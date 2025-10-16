@@ -3,8 +3,16 @@
 "use client"
 
 import { useState } from "react"
-import { Container, Row, Col, Card, Form, Button, ButtonGroup } from "react-bootstrap"
 import { Line, Bar } from "react-chartjs-2"
+import { 
+  MdTrendingUp, 
+  MdAnalytics, 
+  MdDateRange, 
+  MdBarChart, 
+  MdShowChart,
+  MdRefresh,
+  MdDownload
+} from "react-icons/md"
 
 const TrendAnalysis = () => {
   const [timeRange, setTimeRange] = useState("30d")
@@ -66,91 +74,119 @@ const TrendAnalysis = () => {
   }
 
   return (
-    <Container fluid>
-      <Row className="mb-4">
-        <Col>
-          <h1 className="h3 mb-0">Trend Analysis</h1>
-          <p className="text-muted">Analyze survey performance trends over time</p>
-        </Col>
-      </Row>
+    <div className="trend-analysis-container">
+      {/* Header Section */}
+      <div className="page-header-section">
+        <div className="header-content">
+          <div className="header-left">
+            <div className="page-icon">
+              <MdTrendingUp />
+            </div>
+            <div className="page-info">
+              <h1 className="page-title">Trend Analysis</h1>
+              <p className="page-subtitle">Analyze survey performance trends over time</p>
+            </div>
+          </div>
+          <div className="header-actions">
+            <button className="btn btn-outline-primary">
+              <MdRefresh />
+              <span>Refresh Data</span>
+            </button>
+            <button className="btn btn-outline-primary">
+              <MdDownload />
+              <span>Export Report</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <Row className="mb-4">
-        <Col lg={6}>
-          <Card>
-            <Card.Body>
-              <Form.Group className="mb-3">
-                <Form.Label>Time Range</Form.Label>
-                <Form.Select value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
-                  <option value="7d">Last 7 days</option>
-                  <option value="30d">Last 30 days</option>
-                  <option value="90d">Last 90 days</option>
-                  <option value="1y">Last year</option>
-                </Form.Select>
-              </Form.Group>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={6}>
-          <Card>
-            <Card.Body>
-              <Form.Group className="mb-3">
-                <Form.Label>Metric</Form.Label>
-                <ButtonGroup className="w-100">
-                  <Button
-                    variant={selectedMetric === "responses" ? "primary" : "outline-primary"}
-                    onClick={() => setSelectedMetric("responses")}
-                  >
-                    Responses
-                  </Button>
-                  <Button
-                    variant={selectedMetric === "completion" ? "primary" : "outline-primary"}
-                    onClick={() => setSelectedMetric("completion")}
-                  >
-                    Completion Rate
-                  </Button>
-                  <Button
-                    variant={selectedMetric === "engagement" ? "primary" : "outline-primary"}
-                    onClick={() => setSelectedMetric("engagement")}
-                  >
-                    Engagement
-                  </Button>
-                </ButtonGroup>
-              </Form.Group>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0">Trend Overview</Card.Title>
-            </Card.Header>
-            <Card.Body>
-              <div style={{ height: "400px" }}>
-                <Line data={trendData} options={chartOptions} />
+      {/* Controls Section */}
+      <div className="controls-section">
+        <div className="controls-grid">
+          <div className="control-panel">
+            <div className="control-header">
+              <div className="control-icon">
+                <MdDateRange />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row>
-        <Col>
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0">Year-over-Year Comparison</Card.Title>
-            </Card.Header>
-            <Card.Body>
-              <div style={{ height: "350px" }}>
-                <Bar data={comparisonData} options={chartOptions} />
+              <h3 className="control-title">Time Range</h3>
+            </div>
+            <div className="control-content">
+              <select 
+                className="time-range-select"
+                value={timeRange} 
+                onChange={(e) => setTimeRange(e.target.value)}
+              >
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="1y">Last year</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="control-panel">
+            <div className="control-header">
+              <div className="control-icon">
+                <MdAnalytics />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+              <h3 className="control-title">Metric</h3>
+            </div>
+            <div className="control-content">
+              <div className="metric-buttons">
+                <button
+                  className={`metric-btn ${selectedMetric === "responses" ? "active" : ""}`}
+                  onClick={() => setSelectedMetric("responses")}
+                >
+                  Responses
+                </button>
+                <button
+                  className={`metric-btn ${selectedMetric === "completion" ? "active" : ""}`}
+                  onClick={() => setSelectedMetric("completion")}
+                >
+                  Completion Rate
+                </button>
+                <button
+                  className={`metric-btn ${selectedMetric === "engagement" ? "active" : ""}`}
+                  onClick={() => setSelectedMetric("engagement")}
+                >
+                  Engagement
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Trend Overview Chart */}
+      <div className="chart-section">
+        <div className="section-card">
+          <div className="section-header">
+            <div className="section-icon">
+              <MdShowChart />
+            </div>
+            <h2 className="section-title">Trend Overview</h2>
+          </div>
+          <div className="chart-container">
+            <Line data={trendData} options={chartOptions} />
+          </div>
+        </div>
+      </div>
+
+      {/* Year-over-Year Comparison Chart */}
+      <div className="comparison-section">
+        <div className="section-card">
+          <div className="section-header">
+            <div className="section-icon">
+              <MdBarChart />
+            </div>
+            <h2 className="section-title">Year-over-Year Comparison</h2>
+          </div>
+          <div className="chart-container">
+            <Bar data={comparisonData} options={chartOptions} />
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

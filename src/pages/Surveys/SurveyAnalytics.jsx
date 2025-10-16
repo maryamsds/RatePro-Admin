@@ -44,7 +44,7 @@ import {
 import axiosInstance from '../../api/axiosInstance';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import './SurveyAnalytics.css';
+
 
 // Register Chart.js components
 ChartJS.register(

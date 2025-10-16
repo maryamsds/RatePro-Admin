@@ -3,8 +3,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Form, Button, Table, Badge } from "react-bootstrap"
-import { MdTrendingUp, MdTrendingDown, MdBarChart, MdPieChart, MdDownload, MdRefresh } from "react-icons/md"
+import { Container, Form, Button, Table, Badge } from "react-bootstrap"
+import { 
+  MdTrendingUp, 
+  MdTrendingDown, 
+  MdBarChart, 
+  MdPieChart, 
+  MdDownload, 
+  MdRefresh,
+  MdAssessment,
+  MdInsertChart,
+  MdTimeline
+} from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 
 const Analytics = ({ darkMode }) => {
@@ -130,158 +140,140 @@ const Analytics = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container d-flex justify-content-center align-items-center" style={{ height: "50vh" }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+      <div className="analytics-container">
+        <div className="analytics-loading">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p>Loading analytics...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <Container fluid className="analytics-container py-4 fade-in">
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center flex-wrap">
-            <div>
-              <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Analytics</h2>
-              <p className="text-muted mb-0">Comprehensive insights and performance metrics</p>
-            </div>
-            <div className="d-flex gap-2 mt-2 mt-md-0">
-              <Form.Select
-                size="sm"
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                style={{ width: "150px" }}
-                className="form-enhanced"
-              >
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 3 months</option>
-                <option value="365">Last year</option>
-              </Form.Select>
-              <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
-              <Button variant="primary" size="sm" className="btn-enhanced">
-                <MdDownload className="me-1" />
-                Export
-              </Button>
-            </div>
-          </div>
-        </Col>
-      </Row>
-
-      {/* Metrics Cards */}
-      <Row className="mb-4">
-        {metrics.map((metric, index) => (
-          <Col key={index} xs={12} sm={6} lg={3} className="mb-3">
-            <Card
-              className="metric-card h-100 border-0 shadow-sm cursor-pointer card-enhanced"
-              style={{
-                borderLeft: `4px solid var(--${metric.color === "primary" ? "primary" : metric.color}-color)`,
-              }}
-            >
-              <Card.Body className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>{metric.title}</div>
-                  <div className={`h4 mb-1 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>{metric.value}</div>
-                  <div
-                    className={`small d-flex align-items-center ${metric.trend === "up" ? "text-success" : "text-danger"}`}
-                  >
-                    {metric.trend === "up" ? <MdTrendingUp className="me-1" /> : <MdTrendingDown className="me-1" />}
-                    {metric.change} from last period
-                  </div>
+    <div className="analytics-container">
+      <Container fluid className="p-0">
+        {/* Modern Header Section */}
+        <div className="page-header-section">
+          <div className="header-content">
+            <div className="header-main w-100 d-flex justify-content-between align-items-center">
+              <div className="page-title-section">
+                <div className="page-icon">
+                  <MdAssessment />
                 </div>
-                <div
-                  className="metric-icon rounded-circle d-flex align-items-center justify-content-center"
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    backgroundColor: `var(--${metric.color === "primary" ? "primary" : metric.color}-color)`,
-                    opacity: 0.1,
-                  }}
-                >
-                  <metric.icon
-                    size={24}
-                    style={{ color: `var(--${metric.color === "primary" ? "primary" : metric.color}-color)` }}
-                  />
+                <div className="page-info">
+                  <h1 className="page-title">Analytics Dashboard</h1>
+                  <p className="page-subtitle">Comprehensive insights and performance metrics</p>
                 </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      <Row>
-        {/* Chart Area */}
-        <Col lg={8} className="mb-4">
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Header className="border-0 pb-0">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className={`mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Response Trends</h5>
+              </div>
+              <div className="header-actions">
                 <Form.Select
                   size="sm"
-                  value={selectedMetric}
-                  onChange={(e) => setSelectedMetric(e.target.value)}
-                  style={{ width: "150px" }}
-                  className="form-enhanced"
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value)}
+                  className="date-range-select"
                 >
-                  <option value="responses">Responses</option>
-                  <option value="completion">Completion Rate</option>
-                  <option value="engagement">Engagement</option>
+                  <option value="7">Last 7 days</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="90">Last 3 months</option>
+                  <option value="365">Last year</option>
                 </Form.Select>
+                <Button variant="outline-secondary" size="sm" className="icon-btn">
+                  <MdRefresh />
+                </Button>
+                <Button variant="primary" size="sm">
+                  <MdDownload className="me-2" />
+                  Export
+                </Button>
               </div>
-            </Card.Header>
-            <Card.Body>
-              <div
-                className="chart-placeholder d-flex align-items-center justify-content-center"
-                style={{
-                  height: "300px",
-                  backgroundColor: darkMode ? "var(--dark-bg)" : "var(--light-bg)",
-                  borderRadius: "0.5rem",
-                  border: `2px dashed ${darkMode ? "var(--dark-border)" : "var(--light-border)"}`,
-                }}
-              >
-                <div className="text-center">
-                  <MdBarChart size={48} className="text-muted mb-2" />
-                  <p className="text-muted mb-0">Chart visualization would appear here</p>
-                  <small className="text-muted">Integration with Chart.js or similar library</small>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="stats-section">
+          <div className="stats-grid">
+            {metrics.map((metric, index) => (
+              <div key={index} className="stat-card">
+                <div className={`stat-icon stat-icon-${metric.color}`}>
+                  <metric.icon />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-number">{metric.value}</div>
+                  <div className="stat-label">{metric.title}</div>
+                  <div className={`stat-trend ${metric.trend === "up" ? "trend-up" : "trend-down"}`}>
+                    {metric.trend === "up" ? <MdTrendingUp /> : <MdTrendingDown />}
+                    {metric.change}
+                  </div>
                 </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+            ))}
+          </div>
+        </div>
 
-        {/* Top Surveys */}
-        <Col lg={4} className="mb-4">
-          <Card className="border-0 shadow-sm h-100 card-enhanced">
-            <Card.Header className="border-0 pb-0">
-              <h5 className={`mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Top Performing Surveys</h5>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="list-group list-group-flush">
+        {/* Main Content Grid */}
+        <div className="content-grid analytics-grid">
+          {/* Chart Area */}
+          <div className="chart-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <h3>Response Trends</h3>
+                  <p>Track performance over time</p>
+                </div>
+                <div className="section-actions">
+                  <Form.Select
+                    size="sm"
+                    value={selectedMetric}
+                    onChange={(e) => setSelectedMetric(e.target.value)}
+                    className="metric-select"
+                  >
+                    <option value="responses">Responses</option>
+                    <option value="completion">Completion Rate</option>
+                    <option value="engagement">Engagement</option>
+                  </Form.Select>
+                </div>
+              </div>
+              <div className="chart-container">
+                <div className="chart-placeholder">
+                  <div className="placeholder-content">
+                    <MdBarChart className="placeholder-icon" />
+                    <p className="placeholder-text">Chart visualization would appear here</p>
+                    <small className="placeholder-hint">Integration with Chart.js or similar library</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Surveys Sidebar */}
+          <div className="sidebar-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <h3>Top Performing Surveys</h3>
+                  <p>Best engagement metrics</p>
+                </div>
+              </div>
+              <div className="surveys-list">
                 {currentSurveys.map((survey, index) => (
-                  <div key={index} className="list-group-item border-0 px-3 py-3">
-                    <div className="d-flex justify-content-between align-items-start">
-                      <div className="flex-grow-1">
-                        <h6 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>{survey.name}</h6>
-                        <p className="mb-1 small text-muted">{survey.category}</p>
-                        <div className="d-flex gap-3 small">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{survey.responses} responses</span>
-                          <span className={darkMode ? "text-white" : "text-dark"}>{survey.completion}% completion</span>
-                        </div>
+                  <div key={index} className="survey-item">
+                    <div className="survey-info">
+                      <div className="survey-name">{survey.name}</div>
+                      <div className="survey-category">{survey.category}</div>
+                      <div className="survey-stats">
+                        <span>{survey.responses} responses</span>
+                        <span>{survey.completion}% complete</span>
                       </div>
-                      <Badge bg="primary" className="ms-2 badge-enhanced">
-                        {survey.avgRating}★
-                      </Badge>
+                    </div>
+                    <div className="survey-rating">
+                      <Badge bg="primary">{survey.avgRating}★</Badge>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="p-3 border-top">
+              <div className="pagination-section">
                 <Pagination
                   current={surveyPagination.page}
                   total={surveyPagination.total}
@@ -289,81 +281,109 @@ const Analytics = ({ darkMode }) => {
                   onChange={(page) => setSurveyPagination((prev) => ({ ...prev, page }))}
                 />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+          </div>
+        </div>
 
-      {/* Recent Activity Table */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Header className="border-0 pb-0">
-              <h5 className={`mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Daily Response Activity</h5>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0 table-enhanced" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th className="border-0 py-3 px-4">Date</th>
-                      <th className="border-0 py-3">Responses</th>
-                      <th className="border-0 py-3">Completion Rate</th>
-                      <th className="border-0 py-3">Trend</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentResponses.map((data, index) => (
-                      <tr key={index}>
-                        <td className="py-3 px-4 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{data.date}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{data.responses}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <div className="d-flex align-items-center">
-                            <div className="progress me-2" style={{ width: "60px", height: "6px" }}>
-                              <div className="progress-bar bg-primary" style={{ width: `${data.completion}%` }}></div>
-                            </div>
-                            <span className={`small ${darkMode ? "text-white" : "text-dark"}`}>{data.completion}%</span>
+        {/* Activity Table Section */}
+        <div className="activity-section">
+          <div className="section-card">
+            <div className="section-header">
+              <div className="section-title">
+                <h3>Daily Response Activity</h3>
+                <p>Detailed performance breakdown</p>
+              </div>
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="activity-table d-none d-md-block">
+              <div className="modern-table">
+                <div className="table-header">
+                  <div className="table-row">
+                    <div className="table-cell">Date</div>
+                    <div className="table-cell">Responses</div>
+                    <div className="table-cell">Completion Rate</div>
+                    <div className="table-cell">Trend</div>
+                  </div>
+                </div>
+                <div className="table-body">
+                  {currentResponses.map((data, index) => (
+                    <div key={index} className="table-row">
+                      <div className="table-cell">
+                        <span className="date-text">{data.date}</span>
+                      </div>
+                      <div className="table-cell">
+                        <span className="response-count">{data.responses}</span>
+                      </div>
+                      <div className="table-cell">
+                        <div className="completion-wrapper">
+                          <div className="progress-bar-wrapper">
+                            <div className="progress-fill" style={{ width: `${data.completion}%` }}></div>
                           </div>
-                        </td>
-                        <td className="py-3 border-0">
-                          {index > 0 && responseData[index - 1] ? (
-                            <span
-                              className={
-                                data.responses > responseData[index - 1].responses ? "text-success" : "text-danger"
-                              }
-                            >
-                              {data.responses > responseData[index - 1].responses ? (
-                                <MdTrendingUp />
-                              ) : (
-                                <MdTrendingDown />
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-                <div className="p-3 border-top">
-                  <Pagination
-                    current={activityPagination.page}
-                    total={activityPagination.total}
-                    limit={activityPagination.limit}
-                    onChange={(page) => setActivityPagination((prev) => ({ ...prev, page }))}
-                  />
+                          <span className="completion-text">{data.completion}%</span>
+                        </div>
+                      </div>
+                      <div className="table-cell">
+                        {index > 0 && responseData[index - 1] ? (
+                          <span className={data.responses > responseData[index - 1].responses ? "trend-up" : "trend-down"}>
+                            {data.responses > responseData[index - 1].responses ? <MdTrendingUp /> : <MdTrendingDown />}
+                          </span>
+                        ) : (
+                          <span className="trend-neutral">-</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="activity-cards d-md-none">
+              {currentResponses.map((data, index) => (
+                <div key={index} className="activity-card">
+                  <div className="activity-card-header">
+                    <span className="activity-date">{data.date}</span>
+                    {index > 0 && responseData[index - 1] && (
+                      <span className={data.responses > responseData[index - 1].responses ? "trend-up" : "trend-down"}>
+                        {data.responses > responseData[index - 1].responses ? <MdTrendingUp /> : <MdTrendingDown />}
+                      </span>
+                    )}
+                  </div>
+                  <div className="activity-card-body">
+                    <div className="activity-meta">
+                      <div className="meta-item">
+                        <span className="meta-label">Responses:</span>
+                        <span className="meta-value">{data.responses}</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Completion:</span>
+                        <div className="completion-wrapper">
+                          <div className="progress-bar-wrapper">
+                            <div className="progress-fill" style={{ width: `${data.completion}%` }}></div>
+                          </div>
+                          <span className="completion-text">{data.completion}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pagination-section">
+              <Pagination
+                current={activityPagination.page}
+                total={activityPagination.total}
+                limit={activityPagination.limit}
+                onChange={(page) => setActivityPagination((prev) => ({ ...prev, page }))}
+              />
+            </div>
+          </div>
+        </div>
+
+      </Container>
+    </div>
   )
 }
 

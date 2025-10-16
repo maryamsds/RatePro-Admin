@@ -60,7 +60,6 @@ import {
 } from "react-icons/md"
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { useAuth } from "../../context/AuthContext"
-import "./Sidebar.css"
 
 const Sidebar = ({ darkMode, isOpen, isMobile, isTablet, collapsed, onClose, onToggle }) => {
   const { user, hasPermission } = useAuth()
@@ -231,8 +230,9 @@ const Sidebar = ({ darkMode, isOpen, isMobile, isTablet, collapsed, onClose, onT
     const handleClickOutside = (event) => {
       if (
         sidebarRef.current &&
-        !sidebarRef.current.contains(event.target) &&
-        (((isMobile || isTablet) && isOpen) || (!isMobile && !isTablet && !collapsed && isOpen))
+        !sidebarRef.current.contains(event.target)
+        //  &&
+        // (((isMobile || isTablet) && isOpen) || (!isMobile && !isTablet && !collapsed && isOpen))
       ) {
         onClose()
       }
@@ -400,7 +400,7 @@ const Sidebar = ({ darkMode, isOpen, isMobile, isTablet, collapsed, onClose, onT
     height: "100vh", 
     position: "fixed", 
     top: 0,
-    left: isMobile ? (isOpen ? 0 : "-100%") : 0, 
+    left: 0,
     zIndex: 1050, 
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
@@ -538,17 +538,29 @@ const Sidebar = ({ darkMode, isOpen, isMobile, isTablet, collapsed, onClose, onT
   }
 
   return (
-    <div 
-      ref={sidebarRef} 
-      style={sidebarStyle} 
-      className={`sidebar d-flex flex-column ${collapsed ? 'collapsed' : 'expanded'} ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''} ${isOpen && isMobile ? 'open' : ''} ${darkMode ? 'dark-mode' : ''}`}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-    >
+    <>
+      {/* Mobile Toggle Button - Shows when sidebar is closed on mobile */}
+      {isMobile && (
+        <button
+          className="mobile-sidebar-toggle"
+          onClick={onToggle}
+          aria-label="Open sidebar"
+        >
+          <MdMenu size={24} />
+        </button>
+      )}
+
+      <div 
+        ref={sidebarRef} 
+        style={sidebarStyle} 
+        className={`sidebar d-flex flex-column ${collapsed ? 'collapsed' : 'expanded'} ${isMobile ? 'mobile' : ''} ${isTablet ? 'tablet' : ''} ${darkMode ? 'dark-mode' : ''}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
       {/* Header */}
       <div className="sidebar-header">
         {!collapsed && <h4 className="sidebar-logo">Rate Pro</h4>}
-        <Button
+        {/* <Button
           variant="link"
           className="sidebar-toggle"
           onClick={onToggle}
@@ -556,7 +568,16 @@ const Sidebar = ({ darkMode, isOpen, isMobile, isTablet, collapsed, onClose, onT
           tabIndex={0}
         >
           {collapsed ? <MdMenu size={isMobile ? 20 : 24} /> : <MdClose size={isMobile ? 20 : 24} />}
-        </Button>
+        </Button> */}
+        <Button
+  variant="link"
+  className="sidebar-toggle"
+  onClick={() => onToggle(!collapsed)}
+  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+  tabIndex={0}
+>
+  {collapsed ? <MdMenu size={isMobile ? 20 : 24} /> : <MdClose size={isMobile ? 20 : 24} />}
+</Button>
       </div>
 
       {/* Navigation */}
@@ -682,6 +703,7 @@ const Sidebar = ({ darkMode, isOpen, isMobile, isTablet, collapsed, onClose, onT
           ))}
       </Nav>
     </div>
+    </>
   )
 }
 

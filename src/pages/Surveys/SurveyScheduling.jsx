@@ -3,16 +3,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Form, Button, Table, Badge, Modal } from "react-bootstrap"
-import { MdSchedule, MdAdd, MdEdit, MdDelete, MdPlayArrow as MdPlay, MdPause } from "react-icons/md"
+import { Container, Row, Col, Card, Form, Button, Table, Badge, Modal, Spinner, ProgressBar } from "react-bootstrap"
+import { MdSchedule, MdAdd, MdEdit, MdDelete, MdPlayArrow as MdPlay, MdPause, MdFilterList, MdViewList, MdViewModule, MdAccessTime, MdPeople, MdTrendingUp } from "react-icons/md"
+import { FaCalendarAlt, FaClock, FaUsers, FaChartLine } from "react-icons/fa"
 import Pagination from "../../components/Pagination/Pagination.jsx"
+
 
 const SurveyScheduling = ({ darkMode }) => {
   const [scheduledSurveys, setScheduledSurveys] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState(null)
-  const [pagination, setPagination] = useState({ page: 1, limit: 2, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 6, total: 0 })
+  const [viewMode, setViewMode] = useState('cards') // 'table' or 'cards'
+  const [statusFilter, setStatusFilter] = useState('all')
   const [formData, setFormData] = useState({
     surveyId: "",
     title: "",
@@ -227,132 +231,327 @@ const SurveyScheduling = ({ darkMode }) => {
  
   
 
+  // Get stats for dashboard
+  const getStats = () => {
+    const active = scheduledSurveys.filter(s => s.status === 'active').length
+    const scheduled = scheduledSurveys.filter(s => s.status === 'scheduled').length
+    const completed = scheduledSurveys.filter(s => s.status === 'completed').length
+    const totalResponses = scheduledSurveys.reduce((sum, s) => sum + s.responses, 0)
+    return { active, scheduled, completed, totalResponses }
+  }
+
+  const stats = getStats()
+  const filteredSurveys = statusFilter === 'all' ? scheduledSurveys : scheduledSurveys.filter(s => s.status === statusFilter)
+
   return (
-    <Container fluid className="py-4">
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">Survey Scheduling</h1>
-              <p className="text-muted mb-0">Schedule surveys to run at specific times and dates</p>
+    <div className="survey-scheduling-container">
+      <Container fluid>
+        {/* Header Section */}
+        <div className="scheduling-header">
+          <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
+            <div className="header-content">
+              <div className="d-flex align-items-center mb-2">
+                <MdSchedule className="me-2" style={{ color: 'var(--primary-color, #1fdae4)' }} size={28} />
+                <h1 className="h4 mb-0 fw-bold">Survey Scheduling</h1>
+              </div>
+              <p className="text-muted mb-0 d-none d-sm-block">
+                Schedule and manage automated survey campaigns
+              </p>
             </div>
-            <Button variant="primary" onClick={handleCreateSchedule}>
-              <MdAdd className="me-2" />
-              Schedule Survey
+            <Button 
+              variant="primary" 
+              className="schedule-btn"
+              onClick={handleCreateSchedule}
+              size="sm"
+            >
+              <MdAdd className="me-1 me-sm-2" size={16} />
+              <span className="d-none d-sm-inline">Schedule Survey</span>
+              <span className="d-sm-none">Schedule</span>
             </Button>
           </div>
-        </Col>
-      </Row>
+          
+          {/* Stats Overview */}
+          <div className="stats-overview">
+            <div className="stat-card active">
+              <div className="stat-icon">
+                <MdPlay size={20} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.active}</div>
+                <div className="stat-label">Active</div>
+              </div>
+            </div>
+            <div className="stat-card scheduled">
+              <div className="stat-icon">
+                <FaCalendarAlt size={18} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.scheduled}</div>
+                <div className="stat-label">Scheduled</div>
+              </div>
+            </div>
+            <div className="stat-card completed">
+              <div className="stat-icon">
+                <MdTrendingUp size={20} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.completed}</div>
+                <div className="stat-label">Completed</div>
+              </div>
+            </div>
+            <div className="stat-card responses d-none d-md-flex">
+              <div className="stat-icon">
+                <FaUsers size={18} />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">{stats.totalResponses}</div>
+                <div className="stat-label">Responses</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Scheduled Surveys Table */}
-      <Card className="border-0 shadow-sm">
-        <Card.Body className="p-0">
-          <div className="table-responsive">
-            <Table hover className="mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th>Survey</th>
-                  <th>Schedule</th>
-                  <th>Frequency</th>
-                  <th>Status</th>
-                  <th>Progress</th>
-                  <th>Target Audience</th>
-                  <th className="text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scheduledSurveys
-                  .slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit)
-                  .map((schedule) => (
-                    <tr key={schedule.id}>
-                      <td>
-                        <div>
-                          <div className="fw-medium">{schedule.title}</div>
-                          <small className="text-muted">ID: {schedule.surveyId}</small>
+        {/* Filters and View Toggle */}
+        <div className="filters-section">
+          <div className="d-flex align-items-center justify-content-between flex-wrap">
+            <div className="filter-controls">
+              <Form.Select 
+                size="sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="status-filter"
+              >
+                <option value="all">All Status</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="completed">Completed</option>
+              </Form.Select>
+            </div>
+            
+            <div className="view-controls d-none d-lg-flex">
+              <Button 
+                variant={viewMode === 'cards' ? 'primary' : 'outline-secondary'}
+                size="sm"
+                onClick={() => setViewMode('cards')}
+                className="me-2"
+              >
+                <MdViewModule size={16} />
+              </Button>
+              <Button 
+                variant={viewMode === 'table' ? 'primary' : 'outline-secondary'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+              >
+                <MdViewList size={16} />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Surveys Content */}
+        {viewMode === 'cards' || window.innerWidth < 992 ? (
+          /* Cards View - Mobile and Desktop Cards */
+          <div className="surveys-grid">
+            {filteredSurveys
+              .slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit)
+              .map((schedule) => (
+                <div key={schedule.id} className="survey-card">
+                  {/* Card Header */}
+                  <div className="card-header">
+                    <div className="survey-info">
+                      <h5 className="survey-title">{schedule.title}</h5>
+                      <p className="survey-id">ID: {schedule.surveyId}</p>
+                    </div>
+                    <div className="status-badge">
+                      <Badge bg={getStatusVariant(schedule.status)} className="status-pill">
+                        {schedule.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="card-content">
+                    {/* Schedule Info */}
+                    <div className="schedule-info">
+                      <div className="info-row">
+                        <FaCalendarAlt size={14} className="info-icon" />
+                        <div className="info-content">
+                          <div className="info-label">Start</div>
+                          <div className="info-value">{new Date(schedule.startDate).toLocaleDateString()} at {new Date(schedule.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                         </div>
-                      </td>
-                      <td>
-                        <div>
-                          <div className="small">
-                            <strong>Start:</strong> {new Date(schedule.startDate).toLocaleString()}
-                          </div>
-                          <div className="small">
-                            <strong>End:</strong> {new Date(schedule.endDate).toLocaleString()}
-                          </div>
+                      </div>
+                      <div className="info-row">
+                        <FaClock size={14} className="info-icon" />
+                        <div className="info-content">
+                          <div className="info-label">End</div>
+                          <div className="info-value">{new Date(schedule.endDate).toLocaleDateString()} at {new Date(schedule.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                         </div>
-                      </td>
-                      <td>
-                        <Badge bg="secondary">{schedule.frequency}</Badge>
-                      </td>
-                      <td>
-                        <Badge bg={getStatusVariant(schedule.status)}>{schedule.status}</Badge>
-                      </td>
-                      <td>
-                        <div>
-                          <div className="small">
-                            {schedule.responses} / {schedule.maxResponses || "∞"} responses
+                      </div>
+                    </div>
+
+                    {/* Metadata */}
+                    <div className="metadata">
+                      <div className="meta-item">
+                        <span className="meta-label">Frequency:</span>
+                        <Badge bg="secondary" className="frequency-badge">{schedule.frequency}</Badge>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">Target:</span>
+                        <span className="meta-value">{schedule.targetAudience}</span>
+                      </div>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="progress-section">
+                      <div className="progress-info">
+                        <span className="progress-text">{schedule.responses} / {schedule.maxResponses || "∞"} responses</span>
+                        {schedule.maxResponses && (
+                          <span className="progress-percentage">
+                            {Math.round((schedule.responses / schedule.maxResponses) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      {schedule.maxResponses && (
+                        <ProgressBar 
+                          now={Math.min((schedule.responses / schedule.maxResponses) * 100, 100)}
+                          className="custom-progress"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className="card-actions">
+                    {getStatusActions(schedule)}
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => handleEditSchedule(schedule)}
+                      className="action-btn"
+                    >
+                      <MdEdit size={16} />
+                      <span className="btn-text">Edit</span>
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => handleDeleteSchedule(schedule.id)}
+                      className="action-btn"
+                    >
+                      <MdDelete size={16} />
+                      <span className="btn-text">Delete</span>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        ) : (
+          /* Table View - Desktop Only */
+          <Card className="table-card">
+            <div className="table-responsive">
+              <Table hover className="surveys-table">
+                <thead>
+                  <tr>
+                    <th>Survey</th>
+                    <th>Schedule</th>
+                    <th>Frequency</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Target Audience</th>
+                    <th className="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSurveys
+                    .slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit)
+                    .map((schedule) => (
+                      <tr key={schedule.id}>
+                        <td>
+                          <div className="survey-cell">
+                            <div className="fw-medium">{schedule.title}</div>
+                            <small className="text-muted">ID: {schedule.surveyId}</small>
                           </div>
-                          {schedule.maxResponses && (
-                            <div className="progress mt-1" style={{ height: "4px" }}>
-                              <div
-                                className="progress-bar bg-primary"
-                                style={{
-                                  width: `${Math.min((schedule.responses / schedule.maxResponses) * 100, 100)}%`,
-                                }}
-                              />
+                        </td>
+                        <td>
+                          <div className="schedule-cell">
+                            <div className="schedule-item">
+                              <strong>Start:</strong> {new Date(schedule.startDate).toLocaleString()}
                             </div>
-                          )}
-                        </div>
-                      </td>
-                      <td>{schedule.targetAudience}</td>
-                      <td>
-                        <div className="d-flex justify-content-center gap-1">
-                          {getStatusActions(schedule)}
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={() => handleEditSchedule(schedule)}
-                            title="Edit"
-                          >
-                            <MdEdit />
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDeleteSchedule(schedule.id)}
-                            title="Delete"
-                          >
-                            <MdDelete />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </Table>
-          </div>
+                            <div className="schedule-item">
+                              <strong>End:</strong> {new Date(schedule.endDate).toLocaleString()}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <Badge bg="secondary">{schedule.frequency}</Badge>
+                        </td>
+                        <td>
+                          <Badge bg={getStatusVariant(schedule.status)}>{schedule.status}</Badge>
+                        </td>
+                        <td>
+                          <div className="progress-cell">
+                            <div className="progress-text">
+                              {schedule.responses} / {schedule.maxResponses || "∞"}
+                            </div>
+                            {schedule.maxResponses && (
+                              <ProgressBar 
+                                now={Math.min((schedule.responses / schedule.maxResponses) * 100, 100)}
+                                className="table-progress"
+                              />
+                            )}
+                          </div>
+                        </td>
+                        <td>{schedule.targetAudience}</td>
+                        <td>
+                          <div className="table-actions">
+                            {getStatusActions(schedule)}
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleEditSchedule(schedule)}
+                              title="Edit"
+                            >
+                              <MdEdit />
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteSchedule(schedule.id)}
+                              title="Delete"
+                            >
+                              <MdDelete />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </Table>
+            </div>
+          </Card>
+        )}
 
-          <div className="p-3">
-            <Pagination
-              current={pagination.page}
-              total={pagination.total}
-              limit={pagination.limit}
-              onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-            />
-          </div>
-        </Card.Body>
-      </Card>
+        {/* Pagination */}
+        <div className="pagination-container">
+          <Pagination
+            current={pagination.page}
+            total={filteredSurveys.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
 
-      {/* Schedule Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <MdSchedule className="me-2" />
-            {editingSchedule ? "Edit Schedule" : "Schedule Survey"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+        {/* Schedule Modal */}
+        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="schedule-modal">
+          <Modal.Header closeButton className="modal-header-custom">
+            <Modal.Title>
+              <MdSchedule className="me-2" />
+              {editingSchedule ? "Edit Schedule" : "Schedule Survey"}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="modal-body-custom">
           <Form>
             <Row>
               <Col md={6}>
@@ -501,8 +700,9 @@ const SurveyScheduling = ({ darkMode }) => {
             {editingSchedule ? "Update Schedule" : "Create Schedule"}
           </Button>
         </Modal.Footer>
-      </Modal>
-    </Container>
+        </Modal>
+      </Container>
+    </div>
   )
 }
 

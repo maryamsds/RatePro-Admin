@@ -3,15 +3,12 @@
 
 import { useState, useEffect } from "react"
 import { 
-  Container, Row, Col, Card, Table, Badge, Button, 
-  Form, Modal, InputGroup, Spinner, Alert 
-} from "react-bootstrap"
-import { 
   MdAdd, MdEdit, MdDelete, MdSearch, MdRefresh,
-  MdStar, MdStarOutline, MdLabel, MdCategory 
+  MdStar, MdStarOutline, MdLabel, MdCategory,
+  MdCheckCircle, MdTrendingUp, MdSettings,
+  MdClose
 } from "react-icons/md"
 import Pagination from "./components/Pagination/Pagination.jsx"
-import TableControls from "./components/TableControls/TableControls.jsx"
 
 const Features = ({ darkMode }) => {
   // State for features data
@@ -28,7 +25,7 @@ const Features = ({ darkMode }) => {
   // State for table controls
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState("all")
-  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
 
   // Category options for filter
   const categoryOptions = [
@@ -162,48 +159,49 @@ const Features = ({ darkMode }) => {
     ))
   }
 
-  // Get status badge variant
-  const getStatusBadge = (status) => {
-    const variants = {
-      active: "success",
-      inactive: "secondary",
-      coming_soon: "info"
-    }
-    return variants[status] || "secondary"
-  }
+  // Calculate stats
+  const activeFeatures = features.filter(f => f.status === 'active').length
+  const premiumFeatures = features.filter(f => f.isPremium).length
+  const totalCategories = [...new Set(features.map(f => f.category))].length
 
   if (loading) {
     return (
-      <Container fluid className="py-4 d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
-        <Spinner animation="border" variant="primary" />
-      </Container>
+      <div className="features-container">
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Loading features...</p>
+        </div>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Container fluid className="py-4">
-        <Alert variant="danger">{error}</Alert>
-      </Container>
+      <div className="features-container">
+        <div className="error-container">
+          <p className="error-message">{error}</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Container fluid className={`py-4 ${darkMode ? "bg-dark" : ""}`}>
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className={`h3 mb-1 ${darkMode ? "text-light" : ""}`}>
-                <MdCategory className="me-2" /> Feature Management
-              </h1>
-              <p className={`text-muted mb-0 ${darkMode ? "text-light" : ""}`}>
-                Manage your platform features and offerings
-              </p>
+    <div className="features-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-title-wrapper">
+            <div className="page-icon">
+              <MdCategory />
             </div>
-            <Button 
-              variant="primary" 
+            <div>
+              <h1 className="page-title">Feature Management</h1>
+              <p className="page-subtitle">Manage your platform features and offerings</p>
+            </div>
+          </div>
+          <div className="page-actions">
+            <button 
+              className="action-button primary-action"
               onClick={() => {
                 setCurrentFeature({
                   title: "",
@@ -216,218 +214,280 @@ const Features = ({ darkMode }) => {
                 setShowModal(true)
               }}
             >
-              <MdAdd className="me-2" /> Add Feature
-            </Button>
+              <MdAdd /> Add Feature
+            </button>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
 
-      {/* Table Controls */}
-      <TableControls
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterOptions={categoryOptions}
-        selectedFilter={filterCategory}
-        setSelectedFilter={setFilterCategory}
-        onRefresh={() => window.location.reload()}
-        darkMode={darkMode}
-        placeholder="Search features..."
-      />
-
-      {/* Features Table */}
-      <Card className={`border-0 shadow-sm ${darkMode ? "bg-dark" : ""}`}>
-        <Card.Body className="p-0">
-          <div className="table-responsive">
-            <Table hover className={`mb-0 ${darkMode ? "table-dark" : ""}`}>
-              <thead className={darkMode ? "table-dark" : "table-light"}>
-                <tr>
-                  <th className={darkMode ? "text-light" : ""}>Title</th>
-                  <th className={darkMode ? "text-light" : ""}>Description</th>
-                  <th className={darkMode ? "text-light" : ""}>Category</th>
-                  <th className={darkMode ? "text-light" : ""}>Premium</th>
-                  <th className={darkMode ? "text-light" : ""}>Status</th>
-                  <th className={darkMode ? "text-light" : ""}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedFeatures.map(feature => (
-                  <tr key={feature.id}>
-                    <td className={darkMode ? "text-light" : ""}>
-                      <div className="fw-medium">
-                        <MdLabel className="me-2" />
-                        {feature.title}
-                      </div>
-                      <small className={darkMode ? "text-light" : "text-muted"}>
-                        Added: {feature.createdAt}
-                      </small>
-                    </td>
-                    <td className={darkMode ? "text-light" : ""}>
-                      <div className="text-truncate" style={{ maxWidth: '300px' }}>
-                        {feature.description}
-                      </div>
-                    </td>
-                    <td>
-                      <Badge bg="info" className="text-capitalize">
-                        {feature.category}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button 
-                        variant={feature.isPremium ? "outline-warning" : "outline-secondary"}
-                        size="sm"
-                        onClick={() => togglePremium(feature.id)}
-                      >
-                        {feature.isPremium ? (
-                          <MdStar className="me-1" />
-                        ) : (
-                          <MdStarOutline className="me-1" />
-                        )}
-                        {feature.isPremium ? "Premium" : "Standard"}
-                      </Button>
-                    </td>
-                    <td>
-                      <Badge bg={getStatusBadge(feature.status)} className="text-capitalize">
-                        {feature.status.replace('_', ' ')}
-                      </Badge>
-                    </td>
-                    <td>
-                      <div className="d-flex gap-2">
-                        <Button 
-                          variant="outline-primary" 
-                          size="sm"
-                          onClick={() => handleEdit(feature)}
-                        >
-                          <MdEdit />
-                        </Button>
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm"
-                          onClick={() => handleDelete(feature.id)}
-                        >
-                          <MdDelete />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+      {/* Stats Section */}
+      <div className="stats-section">
+        <div className="stat-card primary-card">
+          <div className="stat-icon">
+            <MdCategory />
           </div>
+          <div className="stat-content">
+            <div className="stat-value">{features.length}</div>
+            <div className="stat-label">Total Features</div>
+          </div>
+        </div>
+        <div className="stat-card success-card">
+          <div className="stat-icon">
+            <MdCheckCircle />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{activeFeatures}</div>
+            <div className="stat-label">Active</div>
+          </div>
+        </div>
+        <div className="stat-card warning-card">
+          <div className="stat-icon">
+            <MdStar />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{premiumFeatures}</div>
+            <div className="stat-label">Premium Features</div>
+          </div>
+        </div>
+        <div className="stat-card info-card">
+          <div className="stat-icon">
+            <MdSettings />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{totalCategories}</div>
+            <div className="stat-label">Categories</div>
+          </div>
+        </div>
+      </div>
 
-          {/* Pagination */}
-          <div className="p-3 border-top">
-            <Pagination
-              current={pagination.page}
-              total={filteredFeatures.length}
-              limit={pagination.limit}
-              onChange={(page) => setPagination(prev => ({ ...prev, page }))}
-              darkMode={darkMode}
+      {/* Filters Section */}
+      <div className="section-card filters-section">
+        <div className="filters-grid">
+          <div className="search-input-container">
+            <MdSearch className="search-icon" />
+            <input 
+              type="text"
+              className="search-input"
+              placeholder="Search features..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </Card.Body>
-      </Card>
+          <div className="filter-group">
+            <select 
+              className="filter-select"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <option value="all">All Categories</option>
+              {categoryOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button 
+            className="action-button secondary-action"
+            onClick={() => window.location.reload()}
+          >
+            <MdRefresh /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Features Table */}
+      <div className="section-card features-table-section">
+        <div className="section-header">
+          <div className="section-title-wrapper">
+            <h2 className="section-title">{filteredFeatures.length} feature(s) found</h2>
+          </div>
+        </div>
+
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedFeatures.map(feature => (
+                <tr key={feature.id}>
+                  <td>
+                    <div className="feature-name-cell">
+                      <div className="feature-icon">
+                        <MdLabel />
+                      </div>
+                      <div>
+                        <div className="feature-name">{feature.title}</div>
+                        <div className="feature-date">Added: {feature.createdAt}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="feature-description">{feature.description}</div>
+                  </td>
+                  <td>
+                    <span className="category-badge">{feature.category}</span>
+                  </td>
+                  <td>
+                    <button 
+                      className={`premium-toggle ${feature.isPremium ? 'is-premium' : 'is-standard'}`}
+                      onClick={() => togglePremium(feature.id)}
+                    >
+                      {feature.isPremium ? <MdStar /> : <MdStarOutline />}
+                      {feature.isPremium ? 'Premium' : 'Standard'}
+                    </button>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${feature.status}-status`}>
+                      {feature.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="action-btn edit-btn"
+                        onClick={() => handleEdit(feature)}
+                        title="Edit"
+                      >
+                        <MdEdit />
+                      </button>
+                      <button 
+                        className="action-btn delete-btn"
+                        onClick={() => handleDelete(feature.id)}
+                        title="Delete"
+                      >
+                        <MdDelete />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="table-footer">
+          <Pagination
+            current={pagination.page}
+            total={filteredFeatures.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination(prev => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
+      </div>
 
       {/* Add/Edit Feature Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header 
-          closeButton 
-          className={darkMode ? "bg-dark border-dark text-light" : ""}
-        >
-          <Modal.Title>
-            {isEditing ? "Edit Feature" : "Add New Feature"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Feature Title</Form.Label>
-              <Form.Control
-                type="text"
-                name="title"
-                value={currentFeature?.title || ""}
-                onChange={handleInputChange}
-                required
-                className={darkMode ? "bg-dark border-dark text-light" : ""}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                value={currentFeature?.description || ""}
-                onChange={handleInputChange}
-                className={darkMode ? "bg-dark border-dark text-light" : ""}
-              />
-            </Form.Group>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Category</Form.Label>
-                  <Form.Select
-                    name="category"
-                    value={currentFeature?.category || "survey"}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                <MdCategory />
+                {isEditing ? "Edit Feature" : "Add New Feature"}
+              </h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                <MdClose />
+              </button>
+            </div>
+            <div className="modal-body">
+              <form className="feature-form" onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label className="form-label">Feature Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    className="form-input"
+                    value={currentFeature?.title || ""}
                     onChange={handleInputChange}
-                    className={darkMode ? "bg-dark border-dark text-light" : ""}
-                  >
-                    {categoryOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Icon</Form.Label>
-                  <Form.Select
-                    name="icon"
-                    value={currentFeature?.icon || "poll"}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    rows={3}
+                    name="description"
+                    className="form-input"
+                    value={currentFeature?.description || ""}
                     onChange={handleInputChange}
-                    className={darkMode ? "bg-dark border-dark text-light" : ""}
-                  >
-                    <option value="poll">Poll</option>
-                    <option value="analytics">Analytics</option>
-                    <option value="insert_chart">Chart</option>
-                    <option value="people">People</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="checkbox"
-                label="Premium Feature"
-                name="isPremium"
-                checked={currentFeature?.isPremium || false}
-                onChange={handleInputChange}
-                className={darkMode ? "text-light" : ""}
-              />
-            </Form.Group>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Category</label>
+                    <select
+                      name="category"
+                      className="form-select"
+                      value={currentFeature?.category || "survey"}
+                      onChange={handleInputChange}
+                    >
+                      {categoryOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Icon</label>
+                    <select
+                      name="icon"
+                      className="form-select"
+                      value={currentFeature?.icon || "poll"}
+                      onChange={handleInputChange}
+                    >
+                      <option value="poll">Poll</option>
+                      <option value="analytics">Analytics</option>
+                      <option value="insert_chart">Chart</option>
+                      <option value="people">People</option>
+                    </select>
+                  </div>
+                </div>
 
-            <div className="d-flex justify-content-end gap-2">
-              <Button 
-                variant="secondary" 
+                <div className="form-group">
+                  <label className="form-checkbox">
+                    <input
+                      type="checkbox"
+                      name="isPremium"
+                      checked={currentFeature?.isPremium || false}
+                      onChange={handleInputChange}
+                    />
+                    <span>Premium Feature</span>
+                  </label>
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="modal-cancel-btn"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
-              </Button>
-              <Button 
-                variant="primary" 
-                type="submit"
+              </button>
+              <button 
+                className="modal-submit-btn"
+                onClick={handleSubmit}
               >
+                <MdAdd />
                 {isEditing ? "Update Feature" : "Add Feature"}
-              </Button>
+              </button>
             </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
-    </Container>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

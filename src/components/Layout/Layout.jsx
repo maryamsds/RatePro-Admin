@@ -5,7 +5,7 @@ import { Outlet } from "react-router-dom"
 import { Container } from "react-bootstrap"
 import Sidebar from "../Sidebar/Sidebar.jsx"
 import Header from "../Header/Header.jsx"
-import "./Layout.css"
+
 
 const Layout = ({ darkMode, toggleTheme }) => {
   // Responsive breakpoints

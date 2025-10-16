@@ -1,7 +1,6 @@
 // src/components/Pagination/Pagination.jsx
 "use client"
 
-import { Pagination as BootstrapPagination } from "react-bootstrap"
 import { MdChevronLeft, MdChevronRight, MdMoreHoriz } from "react-icons/md"
 
 const Pagination = ({ 
@@ -9,10 +8,9 @@ const Pagination = ({
   total, 
   limit, 
   onChange, 
-  darkMode,
   showTotal = true,
   className = "",
-  size = "sm"
+  size = "md"
 }) => {
   const totalPages = Math.ceil(total / limit)
 
@@ -47,47 +45,52 @@ const Pagination = ({
   const visiblePages = getVisiblePages()
 
   return (
-    <div className={`d-flex justify-content-between align-items-center flex-wrap ${className}`}>
+    <div className={`pagination-wrapper ${className}`}>
       {showTotal && (
-        <small className={`text-muted mb-2 mb-md-0 ${darkMode ? "text-light" : ""}`}>
+        <div className="pagination-info">
           Showing {Math.min((current - 1) * limit + 1, total)} to {Math.min(current * limit, total)} of {total} entries
-        </small>
+        </div>
       )}
 
-      <BootstrapPagination size={size} className="mb-0 pagination-enhanced">
-        <BootstrapPagination.Prev 
+      <div className={`pagination-controls pagination-${size}`}>
+        <button 
+          className="pagination-btn pagination-prev"
           disabled={current === 1} 
           onClick={() => onChange(current - 1)}
-          className={darkMode ? "text-light" : ""}
+          aria-label="Previous page"
         >
-          <MdChevronLeft size={16} />
-        </BootstrapPagination.Prev>
+          <MdChevronLeft />
+        </button>
 
-        {visiblePages.map((page, index) =>
-          page === "..." ? (
-            <BootstrapPagination.Ellipsis key={index} className={darkMode ? "text-light" : ""}>
-              <MdMoreHoriz size={16} />
-            </BootstrapPagination.Ellipsis>
-          ) : (
-            <BootstrapPagination.Item 
-              key={index} 
-              active={page === current} 
-              onClick={() => onChange(page)}
-              className={darkMode ? page === current ? "" : "text-light" : ""}
-            >
-              {page}
-            </BootstrapPagination.Item>
-          )
-        )}
+        <div className="pagination-pages">
+          {visiblePages.map((page, index) =>
+            page === "..." ? (
+              <span key={index} className="pagination-ellipsis">
+                <MdMoreHoriz />
+              </span>
+            ) : (
+              <button
+                key={index} 
+                className={`pagination-btn pagination-number ${page === current ? 'active' : ''}`}
+                onClick={() => onChange(page)}
+                aria-label={`Page ${page}`}
+                aria-current={page === current ? 'page' : undefined}
+              >
+                {page}
+              </button>
+            )
+          )}
+        </div>
 
-        <BootstrapPagination.Next 
+        <button 
+          className="pagination-btn pagination-next"
           disabled={current === totalPages} 
           onClick={() => onChange(current + 1)}
-          className={darkMode ? "text-light" : ""}
+          aria-label="Next page"
         >
-          <MdChevronRight size={16} />
-        </BootstrapPagination.Next>
-      </BootstrapPagination>
+          <MdChevronRight />
+        </button>
+      </div>
     </div>
   )
 }

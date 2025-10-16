@@ -1,30 +1,32 @@
-// src\pages\Profile\Profile.jsx
-"use client"
-
 import { useEffect, useState } from "react"
-import { Container, Row, Col, Card, Form, Button, Tab, Tabs, Alert, Badge } from "react-bootstrap"
-import { MdPerson, MdSecurity, MdNotifications, MdEdit, MdSave, MdCancel } from "react-icons/md"
+import { 
+  MdPerson, MdSecurity, MdNotifications, MdEdit, MdSave, MdCancel,
+  MdCheck, MdClose, MdEmail, MdPhone, MdWork, MdInfo,
+  MdBusiness, MdLanguage, MdAccessTime, MdLock, MdRefresh,
+  MdCamera, MdAssessment, MdPeople, MdTrendingUp
+} from "react-icons/md"
 import axiosInstance, { getCurrentUser, updateProfile, updateUserProfile } from "../../api/axiosInstance"
 import Swal from "sweetalert2"
-import { capitalize } from "../../utilities/capitalize";
+import { capitalize } from "../../utilities/capitalize"
 import { useAuth } from "../../context/AuthContext"
 import { useLocation } from "react-router-dom"
 
-const Profile = ({ darkMode }) => {
-  const [activeTab, setActiveTab] = useState("profile");
-  const [isEditing, setIsEditing] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [userData, setUserData] = useState("");
-  const [userId, setUserId] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const { setUser, user, updateCompanyInfo } = useAuth();
+const Profile = () => {
+  const [activeTab, setActiveTab] = useState("profile")
+  const [isEditing, setIsEditing] = useState(false)
+  const [showAlert, setShowAlert] = useState(false)
+  const [userData, setUserData] = useState("")
+  const [userId, setUserId] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const { setUser, user, updateCompanyInfo } = useAuth()
   const location = useLocation()
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const tab = params.get("tab")
     if (tab) {
-      setActiveTab(tab)  // agar ?tab=company aaya to direct company tab khulega
+      setActiveTab(tab)
     }
   }, [location.search])
 
@@ -33,30 +35,30 @@ const Profile = ({ darkMode }) => {
     lastName: "",
     email: "",
     phone: "",
-    department: "", // Department._id from Tenant.departments
+    department: "",
     role: "",
     bio: "",
     timezone: "",
     language: "",
-  });
+  })
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-  });
+  })
 
   const [passwordErrors, setPasswordErrors] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-  });
+  })
 
   const [formErrors, setFormErrors] = useState({
     firstName: "",
     lastName: "",
     phone: "",
-  });
+  })
 
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
@@ -64,7 +66,7 @@ const Profile = ({ darkMode }) => {
     surveyAlerts: true,
     weeklyReports: true,
     systemUpdates: false,
-  });
+  })
 
   const [companyData, setCompanyData] = useState({
     name: "",
@@ -73,8 +75,8 @@ const Profile = ({ darkMode }) => {
     contactPhone: "",
     website: "",
     employees: "",
-    departments: [], // Array of { _id, name, head }
-  });
+    departments: [],
+  })
 
   const availableDepartments = [
     { name: "Administration" },
@@ -85,36 +87,35 @@ const Profile = ({ darkMode }) => {
     { name: "Marketing" },
     { name: "Sales" },
     { name: "Customer Support" },
-  ];
+  ]
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const res = await getCurrentUser();
-        const user = res.data.user;
-        const nameParts = user.name?.trim().split(" ") || [];
-        const firstName = nameParts.slice(0, -1).join(" ");
-        const lastName = nameParts.slice(-1).join(" ");
+        const res = await getCurrentUser()
+        const user = res.data.user
+        const nameParts = user.name?.trim().split(" ") || []
+        const firstName = nameParts.slice(0, -1).join(" ")
+        const lastName = nameParts.slice(-1).join(" ")
 
         setFormData({
           firstName,
           lastName,
           email: user.email || "",
           phone: user.phone || "",
-          department: user.department?._id || "", // Department ID
+          department: user.department?._id || "",
           role: user.role || "",
           bio: user.bio || "",
           timezone: user.timezone || "",
           language: user.language || "",
-        });
+        })
 
-        setUserId(user._id);
-        setUserData(user);
-        setUser(user);
+        setUserId(user._id)
+        setUserData(user)
+        setUser(user)
 
-        // Load Tenant data for companyAdmin or member roles
         if (user.tenant && (user.role === "companyAdmin" || user.role === "member")) {
-          const tenant = user.tenant;
+          const tenant = user.tenant
           setCompanyData({
             name: tenant.name || "",
             address: tenant.address || "",
@@ -125,60 +126,52 @@ const Profile = ({ darkMode }) => {
             departments: tenant.departments.map(dept => ({
               _id: dept._id,
               name: dept.name,
-              head: dept.head || "No head assigned", // Head is a User ID
+              head: dept.head || "No head assigned",
             })) || [],
-          });
+          })
         }
       } catch (err) {
-        console.error('fetchUserProfile: Error aaya', err.response?.data || err.message);
+        console.error('fetchUserProfile: Error aaya', err.response?.data || err.message)
         if (err.response?.status === 401 || err.response?.status === 404) {
-          console.log('fetchUserProfile: Redirecting to login');
-          window.location.href = '/login';
+          console.log('fetchUserProfile: Redirecting to login')
+          window.location.href = '/login'
         }
       }
-    };
+    }
 
-    fetchUserProfile();
-  }, [setUser]);
+    fetchUserProfile()
+  }, [setUser])
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
 
   const handleNotificationChange = (e) => {
-    const { name, checked } = e.target;
-    setNotifications((prev) => ({ ...prev, [name]: checked }));
-  };
+    const { name, checked } = e.target
+    setNotifications((prev) => ({ ...prev, [name]: checked }))
+  }
 
   const handleSave = async () => {
-    const updatedName = `${formData.firstName} ${formData.lastName}`.trim();
-    const errors = { firstName: "", lastName: "", phone: "" };
+    const updatedName = `${formData.firstName} ${formData.lastName}`.trim()
+    const errors = { firstName: "", lastName: "", phone: "" }
 
-    // Validate First Name
     if (!formData.firstName.trim()) {
-      errors.firstName = "First name is required";
+      errors.firstName = "First name is required"
     } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(formData.firstName)) {
-      errors.firstName = "Only alphabets allowed";
+      errors.firstName = "Only alphabets allowed"
     }
 
-    // Validate Last Name (optional)
     if (formData.lastName && !/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(formData.lastName)) {
-      errors.lastName = "Only alphabets allowed";
+      errors.lastName = "Only alphabets allowed"
     }
 
-    // Validate Phone
     if (formData.phone && !/^\+?\d+$/.test(formData.phone)) {
-      errors.phone = "Only digits or + allowed";
+      errors.phone = "Only digits or + allowed"
     }
 
-    // // Validate Department for member role
-    // if (user.role === "member" && !formData.department) {
-    //   errors.department = "Department is required for members";
-    // }
-
-    setFormErrors(errors);
-    if (Object.values(errors).some((e) => e)) return;
+    setFormErrors(errors)
+    if (Object.values(errors).some((e) => e)) return
 
     try {
       Swal.fire({
@@ -186,17 +179,15 @@ const Profile = ({ darkMode }) => {
         text: "Please wait while we update your profile.",
         allowOutsideClick: false,
         didOpen: () => {
-          Swal.showLoading();
+          Swal.showLoading()
         },
-      });
+      })
 
-      // Update user profile
       await updateUserProfile({
         name: updatedName,
         phone: formData.phone,
         bio: formData.bio,
-        // department: formData.department || null, // Send Department._id or null
-      });
+      })
 
       Swal.fire({
         icon: "success",
@@ -204,33 +195,36 @@ const Profile = ({ darkMode }) => {
         text: "Your changes have been saved successfully.",
         timer: 2000,
         showConfirmButton: false,
-      });
+      })
 
-      setIsEditing(false);
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 3000);
+      setIsEditing(false)
+      setShowAlert(true)
+      setSaved(true)
+      setTimeout(() => {
+        setShowAlert(false)
+        setSaved(false)
+      }, 3000)
     } catch (err) {
-      Swal.close();
+      Swal.close()
       Swal.fire({
         icon: "error",
         title: "Failed to Save",
         text: err?.response?.data?.message || "An error occurred while saving your profile.",
-      });
+      })
     }
-  };
+  }
 
   const handlePasswordRequest = async () => {
-    const { currentPassword, newPassword, confirmPassword } = passwordData;
-    const errors = { currentPassword: "", newPassword: "", confirmPassword: "" };
+    const { currentPassword, newPassword, confirmPassword } = passwordData
+    const errors = { currentPassword: "", newPassword: "", confirmPassword: "" }
 
-    // Frontend validations
-    if (!currentPassword) errors.currentPassword = "Current password is required";
-    if (!newPassword) errors.newPassword = "New password is required";
+    if (!currentPassword) errors.currentPassword = "Current password is required"
+    if (!newPassword) errors.newPassword = "New password is required"
     if (newPassword !== confirmPassword)
-      errors.confirmPassword = "Passwords do not match";
+      errors.confirmPassword = "Passwords do not match"
 
-    setPasswordErrors(errors);
-    if (Object.values(errors).some((e) => e)) return;
+    setPasswordErrors(errors)
+    if (Object.values(errors).some((e) => e)) return
 
     try {
       Swal.fire({
@@ -238,11 +232,11 @@ const Profile = ({ darkMode }) => {
         text: "Please wait",
         allowOutsideClick: false,
         didOpen: () => {
-          Swal.showLoading();
+          Swal.showLoading()
         },
-      });
+      })
 
-      await updateUserProfile({ currentPassword, newPassword });
+      await updateUserProfile({ currentPassword, newPassword })
 
       Swal.fire({
         icon: "success",
@@ -250,76 +244,78 @@ const Profile = ({ darkMode }) => {
         text: "Your password has been changed successfully!",
         timer: 2000,
         showConfirmButton: false,
-      });
+      })
 
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      setPasswordErrors({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      setPasswordErrors({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
     } catch (err) {
-      const msg = err.response?.data?.message || "Something went wrong";
-      Swal.close();
+      const msg = err.response?.data?.message || "Something went wrong"
+      Swal.close()
 
       if (msg.toLowerCase().includes("current password")) {
-        setPasswordErrors((prev) => ({ ...prev, currentPassword: msg }));
+        setPasswordErrors((prev) => ({ ...prev, currentPassword: msg }))
       } else {
         Swal.fire({
           icon: "error",
           title: "Update Failed",
           text: msg,
-        });
+        })
       }
     }
-  };
+  }
 
   const handleCancel = () => {
-    setIsEditing(false);
-  };
+    setIsEditing(false)
+  }
 
   const handleAvatarChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]
+    if (!file) return
 
-    setIsUploading(true);
+    setIsUploading(true)
 
     try {
-      const formData = new FormData();
-      formData.append("avatar", file);
+      const formData = new FormData()
+      formData.append("avatar", file)
 
       const res = await axiosInstance.put(`/users/me`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      });
+      })
 
-      Swal.fire("Success", "Avatar updated!", "success");
-      setUser(res.data.user);
-      setUserData(res.data.user);
+      Swal.fire("Success", "Avatar updated!", "success")
+      setUser(res.data.user)
+      setUserData(res.data.user)
     } catch (err) {
-      Swal.fire("Error", err.response?.data?.message || "Upload failed", "error");
+      Swal.fire("Error", err.response?.data?.message || "Upload failed", "error")
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
-  };
+  }
 
   const handleCompanyChange = (e, index) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
 
     setCompanyData((prev) => {
       if (typeof index === "number") {
-        const updatedDepartments = [...prev.departments];
+        const updatedDepartments = [...prev.departments]
         updatedDepartments[index] = {
           ...updatedDepartments[index],
           [name === "departmentName" ? "name" : "head"]: value,
-        };
-        return { ...prev, departments: updatedDepartments };
+        }
+        return { ...prev, departments: updatedDepartments }
       }
-      return { ...prev, [name]: value };
-    });
-  };
+      return { ...prev, [name]: value }
+    })
+  }
 
   const addDepartment = () => {
     setCompanyData((prev) => ({
       ...prev,
       departments: [...prev.departments, { _id: "", name: "", head: "" }],
-    }));
-  };
+    }))
+  }
 
   const handleSaveInfo = async () => {
     try {
@@ -328,22 +324,20 @@ const Profile = ({ darkMode }) => {
         text: "Please wait while we update company info.",
         allowOutsideClick: false,
         didOpen: () => {
-          Swal.showLoading();
+          Swal.showLoading()
         },
-      });
+      })
 
-      // Validate company data
       if (!companyData.name) {
-        Swal.close();
+        Swal.close()
         Swal.fire({
           icon: "error",
           title: "Validation Error",
           text: "Company name is required.",
-        });
-        return;
+        })
+        return
       }
 
-      // Prepare payload for Tenant update
       const tenantPayload = {
         name: companyData.name,
         address: companyData.address,
@@ -354,141 +348,130 @@ const Profile = ({ darkMode }) => {
         departments: companyData.departments.map((dept) => ({
           _id: dept._id || undefined,
           name: dept.name,
-          head: dept.head || undefined, // User ID for head
+          head: dept.head || undefined,
         })),
-      };
+      }
 
-      // Update Tenant
-      const response = await axiosInstance.put(`/tenants/${user.tenant?._id}`, tenantPayload);
+      const response = await axiosInstance.put(`/tenants/${user.tenant?._id}`, tenantPayload)
 
       if (response.status === 200) {
-        updateCompanyInfo(response.data.tenant);
+        updateCompanyInfo(response.data.tenant)
         Swal.fire({
           icon: "success",
           title: "Updated",
           text: "Company info updated successfully!",
           timer: 2000,
           showConfirmButton: false,
-        });
+        })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
       } else {
-        Swal.close();
+        Swal.close()
         Swal.fire({
           icon: "error",
           title: "Error",
           text: "Update failed. Please try again.",
-        });
+        })
       }
     } catch (error) {
-      console.error("Update error:", error);
-      Swal.close();
+      console.error("Update error:", error)
+      Swal.close()
       Swal.fire({
         icon: "error",
         title: "Something went wrong",
         text: error.response?.data?.message || "Server error. Try again later.",
-      });
+      })
     }
-  };
+  }
 
-  const tabClass = (tab) => `nav-link ${activeTab === tab ? "active" : ""}`;
-  const inputClass = "form-control";
+  const handleSaveNotifications = () => {
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
 
   return (
-    <Container fluid className="profile-container py-4">
+    <div className="profile-container">
+      {/* Loading Overlay */}
       {isUploading && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(var(--bs-dark-rgb), 0.5)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div className="spinner-border text-light" role="status"></div>
+        <div className="loading-overlay">
+          <div className="loading-spinner-large"></div>
         </div>
       )}
 
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Profile Settings</h2>
-              <p className="text-muted mb-0">Manage your account settings and preferences</p>
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-header-left">
+            <div className="page-header-icon">
+              <MdPerson />
             </div>
-            <div className="d-flex gap-2">
-              {activeTab === "profile" && (
-                isEditing ? (
-                  <>
-                    <button onClick={handleCancel} className="btn btn-outline-secondary btn-sm">
-                      <MdCancel className="me-1" /> Cancel
-                    </button>
-                    <button onClick={handleSave} className="btn btn-primary btn-sm">
-                      <MdSave className="me-1" /> Save
-                    </button>
-                  </>
-                ) : (
-                  <button onClick={() => setIsEditing(true)} className="btn btn-primary btn-sm">
-                    <MdEdit className="me-1" /> Edit Profile
-                  </button>
-                )
-              )}
+            <div className="page-header-text">
+              <h1>Profile Settings</h1>
+              <p>Manage your account settings and preferences</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="page-header-actions">
+            {activeTab === "profile" && (
+              isEditing ? (
+                <>
+                  <button onClick={handleCancel} className="secondary-action">
+                    <MdCancel />
+                    Cancel
+                  </button>
+                  <button onClick={handleSave} className="primary-action">
+                    <MdSave />
+                    Save Changes
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setIsEditing(true)} className="primary-action">
+                  <MdEdit />
+                  Edit Profile
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      </div>
 
-      {/* Alert */}
-      {showAlert && (
-        <Row className="mb-3">
-          <Col>
-            <Alert variant="success" className="d-flex align-items-center">
-              <MdSave className="me-2" />
-              Profile updated successfully!
-            </Alert>
-          </Col>
-        </Row>
+      {/* Success Notification */}
+      {(showAlert || saved) && (
+        <div className="notification-overlay" onClick={() => { setShowAlert(false); setSaved(false); }}>
+          <div className="notification-container success">
+            <div className="notification-icon">
+              <MdCheck />
+            </div>
+            <div className="notification-content">
+              <h4>Success!</h4>
+              <p>Your changes have been saved successfully!</p>
+            </div>
+            <button className="notification-close" onClick={() => { setShowAlert(false); setSaved(false); }}>
+              <MdClose />
+            </button>
+          </div>
+        </div>
       )}
 
-      <Row>
-        {/* Profile Card */}
-        <Col lg={4} className="mb-4">
-          <Card
-            className="profile-card border-0 shadow-sm h-100"
-            style={{
-              backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
-            }}
-          >
-            <Card.Body className="text-center">
-              <div
-                className="profile-avatar mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center position-relative"
-                style={{
-                  width: "120px",
-                  height: "120px",
-                  backgroundColor: "var(--primary-color)",
-                  color: "var(--bs-white)",
-                  fontSize: "3rem",
-                  cursor: "pointer",
-                }}
-              >
-                {/* Avatar image or fallback initial */}
+      {/* Profile Content */}
+      <div className="profile-content-grid">
+        {/* Profile Sidebar */}
+        <div className="profile-sidebar">
+          <div className="profile-card">
+            <div className="avatar-section">
+              <div className="profile-avatar">
                 {userData?.avatar?.url ? (
                   <img
                     src={userData.avatar.url}
                     alt="Avatar"
-                    className="rounded-circle w-100 h-100 object-fit-cover"
+                    className="avatar-image"
                   />
                 ) : (
-                  <span>{userData?.name?.charAt(0)?.toUpperCase() || <MdPerson />}</span>
+                  <span className="avatar-initial">
+                    {userData?.name?.charAt(0)?.toUpperCase() || <MdPerson />}
+                  </span>
                 )}
 
-                {/* Hidden file input */}
-                <Form.Control
+                <input
                   id="avatarUpload"
                   type="file"
                   accept="image/*"
@@ -496,362 +479,399 @@ const Profile = ({ darkMode }) => {
                   style={{ display: "none" }}
                 />
 
-                {/* Edit icon trigger */}
-                <label
-                  htmlFor="avatarUpload"
-                  style={{
-                    position: "absolute",
-                    bottom: "5px",
-                    left: "5px",
-                    backgroundColor: "var(--bs-white)",
-                    borderRadius: "50%",
-                    padding: "5px",
-                    cursor: "pointer",
-                    height: "26px",
-                    width: "26px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  <MdEdit size={16} color="var(--primary-color)" />
+                <label htmlFor="avatarUpload" className="avatar-edit-btn">
+                  <MdCamera />
                 </label>
               </div>
 
-              <h4 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
-                {formData.firstName} {formData.lastName}
-              </h4>
-              <p className="text-muted mb-2">{formData.email}</p>
-              <Badge bg="primary" className="mb-3 p-2">
-                {capitalize(formData.role)}
-              </Badge>
-              <p className={`small ${darkMode ? "text-light" : "text-muted"}`}>{formData.bio}</p>
-              <div className="profile-stats mt-4">
-                <Row>
-                  <Col xs={4}>
-                    <div className={`fw-bold ${darkMode ? "text-white" : "text-dark"}`}>24</div>
-                    <div className="small text-muted">Surveys</div>
-                  </Col>
-                  <Col xs={4}>
-                    <div className={`fw-bold ${darkMode ? "text-white" : "text-dark"}`}>1.2K</div>
-                    <div className="small text-muted">Responses</div>
-                  </Col>
-                  <Col xs={4}>
-                    <div className={`fw-bold ${darkMode ? "text-white" : "text-dark"}`}>78%</div>
-                    <div className="small text-muted">Completion</div>
-                  </Col>
-                </Row>
+              <div className="user-info">
+                <h3 className="user-name">
+                  {formData.firstName} {formData.lastName}
+                </h3>
+                <p className="user-email">{formData.email}</p>
+                <span className="user-role-badge">
+                  {capitalize(formData.role)}
+                </span>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
 
-        {/* Settings Tabs */}
-        <Col lg={8}>
-          <Card
-            className="settings-card border-0 shadow-sm"
-            style={{
-              backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
-            }}
-          >
-            <Card.Body>
+              {formData.bio && (
+                <p className="user-bio">{formData.bio}</p>
+              )}
+            </div>
 
-              <ul className="nav nav-tabs mb-4">
-                <li className="nav-item">
-                  <button className={tabClass("profile")} onClick={() => setActiveTab("profile")}>
-                    <MdPerson className="me-1" /> Personal Info
-                  </button>
-                </li>
-                <li className="nav-item">
-                  <button className={tabClass("security")} onClick={() => setActiveTab("security")}>
-                    <MdSecurity className="me-1" /> Security
-                  </button>
-                </li>
-                {(user?.role === "company" || user?.role === "companyAdmin") && (
-                  <li className="nav-item">
-                    <button className={tabClass("company")} onClick={() => setActiveTab("company")}>
-                      🏢 Company Details
-                    </button>
-                  </li>
-                )}
-                <li className="nav-item">
-                  <button className={tabClass("notifications")} onClick={() => setActiveTab("notifications")}>
-                    <MdNotifications className="me-1" /> Notifications
-                  </button>
-                </li>
-              </ul>
+            <div className="profile-stats">
+              <div className="stat-item">
+                <div className="stat-icon">
+                  <MdAssessment />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-value">24</div>
+                  <div className="stat-label">Surveys</div>
+                </div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-icon">
+                  <MdPeople />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-value">1.2K</div>
+                  <div className="stat-label">Responses</div>
+                </div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-icon">
+                  <MdTrendingUp />
+                </div>
+                <div className="stat-content">
+                  <div className="stat-value">78%</div>
+                  <div className="stat-label">Completion</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        {/* Settings Section */}
+        <div className="settings-section">
+          <div className="section-card">
+            {/* Custom Tab Navigation */}
+            <div className="tab-nav">
+              <button 
+                className={`tab-button ${activeTab === "profile" ? "active" : ""}`}
+                onClick={() => setActiveTab("profile")}
+              >
+                <MdPerson />
+                Personal Info
+              </button>
+              <button 
+                className={`tab-button ${activeTab === "security" ? "active" : ""}`}
+                onClick={() => setActiveTab("security")}
+              >
+                <MdLock />
+                Security
+              </button>
+              {(user?.role === "company" || user?.role === "companyAdmin") && (
+                <button 
+                  className={`tab-button ${activeTab === "company" ? "active" : ""}`}
+                  onClick={() => setActiveTab("company")}
+                >
+                  <MdBusiness />
+                  Company Details
+                </button>
+              )}
+              <button 
+                className={`tab-button ${activeTab === "notifications" ? "active" : ""}`}
+                onClick={() => setActiveTab("notifications")}
+              >
+                <MdNotifications />
+                Notifications
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="tab-content">
+              {/* Personal Info Tab */}
               {activeTab === "profile" && (
-                <form className="row g-3">
-                  {[
-                    ["First Name", "firstName"],
-                    ["Last Name", "lastName"],
-                    ["Phone", "phone"],
-                  ].map(([label, name]) => (
-                    <div className="col-md-6" key={name}>
-                      <label className="form-label">{label}</label>
-                      <input
-                        type="text"
-                        name={name}
-                        value={formData[name]}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className={inputClass}
-                      />
-                      {/* Show error only for validated fields */}
-                      {["firstName", "lastName", "phone"].includes(name) && formErrors[name] && (
-                        <small className="text-danger">{formErrors[name]}</small>
-                      )}
-                    </div>
-                  ))}
-
-                  <div className="col-md-6">
-                    <label className="form-label">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      className={inputClass}
-                      disabled />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Role</label>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="firstName">First Name *</label>
                     <input
                       type="text"
-                      name="role"
-                      value={formData.role}
-                      className={`${inputClass} opacity-75`}
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                    />
+                    {formErrors.firstName && (
+                      <span className="form-error">{formErrors.firstName}</span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="lastName">Last Name</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                    />
+                    {formErrors.lastName && (
+                      <span className="form-error">{formErrors.lastName}</span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
                       disabled
                     />
                   </div>
 
-                  <div className="col-12">
-                    <label className="form-label">Bio</label>
-                    <textarea
-                      name="bio"
-                      rows="3"
-                      className={inputClass}
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone</label>
+                    <input
+                      type="text"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
                       onChange={handleInputChange}
                       disabled={!isEditing}
+                    />
+                    {formErrors.phone && (
+                      <span className="form-error">{formErrors.phone}</span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="role">Role</label>
+                    <input
+                      type="text"
+                      id="role"
+                      name="role"
+                      value={formData.role}
+                      disabled
+                    />
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label htmlFor="bio">Bio</label>
+                    <textarea
+                      id="bio"
+                      name="bio"
+                      rows="3"
                       value={formData.bio}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
                     ></textarea>
                   </div>
-                </form>
+                </div>
               )}
 
+              {/* Security Tab */}
               {activeTab === "security" && (
-                <form className="row g-3">
-                  <div className="col-md-12">
-                    <label className="form-label">Current Password</label>
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label htmlFor="currentPassword">Current Password</label>
                     <input
                       type="password"
-                      placeholder="Current password"
+                      id="currentPassword"
+                      placeholder="Enter current password"
+                      value={passwordData.currentPassword}
                       onChange={(e) => {
-                        setPasswordData({ ...passwordData, currentPassword: e.target.value });
-                        setPasswordErrors((prev) => ({ ...prev, currentPassword: "" }));
+                        setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                        setPasswordErrors({ ...passwordErrors, currentPassword: "" })
                       }}
-                      className={inputClass}
                     />
                     {passwordErrors.currentPassword && (
-                      <small className="text-danger">{passwordErrors.currentPassword}</small>
+                      <span className="form-error">{passwordErrors.currentPassword}</span>
                     )}
                   </div>
-                  <div className="col-md-12">
-                    <label className="form-label">New Password</label>
+
+                  <div className="form-group full-width">
+                    <label htmlFor="newPassword">New Password</label>
                     <input
                       type="password"
-                      placeholder="New password"
+                      id="newPassword"
+                      placeholder="Enter new password"
+                      value={passwordData.newPassword}
                       onChange={(e) => {
-                        setPasswordData({ ...passwordData, newPassword: e.target.value });
-                        setPasswordErrors((prev) => ({ ...prev, newPassword: "" }));
+                        setPasswordData({ ...passwordData, newPassword: e.target.value })
+                        setPasswordErrors({ ...passwordErrors, newPassword: "" })
                       }}
-                      className={inputClass}
                     />
                     {passwordErrors.newPassword && (
-                      <small className="text-danger">{passwordErrors.newPassword}</small>
+                      <span className="form-error">{passwordErrors.newPassword}</span>
                     )}
                   </div>
-                  <div className="col-md-12">
-                    <label className="form-label">Confirm Password</label>
+
+                  <div className="form-group full-width">
+                    <label htmlFor="confirmPassword">Confirm Password</label>
                     <input
                       type="password"
-                      placeholder="Confirm password"
+                      id="confirmPassword"
+                      placeholder="Confirm new password"
+                      value={passwordData.confirmPassword}
                       onChange={(e) => {
-                        setPasswordData({ ...passwordData, confirmPassword: e.target.value });
-                        setPasswordErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                        setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                        setPasswordErrors({ ...passwordErrors, confirmPassword: "" })
                       }}
-                      className={inputClass}
                     />
                     {passwordErrors.confirmPassword && (
-                      <small className="text-danger">{passwordErrors.confirmPassword}</small>
+                      <span className="form-error">{passwordErrors.confirmPassword}</span>
                     )}
                   </div>
-                  <div className="col-12">
+
+                  <div className="form-group full-width">
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="primary-action"
                       onClick={handlePasswordRequest}
                     >
+                      <MdLock />
                       Update Password
                     </button>
                   </div>
-                </form>
+                </div>
               )}
 
+              {/* Company Details Tab */}
               {activeTab === "company" && (
-                <form className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label">Company Name</label>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="companyName">Company Name *</label>
                     <input
                       type="text"
+                      id="companyName"
                       name="name"
                       value={companyData.name}
                       onChange={handleCompanyChange}
-                      className={inputClass}
                     />
                   </div>
 
-                  <div className="col-md-6">
-                    <label className="form-label">Company Email</label>
+                  <div className="form-group">
+                    <label htmlFor="contactEmail">Company Email</label>
                     <input
                       type="email"
+                      id="contactEmail"
                       name="contactEmail"
                       value={companyData.contactEmail}
                       onChange={handleCompanyChange}
-                      className={inputClass}
                     />
                   </div>
 
-                  <div className="col-md-6">
-                    <label className="form-label">Company Phone</label>
+                  <div className="form-group">
+                    <label htmlFor="contactPhone">Company Phone</label>
                     <input
                       type="text"
+                      id="contactPhone"
                       name="contactPhone"
                       value={companyData.contactPhone}
                       onChange={handleCompanyChange}
-                      className={inputClass}
                     />
                   </div>
 
-                  <div className="col-md-6">
-                    <label className="form-label">Website (optional)</label>
+                  <div className="form-group">
+                    <label htmlFor="website">Website (optional)</label>
                     <input
                       type="text"
+                      id="website"
                       name="website"
                       value={companyData.website}
                       onChange={handleCompanyChange}
-                      className={inputClass}
                     />
                   </div>
 
-                  <div className="col-md-12">
-                    <label className="form-label">Company Address</label>
+                  <div className="form-group full-width">
+                    <label htmlFor="address">Company Address</label>
                     <input
                       type="text"
+                      id="address"
                       name="address"
                       value={companyData.address}
                       onChange={handleCompanyChange}
-                      className={inputClass}
                     />
                   </div>
 
-                  <div className="col-md-4">
-                    <label className="form-label">Total Employees</label>
+                  <div className="form-group">
+                    <label htmlFor="employees">Total Employees</label>
                     <input
                       type="number"
+                      id="employees"
                       name="employees"
                       value={companyData.employees}
                       onChange={handleCompanyChange}
-                      className={inputClass}
                     />
                   </div>
 
-                  <div className="col-md-12">
-                    <label className="form-label">Departments</label>
-                    {companyData.departments.map((dept, idx) => (
-                      <div key={idx} className="row mb-2">
-                        <div className="col-md-5">
-                          {/* <select
-                            name="departmentName"
-                            value={dept.name}
-                            onChange={(e) => handleCompanyChange(e, idx)}
-                            className={inputClass}
-                          >
-                            <option value="">Select Department</option>
-                            {availableDepartments.map((d) => (
-                              <option key={d.name} value={d.name}>
-                                {d.name}
-                              </option>
-                            ))}
-                          </select> */}
+                  <div className="form-group full-width">
+                    <label>Departments</label>
+                    <div className="departments-list">
+                      {companyData.departments.map((dept, idx) => (
+                        <div key={idx} className="department-row">
                           <input
                             type="text"
                             name="departmentName"
                             placeholder="Department Name"
                             value={dept.name}
                             onChange={(e) => handleCompanyChange(e, idx)}
-                            className={inputClass}
                           />
-                        </div>
-                        <div className="col-md-5">
                           <input
                             type="text"
                             name="departmentHead"
                             placeholder="Department Head"
                             value={dept.head}
                             onChange={(e) => handleCompanyChange(e, idx)}
-                            className={inputClass}
                           />
                         </div>
-                      </div>
-                    ))}
-
-                    <Button variant="outline-secondary" size="sm" onClick={addDepartment}>
-                      + Add Department
-                    </Button>
+                      ))}
+                      <button
+                        type="button"
+                        className="secondary-action"
+                        onClick={addDepartment}
+                      >
+                        + Add Department
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="col-12">
-                    <Button type="button" onClick={handleSaveInfo} className="btn btn-primary">
+                  <div className="form-group full-width">
+                    <button
+                      type="button"
+                      className="primary-action"
+                      onClick={handleSaveInfo}
+                    >
+                      <MdSave />
                       Save Company Info
-                    </Button>
+                    </button>
                   </div>
-                </form>
+                </div>
               )}
 
+              {/* Notifications Tab */}
               {activeTab === "notifications" && (
-                <form className="row g-3">
+                <div className="notifications-grid">
                   {Object.entries(notifications).map(([key, value]) => (
-                    <div
-                      key={key}
-                      className="col-12 d-flex justify-content-between align-items-center"
-                    >
-                      <label className="form-check-label">
-                        {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+                    <div key={key} className="notification-item">
+                      <div className="notification-info">
+                        <h4>{key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}</h4>
+                        <p>Receive {key.replace(/([A-Z])/g, " $1").toLowerCase()} updates</p>
+                      </div>
+                      <label className="custom-switch">
+                        <input
+                          type="checkbox"
+                          name={key}
+                          checked={value}
+                          onChange={handleNotificationChange}
+                        />
+                        <span className="switch-slider"></span>
                       </label>
-                      <input
-                        type="checkbox"
-                        className="form-check-input ms-2"
-                        name={key}
-                        checked={value}
-                        onChange={handleNotificationChange}
-                      />
                     </div>
                   ))}
-                  <div className="col-12">
-                    <button type="button" className="btn btn-primary">
+
+                  <div className="form-group full-width">
+                    <button
+                      type="button"
+                      className="primary-action"
+                      onClick={handleSaveNotifications}
+                    >
+                      <MdSave />
                       Save Preferences
                     </button>
                   </div>
-                </form>
+                </div>
               )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

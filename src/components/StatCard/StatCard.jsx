@@ -2,7 +2,7 @@
 
 "use client"
 
-import "./StatCard.css"
+
 
 const StatCard = ({ icon, title, value, subtitle, color }) => {
   const getColorClass = () => {

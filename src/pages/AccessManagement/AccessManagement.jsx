@@ -1,527 +1,3 @@
-// // src\pages\AccessManagement\AccessManagement.jsx
-// "use client"
-
-// import { useState, useEffect, useMemo } from "react"
-// import { Link } from "react-router-dom"
-// import {
-//   Container, Row, Col, Card, Table, Badge, Button,
-//   Form, InputGroup
-// } from "react-bootstrap"
-// import {
-//   MdAdd, MdEdit, MdDelete, MdSearch,
-//   MdSecurity, MdGroup, MdVpnKey
-// } from "react-icons/md"
-// import Pagination from "../../components/Pagination/Pagination.jsx"
-// import axiosInstance from "../../api/axiosInstance"
-// import Swal from "sweetalert2"
-
-// const AccessManagement = () => {
-//   // ===== State (kept UI structure the same) =====
-//   const [users, setUsers] = useState([])
-//   const [roles, setRoles] = useState([])
-//   const [loading, setLoading] = useState(true)
-//   const [searchTerm, setSearchTerm] = useState("")
-//   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
-//   const [permissions, setPermissions] = useState([]);
-//   const [permissionCount, setPermissionCount] = useState(0);
-
-//   // Task-to-role assignments (kept as-is per request)
-//   const [taskAssignments, setTaskAssignments] = useState([])
-
-//   // ===== Fetch data (roles/permissions management moved out) =====
-//   useEffect(() => {
-//     let mounted = true
-//     const fetchAll = async () => {
-//       try {
-//         setLoading(true)
-
-//         // Try fetching users from backend
-//         let fetchedUsers = []
-//         try {
-//           const { data } = await axiosInstance.get("/users", { withCredentials: true })
-//           // Accept flexible shapes
-//           const apiUsers = Array.isArray(data?.users) ? data.users : Array.isArray(data) ? data : []
-//           fetchedUsers = apiUsers.map((u, idx) => ({
-//             id: u._id || u.id || idx + 1,
-//             name: u.name || u.fullName || u.username || "Unknown",
-//             email: u.email || "",
-//             // Role could be string or object
-//             role: typeof u.role === "string" ? u.role : (u.role?.name || u.roleName || "Member"),
-//             lastLogin: u.lastLogin || u.lastSeen || "—",
-//             status: u.isActive === true ? "Active" : "Inactive",
-//           }))
-//         } catch (err) {
-//           // Fallback to demo data (keeps UI identical behavior)
-//         }
-
-//         // Try fetching roles from backend
-//         let fetchedRoles = []
-//         try {
-//           const { data } = await axiosInstance.get("/roles", { withCredentials: true })
-//           const apiRoles = Array.isArray(data?.roles) ? data.roles : Array.isArray(data) ? data : []
-//           // If backend doesn't provide userCount, compute from fetchedUsers
-//           const counts = fetchedUsers.reduce((acc, u) => {
-//             const key = u.role || "Unknown"
-//             acc[key] = (acc[key] || 0) + 1
-//             return acc
-//           }, {})
-
-//           fetchedRoles = apiRoles.map((r, idx) => ({
-//             id: r._id || r.id || idx + 1,
-//             name: r.name || "Unnamed Role",
-//             description: r.description || "",
-//             permissions: r.permissions || [],
-//             userCount: typeof r.userCount === "number" ? r.userCount : (counts[r.name] || 0),
-//           }))
-//         } catch (err) {
-//           // Fallback: derive roles purely from users present
-//           const counts = fetchedUsers.reduce((acc, u) => {
-//             const key = u.role || "Unknown"
-//             acc[key] = (acc[key] || 0) + 1
-//             return acc
-//           }, {})
-//           fetchedRoles = Object.entries(counts).map(([roleName, count], i) => ({
-//             id: i + 1,
-//             name: roleName,
-//             description: "",
-//             permissions: [],
-//             userCount: count,
-//           }))
-//         }
-
-//         if (!mounted) return
-//         setUsers(fetchedUsers)
-//         setRoles(fetchedRoles)
-//         setPagination((prev) => ({ ...prev, total: fetchedUsers.length }))
-//       } catch (e) {
-//         console.error(e)
-//         Swal.fire("Error", e?.response?.data?.message || "Failed to load access data", "error")
-//       } finally {
-//         if (mounted) setLoading(false)
-//       }
-//     }
-
-//     fetchAll()
-//     return () => { mounted = false }
-//   }, [])
-
-//   useEffect(() => {
-//     const fetchPermissions = async () => {
-//       try {
-//         const { data } = await axiosInstance.get("/permissions", { withCredentials: true });
-//         setPermissions(Array.isArray(data?.permissions) ? data.permissions : []);
-//         const apiPermissions = Array.isArray(data?.permissions) ? data.permissions : [];
-//         setPermissionCount(apiPermissions.length);
-//       } catch (err) {
-//         console.error("Permissions fetch error:", err);
-//       }
-//     };
-//     fetchPermissions();
-//   }, []);
-
-//   // ===== Static tasks list (kept UI exactly same) =====
-//   const taskList = [
-//     "Create User",
-//     "Delete User",
-//     "Create Survey",
-//     "Take Survey",
-//     "Export Report",
-//     "View Analytics",
-//     "Manage HR Records",
-//     "Approve Leave Request",
-//   ]
-//   // const handleAssignTask = async (userId, permissionId) => {
-//   //   try {
-//   //     const { data } = await axiosInstance.post(
-//   //       "/permissionassignment/task-assignments",
-//   //       { permissionId, userId },
-//   //       { withCredentials: true }
-//   //     );
-//   //     setTaskAssignments((prev) => {
-//   //       const exists = prev.find((entry) => entry.permission === permission);
-//   //       if (exists) {
-//   //         return prev.map((entry) =>
-//   //           entry.permission === permission ? { ...entry, userId } : entry
-//   //         );
-//   //       } else {
-//   //         return [...prev, { permission, userId }];
-//   //       }
-//   //     });
-//   //   } catch (err) {
-//   //     console.error("Assign task error:", err);
-//   //     Swal.fire("Error", "Failed to assign task", "error");
-//   //   }
-//   // };
-//   const handleAssignTask = async (userId, permissionId) => {
-//     try {
-//       if (!userId || !permissionId) {
-//         console.error('Missing userId or permissionId', { userId, permissionId });
-//         Swal.fire('Error', 'Please select a user and permission', 'error');
-//         return;
-//       }
-
-//       console.log('Sending request to assign task:', { userId, permissionId });
-
-//       const { data } = await axiosInstance.post(
-//         '/permissionassignment/task-assignments', 
-//         { permissionId, userId },
-//         { withCredentials: true }
-//       );
-
-//       setTaskAssignments((prev) => {
-//         const exists = prev.find((entry) => entry.permissionId === permissionId); // Fixed 'permission' to 'permissionId'
-//         if (exists) {
-//           return prev.map((entry) =>
-//             entry.permissionId === permissionId ? { ...entry, userId } : entry
-//           );
-//         } else {
-//           return [...prev, { permissionId, userId }]; // Fixed 'permission' to 'permissionId'
-//         }
-//       });
-
-//       Swal.fire('Success', 'Task assigned successfully', 'success');
-//     } catch (err) {
-//       console.error('Assign task error:', err);
-//       Swal.fire('Error', err.response?.data?.message || 'Failed to assign task', 'error');
-//     }
-//   };
-
-//   // ===== Helpers (unchanged UI) =====
-//   const getStatusVariant = (status) => {
-//     switch (status) {
-//       case "Active": return "success"
-//       case "Inactive": return "danger"
-//       case "Pending": return "warning"
-//       default: return "secondary"
-//     }
-//   }
-
-//   const getRoleVariant = (role) => {
-//     switch (role) {
-//       case "Admin": return "danger"
-//       case "Editor": return "primary"
-//       case "Viewer": return "secondary"
-//       case "HR Manager": return "info"
-//       default: return "dark"
-//     }
-//   }
-
-//   // ===== Search + Pagination (kept same table & layout) =====
-//   const filteredUsers = useMemo(() => {
-//     const term = searchTerm.trim().toLowerCase()
-//     if (!term) return users
-//     return users.filter((u) =>
-//       (u.name || "").toLowerCase().includes(term) ||
-//       (u.email || "").toLowerCase().includes(term) ||
-//       (u.role || "").toLowerCase().includes(term)
-//     )
-//   }, [users, searchTerm])
-
-//   const paginatedUsers = useMemo(() => {
-//     const start = (pagination.page - 1) * pagination.limit
-//     const end = pagination.page * pagination.limit
-//     return filteredUsers.slice(start, end)
-//   }, [filteredUsers, pagination])
-
-//   useEffect(() => {
-//     // Update total on search
-//     setPagination((prev) => ({ ...prev, total: filteredUsers.length, page: 1 }))
-//   }, [filteredUsers.length])
-
-//   if (loading) {
-//     return (
-//       <Container fluid className="py-4">
-//         <div className="text-center">
-//           <div className="spinner-border text-primary mb-3" role="status">
-//             <span className="visually-hidden">Loading...</span>
-//           </div>
-//           <p>Loading access management...</p>
-//         </div>
-//       </Container>
-//     )
-//   }
-
-//   return (
-//     <Container fluid className="py-4">
-//       {/* Header */}
-//       <Row className="mb-4">
-//         <Col>
-//           <div className="d-flex justify-content-between align-items-center">
-//             <div>
-//               <h1 className="h3 mb-1">Access Management</h1>
-//               <p className="text-muted mb-0">Manage user roles and permissions</p>
-//             </div>
-//             <div className="d-flex gap-2">
-//               <Button as={Link} to="/app/roles" variant="outline-primary">
-//                 <MdGroup className="me-2" /> Manage Roles
-//               </Button>
-//             </div>
-//           </div>
-//         </Col>
-//       </Row>
-
-//       {/* Quick Stats (UI unchanged; permissions count kept static) */}
-//       <Row className="g-3 mb-4">
-//         <Col sm={6} lg={3}>
-//           <Card className="h-100 border-0 shadow-sm text-center">
-//             <Card.Body>
-//               <div className="text-primary mb-2"><MdGroup size={32} /></div>
-//               <h3>{users.length}</h3>
-//               <p className="text-muted mb-0">Total Users</p>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//         <Col sm={6} lg={3}>
-//           <Card className="h-100 border-0 shadow-sm text-center">
-//             <Card.Body>
-//               <div className="text-success mb-2"><MdSecurity size={32} /></div>
-//               <h3>{roles.length}</h3>
-//               <p className="text-muted mb-0">Active Roles</p>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//         <Col sm={6} lg={3}>
-//           <Card className="h-100 border-0 shadow-sm text-center">
-//             <Card.Body>
-//               <div className="text-warning mb-2"><MdVpnKey size={32} /></div>
-//               <h3>{permissionCount}</h3>
-//               <p className="text-muted mb-0">Permissions</p>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//         <Col sm={6} lg={3}>
-//           <Card className="h-100 border-0 shadow-sm text-center">
-//             <Card.Body>
-//               <div className="text-info mb-2"><MdSecurity size={32} /></div>
-//               <h3>{users.filter((u) => u.status === "Active").length}</h3>
-//               <p className="text-muted mb-0">Active Users</p>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//       </Row>
-
-//       {/* Users Table (UI unchanged) */}
-//       <Row>
-//         <Col lg={8}>
-//           <Card className="mb-4 border-0 shadow-sm">
-//             <Card.Header className="bg-transparent d-flex justify-content-between align-items-center">
-//               <h5 className="mb-0">User Access</h5>
-//               <Button as={Link} to="/app/users/form" variant="primary" size="sm">
-//                 <MdAdd className="me-2" /> Add User
-//               </Button>
-//             </Card.Header>
-//             <Card.Body className="p-0">
-//               <div className="p-3 border-bottom">
-//                 <InputGroup>
-//                   <InputGroup.Text><MdSearch /></InputGroup.Text>
-//                   <Form.Control
-//                     type="text"
-//                     placeholder="Search users..."
-//                     value={searchTerm}
-//                     onChange={(e) => setSearchTerm(e.target.value)}
-//                   />
-//                 </InputGroup>
-//               </div>
-//               <div className="table-responsive">
-//                 <Table hover className="mb-0">
-//                   <thead className="table-light">
-//                     <tr>
-//                       <th>User</th>
-//                       <th>Role</th>
-//                       <th>Status</th>
-//                       <th>Last Login</th>
-//                       <th className="text-center">Actions</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {paginatedUsers.map((user) => (
-//                       <tr key={user.id}>
-//                         <td>
-//                           <div>
-//                             <div className="fw-medium">{user.name}</div>
-//                             <small className="text-muted">{user.email}</small>
-//                           </div>
-//                         </td>
-//                         <td><Badge bg={getRoleVariant(user.role)}>{user.role}</Badge></td>
-//                         <td><Badge bg={getStatusVariant(user.status)}>{user.status}</Badge></td>
-//                         <td>{user.lastLogin}</td>
-//                         <td>
-//                           <div className="d-flex justify-content-center gap-1">
-//                             <Button as={Link} to={`/app/users/${user.id}/edit`} variant="outline-primary" size="sm">
-//                               <MdEdit />
-//                             </Button>
-//                             <Button variant="outline-danger" size="sm"><MdDelete /></Button>
-//                           </div>
-//                         </td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </Table>
-//               </div>
-//               <div className="p-3">
-//                 <Pagination
-//                   current={pagination.page}
-//                   total={pagination.total}
-//                   limit={pagination.limit}
-//                   onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-//                 />
-//               </div>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-
-//         {/* Roles Overview (counts per role; UI unchanged) */}
-//         <Col lg={4}>
-//           <Card className="border-0 shadow-sm">
-//             <Card.Header className="bg-transparent d-flex justify-content-between align-items-center">
-//               <h5 className="mb-0">Roles Overview</h5>
-//               <Button as={Link} to="/app/access/roles" variant="outline-primary" size="sm">View All</Button>
-//             </Card.Header>
-//             <Card.Body>
-//               {roles.map((role) => (
-//                 <div key={role.id} className="d-flex justify-content-between align-items-center mb-3">
-//                   <div>
-//                     <h6 className="mb-1">{role.name}</h6>
-//                     <small className="text-muted">{role.description}</small>
-//                   </div>
-//                   <Badge bg="secondary">{role.userCount} users</Badge>
-//                 </div>
-//               ))}
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//       </Row>
-
-//       {/* Task Assignment Cards (kept identical) */}
-//       <Row className="mt-4">
-//         <Col>
-//           {/* <h5 className="mb-3">Assign System Tasks to Roles</h5>
-//           <Row className="g-3">
-//             {taskList.map((task, index) => (
-//               <Col md={6} lg={4} key={index}>
-//                 <Card className="border-0 shadow-sm">
-//                   <Card.Body>
-//                     <Form.Check
-//                       type="checkbox"
-//                       id={`task-${index}`}
-//                       label={task}
-//                       checked={taskAssignments.some((a) => a.task === task)}
-//                       onChange={(e) => {
-//                         if (!e.target.checked) {
-//                           setTaskAssignments((prev) =>
-//                             prev.filter((a) => a.task !== task)
-//                           )
-//                         }
-//                       }}
-//                     />
-//                     <Form.Group className="mt-2">
-//                       <Form.Select
-//                         value={taskAssignments.find((a) => a.task === task)?.role || ""}
-//                         onChange={(e) => handleAssignTask(task, e.target.value)}
-//                       >
-//                         <option value="">-- Assign to Role --</option>
-//                         {roles.map((role) => (
-//                           <option key={role.id} value={role.name}>{role.name}</option>
-//                         ))}
-//                       </Form.Select>
-//                     </Form.Group>
-//                   </Card.Body>
-//                 </Card>
-//               </Col>
-//             ))}
-//           </Row> */}
-//           <h5 className="mb-3">Assign System Tasks to Users</h5>
-//           <Row className="g-3">
-//             {permissions.map((perm, index) => (
-//               <Col md={6} lg={4} key={perm.name}>
-//                 <Card className="border-0 shadow-sm">
-//                   <Card.Body>
-//                     <Form.Check
-//                       type="checkbox"
-//                       id={`perm-${index}`}
-//                       label={`${perm.description}`}
-//                       checked={taskAssignments.some((a) => a.permission === perm.name)}
-//                       onChange={(e) => {
-//                         if (!e.target.checked) {
-//                           setTaskAssignments((prev) =>
-//                             prev.filter((a) => a.permission !== perm.name)
-//                           )
-//                           // delete assignment API call
-//                           axiosInstance.delete(`/task-assignments/${perm.name}`, { withCredentials: true });
-//                         }
-//                       }}
-//                     />
-//                     <Form.Group className="mt-2">
-//                       <Form.Select
-//                         value={taskAssignments.find((a) => a.permission === perm.name)?.userId || ""}
-//                         onChange={(e) => handleAssignTask(perm.name, e.target.value)}
-//                       >
-//                         <option value="">-- Assign to User --</option>
-//                         {users
-//                           .filter((u) => u.role !== "companyAdmin")
-//                           .map((u) => (
-//                             <option key={u.id} value={u.id}>{u.name}</option>
-//                           ))}
-//                       </Form.Select>
-//                     </Form.Group>
-//                   </Card.Body>
-//                 </Card>
-//               </Col>
-//             ))}
-//           </Row>
-//         </Col>
-//       </Row>
-
-//       {/* Task Assignment Table (kept identical) */}
-//       <Row className="mt-5">
-//         <Col>
-//           <h5 className="mb-3">Task Assignments Overview</h5>
-//           <Card className="border-0 shadow-sm">
-//             <Card.Body className="p-0">
-//               <div className="table-responsive">
-//                 <Table hover className="mb-0">
-//                   <thead className="table-light">
-//                     <tr>
-//                       <th>Permission</th>
-//                       <th>Assigned User</th>
-//                       <th className="text-center">Actions</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {taskAssignments.map((entry, idx) => {
-//                       const user = users.find((u) => u.id === entry.userId);
-//                       return (
-//                         <tr key={idx}>
-//                           <td>{entry.permission}</td>
-//                           <td><Badge bg="primary">{user?.name || "Unknown"}</Badge></td>
-//                           <td className="text-center">
-//                             <Button
-//                               variant="outline-danger"
-//                               size="sm"
-//                               onClick={async () => {
-//                                 await axiosInstance.delete(`/task-assignments/${entry._id}`, { withCredentials: true });
-//                                 setTaskAssignments((prev) => prev.filter((a) => a._id !== entry._id));
-//                               }}
-//                             >
-//                               <MdDelete />
-//                             </Button>
-//                           </td>
-//                         </tr>
-//                       );
-//                     })}
-//                   </tbody>
-//                 </Table>
-//               </div>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//       </Row>
-//     </Container>
-//   )
-// }
-
-// export default AccessManagement
-
 // src/pages/AccessManagement/AccessManagement.jsx
 "use client"
 
@@ -529,11 +5,12 @@ import { useState, useEffect, useMemo } from "react"
 import { Link } from "react-router-dom"
 import {
   Container, Row, Col, Card, Table, Badge, Button,
-  Form, InputGroup
+  Form, InputGroup, Dropdown
 } from "react-bootstrap"
 import {
-  MdAdd, MdEdit, MdDelete, MdSearch,
-  MdSecurity, MdGroup, MdVpnKey
+  MdAdd, MdEdit, MdDelete, MdSearch, MdFilterList,
+  MdSecurity, MdGroup, MdVpnKey, MdMoreVert, MdRefresh,
+  MdSettings, MdPersonAdd, MdAssignment
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 import axiosInstance from "../../api/axiosInstance"
@@ -751,135 +228,260 @@ const AccessManagement = () => {
 
   if (loading) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status">
+      <div className="access-management-container">
+        <div className="access-management-loading">
+          <div className="spinner-border" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
           <p>Loading access management...</p>
         </div>
-      </Container>
+      </div>
     )
   }
 
   return (
-    <Container fluid className="py-4">
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">Access Management</h1>
-              <p className="text-muted mb-0">Manage user roles and permissions</p>
-            </div>
-            <div className="d-flex gap-2">
-              <Button as={Link} to="/app/roles" variant="outline-primary">
-                <MdGroup className="me-2" /> Manage Roles
-              </Button>
+    <div className="access-management-container">
+      <Container fluid className="p-0">
+        {/* Modern Header Section */}
+        <div className="page-header-section">
+          <div className="header-content">
+            <div className="header-main">
+              <div className="page-title-section">
+                <div className="page-icon">
+                  <MdSecurity />
+                </div>
+                <div className="page-info">
+                  <h1 className="page-title">Access Management</h1>
+                  <p className="page-subtitle">Manage user roles, permissions and system access</p>
+                </div>
+              </div>
+              <div className="header-actions d-flex align-items-center gap-2">
+                <Button variant="outline-secondary" size="sm" className="d-none d-md-flex">
+                  <MdRefresh className="me-1" />
+                  Refresh
+                </Button>
+                <Button as={Link} to="/app/roles" variant="outline-primary" className="d-none d-sm-flex">
+                  <MdGroup className="me-1" />
+                  Manage Roles
+                </Button>
+                <Button as={Link} to="/app/users/form" variant="primary">
+                  <MdPersonAdd className="me-1" />
+                  <span className="d-none d-sm-inline">Add User</span>
+                  <span className="d-sm-none">Add</span>
+                </Button>
+                <Dropdown className="d-md-none">
+                  <Dropdown.Toggle variant="outline-secondary" size="sm">
+                    <MdMoreVert />
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu align="end">
+                    <Dropdown.Item as={Link} to="/app/roles">
+                      <MdGroup className="me-2" />
+                      Manage Roles
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={() => window.location.reload()}>
+                      <MdRefresh className="me-2" />
+                      Refresh
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
             </div>
           </div>
-        </Col>
-      </Row>
+        </div>
 
-      {/* Quick Stats */}
-      <Row className="g-3 mb-4">
-        <Col sm={6} lg={3}>
-          <Card className="h-100 border-0 shadow-sm text-center">
-            <Card.Body>
-              <div className="text-primary mb-2"><MdGroup size={32} /></div>
-              <h3>{users.length}</h3>
-              <p className="text-muted mb-0">Total Users</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col sm={6} lg={3}>
-          <Card className="h-100 border-0 shadow-sm text-center">
-            <Card.Body>
-              <div className="text-success mb-2"><MdSecurity size={32} /></div>
-              <h3>{roles.length}</h3>
-              <p className="text-muted mb-0">Active Roles</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col sm={6} lg={3}>
-          <Card className="h-100 border-0 shadow-sm text-center">
-            <Card.Body>
-              <div className="text-warning mb-2"><MdVpnKey size={32} /></div>
-              <h3>{permissionCount}</h3>
-              <p className="text-muted mb-0">Permissions</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col sm={6} lg={3}>
-          <Card className="h-100 border-0 shadow-sm text-center">
-            <Card.Body>
-              <div className="text-info mb-2"><MdSecurity size={32} /></div>
-              <h3>{users.filter((u) => u.status === "Active").length}</h3>
-              <p className="text-muted mb-0">Active Users</p>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+        {/* Stats Section */}
+        <div className="stats-section">
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-users">
+                <MdGroup />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{users.length}</div>
+                <div className="stat-label">Total Users</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-roles">
+                <MdSecurity />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{roles.length}</div>
+                <div className="stat-label">Active Roles</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-permissions">
+                <MdVpnKey />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{permissionCount}</div>
+                <div className="stat-label">Permissions</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-active">
+                <MdSecurity />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{users.filter((u) => u.status === "Active").length}</div>
+                <div className="stat-label">Active Users</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Users Table */}
-      <Row>
-        <Col lg={8}>
-          <Card className="mb-4 border-0 shadow-sm">
-            <Card.Header className="bg-transparent d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">User Access</h5>
-              <Button as={Link} to="/app/users/form" variant="primary" size="sm">
-                <MdAdd className="me-2" /> Add User
-              </Button>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="p-3 border-bottom">
-                <InputGroup>
-                  <InputGroup.Text><MdSearch /></InputGroup.Text>
-                  <Form.Control
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Users Management Section */}
+          <div className="users-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <h3>User Access Management</h3>
+                  <p>Manage user roles, permissions, and access levels</p>
+                </div>
+                <div className="section-actions d-none d-md-flex">
+                  <Button variant="outline-secondary" size="sm">
+                    <MdFilterList className="me-1" />
+                    Filter
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Search and Filter Bar */}
+              <div className="search-filter-section">
+                <div className="search-input-group">
+                  <div className="search-icon">
+                    <MdSearch />
+                  </div>
+                  <input
                     type="text"
-                    placeholder="Search users..."
+                    className="search-input"
+                    placeholder="Search users by name, email, or role..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                </InputGroup>
+                </div>
+                <div className="filter-actions">
+                  <Button variant="outline-secondary" size="sm" className="d-md-none">
+                    <MdFilterList />
+                  </Button>
+                </div>
               </div>
-              <div className="table-responsive">
-                <Table hover className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>User</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th>Last Login</th>
-                      <th className="text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+
+              {/* Desktop Table View */}
+              <div className="users-table d-none d-md-block">
+                <div className="modern-table">
+                  <div className="table-header">
+                    <div className="table-row">
+                      <div className="table-cell">User</div>
+                      <div className="table-cell">Role</div>
+                      <div className="table-cell">Status</div>
+                      <div className="table-cell">Last Login</div>
+                      <div className="table-cell text-center">Actions</div>
+                    </div>
+                  </div>
+                  <div className="table-body">
                     {paginatedUsers.map((user) => (
-                      <tr key={user.id}>
-                        <td>
-                          <div>
-                            <div className="fw-medium">{user.name}</div>
-                            <small className="text-muted">{user.email}</small>
+                      <div key={user.id} className="table-row">
+                        <div className="table-cell">
+                          <div className="user-info">
+                            <div className="user-avatar">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="user-details">
+                              <div className="user-name">{user.name}</div>
+                              <div className="user-email">{user.email}</div>
+                            </div>
                           </div>
-                        </td>
-                        <td><Badge bg={getRoleVariant(user.role)}>{user.role}</Badge></td>
-                        <td><Badge bg={getStatusVariant(user.status)}>{user.status}</Badge></td>
-                        <td>{formatLocalDateTime(user.lastLogin)}</td>
-                        <td>
-                          <div className="d-flex justify-content-center gap-1">
-                            <Button as={Link} to={`/app/users/${user.id}/edit`} variant="outline-primary" size="sm">
+                        </div>
+                        <div className="table-cell">
+                          <span className={`role-badge role-${user.role.toLowerCase().replace(/\s+/g, '-')}`}>
+                            {user.role}
+                          </span>
+                        </div>
+                        <div className="table-cell">
+                          <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                            {user.status}
+                          </span>
+                        </div>
+                        <div className="table-cell">
+                          <span className="last-login">{formatLocalDateTime(user.lastLogin)}</span>
+                        </div>
+                        <div className="table-cell">
+                          <div className="action-buttons">
+                            <Button as={Link} to={`/app/users/${user.id}/edit`} 
+                                   variant="outline-primary" size="sm" className="action-btn">
                               <MdEdit />
                             </Button>
-                            <Button variant="outline-danger" size="sm"><MdDelete /></Button>
+                            <Button variant="outline-danger" size="sm" className="action-btn">
+                              <MdDelete />
+                            </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </Table>
+                  </div>
+                </div>
               </div>
-              <div className="p-3">
+
+              {/* Mobile Cards View */}
+              <div className="users-cards d-md-none">
+                {paginatedUsers.map((user) => (
+                  <div key={user.id} className="user-card">
+                    <div className="user-card-header">
+                      <div className="user-avatar">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="user-info">
+                        <div className="user-name">{user.name}</div>
+                        <div className="user-email">{user.email}</div>
+                      </div>
+                      <div className="user-actions">
+                        <Dropdown>
+                          <Dropdown.Toggle variant="link" size="sm">
+                            <MdMoreVert />
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu align="end">
+                            <Dropdown.Item as={Link} to={`/app/users/${user.id}/edit`}>
+                              <MdEdit className="me-2" />
+                              Edit
+                            </Dropdown.Item>
+                            <Dropdown.Item className="text-danger">
+                              <MdDelete className="me-2" />
+                              Delete
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      </div>
+                    </div>
+                    <div className="user-card-content">
+                      <div className="user-meta">
+                        <div className="meta-item">
+                          <span className="meta-label">Role:</span>
+                          <span className={`role-badge role-${user.role.toLowerCase().replace(/\s+/g, '-')}`}>
+                            {user.role}
+                          </span>
+                        </div>
+                        <div className="meta-item">
+                          <span className="meta-label">Status:</span>
+                          <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                            {user.status}
+                          </span>
+                        </div>
+                        <div className="meta-item">
+                          <span className="meta-label">Last Login:</span>
+                          <span className="meta-value">{formatLocalDateTime(user.lastLogin)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className="pagination-section">
                 <Pagination
                   current={pagination.page}
                   total={pagination.total}
@@ -887,57 +489,99 @@ const AccessManagement = () => {
                   onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
                 />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+            </div>
+          </div>
 
-        {/* Roles Overview */}
-        <Col lg={4}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-transparent d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Roles Overview</h5>
-              <Button as={Link} to="/app/roles" variant="outline-primary" size="sm">View All</Button>
-            </Card.Header>
-            <Card.Body>
-              {roles.map((role) => (
-                <div key={role.id} className="d-flex justify-content-between align-items-center mb-3">
-                  <div>
-                    <h6 className="mb-1">{role.name}</h6>
-                    <small className="text-muted">{role.description}</small>
-                  </div>
-                  <Badge bg="secondary">{role.userCount} users</Badge>
+          {/* Sidebar: Roles & Quick Actions */}
+          <div className="sidebar-section">
+            {/* Roles Overview */}
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <h3>Roles Overview</h3>
                 </div>
-              ))}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                <Button as={Link} to="/app/roles" variant="outline-primary" size="sm">
+                  View All
+                </Button>
+              </div>
+              <div className="roles-list">
+                {roles.map((role) => (
+                  <div key={role.id} className="role-item">
+                    <div className="role-info">
+                      <div className="role-name">{role.name}</div>
+                      <div className="role-description">{role.description || "No description"}</div>
+                    </div>
+                    <div className="role-count">
+                      {role.userCount} users
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-      {/* Task Assignment Cards */}
-      <Row className="mt-4">
-        <Col>
-          <h5 className="mb-3">Assign System Tasks to Users</h5>
-          <Row className="g-3">
-            {permissions.map((perm, index) => (
-              <Col md={6} lg={4} key={perm._id}>
-                <Card className="border-0 shadow-sm">
-                  <Card.Body>
-                    <Form.Check
-                      type="checkbox"
-                      id={`perm-${index}`}
-                      label={perm.description || perm.name}
-                      checked={taskAssignments.some((a) => a.permissionId === perm._id)}
-                      onChange={(e) => {
-                        if (!e.target.checked) {
-                          const assignment = taskAssignments.find((a) => a.permissionId === perm._id)
-                          if (assignment) {
-                            handleRemoveTask(assignment._id)
+            {/* Quick Actions */}
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <h3>Quick Actions</h3>
+                </div>
+              </div>
+              <div className="quick-actions">
+                <Button as={Link} to="/app/users/form" variant="primary" className="w-100 mb-2">
+                  <MdPersonAdd className="me-2" />
+                  Add New User
+                </Button>
+                <Button as={Link} to="/app/roles" variant="outline-primary" className="w-100 mb-2">
+                  <MdGroup className="me-2" />
+                  Manage Roles
+                </Button>
+                <Button variant="outline-secondary" className="w-100">
+                  <MdSettings className="me-2" />
+                  Settings
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Task Assignment Section */}
+        <div className="task-assignment-section">
+          <div className="section-card">
+            <div className="section-header">
+              <div className="section-title">
+                <h3>System Task Assignments</h3>
+                <p>Assign specific system tasks and permissions to users</p>
+              </div>
+            </div>
+            
+            {/* Permission Assignment Cards */}
+            <div className="permission-assignment-grid">
+              {permissions.map((perm, index) => (
+                <div key={perm._id} className="permission-card">
+                  <div className="permission-header">
+                    <div className="permission-checkbox">
+                      <input
+                        type="checkbox"
+                        id={`perm-${index}`}
+                        checked={taskAssignments.some((a) => a.permissionId === perm._id)}
+                        onChange={(e) => {
+                          if (!e.target.checked) {
+                            const assignment = taskAssignments.find((a) => a.permissionId === perm._id)
+                            if (assignment) {
+                              handleRemoveTask(assignment._id)
+                            }
                           }
-                        }
-                      }}
-                    />
-                    <Form.Group className="mt-2">
-                      <Form.Select
+                        }}
+                      />
+                      <label htmlFor={`perm-${index}`} className="permission-label">
+                        {perm.description || perm.name}
+                      </label>
+                    </div>
+                  </div>
+                  <div className="permission-content">
+                    <div className="user-select-wrapper">
+                      <select
+                        className="user-select"
                         value={taskAssignments.find((a) => a.permissionId === perm._id)?.userId || ""}
                         onChange={(e) => handleAssignTask(perm._id, e.target.value)}
                       >
@@ -947,58 +591,103 @@ const AccessManagement = () => {
                           .map((u) => (
                             <option key={u.id} value={u.id}>{u.name}</option>
                           ))}
-                      </Form.Select>
-                    </Form.Group>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Col>
-      </Row>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-      {/* Task Assignment Table */}
-      <Row className="mt-5">
-        <Col>
-          <h5 className="mb-3">Task Assignments Overview</h5>
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table hover className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Permission</th>
-                      <th>Assigned User</th>
-                      <th className="text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {taskAssignments.map((entry) => {
-                      const permission = permissions.find((p) => p._id === entry.permissionId)
-                      return (
-                        <tr key={entry._id}>
-                          <td>{permission?.description || permission?.name || entry.permission}</td>
-                          <td><Badge bg="primary">{entry.userName || "Unknown"}</Badge></td>
-                          <td className="text-center">
+        {/* Task Assignments Overview */}
+        <div className="assignments-overview-section">
+          <div className="section-card">
+            <div className="section-header">
+              <div className="section-title">
+                <h3>Active Task Assignments</h3>
+                <p>Overview of currently assigned permissions and tasks</p>
+              </div>
+            </div>
+            
+            {/* Desktop Table */}
+            <div className="assignments-table d-none d-md-block">
+              <div className="modern-table">
+                <div className="table-header">
+                  <div className="table-row">
+                    <div className="table-cell">Permission</div>
+                    <div className="table-cell">Assigned User</div>
+                    <div className="table-cell text-center">Actions</div>
+                  </div>
+                </div>
+                <div className="table-body">
+                  {taskAssignments.map((entry) => {
+                    const permission = permissions.find((p) => p._id === entry.permissionId)
+                    return (
+                      <div key={entry._id} className="table-row">
+                        <div className="table-cell">
+                          <div className="permission-info">
+                            <MdAssignment className="permission-icon" />
+                            <span>{permission?.description || permission?.name || entry.permission}</span>
+                          </div>
+                        </div>
+                        <div className="table-cell">
+                          <span className="assigned-user">{entry.userName || "Unknown"}</span>
+                        </div>
+                        <div className="table-cell">
+                          <div className="action-buttons">
                             <Button
                               variant="outline-danger"
                               size="sm"
+                              className="action-btn"
                               onClick={() => handleRemoveTask(entry._id)}
                             >
                               <MdDelete />
                             </Button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </Table>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="assignments-cards d-md-none">
+              {taskAssignments.map((entry) => {
+                const permission = permissions.find((p) => p._id === entry.permissionId)
+                return (
+                  <div key={entry._id} className="assignment-card">
+                    <div className="assignment-header">
+                      <div className="assignment-icon">
+                        <MdAssignment />
+                      </div>
+                      <div className="assignment-title">
+                        {permission?.description || permission?.name || entry.permission}
+                      </div>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleRemoveTask(entry._id)}
+                      >
+                        <MdDelete />
+                      </Button>
+                    </div>
+                    <div className="assignment-content">
+                      <div className="assigned-to">
+                        <span className="label">Assigned to:</span>
+                        <span className="user-name">{entry.userName || "Unknown"}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </Container>
+    </div>
   )
 }
 

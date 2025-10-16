@@ -26,7 +26,7 @@ import { QRCodeSVG } from 'qrcode.react';
 // import axiosInstance from '../../api/axiosInstance'; // TODO: Use for actual API calls
 // import { useAuth } from '../../context/AuthContext'; // TODO: Use for user context
 import Swal from 'sweetalert2';
-import './SurveyDistribution.css';
+
 
 const SurveyDistribution = () => {
   const navigate = useNavigate();

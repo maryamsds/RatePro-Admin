@@ -4,15 +4,11 @@
 
 import { useState, useEffect } from "react"
 import { 
-  Container, Row, Col, Card, Table, Badge, Button, 
-  Form, Modal, InputGroup, Spinner 
-} from "react-bootstrap"
-import { 
   MdAdd, MdEdit, MdDelete, MdSearch, MdRefresh,
-  MdWidgets, MdVisibility, MdVisibilityOff 
+  MdWidgets, MdVisibility, MdVisibilityOff,
+  MdCheckCircle, MdTrendingUp, MdSettings
 } from "react-icons/md"
 import Pagination from "./components/Pagination/Pagination.jsx"
-import TableControls from "./components/TableControls/TableControls.jsx"
 
 const Widgets = ({ darkMode }) => {
   // State for widgets data
@@ -27,7 +23,7 @@ const Widgets = ({ darkMode }) => {
   // State for table controls
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
-  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
 
   // Status options for filter
   const statusOptions = [
@@ -94,6 +90,11 @@ const Widgets = ({ darkMode }) => {
     const matchesStatus = filterStatus === "all" || widget.status === filterStatus
     return matchesSearch && matchesStatus
   })
+
+  // Calculate stats
+  const activeWidgets = widgets.filter(w => w.status === 'active').length
+  const visibleWidgets = widgets.filter(w => w.visibility).length
+  const uniquePositions = [...new Set(widgets.map(w => w.position))].length
 
   // Paginate widgets
   const paginatedWidgets = filteredWidgets.slice(
@@ -167,246 +168,317 @@ const Widgets = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <Container fluid className="py-4 d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
-        <Spinner animation="border" variant="primary" />
-      </Container>
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading widgets...</p>
+      </div>
     )
   }
 
   return (
-    <Container fluid className={`py-4 ${darkMode ? "bg-dark" : ""}`}>
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className={`h3 mb-1 ${darkMode ? "text-light" : ""}`}>
-                <MdWidgets className="me-2" /> Widget Management
-              </h1>
-              <p className={`text-muted mb-0 ${darkMode ? "text-light" : ""}`}>
-                Create and manage dashboard widgets
-              </p>
+    <div className="widgets-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-header-left">
+            <div className="page-header-icon">
+              <MdWidgets />
             </div>
-            <Button 
-              variant="primary" 
-              onClick={() => {
-                setCurrentWidget({
-                  name: "",
-                  description: "",
-                  status: "active",
-                  position: "dashboard",
-                  visibility: true
-                })
-                setIsEditing(false)
-                setShowModal(true)
-              }}
-            >
-              <MdAdd className="me-2" /> Add Widget
-            </Button>
+            <div className="page-header-text">
+              <h1>Widget Management</h1>
+              <p>Create and manage dashboard widgets</p>
+            </div>
           </div>
-        </Col>
-      </Row>
+          <button
+            className="primary-action"
+            onClick={() => {
+              setCurrentWidget({
+                name: "",
+                description: "",
+                status: "active",
+                position: "dashboard",
+                visibility: true
+              })
+              setIsEditing(false)
+              setShowModal(true)
+            }}
+          >
+            <MdAdd /> Add Widget
+          </button>
+        </div>
+      </div>
 
-      {/* Table Controls */}
-      <TableControls
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterOptions={statusOptions}
-        selectedFilter={filterStatus}
-        setSelectedFilter={setFilterStatus}
-        onRefresh={() => window.location.reload()}
-        darkMode={darkMode}
-        placeholder="Search widgets..."
-      />
+      {/* Stats Section */}
+      <div className="stats-section">
+        <div className="stat-card stat-card-primary">
+          <div className="stat-icon">
+            <MdWidgets />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{widgets.length}</div>
+            <div className="stat-label">Total Widgets</div>
+          </div>
+        </div>
+        <div className="stat-card stat-card-success">
+          <div className="stat-icon">
+            <MdCheckCircle />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{activeWidgets}</div>
+            <div className="stat-label">Active Widgets</div>
+          </div>
+        </div>
+        <div className="stat-card stat-card-warning">
+          <div className="stat-icon">
+            <MdVisibility />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{visibleWidgets}</div>
+            <div className="stat-label">Visible Widgets</div>
+          </div>
+        </div>
+        <div className="stat-card stat-card-info">
+          <div className="stat-icon">
+            <MdSettings />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{uniquePositions}</div>
+            <div className="stat-label">Positions</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="filters-section">
+        <div className="search-input-container">
+          <MdSearch className="search-icon" />
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search widgets..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <select
+          className="filter-select"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="all">All Status</option>
+          {statusOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <button
+          className="refresh-button"
+          onClick={() => window.location.reload()}
+          title="Refresh"
+        >
+          <MdRefresh />
+        </button>
+      </div>
 
       {/* Widgets Table */}
-      <Card className={`border-0 shadow-sm ${darkMode ? "bg-dark" : ""}`}>
-        <Card.Body className="p-0">
-          <div className="table-responsive">
-            <Table hover className={`mb-0 ${darkMode ? "table-dark" : ""}`}>
-              <thead className={darkMode ? "table-dark" : "table-light"}>
-                <tr>
-                  <th className={darkMode ? "text-light" : ""}>Name</th>
-                  <th className={darkMode ? "text-light" : ""}>Description</th>
-                  <th className={darkMode ? "text-light" : ""}>Status</th>
-                  <th className={darkMode ? "text-light" : ""}>Position</th>
-                  <th className={darkMode ? "text-light" : ""}>Visibility</th>
-                  <th className={darkMode ? "text-light" : ""}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedWidgets.map(widget => (
+      <div className="section-card">
+        <div className="section-header">
+          <h2>Widgets</h2>
+          <span className="section-count">{filteredWidgets.length} widget(s) found</span>
+        </div>
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Position</th>
+                <th>Visibility</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedWidgets.length > 0 ? (
+                paginatedWidgets.map(widget => (
                   <tr key={widget.id}>
-                    <td className={darkMode ? "text-light" : ""}>
-                      <div className="fw-medium">{widget.name}</div>
-                      <small className={darkMode ? "text-light" : "text-muted"}>
-                        Created: {widget.createdAt}
-                      </small>
+                    <td>
+                      <div className="widget-details-cell">
+                        <div className="widget-name">{widget.name}</div>
+                        <div className="widget-date">Created: {widget.createdAt}</div>
+                      </div>
                     </td>
-                    <td className={darkMode ? "text-light" : ""}>
-                      <div className="text-truncate" style={{ maxWidth: '300px' }}>
+                    <td>
+                      <div className="widget-description">
                         {widget.description}
                       </div>
                     </td>
                     <td>
-                      <Badge bg={getStatusBadge(widget.status)} className="text-capitalize">
+                      <span className={`status-badge status-${widget.status}`}>
                         {widget.status}
-                      </Badge>
-                    </td>
-                    <td className={darkMode ? "text-light" : ""}>
-                      <Badge bg="info" className="text-capitalize">
-                        {widget.position}
-                      </Badge>
+                      </span>
                     </td>
                     <td>
-                      <Button 
-                        variant={widget.visibility ? "outline-success" : "outline-secondary"}
-                        size="sm"
+                      <span className="position-badge">
+                        {widget.position}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className={`visibility-toggle ${widget.visibility ? 'visible' : 'hidden'}`}
                         onClick={() => toggleVisibility(widget.id)}
                       >
                         {widget.visibility ? (
-                          <MdVisibility className="me-1" />
+                          <>
+                            <MdVisibility /> Visible
+                          </>
                         ) : (
-                          <MdVisibilityOff className="me-1" />
+                          <>
+                            <MdVisibilityOff /> Hidden
+                          </>
                         )}
-                        {widget.visibility ? "Visible" : "Hidden"}
-                      </Button>
+                      </button>
                     </td>
                     <td>
-                      <div className="d-flex gap-2">
-                        <Button 
-                          variant="outline-primary" 
-                          size="sm"
+                      <div className="action-buttons">
+                        <button
+                          className="action-btn edit-btn"
                           onClick={() => handleEdit(widget)}
+                          title="Edit"
                         >
                           <MdEdit />
-                        </Button>
-                        <Button 
-                          variant="outline-danger" 
-                          size="sm"
+                        </button>
+                        <button
+                          className="action-btn delete-btn"
                           onClick={() => handleDelete(widget.id)}
+                          title="Delete"
                         >
                           <MdDelete />
-                        </Button>
+                        </button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-
-          {/* Pagination */}
-          <div className="p-3 border-top">
-            <Pagination
-              current={pagination.page}
-              total={filteredWidgets.length}
-              limit={pagination.limit}
-              onChange={(page) => setPagination(prev => ({ ...prev, page }))}
-              darkMode={darkMode}
-            />
-          </div>
-        </Card.Body>
-      </Card>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="no-data">
+                    No widgets found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="table-footer">
+          <Pagination
+            current={pagination.page}
+            total={filteredWidgets.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination(prev => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
+      </div>
 
       {/* Add/Edit Widget Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header 
-          closeButton 
-          className={darkMode ? "bg-dark border-dark text-light" : ""}
-        >
-          <Modal.Title>
-            {isEditing ? "Edit Widget" : "Add New Widget"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Widget Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={currentWidget?.name || ""}
-                onChange={handleInputChange}
-                required
-                className={darkMode ? "bg-dark border-dark text-light" : ""}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                value={currentWidget?.description || ""}
-                onChange={handleInputChange}
-                className={darkMode ? "bg-dark border-dark text-light" : ""}
-              />
-            </Form.Group>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select
-                    name="status"
-                    value={currentWidget?.status || "active"}
-                    onChange={handleInputChange}
-                    className={darkMode ? "bg-dark border-dark text-light" : ""}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="draft">Draft</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Position</Form.Label>
-                  <Form.Select
-                    name="position"
-                    value={currentWidget?.position || "dashboard"}
-                    onChange={handleInputChange}
-                    className={darkMode ? "bg-dark border-dark text-light" : ""}
-                  >
-                    <option value="dashboard">Dashboard</option>
-                    <option value="analytics">Analytics</option>
-                    <option value="sidebar">Sidebar</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="checkbox"
-                label="Visible"
-                name="visibility"
-                checked={currentWidget?.visibility || false}
-                onChange={handleInputChange}
-                className={darkMode ? "text-light" : ""}
-              />
-            </Form.Group>
-
-            <div className="d-flex justify-content-end gap-2">
-              <Button 
-                variant="secondary" 
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="primary" 
-                type="submit"
-              >
-                {isEditing ? "Update Widget" : "Add Widget"}
-              </Button>
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-left">
+                <MdWidgets className="modal-icon" />
+                <h2>{isEditing ? "Edit Widget" : "Add New Widget"}</h2>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                ×
+              </button>
             </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
-    </Container>
+            <form onSubmit={handleSubmit}>
+              <div className="modal-body">
+                <div className="widget-form">
+                  <div className="form-group">
+                    <label className="form-label">Widget Name *</label>
+                    <input
+                      type="text"
+                      name="name"
+                      className="form-input"
+                      value={currentWidget?.name || ""}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      name="description"
+                      className="form-textarea"
+                      rows="3"
+                      value={currentWidget?.description || ""}
+                      onChange={handleInputChange}
+                    ></textarea>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Status</label>
+                      <select
+                        name="status"
+                        className="form-select"
+                        value={currentWidget?.status || "active"}
+                        onChange={handleInputChange}
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="draft">Draft</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Position</label>
+                      <select
+                        name="position"
+                        className="form-select"
+                        value={currentWidget?.position || "dashboard"}
+                        onChange={handleInputChange}
+                      >
+                        <option value="dashboard">Dashboard</option>
+                        <option value="analytics">Analytics</option>
+                        <option value="sidebar">Sidebar</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-checkbox">
+                      <input
+                        type="checkbox"
+                        name="visibility"
+                        checked={currentWidget?.visibility || false}
+                        onChange={handleInputChange}
+                      />
+                      <span>Visible</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="modal-button modal-button-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="modal-button modal-button-primary">
+                  <MdAdd /> {isEditing ? "Update Widget" : "Add Widget"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

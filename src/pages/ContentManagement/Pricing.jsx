@@ -4,15 +4,11 @@
 
 import { useState, useEffect } from "react"
 import {
-  Container, Row, Col, Card, Table, Badge, Button,
-  Form, Modal, InputGroup, Spinner, Alert
-} from "react-bootstrap"
-import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdRefresh,
-  MdAttachMoney, MdCheck, MdClose
+  MdAttachMoney, MdCheck, MdClose, MdStar,
+  MdCheckCircle, MdTrendingUp, MdSettings
 } from "react-icons/md"
 import Pagination from "./components/Pagination/Pagination.jsx"
-import TableControls from "./components/TableControls/TableControls.jsx"
 
 const Pricing = ({ darkMode }) => {
   // State for pricing plans data
@@ -28,7 +24,7 @@ const Pricing = ({ darkMode }) => {
   // State for table controls
   const [searchTerm, setSearchTerm] = useState("")
   const [filterTier, setFilterTier] = useState("all")
-  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
 
   // Tier options for filter
   const tierOptions = [
@@ -208,38 +204,49 @@ const Pricing = ({ darkMode }) => {
     return `${plan.currency}${plan.price}/${plan.interval}`
   }
 
+  // Calculate stats
+  const activePlans = plans.filter(p => p.isActive).length
+  const popularPlans = plans.filter(p => p.isPopular).length
+  const totalTiers = [...new Set(plans.map(p => p.tier))].length
+
   if (loading) {
     return (
-      <Container fluid className="py-4 d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
-        <Spinner animation="border" variant="primary" />
-      </Container>
+      <div className="pricing-container">
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Loading pricing plans...</p>
+        </div>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <Container fluid className="py-4">
-        <Alert variant="danger">{error}</Alert>
-      </Container>
+      <div className="pricing-container">
+        <div className="error-container">
+          <p className="error-message">{error}</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Container fluid className={`py-4 ${darkMode ? "bg-dark" : ""}`}>
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className={`h3 mb-1 ${darkMode ? "text-light" : ""}`}>
-                <MdAttachMoney className="me-2" /> Pricing Management
-              </h1>
-              <p className={`text-muted mb-0 ${darkMode ? "text-light" : ""}`}>
-                Configure your pricing plans and tiers
-              </p>
+    <div className="pricing-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-title-wrapper">
+            <div className="page-icon">
+              <MdAttachMoney />
             </div>
-            <Button
-              variant="primary"
+            <div>
+              <h1 className="page-title">Pricing Management</h1>
+              <p className="page-subtitle">Configure your pricing plans and tiers</p>
+            </div>
+          </div>
+          <div className="page-actions">
+            <button
+              className="action-button primary-action"
               onClick={() => {
                 setCurrentPlan({
                   name: "",
@@ -255,273 +262,367 @@ const Pricing = ({ darkMode }) => {
                 setShowModal(true)
               }}
             >
-              <MdAdd className="me-2" /> Add Plan
-            </Button>
+              <MdAdd /> Add Plan
+            </button>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
 
-      {/* Table Controls */}
-      <TableControls
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterOptions={tierOptions}
-        selectedFilter={filterTier}
-        setSelectedFilter={setFilterTier}
-        onRefresh={() => window.location.reload()}
-        darkMode={darkMode}
-        placeholder="Search plans by name or tier..."
-      />
+      {/* Stats Section */}
+      <div className="stats-section">
+        <div className="stat-card primary-card">
+          <div className="stat-icon">
+            <MdAttachMoney />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{plans.length}</div>
+            <div className="stat-label">Total Plans</div>
+          </div>
+        </div>
+        <div className="stat-card success-card">
+          <div className="stat-icon">
+            <MdCheckCircle />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{activePlans}</div>
+            <div className="stat-label">Active Plans</div>
+          </div>
+        </div>
+        <div className="stat-card warning-card">
+          <div className="stat-icon">
+            <MdStar />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{popularPlans}</div>
+            <div className="stat-label">Popular Plans</div>
+          </div>
+        </div>
+        <div className="stat-card info-card">
+          <div className="stat-icon">
+            <MdSettings />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{totalTiers}</div>
+            <div className="stat-label">Pricing Tiers</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="section-card filters-section">
+        <div className="filters-grid">
+          <div className="search-input-container">
+            <MdSearch className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search plans by name or tier..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="filter-group">
+            <select
+              className="filter-select"
+              value={filterTier}
+              onChange={(e) => setFilterTier(e.target.value)}
+            >
+              <option value="all">All Tiers</option>
+              {tierOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            className="action-button secondary-action"
+            onClick={() => window.location.reload()}
+          >
+            <MdRefresh /> Refresh
+          </button>
+        </div>
+      </div>
 
       {/* Pricing Plans Table */}
-      <Row>
-        <Col>
-          <Card className={darkMode ? "bg-dark text-light" : ""}>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table striped bordered hover variant={darkMode ? "dark" : ""} className="mb-0">
-                  <thead  >
-                    <tr>
-                      <th style={{ color: "white" }}>Name</th>
-                      <th style={{ color: "white" }}>Tier</th>
-                      <th style={{ color: "white" }}>Price</th>
-                      <th style={{ color: "white" }}>Features</th>
-                      <th style={{ color: "white" }}>Status</th>
-                      <th style={{ color: "white" }}>Popular</th>
-                      <th style={{ color: "white" }}>Created</th>
-                      <th style={{ color: "white" }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedPlans.length > 0 ? (
-                      paginatedPlans.map(plan => (
-                        <tr key={plan.id}>
-                          <td>{plan.name}</td>
-                          <td>
-                            <Badge
-                              bg={
-                                plan.tier === 'basic' ? 'secondary' :
-                                  plan.tier === 'standard' ? 'primary' :
-                                    plan.tier === 'premium' ? 'warning' : 'success'
-                              }
-                            >
-                              {plan.tier}
-                            </Badge>
-                          </td>
-                          <td>{formatPrice(plan)}</td>
-                          <td>
-                            <ul className="mb-0">
-                              {plan.features.map((feature, i) => (
-                                <li key={i}>{feature}</li>
-                              ))}
-                            </ul>
-                          </td>
-                          <td>
-                            <Form.Check
-                              type="switch"
-                              id={`active-${plan.id}`}
-                              checked={plan.isActive}
-                              onChange={() => toggleStatus(plan.id)}
-                              label={plan.isActive ? "Active" : "Inactive"}
-                            />
-                          </td>
-                          <td>
-                            <Form.Check
-                              type="switch"
-                              id={`popular-${plan.id}`}
-                              checked={plan.isPopular}
-                              onChange={() => togglePopular(plan.id)}
-                              label={plan.isPopular ? "Yes" : "No"}
-                            />
-                          </td>
-                          <td>{plan.createdAt}</td>
-                          <td>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              className="me-2"
-                              onClick={() => handleEdit(plan)}
-                            >
-                              <MdEdit />
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDelete(plan.id)}
-                            >
-                              <MdDelete />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="8" className="text-center py-4">
-                          No pricing plans found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-            <Card.Footer className={`${darkMode ? "bg-dark border-top border-secondary" : ""}`}>
-              <Pagination
-                current={pagination.page}
-                total={filteredPlans.length}
-                limit={pagination.limit}
-                onChange={(page) => setPagination(prev => ({ ...prev, page }))}
-                darkMode={darkMode}
-              />
-            </Card.Footer>
-          </Card>
-        </Col>
-      </Row>
+      <div className="section-card pricing-table-section">
+        <div className="section-header">
+          <div className="section-title-wrapper">
+            <h2 className="section-title">{filteredPlans.length} plan(s) found</h2>
+          </div>
+        </div>
+
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Plan Details</th>
+                <th>Tier</th>
+                <th>Price</th>
+                <th>Features</th>
+                <th>Status</th>
+                <th>Popular</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedPlans.length > 0 ? (
+                paginatedPlans.map(plan => (
+                  <tr key={plan.id}>
+                    <td>
+                      <div className="plan-details-cell">
+                        <div className="plan-name">{plan.name}</div>
+                        <div className="plan-date">Created: {plan.createdAt}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`tier-badge tier-${plan.tier}`}>
+                        {plan.tier}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="plan-price">{formatPrice(plan)}</div>
+                    </td>
+                    <td>
+                      <ul className="features-list">
+                        {plan.features.map((feature, i) => (
+                          <li key={i}>
+                            <MdCheck className="feature-check" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td>
+                      <label className="status-toggle">
+                        <input
+                          type="checkbox"
+                          checked={plan.isActive}
+                          onChange={() => toggleStatus(plan.id)}
+                        />
+                        <span className="toggle-slider"></span>
+                        <span className="toggle-label">
+                          {plan.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </label>
+                    </td>
+                    <td>
+                      <label className="popular-toggle">
+                        <input
+                          type="checkbox"
+                          checked={plan.isPopular}
+                          onChange={() => togglePopular(plan.id)}
+                        />
+                        <span className="toggle-slider"></span>
+                        <span className="toggle-label">
+                          {plan.isPopular ? "Yes" : "No"}
+                        </span>
+                      </label>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="action-btn edit-btn"
+                          onClick={() => handleEdit(plan)}
+                          title="Edit"
+                        >
+                          <MdEdit />
+                        </button>
+                        <button
+                          className="action-btn delete-btn"
+                          onClick={() => handleDelete(plan.id)}
+                          title="Delete"
+                        >
+                          <MdDelete />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="no-data">
+                    No pricing plans found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="table-footer">
+          <Pagination
+            current={pagination.page}
+            total={filteredPlans.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination(prev => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
+      </div>
 
       {/* Add/Edit Plan Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton className={darkMode ? "bg-dark text-light" : ""}>
-          <Modal.Title>{isEditing ? "Edit Pricing Plan" : "Add New Pricing Plan"}</Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleSubmit}>
-          <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
-            {currentPlan && (
-              <>
-                <Form.Group className="mb-3">
-                  <Form.Label>Plan Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="name"
-                    value={currentPlan.name}
-                    onChange={handleInputChange}
-                    required
-                    className={darkMode ? "bg-dark text-light" : ""}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Tier</Form.Label>
-                  <Form.Select
-                    name="tier"
-                    value={currentPlan.tier}
-                    onChange={handleInputChange}
-                    className={darkMode ? "bg-dark text-light" : ""}
-                  >
-                    {tierOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Price</Form.Label>
-                      <InputGroup>
-                        <Form.Select
-                          name="currency"
-                          value={currentPlan.currency}
-                          onChange={handleInputChange}
-                          className={darkMode ? "bg-dark text-light" : ""}
-                        >
-                          <option value="USD">$</option>
-                          <option value="EUR">€</option>
-                          <option value="GBP">£</option>
-                        </Form.Select>
-                        <Form.Control
-                          type="number"
-                          name="price"
-                          value={currentPlan.price}
-                          onChange={handleInputChange}
-                          min="0"
-                          className={darkMode ? "bg-dark text-light" : ""}
-                        />
-                      </InputGroup>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Billing Interval</Form.Label>
-                      <Form.Select
-                        name="interval"
-                        value={currentPlan.interval}
-                        onChange={handleInputChange}
-                        className={darkMode ? "bg-dark text-light" : ""}
-                      >
-                        <option value="month">Monthly</option>
-                        <option value="year">Yearly</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                <Form.Group className="mb-3">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <Form.Label>Features</Form.Label>
-                    <Button variant="outline-primary" size="sm" onClick={addFeature}>
-                      <MdAdd /> Add Feature
-                    </Button>
-                  </div>
-                  {currentPlan.features.map((feature, index) => (
-                    <InputGroup key={index} className="mb-2">
-                      <Form.Control
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                <MdAttachMoney />
+                {isEditing ? "Edit Pricing Plan" : "Add New Pricing Plan"}
+              </h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                <MdClose />
+              </button>
+            </div>
+            <div className="modal-body">
+              <form className="pricing-form" onSubmit={handleSubmit}>
+                {currentPlan && (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Plan Name</label>
+                      <input
                         type="text"
-                        value={feature}
-                        onChange={(e) => handleFeatureChange(index, e.target.value)}
-                        className={darkMode ? "bg-dark text-light" : ""}
+                        name="name"
+                        className="form-input"
+                        value={currentPlan.name}
+                        onChange={handleInputChange}
+                        required
                       />
-                      <Button
-                        variant="outline-danger"
-                        onClick={() => removeFeature(index)}
-                      >
-                        <MdClose />
-                      </Button>
-                    </InputGroup>
-                  ))}
-                </Form.Group>
+                    </div>
 
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        id="isActive"
-                        name="isActive"
-                        label="Active Plan"
-                        checked={currentPlan.isActive}
+                    <div className="form-group">
+                      <label className="form-label">Tier</label>
+                      <select
+                        name="tier"
+                        className="form-select"
+                        value={currentPlan.tier}
                         onChange={handleInputChange}
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        id="isPopular"
-                        name="isPopular"
-                        label="Mark as Popular"
-                        checked={currentPlan.isPopular}
-                        onChange={handleInputChange}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-              </>
-            )}
-          </Modal.Body>
-          <Modal.Footer className={darkMode ? "bg-dark border-top border-secondary" : ""}>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit">
-              {isEditing ? "Update Plan" : "Create Plan"}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
-    </Container>
+                      >
+                        {tierOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Price</label>
+                        <div className="price-input-group">
+                          <select
+                            name="currency"
+                            className="currency-select"
+                            value={currentPlan.currency}
+                            onChange={handleInputChange}
+                          >
+                            <option value="USD">$</option>
+                            <option value="EUR">€</option>
+                            <option value="GBP">£</option>
+                          </select>
+                          <input
+                            type="number"
+                            name="price"
+                            className="price-input"
+                            value={currentPlan.price}
+                            onChange={handleInputChange}
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Billing Interval</label>
+                        <select
+                          name="interval"
+                          className="form-select"
+                          value={currentPlan.interval}
+                          onChange={handleInputChange}
+                        >
+                          <option value="month">Monthly</option>
+                          <option value="year">Yearly</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <div className="features-header">
+                        <label className="form-label">Features</label>
+                        <button
+                          type="button"
+                          className="add-feature-btn"
+                          onClick={addFeature}
+                        >
+                          <MdAdd /> Add Feature
+                        </button>
+                      </div>
+                      {currentPlan.features.map((feature, index) => (
+                        <div key={index} className="feature-input-group">
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={feature}
+                            onChange={(e) => handleFeatureChange(index, e.target.value)}
+                            placeholder="Enter feature"
+                          />
+                          <button
+                            type="button"
+                            className="remove-feature-btn"
+                            onClick={() => removeFeature(index)}
+                          >
+                            <MdClose />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="form-row toggles-row">
+                      <div className="form-group">
+                        <label className="form-checkbox">
+                          <input
+                            type="checkbox"
+                            name="isActive"
+                            checked={currentPlan.isActive}
+                            onChange={handleInputChange}
+                          />
+                          <span>Active Plan</span>
+                        </label>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-checkbox">
+                          <input
+                            type="checkbox"
+                            name="isPopular"
+                            checked={currentPlan.isPopular}
+                            onChange={handleInputChange}
+                          />
+                          <span>Mark as Popular</span>
+                        </label>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-cancel-btn"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal-submit-btn"
+                onClick={handleSubmit}
+              >
+                <MdAdd />
+                {isEditing ? "Update Plan" : "Create Plan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

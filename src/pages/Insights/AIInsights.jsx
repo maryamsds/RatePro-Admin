@@ -35,7 +35,7 @@ import {
   RadialLinearScale
 } from 'chart.js';
 import axiosInstance from '../../api/axiosInstance';
-import './AIInsights.css';
+
 
 // Register Chart.js components
 ChartJS.register(

@@ -3,7 +3,22 @@
 "use client"
 
 import { useState } from "react"
-import { Container, Row, Col, Card, Form, Button, Alert, Badge } from "react-bootstrap"
+import {
+  MdNotifications,
+  MdEmail,
+  MdPhoneAndroid,
+  MdSms,
+  MdSchedule,
+  MdSave,
+  MdRefresh,
+  MdCheck,
+  MdClose,
+  MdInfo,
+  MdWarning,
+  MdCheckCircle
+} from "react-icons/md"
+import { FaSlack } from "react-icons/fa";
+
 
 const NotificationSettings = () => {
   const [saved, setSaved] = useState(false)
@@ -71,350 +86,469 @@ const NotificationSettings = () => {
   }
 
   return (
-    <Container fluid>
-      <Row className="mb-4">
-        <Col>
-          <h1 className="h3 mb-0">Notification Settings</h1>
-          <p className="text-muted">Manage how and when you receive notifications</p>
-        </Col>
-      </Row>
+    <div className="notification-settings-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-header-left">
+            <div className="page-header-icon">
+              <MdNotifications />
+            </div>
+            <div className="page-header-text">
+              <h1>Notification Settings</h1>
+              <p>Configure how and when you receive notifications across all channels</p>
+            </div>
+          </div>
+          <div className="page-header-actions">
+            <button className="secondary-action">
+              <MdRefresh />
+              Reset to Defaults
+            </button>
+            <button className="primary-action" onClick={handleSave}>
+              <MdSave />
+              Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
 
+      {/* Success Notification */}
       {saved && (
-        <Alert variant="success" className="mb-4">
-          <i className="fas fa-check-circle me-2"></i>
-          Notification settings saved successfully!
-        </Alert>
+        <div className="notification-overlay" onClick={() => setSaved(false)}>
+          <div className="notification-container success">
+            <div className="notification-icon">
+              <MdCheckCircle />
+            </div>
+            <div className="notification-content">
+              <h4>Settings Saved</h4>
+              <p>Your notification preferences have been updated successfully!</p>
+            </div>
+            <button className="notification-close" onClick={() => setSaved(false)}>
+              <MdClose />
+            </button>
+          </div>
+        </div>
       )}
 
-      <Form onSubmit={handleSave}>
-        <Row>
-          <Col lg={6}>
-            {/* Email Notifications */}
-            <Card className="mb-4">
-              <Card.Header>
-                <div className="d-flex align-items-center">
-                  <i className="fas fa-envelope text-primary me-2"></i>
-                  <Card.Title className="mb-0">Email Notifications</Card.Title>
-                  <Badge bg="success" className="ms-auto">
-                    Active
-                  </Badge>
+      {/* Notification Content */}
+      <div className="notification-content">
+        <div className="notification-grid">
+          {/* Email Notifications */}
+          <div className="notification-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <MdEmail className="section-icon" />
+                  <div>
+                    <h2>Email Notifications</h2>
+                    <p>Receive notifications via email</p>
+                  </div>
                 </div>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="email-new-responses"
-                    label="New survey responses"
-                    checked={settings.email.newResponses}
-                    onChange={(e) => updateEmailSetting("newResponses", e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">Get notified when someone completes your survey</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="email-survey-completed"
-                    label="Survey completion milestones"
-                    checked={settings.email.surveyCompleted}
-                    onChange={(e) => updateEmailSetting("surveyCompleted", e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">Notifications for response milestones (100, 500, 1000+)</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="email-weekly-reports"
-                    label="Weekly summary reports"
-                    checked={settings.email.weeklyReports}
-                    onChange={(e) => updateEmailSetting("weeklyReports", e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">Weekly digest of your survey performance</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="email-system-updates"
-                    label="System updates and maintenance"
-                    checked={settings.email.systemUpdates}
-                    onChange={(e) => updateEmailSetting("systemUpdates", e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">Important system announcements and scheduled maintenance</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="email-security-alerts"
-                    label="Security alerts"
-                    checked={settings.email.securityAlerts}
-                    onChange={(e) => updateEmailSetting("securityAlerts", e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">Login attempts and security-related notifications</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="email-marketing"
-                    label="Marketing emails"
-                    checked={settings.email.marketingEmails}
-                    onChange={(e) => updateEmailSetting("marketingEmails", e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">Product updates, tips, and promotional content</Form.Text>
-                </Form.Group>
-              </Card.Body>
-            </Card>
-
-            {/* Push Notifications */}
-            <Card className="mb-4">
-              <Card.Header>
-                <div className="d-flex align-items-center">
-                  <i className="fas fa-bell text-warning me-2"></i>
-                  <Card.Title className="mb-0">Push Notifications</Card.Title>
-                  <Badge bg="secondary" className="ms-auto">
-                    Browser Only
-                  </Badge>
+                <div className="status-badge active">
+                  <MdCheck />
+                  Active
                 </div>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="push-new-responses"
-                    label="New responses"
-                    checked={settings.push.newResponses}
-                    onChange={(e) => updatePushSetting("newResponses", e.target.checked)}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="push-survey-completed"
-                    label="Survey milestones"
-                    checked={settings.push.surveyCompleted}
-                    onChange={(e) => updatePushSetting("surveyCompleted", e.target.checked)}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="push-system-alerts"
-                    label="System alerts"
-                    checked={settings.push.systemAlerts}
-                    onChange={(e) => updatePushSetting("systemAlerts", e.target.checked)}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="push-reminders"
-                    label="Task reminders"
-                    checked={settings.push.reminders}
-                    onChange={(e) => updatePushSetting("reminders", e.target.checked)}
-                  />
-                </Form.Group>
-
-                <div className="alert alert-info">
-                  <i className="fas fa-info-circle me-2"></i>
-                  <small>
-                    Push notifications require browser permission. Click "Allow" when prompted to enable notifications.
-                  </small>
+              </div>
+              <div className="section-content">
+                <div className="switch-group">
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.email.newResponses}
+                        onChange={(e) => updateEmailSetting("newResponses", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">New survey responses</span>
+                        <span className="switch-description">Get notified when someone completes your survey</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.email.surveyCompleted}
+                        onChange={(e) => updateEmailSetting("surveyCompleted", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Survey completion milestones</span>
+                        <span className="switch-description">Notifications for response milestones (100, 500, 1000+)</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.email.weeklyReports}
+                        onChange={(e) => updateEmailSetting("weeklyReports", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Weekly summary reports</span>
+                        <span className="switch-description">Weekly digest of your survey performance</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.email.systemUpdates}
+                        onChange={(e) => updateEmailSetting("systemUpdates", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">System updates and maintenance</span>
+                        <span className="switch-description">Important system announcements and scheduled maintenance</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.email.securityAlerts}
+                        onChange={(e) => updateEmailSetting("securityAlerts", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Security alerts</span>
+                        <span className="switch-description">Login attempts and security-related notifications</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.email.marketingEmails}
+                        onChange={(e) => updateEmailSetting("marketingEmails", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Marketing emails</span>
+                        <span className="switch-description">Product updates, tips, and promotional content</span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
-              </Card.Body>
-            </Card>
-          </Col>
+              </div>
+            </div>
+          </div>
 
-          <Col lg={6}>
-            {/* SMS Notifications */}
-            <Card className="mb-4">
-              <Card.Header>
-                <div className="d-flex align-items-center">
-                  <i className="fas fa-sms text-success me-2"></i>
-                  <Card.Title className="mb-0">SMS Notifications</Card.Title>
-                  <Badge bg={settings.sms.enabled ? "success" : "secondary"} className="ms-auto">
-                    {settings.sms.enabled ? "Active" : "Disabled"}
-                  </Badge>
+          {/* Push Notifications */}
+          <div className="notification-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <MdPhoneAndroid className="section-icon" />
+                  <div>
+                    <h2>Push Notifications</h2>
+                    <p>Browser and mobile push notifications</p>
+                  </div>
                 </div>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="sms-enabled"
-                    label="Enable SMS notifications"
-                    checked={settings.sms.enabled}
-                    onChange={(e) => updateSmsSetting("enabled", e.target.checked)}
-                  />
-                </Form.Group>
+                <div className="status-badge secondary">
+                  Browser Only
+                </div>
+              </div>
+              <div className="section-content">
+                <div className="switch-group">
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.push.newResponses}
+                        onChange={(e) => updatePushSetting("newResponses", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">New responses</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.push.surveyCompleted}
+                        onChange={(e) => updatePushSetting("surveyCompleted", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Survey milestones</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.push.systemAlerts}
+                        onChange={(e) => updatePushSetting("systemAlerts", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">System alerts</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.push.reminders}
+                        onChange={(e) => updatePushSetting("reminders", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Task reminders</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="info-alert">
+                  <MdInfo className="info-icon" />
+                  <p>Push notifications require browser permission. Click "Allow" when prompted to enable notifications.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* SMS Notifications */}
+          <div className="notification-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <MdSms className="section-icon" />
+                  <div>
+                    <h2>SMS Notifications</h2>
+                    <p>Text message notifications to your phone</p>
+                  </div>
+                </div>
+                <div className={`status-badge ${settings.sms.enabled ? 'active' : 'inactive'}`}>
+                  {settings.sms.enabled ? 'Active' : 'Disabled'}
+                </div>
+              </div>
+              <div className="section-content">
+                <div className="switch-group">
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.sms.enabled}
+                        onChange={(e) => updateSmsSetting("enabled", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Enable SMS notifications</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
 
                 {settings.sms.enabled && (
-                  <>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Phone Number</Form.Label>
-                      <Form.Control
+                  <div className="form-section">
+                    <div className="form-group">
+                      <label>Phone Number</label>
+                      <input
                         type="tel"
                         placeholder="+1 (555) 123-4567"
                         value={settings.sms.phoneNumber}
                         onChange={(e) => updateSmsSetting("phoneNumber", e.target.value)}
                       />
-                      <Form.Text className="text-muted">Include country code</Form.Text>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        id="sms-critical-alerts"
-                        label="Critical alerts only"
-                        checked={settings.sms.criticalAlerts}
-                        onChange={(e) => updateSmsSetting("criticalAlerts", e.target.checked)}
-                      />
-                      <Form.Text className="text-muted">Security issues and system outages</Form.Text>
-                    </Form.Group>
-
-                    <div className="alert alert-warning">
-                      <i className="fas fa-exclamation-triangle me-2"></i>
-                      <small>SMS notifications may incur charges based on your mobile plan.</small>
+                      <span className="form-help">Include country code</span>
                     </div>
-                  </>
-                )}
-              </Card.Body>
-            </Card>
 
-            {/* Slack Integration */}
-            <Card className="mb-4">
-              <Card.Header>
-                <div className="d-flex align-items-center">
-                  <i className="fab fa-slack text-info me-2"></i>
-                  <Card.Title className="mb-0">Slack Integration</Card.Title>
-                  <Badge bg={settings.slack.enabled ? "success" : "secondary"} className="ms-auto">
-                    {settings.slack.enabled ? "Connected" : "Disconnected"}
-                  </Badge>
+                    <div className="switch-group">
+                      <div className="switch-item">
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={settings.sms.criticalAlerts}
+                            onChange={(e) => updateSmsSetting("criticalAlerts", e.target.checked)}
+                          />
+                          <span className="switch-slider"></span>
+                          <div className="switch-content">
+                            <span className="switch-label">Critical alerts only</span>
+                            <span className="switch-description">Security issues and system outages</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="warning-alert">
+                      <MdWarning className="warning-icon" />
+                      <p>SMS notifications may incur charges based on your mobile plan.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Slack Integration */}
+          <div className="notification-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <FaSlack className="section-icon" />
+                  <div>
+                    <h2>Slack Integration</h2>
+                    <p>Send notifications to Slack channels</p>
+                  </div>
                 </div>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    id="slack-enabled"
-                    label="Enable Slack notifications"
-                    checked={settings.slack.enabled}
-                    onChange={(e) => updateSlackSetting("enabled", e.target.checked)}
-                  />
-                </Form.Group>
+                <div className={`status-badge ${settings.slack.enabled ? 'active' : 'inactive'}`}>
+                  {settings.slack.enabled ? 'Connected' : 'Disconnected'}
+                </div>
+              </div>
+              <div className="section-content">
+                <div className="switch-group">
+                  <div className="switch-item">
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.slack.enabled}
+                        onChange={(e) => updateSlackSetting("enabled", e.target.checked)}
+                      />
+                      <span className="switch-slider"></span>
+                      <div className="switch-content">
+                        <span className="switch-label">Enable Slack notifications</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
 
                 {settings.slack.enabled && (
-                  <>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Webhook URL</Form.Label>
-                      <Form.Control
+                  <div className="form-section">
+                    <div className="form-group">
+                      <label>Webhook URL</label>
+                      <input
                         type="url"
                         placeholder="https://hooks.slack.com/services/..."
                         value={settings.slack.webhook}
                         onChange={(e) => updateSlackSetting("webhook", e.target.value)}
                       />
-                    </Form.Group>
+                    </div>
 
-                    <Form.Group className="mb-3">
-                      <Form.Label>Channel</Form.Label>
-                      <Form.Control
+                    <div className="form-group">
+                      <label>Channel</label>
+                      <input
                         type="text"
                         placeholder="#surveys"
                         value={settings.slack.channel}
                         onChange={(e) => updateSlackSetting("channel", e.target.value)}
                       />
-                    </Form.Group>
+                    </div>
 
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        id="slack-new-responses"
-                        label="New responses"
-                        checked={settings.slack.newResponses}
-                        onChange={(e) => updateSlackSetting("newResponses", e.target.checked)}
-                      />
-                    </Form.Group>
+                    <div className="switch-group">
+                      <div className="switch-item">
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={settings.slack.newResponses}
+                            onChange={(e) => updateSlackSetting("newResponses", e.target.checked)}
+                          />
+                          <span className="switch-slider"></span>
+                          <div className="switch-content">
+                            <span className="switch-label">New responses</span>
+                          </div>
+                        </label>
+                      </div>
 
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        id="slack-survey-completed"
-                        label="Survey milestones"
-                        checked={settings.slack.surveyCompleted}
-                        onChange={(e) => updateSlackSetting("surveyCompleted", e.target.checked)}
-                      />
-                    </Form.Group>
+                      <div className="switch-item">
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={settings.slack.surveyCompleted}
+                            onChange={(e) => updateSlackSetting("surveyCompleted", e.target.checked)}
+                          />
+                          <span className="switch-slider"></span>
+                          <div className="switch-content">
+                            <span className="switch-label">Survey milestones</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
 
-                    <Button variant="outline-primary" size="sm">
-                      <i className="fas fa-vial me-2"></i>
+                    <button className="test-button">
+                      <MdCheck />
                       Test Slack Connection
-                    </Button>
-                  </>
+                    </button>
+                  </div>
                 )}
-              </Card.Body>
-            </Card>
-
-            {/* Notification Schedule */}
-            <Card className="mb-4">
-              <Card.Header>
-                <div className="d-flex align-items-center">
-                  <i className="fas fa-clock text-secondary me-2"></i>
-                  <Card.Title className="mb-0">Notification Schedule</Card.Title>
-                </div>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Quiet Hours</Form.Label>
-                  <Row>
-                    <Col>
-                      <Form.Control type="time" defaultValue="22:00" />
-                      <Form.Text className="text-muted">From</Form.Text>
-                    </Col>
-                    <Col>
-                      <Form.Control type="time" defaultValue="08:00" />
-                      <Form.Text className="text-muted">To</Form.Text>
-                    </Col>
-                  </Row>
-                  <Form.Text className="text-muted">No notifications during these hours</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Timezone</Form.Label>
-                  <Form.Select defaultValue="UTC">
-                    <option value="UTC">UTC</option>
-                    <option value="EST">Eastern Time</option>
-                    <option value="PST">Pacific Time</option>
-                    <option value="GMT">Greenwich Mean Time</option>
-                  </Form.Select>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check type="checkbox" id="weekend-notifications" label="Disable weekend notifications" />
-                </Form.Group>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-
-        <Row>
-          <Col>
-            <div className="d-flex justify-content-end gap-2">
-              <Button variant="outline-secondary">Reset to Defaults</Button>
-              <Button type="submit" variant="primary">
-                <i className="fas fa-save me-2"></i>
-                Save Settings
-              </Button>
+              </div>
             </div>
-          </Col>
-        </Row>
-      </Form>
-    </Container>
+          </div>
+
+          {/* Notification Schedule */}
+          <div className="notification-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <MdSchedule className="section-icon" />
+                  <div>
+                    <h2>Notification Schedule</h2>
+                    <p>Configure quiet hours and timing preferences</p>
+                  </div>
+                </div>
+              </div>
+              <div className="section-content">
+                <div className="form-section">
+                  <div className="form-group">
+                    <label>Quiet Hours</label>
+                    <div className="time-range">
+                      <div className="time-input">
+                        <input type="time" defaultValue="22:00" />
+                        <span className="time-label">From</span>
+                      </div>
+                      <div className="time-input">
+                        <input type="time" defaultValue="08:00" />
+                        <span className="time-label">To</span>
+                      </div>
+                    </div>
+                    <span className="form-help">No notifications during these hours</span>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Timezone</label>
+                    <select defaultValue="UTC">
+                      <option value="UTC">UTC</option>
+                      <option value="EST">Eastern Time</option>
+                      <option value="PST">Pacific Time</option>
+                      <option value="GMT">Greenwich Mean Time</option>
+                    </select>
+                  </div>
+
+                  <div className="switch-group">
+                    <div className="switch-item">
+                      <label className="switch">
+                        <input type="checkbox" />
+                        <span className="switch-slider"></span>
+                        <div className="switch-content">
+                          <span className="switch-label">Disable weekend notifications</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

@@ -3,7 +3,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Modal, Dropdown } from "react-bootstrap"
 import {
   MdSupport,
   MdAdd,
@@ -19,6 +18,7 @@ import {
   MdPerson,
   MdSchedule,
   MdCheckCircle,
+  MdClose,
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 
@@ -29,7 +29,7 @@ const SupportTickets = ({ darkMode }) => {
   const [filterStatus, setFilterStatus] = useState("all")
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedTicket, setSelectedTicket] = useState(null)
-  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
 
   useEffect(() => {
     setTimeout(() => {
@@ -154,33 +154,21 @@ const SupportTickets = ({ darkMode }) => {
   }, [])
 
   const getStatusBadge = (status) => {
-    const variants = {
-      Open: "danger",
-      "In Progress": "warning",
-      Resolved: "success",
-      Closed: "secondary",
-      Pending: "info",
-      Scheduled: "primary",
-    }
+    const statusClass = status.toLowerCase().replace(" ", "-")
     return (
-      <Badge bg={variants[status] || "secondary"} className="badge-enhanced">
+      <span className={`status-badge status-${statusClass}`}>
         {status}
-      </Badge>
+      </span>
     )
   }
 
   const getPriorityBadge = (priority) => {
-    const variants = {
-      Critical: "danger",
-      High: "warning",
-      Medium: "info",
-      Low: "secondary",
-    }
+    const priorityClass = priority.toLowerCase()
     return (
-      <Badge bg={variants[priority] || "secondary"} className="badge-enhanced">
-        {priority === "Critical" && <MdPriorityHigh className="me-1" size={14} />}
+      <span className={`priority-badge priority-${priorityClass}`}>
+        {priority === "Critical" && <MdPriorityHigh />}
         {priority}
-      </Badge>
+      </span>
     )
   }
 
@@ -212,281 +200,224 @@ const SupportTickets = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container d-flex justify-content-center align-items-center" style={{ height: "50vh" }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading support tickets...</p>
       </div>
     )
   }
 
   return (
-    <Container fluid className="support-tickets-container py-4 fade-in">
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center flex-wrap">
-            <div className="d-flex align-items-center">
-              <MdSupport size={32} className="text-primary me-3" />
-              <div>
-                <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Support Tickets</h2>
-                <p className="text-muted mb-0">Manage customer support requests and issues</p>
-              </div>
+    <div className="support-tickets-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-header-left">
+            <div className="page-header-icon">
+              <MdSupport />
             </div>
-            <div className="d-flex gap-2 mt-2 mt-md-0">
-              <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
-              <Button variant="primary" size="sm" className="btn-enhanced">
-                <MdAdd className="me-1" />
-                Create Ticket
-              </Button>
+            <div className="page-header-text">
+              <h1>Support Tickets</h1>
+              <p>Manage customer support requests and issues</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="page-header-actions">
+            <button className="secondary-action">
+              <MdRefresh /> Refresh
+            </button>
+            <button className="primary-action">
+              <MdAdd /> Create Ticket
+            </button>
+          </div>
+        </div>
+      </div>
 
-      {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--primary-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Tickets</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>{tickets.length}</div>
-                </div>
-                <MdSupport size={24} style={{ color: "var(--primary-color)" }} />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--danger-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Open Tickets</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {tickets.filter((t) => t.status === "Open").length}
-                  </div>
-                </div>
-                <MdAssignment size={24} style={{ color: "var(--danger-color)" }} />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--warning-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>In Progress</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {tickets.filter((t) => t.status === "In Progress").length}
-                  </div>
-                </div>
-                <MdSchedule size={24} style={{ color: "var(--warning-color)" }} />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--success-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Resolved</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {tickets.filter((t) => t.status === "Resolved").length}
-                  </div>
-                </div>
-                <MdCheckCircle size={24} style={{ color: "var(--success-color)" }} />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      {/* Stats Section */}
+      <div className="stats-section">
+        <div className="stat-card stat-card-primary">
+          <div className="stat-icon">
+            <MdSupport />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{tickets.length}</div>
+            <div className="stat-label">Total Tickets</div>
+          </div>
+        </div>
+        <div className="stat-card stat-card-danger">
+          <div className="stat-icon">
+            <MdAssignment />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{tickets.filter((t) => t.status === "Open").length}</div>
+            <div className="stat-label">Open Tickets</div>
+          </div>
+        </div>
+        <div className="stat-card stat-card-warning">
+          <div className="stat-icon">
+            <MdSchedule />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{tickets.filter((t) => t.status === "In Progress").length}</div>
+            <div className="stat-label">In Progress</div>
+          </div>
+        </div>
+        <div className="stat-card stat-card-success">
+          <div className="stat-icon">
+            <MdCheckCircle />
+          </div>
+          <div className="stat-details">
+            <div className="stat-value">{tickets.filter((t) => t.status === "Resolved").length}</div>
+            <div className="stat-label">Resolved</div>
+          </div>
+        </div>
+      </div>
 
-      {/* Filters */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="py-3">
-              <Row className="align-items-center">
-                <Col md={6} lg={4} className="mb-2 mb-md-0">
-                  <InputGroup className="form-enhanced">
-                    <InputGroup.Text>
-                      <MdSearch />
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search tickets..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
-                </Col>
-                <Col md={3} lg={2} className="mb-2 mb-md-0">
-                  <Form.Select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="form-enhanced"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="open">Open</option>
-                    <option value="inprogress">In Progress</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
-                    <option value="pending">Pending</option>
-                  </Form.Select>
-                </Col>
-                <Col md={3} lg={2}>
-                  <Button variant="outline-secondary" className="w-100 btn-enhanced">
-                    <MdFilterList className="me-1" />
-                    More Filters
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      {/* Filters Section */}
+      <div className="filters-section">
+        <div className="search-input-container">
+          <MdSearch className="search-icon" />
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search tickets..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <select
+          className="filter-select"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="all">All Status</option>
+          <option value="open">Open</option>
+          <option value="inprogress">In Progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+          <option value="pending">Pending</option>
+        </select>
+        <button className="filter-button">
+          <MdFilterList /> More Filters
+        </button>
+      </div>
 
       {/* Tickets Table */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0 table-enhanced" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th className="border-0 py-3 px-4">
-                        <div className="d-flex align-items-center">
-                          <MdSupport className="me-2" size={16} />
-                          Ticket Details
-                        </div>
-                      </th>
-                      <th className="border-0 py-3">Status</th>
-                      <th className="border-0 py-3">Priority</th>
-                      <th className="border-0 py-3">
-                        <div className="d-flex align-items-center">
-                          <MdPerson className="me-2" size={16} />
-                          Assigned To
-                        </div>
-                      </th>
-                      <th className="border-0 py-3">Response Time</th>
-                      <th className="border-0 py-3">Last Updated</th>
-                      <th className="border-0 py-3 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentTickets.map((ticket) => (
-                      <tr key={ticket.id}>
-                        <td className="py-3 px-4 border-0">
-                          <div>
-                            <div className={`fw-medium mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
-                              {ticket.ticketNumber}
-                            </div>
-                            <div className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>{ticket.subject}</div>
-                            <div className="small text-muted">{ticket.submittedBy}</div>
+      <div className="section-card">
+        <div className="section-header">
+          <h2>Support Tickets</h2>
+          <span className="section-count">{filteredTickets.length} ticket(s) found</span>
+        </div>
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>
+                  <div className="th-content">
+                    <MdSupport /> Ticket Details
+                  </div>
+                </th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>
+                  <div className="th-content">
+                    <MdPerson /> Assigned To
+                  </div>
+                </th>
+                <th>Response Time</th>
+                <th>Last Updated</th>
+                <th className="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentTickets.length > 0 ? (
+                currentTickets.map((ticket) => (
+                  <tr key={ticket.id}>
+                    <td>
+                      <div className="ticket-details-cell">
+                        <div className="ticket-number">{ticket.ticketNumber}</div>
+                        <div className="ticket-subject">{ticket.subject}</div>
+                        <div className="ticket-submitter">{ticket.submittedBy}</div>
+                      </div>
+                    </td>
+                    <td>{getStatusBadge(ticket.status)}</td>
+                    <td>{getPriorityBadge(ticket.priority)}</td>
+                    <td className="ticket-assigned">{ticket.assignedTo}</td>
+                    <td className="ticket-time">{ticket.responseTime}</td>
+                    <td className="ticket-time">{ticket.lastUpdated}</td>
+                    <td>
+                      <div className="ticket-actions">
+                        <div className="dropdown">
+                          <button className="action-menu-btn">
+                            <MdMoreVert />
+                          </button>
+                          <div className="dropdown-menu">
+                            <button className="dropdown-item">
+                              <MdReply /> Reply
+                            </button>
+                            <button className="dropdown-item">
+                              <MdEdit /> Edit
+                            </button>
+                            <button className="dropdown-item">
+                              <MdAssignment /> Assign
+                            </button>
+                            <div className="dropdown-divider"></div>
+                            <button className="dropdown-item danger" onClick={() => handleDelete(ticket)}>
+                              <MdDelete /> Delete
+                            </button>
                           </div>
-                        </td>
-                        <td className="py-3 border-0">{getStatusBadge(ticket.status)}</td>
-                        <td className="py-3 border-0">{getPriorityBadge(ticket.priority)}</td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{ticket.assignedTo}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{ticket.responseTime}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{ticket.lastUpdated}</span>
-                        </td>
-                        <td className="py-3 text-center border-0">
-                          <Dropdown align="end">
-                            <Dropdown.Toggle
-                              variant="link"
-                              className="p-0 border-0"
-                              style={{ color: darkMode ? "var(--dark-text)" : "var(--light-text)" }}
-                            >
-                              <MdMoreVert />
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdReply className="me-2" />
-                                Reply
-                              </Dropdown.Item>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdEdit className="me-2" />
-                                Edit
-                              </Dropdown.Item>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdAssignment className="me-2" />
-                                Assign
-                              </Dropdown.Item>
-                              <Dropdown.Divider />
-                              <Dropdown.Item
-                                className="d-flex align-items-center text-danger"
-                                onClick={() => handleDelete(ticket)}
-                              >
-                                <MdDelete className="me-2" />
-                                Delete
-                              </Dropdown.Item>
-                            </Dropdown.Menu>
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-              <div className="p-3 border-top">
-                <Pagination
-                  current={pagination.page}
-                  total={filteredTickets.length}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                  darkMode={darkMode}
-                />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="no-data">
+                    No tickets found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="table-footer">
+          <Pagination
+            current={pagination.page}
+            total={filteredTickets.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered className="modal-enhanced">
-        <Modal.Header closeButton>
-          <Modal.Title className={darkMode ? "text-white" : "text-dark"}>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete ticket "{selectedTicket?.ticketNumber}"? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="btn-enhanced">
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete} className="btn-enhanced">
-            Delete Ticket
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-container delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Confirm Delete</h2>
+              <button className="modal-close" onClick={() => setShowDeleteModal(false)}>
+                <MdClose />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>
+                Are you sure you want to delete ticket <strong>"{selectedTicket?.ticketNumber}"</strong>? This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-button modal-button-secondary" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-button modal-button-danger" onClick={confirmDelete}>
+                <MdDelete /> Delete Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -3,11 +3,12 @@
 "use client"
 
 import { useState } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal } from "react-bootstrap"
+import { MdSegment, MdAdd, MdRefresh, MdSearch, MdSave, MdVisibility, MdEdit, MdDownload, MdDelete, MdSettings, MdPeople, MdTrendingUp, MdCheckCircle, MdFilterAlt } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 
 const AudienceSegmentation = ({ darkMode }) => {
-  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
+  const [loading, setLoading] = useState(false)
   const [segments, setSegments] = useState([
     {
       id: 1,
@@ -52,15 +53,6 @@ const AudienceSegmentation = ({ darkMode }) => {
     purchase: "",
   })
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      Active: "success",
-      Draft: "secondary",
-      Paused: "warning",
-    }
-    return <Badge bg={variants[status] || "secondary"}>{status}</Badge>
-  }
-
   const handleCreateSegment = () => {
     setCurrentSegment({ name: "", description: "", criteria: "" })
     setShowModal(true)
@@ -85,245 +77,315 @@ const AudienceSegmentation = ({ darkMode }) => {
   }
 
   const indexOfLastItem = pagination.page * pagination.limit
-const indexOfFirstItem = indexOfLastItem - pagination.limit
-const currentSegments = segments.slice(indexOfFirstItem, indexOfLastItem)
+  const indexOfFirstItem = indexOfLastItem - pagination.limit
+  const currentSegments = segments.slice(indexOfFirstItem, indexOfLastItem)
 
+  const totalContacts = segments.reduce((sum, seg) => sum + seg.size, 0)
+  const activeSegments = segments.filter(s => s.status === 'Active').length
+  const draftSegments = segments.filter(s => s.status === 'Draft').length
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading segments...</p>
+      </div>
+    )
+  }
 
   return (
-    <Container fluid>
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-0">Audience Segmentation</h1>
-              <p className="text-muted">Create and manage audience segments for targeted surveys</p>
+    <div className="audience-segmentation-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-title-wrapper">
+            <div className="page-icon">
+              <MdSegment />
             </div>
-            <Button variant="primary" onClick={handleCreateSegment}>
-              <i className="fas fa-plus me-2"></i>
-              Create Segment
-            </Button>
+            <div>
+              <h1 className="page-title">Audience Segmentation</h1>
+              <p className="page-subtitle">Create and manage audience segments for targeted surveys</p>
+            </div>
           </div>
-        </Col>
-      </Row>
+          <div className="page-actions">
+            <button className="action-button secondary-action" onClick={() => setLoading(true)}>
+              <MdRefresh /> Refresh
+            </button>
+            <button className="action-button primary-action" onClick={handleCreateSegment}>
+              <MdAdd /> Create Segment
+            </button>
+          </div>
+        </div>
+      </div>
 
-      {/* Segment Builder */}
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0">Quick Segment Builder</Card.Title>
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                <Col md={3}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Demographics</Form.Label>
-                    <Form.Select
-                      value={filters.demographic}
-                      onChange={(e) => setFilters({ ...filters, demographic: e.target.value })}
-                    >
-                      <option value="">All Demographics</option>
-                      <option value="age_18_25">Age 18-25</option>
-                      <option value="age_26_35">Age 26-35</option>
-                      <option value="age_36_50">Age 36-50</option>
-                      <option value="age_50_plus">Age 50+</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Behavior</Form.Label>
-                    <Form.Select
-                      value={filters.behavior}
-                      onChange={(e) => setFilters({ ...filters, behavior: e.target.value })}
-                    >
-                      <option value="">All Behaviors</option>
-                      <option value="frequent_user">Frequent User</option>
-                      <option value="occasional_user">Occasional User</option>
-                      <option value="new_user">New User</option>
-                      <option value="inactive_user">Inactive User</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Engagement</Form.Label>
-                    <Form.Select
-                      value={filters.engagement}
-                      onChange={(e) => setFilters({ ...filters, engagement: e.target.value })}
-                    >
-                      <option value="">All Engagement</option>
-                      <option value="high">High Engagement</option>
-                      <option value="medium">Medium Engagement</option>
-                      <option value="low">Low Engagement</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Purchase History</Form.Label>
-                    <Form.Select
-                      value={filters.purchase}
-                      onChange={(e) => setFilters({ ...filters, purchase: e.target.value })}
-                    >
-                      <option value="">All Customers</option>
-                      <option value="high_value">High Value ($1000+)</option>
-                      <option value="medium_value">Medium Value ($100-$999)</option>
-                      <option value="low_value">Low Value ($0-$99)</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-              </Row>
-              <div className="d-flex gap-2">
-                <Button variant="outline-primary">
-                  <i className="fas fa-search me-2"></i>
-                  Preview Segment
-                </Button>
-                <Button variant="primary">
-                  <i className="fas fa-save me-2"></i>
-                  Save as Segment
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      {/* Stats Section */}
+      <div className="stats-section">
+        <div className="stat-card primary-card">
+          <div className="stat-icon">
+            <MdSegment />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{segments.length}</div>
+            <div className="stat-label">Total Segments</div>
+          </div>
+        </div>
+        <div className="stat-card success-card">
+          <div className="stat-icon">
+            <MdCheckCircle />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{activeSegments}</div>
+            <div className="stat-label">Active Segments</div>
+          </div>
+        </div>
+        <div className="stat-card info-card">
+          <div className="stat-icon">
+            <MdPeople />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{totalContacts.toLocaleString()}</div>
+            <div className="stat-label">Total Contacts</div>
+          </div>
+        </div>
+        <div className="stat-card warning-card">
+          <div className="stat-icon">
+            <MdTrendingUp />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{draftSegments}</div>
+            <div className="stat-label">Draft Segments</div>
+          </div>
+        </div>
+      </div>
 
-      {/* Segments List */}
-      <Row>
-        <Col>
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0">Existing Segments</Card.Title>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th>Segment Name</th>
-                      <th>Description</th>
-                      <th className="d-none d-lg-table-cell">Criteria</th>
-                      <th>Size</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentSegments.map((segment) => (
-                      <tr key={segment.id}>
-                        <td>
-                          <div className="fw-medium">{segment.name}</div>
-                          <small className="text-muted">
-                            Created: {new Date(segment.created).toLocaleDateString()}
-                          </small>
-                        </td>
-                        <td>
-                          <div className="text-truncate" style={{ maxWidth: "200px" }}>
-                            {segment.description}
-                          </div>
-                        </td>
-                        <td className="d-none d-lg-table-cell">
-                          <code className="small">{segment.criteria}</code>
-                        </td>
-                        <td>
-                          <span className="fw-medium">{segment.size.toLocaleString()}</span>
-                          <small className="text-muted d-block">contacts</small>
-                        </td>
-                        <td>{getStatusBadge(segment.status)}</td>
-                        <td>
-                          <div className="btn-group btn-group-sm">
-                            <Button variant="outline-primary" size="sm" title="View Details">
-                              <i className="fas fa-eye"></i>
-                            </Button>
-                            <Button variant="outline-secondary" size="sm" title="Edit">
-                              <i className="fas fa-edit"></i>
-                            </Button>
-                            <Button variant="outline-info" size="sm" title="Export">
-                              <i className="fas fa-download"></i>
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              title="Delete"
-                              onClick={() => deleteSegment(segment.id)}
-                            >
-                              <i className="fas fa-trash"></i>
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-                <div className="p-3 border-top">
-                  <Pagination
-                    current={pagination.page}
-                    total={segments.length}
-                    limit={pagination.limit}
-                    onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                    darkMode={darkMode}
-                  />
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      {/* Segment Builder Section */}
+      <div className="section-card segment-builder-section">
+        <div className="section-header">
+          <div className="section-title-wrapper">
+            <h2 className="section-title">
+              <MdFilterAlt /> Quick Segment Builder
+            </h2>
+            <p className="section-subtitle">Build segments using demographic and behavioral filters</p>
+          </div>
+        </div>
+
+        <div className="filter-grid">
+          <div className="filter-group">
+            <label className="filter-label">Demographics</label>
+            <select
+              className="filter-select"
+              value={filters.demographic}
+              onChange={(e) => setFilters({ ...filters, demographic: e.target.value })}
+            >
+              <option value="">All Demographics</option>
+              <option value="age_18_25">Age 18-25</option>
+              <option value="age_26_35">Age 26-35</option>
+              <option value="age_36_50">Age 36-50</option>
+              <option value="age_50_plus">Age 50+</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label className="filter-label">Behavior</label>
+            <select
+              className="filter-select"
+              value={filters.behavior}
+              onChange={(e) => setFilters({ ...filters, behavior: e.target.value })}
+            >
+              <option value="">All Behaviors</option>
+              <option value="frequent_user">Frequent User</option>
+              <option value="occasional_user">Occasional User</option>
+              <option value="new_user">New User</option>
+              <option value="inactive_user">Inactive User</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label className="filter-label">Engagement</label>
+            <select
+              className="filter-select"
+              value={filters.engagement}
+              onChange={(e) => setFilters({ ...filters, engagement: e.target.value })}
+            >
+              <option value="">All Engagement</option>
+              <option value="high">High Engagement</option>
+              <option value="medium">Medium Engagement</option>
+              <option value="low">Low Engagement</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label className="filter-label">Purchase History</label>
+            <select
+              className="filter-select"
+              value={filters.purchase}
+              onChange={(e) => setFilters({ ...filters, purchase: e.target.value })}
+            >
+              <option value="">All Customers</option>
+              <option value="high_value">High Value ($1000+)</option>
+              <option value="medium_value">Medium Value ($100-$999)</option>
+              <option value="low_value">Low Value ($0-$99)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="builder-actions">
+          <button className="preview-btn">
+            <MdSearch /> Preview Segment
+          </button>
+          <button className="save-segment-btn">
+            <MdSave /> Save as Segment
+          </button>
+        </div>
+      </div>
+
+      {/* Segments List Section */}
+      <div className="section-card segments-list-section">
+        <div className="section-header">
+          <div className="section-title-wrapper">
+            <h2 className="section-title">Existing Segments</h2>
+            <p className="section-subtitle">View and manage all audience segments</p>
+          </div>
+          <button className="section-action">
+            <MdSettings /> Settings
+          </button>
+        </div>
+
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Segment Name</th>
+                <th>Description</th>
+                <th className="criteria-column">Criteria</th>
+                <th>Size</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentSegments.map((segment) => (
+                <tr key={segment.id}>
+                  <td>
+                    <div className="segment-name">{segment.name}</div>
+                    <div className="segment-date">
+                      Created: {new Date(segment.created).toLocaleDateString()}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="segment-description">
+                      {segment.description}
+                    </div>
+                  </td>
+                  <td className="criteria-column">
+                    <code className="criteria-code">{segment.criteria}</code>
+                  </td>
+                  <td>
+                    <div className="segment-size">{segment.size.toLocaleString()}</div>
+                    <div className="size-label">contacts</div>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${segment.status.toLowerCase()}-status`}>
+                      {segment.status}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button className="action-btn view-btn" title="View Details">
+                        <MdVisibility />
+                      </button>
+                      <button className="action-btn edit-btn" title="Edit">
+                        <MdEdit />
+                      </button>
+                      <button className="action-btn download-btn" title="Export">
+                        <MdDownload />
+                      </button>
+                      <button
+                        className="action-btn delete-btn"
+                        title="Delete"
+                        onClick={() => deleteSegment(segment.id)}
+                      >
+                        <MdDelete />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="table-footer">
+          <Pagination
+            current={pagination.page}
+            total={segments.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
+      </div>
 
       {/* Create Segment Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Create New Segment</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Segment Name</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter segment name"
-                value={currentSegment.name}
-                onChange={(e) => setCurrentSegment({ ...currentSegment, name: e.target.value })}
-              />
-            </Form.Group>
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                <MdAdd /> Create New Segment
+              </h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <form className="segment-form">
+                <div className="form-group">
+                  <label className="form-label">Segment Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter segment name"
+                    value={currentSegment.name}
+                    onChange={(e) => setCurrentSegment({ ...currentSegment, name: e.target.value })}
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                placeholder="Describe this segment"
-                value={currentSegment.description}
-                onChange={(e) => setCurrentSegment({ ...currentSegment, description: e.target.value })}
-              />
-            </Form.Group>
+                <div className="form-group">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    placeholder="Describe this segment"
+                    value={currentSegment.description}
+                    onChange={(e) => setCurrentSegment({ ...currentSegment, description: e.target.value })}
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Criteria</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Define segment criteria (e.g., Age > 25 AND Location = 'US')"
-                value={currentSegment.criteria}
-                onChange={(e) => setCurrentSegment({ ...currentSegment, criteria: e.target.value })}
-              />
-              <Form.Text className="text-muted">
-                Use logical operators like AND, OR to combine multiple conditions
-              </Form.Text>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSaveSegment}>
-            Create Segment
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+                <div className="form-group">
+                  <label className="form-label">Criteria</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={3}
+                    placeholder="Define segment criteria (e.g., Age > 25 AND Location = 'US')"
+                    value={currentSegment.criteria}
+                    onChange={(e) => setCurrentSegment({ ...currentSegment, criteria: e.target.value })}
+                  />
+                  <p className="help-text">
+                    Use logical operators like AND, OR to combine multiple conditions
+                  </p>
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-submit-btn" onClick={handleSaveSegment}>
+                <MdAdd /> Create Segment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

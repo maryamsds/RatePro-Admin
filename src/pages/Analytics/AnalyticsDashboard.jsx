@@ -1,15 +1,12 @@
 // src/pages/Analytics/AnalyticsDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, Row, Col, Card, Button, Badge, Alert, 
-  ProgressBar, Table, Modal, Spinner, Form
-} from 'react-bootstrap';
 import {
   MdAnalytics, MdTrendingUp, MdTrendingDown, MdWarning,
   MdCheckCircle, MdFlag, MdLocationOn, MdPeople, MdTimer,
   MdSentimentSatisfied, MdSentimentDissatisfied, MdSentimentNeutral,
   MdBarChart, MdPieChart, MdShowChart, MdInsights, MdNotifications,
-  MdRefresh, MdDownload, MdFilterList, MdDateRange
+  MdRefresh, MdDownload, MdFilterList, MdDateRange, MdAssessment,
+  MdSpeed, MdSecurity, MdThumbUp, MdThumbDown
 } from 'react-icons/md';
 import {
   FaChartLine, FaExclamationTriangle, FaThumbsUp, FaThumbsDown,
@@ -29,7 +26,7 @@ import {
   ArcElement,
 } from 'chart.js';
 import axiosInstance from '../../api/axiosInstance';
-import './AnalyticsDashboard.css';
+
 
 // Register Chart.js components
 ChartJS.register(
@@ -283,345 +280,409 @@ const AnalyticsDashboard = () => {
 
   if (loading) {
     return (
-      <Container fluid className="p-4">
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Loading Analytics Dashboard...</p>
+      <div className="analytics-dashboard-container">
+        <div className="analytics-loading">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p>Loading Analytics Dashboard...</p>
         </div>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <Container fluid className="analytics-dashboard p-4">
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 className="mb-1">📊 Analytics Dashboard</h2>
-              <p className="text-muted mb-0">Real-time insights and AI-powered analytics</p>
+    <div className="analytics-dashboard-container">
+      {/* Header Section */}
+      <div className="page-header-section">
+        <div className="header-content">
+          <div className="header-left">
+            <div className="page-icon">
+              <MdAssessment />
             </div>
-            <div className="d-flex gap-2">
-              <Form.Select 
-                value={dateRange} 
-                onChange={(e) => setDateRange(e.target.value)}
-                style={{ width: '150px' }}
-              >
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-                <option value="90d">Last 3 Months</option>
-                <option value="1y">Last Year</option>
-              </Form.Select>
-              <Button variant="outline-primary" onClick={fetchDashboardData}>
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
+            <div className="page-info">
+              <h1 className="page-title">Analytics Dashboard</h1>
+              <p className="page-subtitle">Real-time insights and AI-powered analytics</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="header-actions">
+            <select 
+              className="date-range-select"
+              value={dateRange} 
+              onChange={(e) => setDateRange(e.target.value)}
+            >
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 3 Months</option>
+              <option value="1y">Last Year</option>
+            </select>
+            <button className="btn btn-outline-primary" onClick={fetchDashboardData}>
+              <MdRefresh />
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
-      {/* Executive Dashboard - Flow.md Section 8.1 */}
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Header className="bg-primary text-white">
-              <MdAnalytics className="me-2" />
-              Executive Dashboard
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                {/* Customer Satisfaction Index */}
-                <Col lg={4} className="mb-3">
-                  <div className="stat-card">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h6 className="mb-0">Customer Satisfaction Index</h6>
-                      <Badge bg={dashboardData.executive?.customerSatisfactionIndex?.trend >= 0 ? 'success' : 'danger'}>
-                        {dashboardData.executive?.customerSatisfactionIndex?.trend >= 0 ? <MdTrendingUp /> : <MdTrendingDown />}
-                        {Math.abs(dashboardData.executive?.customerSatisfactionIndex?.trend || 0)}%
-                      </Badge>
-                    </div>
-                    <h3 className="text-primary mb-2">
-                      {dashboardData.executive?.customerSatisfactionIndex?.overall || 0}/5.0
-                    </h3>
-                    <div className="location-breakdown">
-                      {dashboardData.executive?.customerSatisfactionIndex?.locations?.map((loc, idx) => (
-                        <div key={idx} className="d-flex justify-content-between small mb-1">
-                          <span>{loc.name}</span>
-                          <span className="fw-semibold">{loc.score}/5.0 ({loc.responses})</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </Col>
-
-                {/* NPS Score */}
-                <Col lg={4} className="mb-3">
-                  <div className="stat-card">
-                    <h6 className="mb-2">Net Promoter Score</h6>
-                    <h3 className="text-success mb-2">
-                      {dashboardData.executive?.npsScore?.current || 0}
-                      <Badge bg="success" className="ms-2 fs-6">
-                        +{dashboardData.executive?.npsScore?.trend || 0}
-                      </Badge>
-                    </h3>
-                    <div style={{ height: '150px' }}>
-                      <Doughnut data={npsChartData} options={{ maintainAspectRatio: false }} />
-                    </div>
-                  </div>
-                </Col>
-
-                {/* Response Rate */}
-                <Col lg={4} className="mb-3">
-                  <div className="stat-card">
-                    <h6 className="mb-2">Response Rate</h6>
-                    <h3 className="text-info mb-2">
-                      {dashboardData.executive?.responseRate?.current || 0}%
-                    </h3>
-                    <ProgressBar 
-                      now={dashboardData.executive?.responseRate?.current || 0}
-                      variant="info"
-                      className="mb-2"
-                    />
-                    <small className="text-muted">
-                      {dashboardData.executive?.responseRate?.completed || 0} of {dashboardData.executive?.responseRate?.total || 0} completed
-                    </small>
-                  </div>
-                </Col>
-              </Row>
-
-              {/* Satisfaction Trend Chart */}
-              <Row>
-                <Col>
-                  <h6 className="mb-3">Satisfaction Trend (Month-on-Month)</h6>
-                  <div style={{ height: '300px' }}>
-                    <Line 
-                      data={satisfactionChartData} 
-                      options={{ 
-                        maintainAspectRatio: false,
-                        responsive: true,
-                        plugins: {
-                          legend: { display: false }
-                        }
-                      }} 
-                    />
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Operational Dashboard - Flow.md Section 8.2 */}
-      <Row className="mb-4">
-        <Col lg={8}>
-          <Card>
-            <Card.Header className="bg-warning text-dark">
-              <MdNotifications className="me-2" />
-              Operational Dashboard - Real-time Alerts
-            </Card.Header>
-            <Card.Body>
-              <Row className="mb-3">
-                <Col md={4}>
-                  <Alert variant="danger" className="text-center">
-                    <FaExclamationTriangle size={24} />
-                    <h5 className="mb-0">{dashboardData.operational?.alerts?.critical || 0}</h5>
-                    <small>Critical Alerts</small>
-                  </Alert>
-                </Col>
-                <Col md={4}>
-                  <Alert variant="warning" className="text-center">
-                    <MdWarning size={24} />
-                    <h5 className="mb-0">{dashboardData.operational?.alerts?.warning || 0}</h5>
-                    <small>Warnings</small>
-                  </Alert>
-                </Col>
-                <Col md={4}>
-                  <Alert variant="info" className="text-center">
-                    <MdCheckCircle size={24} />
-                    <h5 className="mb-0">{dashboardData.operational?.slaMetrics?.onTimeResolution || 0}%</h5>
-                    <small>SLA Compliance</small>
-                  </Alert>
-                </Col>
-              </Row>
-
-              {/* Top Complaints vs Praises */}
-              <Row>
-                <Col md={6}>
-                  <h6 className="mb-3 text-danger">🔴 Top 5 Complaints</h6>
-                  <div className="complaints-list">
-                    {dashboardData.operational?.topComplaints?.map((complaint, idx) => (
-                      <div key={idx} className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                        <span>{complaint.category}</span>
-                        <div className="d-flex align-items-center">
-                          <Badge bg="danger" className="me-2">{complaint.count}</Badge>
-                          {complaint.trend === 'up' ? <MdTrendingUp className="text-danger" /> : 
-                           complaint.trend === 'down' ? <MdTrendingDown className="text-success" /> : 
-                           <span className="text-muted">—</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <h6 className="mb-3 text-success">🟢 Top 5 Praises</h6>
-                  <div className="praises-list">
-                    {dashboardData.operational?.topPraises?.map((praise, idx) => (
-                      <div key={idx} className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                        <span>{praise.category}</span>
-                        <div className="d-flex align-items-center">
-                          <Badge bg="success" className="me-2">{praise.count}</Badge>
-                          {praise.trend === 'up' ? <MdTrendingUp className="text-success" /> : 
-                           praise.trend === 'down' ? <MdTrendingDown className="text-danger" /> : 
-                           <span className="text-muted">—</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={4}>
-          <Card>
-            <Card.Header className="bg-success text-white">
-              <MdTimer className="me-2" />
-              SLA Tracker
-            </Card.Header>
-            <Card.Body>
-              <div className="sla-metrics">
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between">
-                    <span>Average Response Time</span>
-                    <strong>{dashboardData.operational?.slaMetrics?.averageResponseTime || 'N/A'}</strong>
-                  </div>
+      {/* Executive Dashboard */}
+      <div className="executive-section">
+        <div className="section-card">
+          <div className="section-header">
+            <div className="section-icon">
+              <MdAnalytics />
+            </div>
+            <h2 className="section-title">Executive Dashboard</h2>
+          </div>
+          
+          {/* Executive Stats Grid */}
+          <div className="stats-grid">
+            {/* Customer Satisfaction Index */}
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon stat-icon-primary">
+                  <MdSentimentSatisfied />
                 </div>
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between">
-                    <span>On-time Resolution</span>
-                    <strong>{dashboardData.operational?.slaMetrics?.onTimeResolution || 0}%</strong>
+                <div className="stat-info">
+                  <h3 className="stat-number">
+                    {dashboardData.executive?.customerSatisfactionIndex?.overall || 0}/5.0
+                  </h3>
+                  <p className="stat-label">Customer Satisfaction Index</p>
+                  <div className={`stat-trend ${(dashboardData.executive?.customerSatisfactionIndex?.trend || 0) >= 0 ? 'trend-up' : 'trend-down'}`}>
+                    {(dashboardData.executive?.customerSatisfactionIndex?.trend || 0) >= 0 ? <MdTrendingUp /> : <MdTrendingDown />}
+                    <span>{Math.abs(dashboardData.executive?.customerSatisfactionIndex?.trend || 0)}%</span>
                   </div>
-                  <ProgressBar 
-                    now={dashboardData.operational?.slaMetrics?.onTimeResolution || 0}
-                    variant="success"
-                  />
-                </div>
-                <div className="mb-3">
-                  <Alert variant="danger" className="p-2">
-                    <small>
-                      <FaClock className="me-2" />
-                      {dashboardData.operational?.slaMetrics?.overdueActions || 0} overdue actions
-                    </small>
-                  </Alert>
                 </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+              <div className="location-breakdown">
+                {dashboardData.executive?.customerSatisfactionIndex?.locations?.map((loc, idx) => (
+                  <div key={idx} className="breakdown-item">
+                    <span className="breakdown-label">{loc.name}</span>
+                    <span className="breakdown-value">{loc.score}/5.0 ({loc.responses})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-      {/* AI Insights Report - Flow.md Section 8.3 */}
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Header className="bg-info text-white">
-              <MdInsights className="me-2" />
-              AI Insights Report - Predictive Analysis
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                <Col lg={8}>
-                  <h6 className="mb-3">🔮 Predictive Insights</h6>
-                  {dashboardData.aiInsights?.predictions?.map((prediction, idx) => (
-                    <Alert key={idx} variant={idx === 0 ? 'warning' : 'info'} className="mb-3">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                          <strong>{prediction.metric}</strong>
-                          <p className="mb-2">{prediction.prediction}</p>
-                          <small className="text-muted">
-                            💡 {prediction.recommendation}
-                          </small>
-                        </div>
-                        <Badge bg="secondary">
-                          {prediction.confidence}% confidence
-                        </Badge>
-                      </div>
-                    </Alert>
-                  ))}
-                </Col>
-                <Col lg={4}>
-                  <h6 className="mb-3">🗺️ Sentiment Heatmap</h6>
-                  <div className="sentiment-regions">
-                    {dashboardData.aiInsights?.sentimentHeatmap?.regions?.map((region, idx) => (
-                      <div key={idx} className="d-flex justify-content-between align-items-center py-2">
-                        <span>{region.name}</span>
-                        <div className="d-flex align-items-center">
-                          <div 
-                            className="sentiment-indicator me-2"
-                            style={{ 
-                              backgroundColor: region.color,
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%'
-                            }}
-                          />
-                          <span>{Math.round(region.sentiment * 100)}%</span>
+            {/* NPS Score */}
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon stat-icon-success">
+                  <MdThumbUp />
+                </div>
+                <div className="stat-info">
+                  <h3 className="stat-number">
+                    {dashboardData.executive?.npsScore?.current || 0}
+                  </h3>
+                  <p className="stat-label">Net Promoter Score</p>
+                  <div className="stat-trend trend-up">
+                    <MdTrendingUp />
+                    <span>+{dashboardData.executive?.npsScore?.trend || 0}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="chart-container-small">
+                <Doughnut data={npsChartData} options={{ maintainAspectRatio: true }} />
+              </div>
+            </div>
+
+            {/* Response Rate */}
+            <div className="stat-card">
+              <div className="stat-header">
+                <div className="stat-icon stat-icon-info">
+                  <MdSpeed />
+                </div>
+                <div className="stat-info">
+                  <h3 className="stat-number">
+                    {dashboardData.executive?.responseRate?.current || 0}%
+                  </h3>
+                  <p className="stat-label">Response Rate</p>
+                </div>
+              </div>
+              <div className="progress-wrapper">
+                <div className="progress-bar-wrapper">
+                  <div 
+                    className="progress-fill"
+                    style={{ width: `${dashboardData.executive?.responseRate?.current || 0}%` }}
+                  />
+                </div>
+                <span className="progress-text">
+                  {dashboardData.executive?.responseRate?.completed || 0} of {dashboardData.executive?.responseRate?.total || 0} completed
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Satisfaction Trend Chart */}
+          <div className="chart-section">
+            <div className="chart-header">
+              <h3 className="chart-title">Satisfaction Trend (Month-on-Month)</h3>
+            </div>
+            <div className="chart-container">
+              <Line 
+                data={satisfactionChartData} 
+                options={{ 
+                  maintainAspectRatio: false,
+                  responsive: true,
+                  plugins: {
+                    legend: { display: false }
+                  }
+                }} 
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Operational Dashboard */}
+      <div className="operational-section">
+        <div className="operational-grid">
+          <div className="operational-main">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-icon">
+                  <MdNotifications />
+                </div>
+                <h2 className="section-title">Operational Dashboard - Real-time Alerts</h2>
+              </div>
+              
+              {/* Alert Stats */}
+              <div className="alert-stats">
+                <div className="alert-stat alert-critical">
+                  <div className="alert-icon">
+                    <FaExclamationTriangle />
+                  </div>
+                  <div className="alert-info">
+                    <h3 className="alert-number">{dashboardData.operational?.alerts?.critical || 0}</h3>
+                    <p className="alert-label">Critical Alerts</p>
+                  </div>
+                </div>
+                <div className="alert-stat alert-warning">
+                  <div className="alert-icon">
+                    <MdWarning />
+                  </div>
+                  <div className="alert-info">
+                    <h3 className="alert-number">{dashboardData.operational?.alerts?.warning || 0}</h3>
+                    <p className="alert-label">Warnings</p>
+                  </div>
+                </div>
+                <div className="alert-stat alert-success">
+                  <div className="alert-icon">
+                    <MdCheckCircle />
+                  </div>
+                  <div className="alert-info">
+                    <h3 className="alert-number">{dashboardData.operational?.slaMetrics?.onTimeResolution || 0}%</h3>
+                    <p className="alert-label">SLA Compliance</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Complaints vs Praises */}
+              <div className="feedback-grid">
+                <div className="feedback-section">
+                  <div className="feedback-header">
+                    <MdThumbDown className="feedback-icon complaints-icon" />
+                    <h3 className="feedback-title">Top 5 Complaints</h3>
+                  </div>
+                  <div className="feedback-list">
+                    {dashboardData.operational?.topComplaints?.map((complaint, idx) => (
+                      <div key={idx} className="feedback-item">
+                        <span className="feedback-category">{complaint.category}</span>
+                        <div className="feedback-meta">
+                          <span className="feedback-count complaint-count">{complaint.count}</span>
+                          <div className={`trend-indicator ${complaint.trend === 'up' ? 'trend-up' : complaint.trend === 'down' ? 'trend-down' : 'trend-neutral'}`}>
+                            {complaint.trend === 'up' ? <MdTrendingUp /> : 
+                             complaint.trend === 'down' ? <MdTrendingDown /> : 
+                             <span>—</span>}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                </div>
+                <div className="feedback-section">
+                  <div className="feedback-header">
+                    <MdThumbUp className="feedback-icon praises-icon" />
+                    <h3 className="feedback-title">Top 5 Praises</h3>
+                  </div>
+                  <div className="feedback-list">
+                    {dashboardData.operational?.topPraises?.map((praise, idx) => (
+                      <div key={idx} className="feedback-item">
+                        <span className="feedback-category">{praise.category}</span>
+                        <div className="feedback-meta">
+                          <span className="feedback-count praise-count">{praise.count}</span>
+                          <div className={`trend-indicator ${praise.trend === 'up' ? 'trend-up' : praise.trend === 'down' ? 'trend-down' : 'trend-neutral'}`}>
+                            {praise.trend === 'up' ? <MdTrendingUp /> : 
+                             praise.trend === 'down' ? <MdTrendingDown /> : 
+                             <span>—</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SLA Tracker */}
+          <div className="sla-sidebar">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-icon">
+                  <MdTimer />
+                </div>
+                <h2 className="section-title">SLA Tracker</h2>
+              </div>
+              <div className="sla-metrics">
+                <div className="sla-metric">
+                  <div className="sla-metric-row">
+                    <span className="sla-label">Average Response Time</span>
+                    <span className="sla-value">{dashboardData.operational?.slaMetrics?.averageResponseTime || 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="sla-metric">
+                  <div className="sla-metric-row">
+                    <span className="sla-label">On-time Resolution</span>
+                    <span className="sla-value">{dashboardData.operational?.slaMetrics?.onTimeResolution || 0}%</span>
+                  </div>
+                  <div className="progress-bar-wrapper">
+                    <div 
+                      className="progress-fill success-progress"
+                      style={{ width: `${dashboardData.operational?.slaMetrics?.onTimeResolution || 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="sla-alert">
+                  <div className="alert-danger-card">
+                    <FaClock className="alert-icon" />
+                    <span className="alert-text">
+                      {dashboardData.operational?.slaMetrics?.overdueActions || 0} overdue actions
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Insights Report */}
+      <div className="ai-insights-section">
+        <div className="section-card">
+          <div className="section-header">
+            <div className="section-icon">
+              <MdInsights />
+            </div>
+            <h2 className="section-title">AI Insights Report - Predictive Analysis</h2>
+          </div>
+          
+          <div className="insights-grid">
+            <div className="insights-main">
+              <div className="insights-header">
+                <div className="insights-icon">
+                  <MdBarChart />
+                </div>
+                <h3 className="insights-title">Predictive Insights</h3>
+              </div>
+              <div className="predictions-list">
+                {dashboardData.aiInsights?.predictions?.map((prediction, idx) => (
+                  <div key={idx} className={`prediction-card ${idx === 0 ? 'prediction-warning' : 'prediction-info'}`}>
+                    <div className="prediction-content">
+                      <div className="prediction-main">
+                        <h4 className="prediction-metric">{prediction.metric}</h4>
+                        <p className="prediction-text">{prediction.prediction}</p>
+                        <div className="prediction-recommendation">
+                          <MdInsights className="recommendation-icon" />
+                          <span className="recommendation-text">{prediction.recommendation}</span>
+                        </div>
+                      </div>
+                      <div className="prediction-confidence">
+                        <span className="confidence-badge">
+                          {prediction.confidence}% confidence
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="insights-sidebar">
+              <div className="sentiment-section">
+                <div className="sentiment-header">
+                  <div className="sentiment-icon">
+                    <MdLocationOn />
+                  </div>
+                  <h3 className="sentiment-title">Sentiment Heatmap</h3>
+                </div>
+                <div className="sentiment-regions">
+                  {dashboardData.aiInsights?.sentimentHeatmap?.regions?.map((region, idx) => (
+                    <div key={idx} className="sentiment-region">
+                      <span className="region-name">{region.name}</span>
+                      <div className="region-sentiment">
+                        <div 
+                          className="sentiment-indicator"
+                          style={{ backgroundColor: region.color }}
+                        />
+                        <span className="sentiment-score">{Math.round(region.sentiment * 100)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Recent Alerts */}
-      <Row>
-        <Col>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <span>
-                <MdFlag className="me-2" />
-                Recent Alerts & Notifications
-              </span>
-              <Button 
-                variant="outline-primary" 
-                size="sm"
+      <div className="alerts-section">
+        <div className="section-card">
+          <div className="section-header">
+            <div className="section-left">
+              <div className="section-icon">
+                <MdFlag />
+              </div>
+              <h2 className="section-title">Recent Alerts & Notifications</h2>
+            </div>
+            <div className="section-actions">
+              <button 
+                className="btn btn-outline-primary btn-sm"
                 onClick={() => setShowAlertsModal(true)}
               >
                 View All
-              </Button>
-            </Card.Header>
-            <Card.Body>
-              {dashboardData.alerts?.slice(0, 3).map((alert, idx) => (
-                <Alert 
-                  key={alert.id} 
-                  variant={alert.type === 'critical' ? 'danger' : alert.type === 'warning' ? 'warning' : 'info'}
-                  className="d-flex justify-content-between align-items-center"
-                >
-                  <div>
-                    <strong>{alert.title}</strong>
-                    <p className="mb-1">{alert.message}</p>
-                    <small className="text-muted">
-                      {alert.timestamp.toLocaleString()} • {alert.action}
-                    </small>
+              </button>
+            </div>
+          </div>
+          
+          <div className="alerts-list">
+            {dashboardData.alerts?.slice(0, 3).map((alert, idx) => (
+              <div 
+                key={alert.id} 
+                className={`alert-card alert-${alert.type}`}
+              >
+                <div className="alert-content">
+                  <div className="alert-main">
+                    <h4 className="alert-title">{alert.title}</h4>
+                    <p className="alert-message">{alert.message}</p>
+                    <div className="alert-meta">
+                      <span className="alert-timestamp">{alert.timestamp.toLocaleString()}</span>
+                      <span className="alert-separator">•</span>
+                      <span className="alert-action">{alert.action}</span>
+                    </div>
                   </div>
-                  <Badge bg={alert.type === 'critical' ? 'danger' : alert.type === 'warning' ? 'warning' : 'info'}>
-                    {alert.type.toUpperCase()}
-                  </Badge>
-                </Alert>
-              ))}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                  <div className="alert-badge">
+                    <span className={`badge-${alert.type}`}>
+                      {alert.type.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

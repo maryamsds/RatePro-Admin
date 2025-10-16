@@ -1,26 +1,15 @@
-// src\pages\Audiences\AudienceSegmentation.jsx
+// src\pages\Audiences\ContactManagement.jsx
 
 "use client"
 
 import { useState } from "react"
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Table,
-  Badge,
-  Button,
-  Form,
-  Modal,
-  InputGroup,
-  Dropdown,
-} from "react-bootstrap"
+import { MdContacts, MdAdd, MdRefresh, MdSearch, MdFilterAlt, MdUpload, MdDownload, MdVisibility, MdEdit, MdEmail, MdDelete, MdSettings, MdPeople, MdCheckCircle, MdTrendingUp, MdLabel, MdMoreVert } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 
 
 const ContactManagement = ({ darkMode }) => {
-  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
+  const [loading, setLoading] = useState(false)
   const [contacts, setContacts] = useState([
     {
       id: 1,
@@ -72,19 +61,9 @@ const ContactManagement = ({ darkMode }) => {
   const [filterSegment, setFilterSegment] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
   const [selectedContacts, setSelectedContacts] = useState([])
-  // const [currentPage, setCurrentPage] = useState(1)
-  // const [itemsPerPage] = useState(10)
+  const [showBulkActions, setShowBulkActions] = useState(false)
 
   const segments = ["High-Value Customers", "New Users", "Inactive Users", "Enterprise", "SMB"]
-
-  const getStatusBadge = (status) => {
-    const variants = {
-      Active: "success",
-      Inactive: "secondary",
-      Blocked: "danger",
-    }
-    return <Badge bg={variants[status] || "secondary"}>{status}</Badge>
-  }
 
   const handleCreateContact = () => {
     setCurrentContact({ name: "", email: "", phone: "", company: "", segment: "", tags: [] })
@@ -130,307 +109,409 @@ const ContactManagement = ({ darkMode }) => {
     return matchesSearch && matchesSegment && matchesStatus
   })
 
-  // const totalPages = Math.ceil(filteredContacts.length / itemsPerPage)
-  // const startIndex = (currentPage - 1) * itemsPerPage
-  // const currentContacts = filteredContacts.slice(startIndex, startIndex + itemsPerPage)
-
   const totalPages = Math.ceil(filteredContacts.length / pagination.limit)
   const startIndex = (pagination.page - 1) * pagination.limit
   const currentContacts = filteredContacts.slice(startIndex, startIndex + pagination.limit)
 
+  const activeContacts = contacts.filter(c => c.status === 'Active').length
+  const totalSegments = [...new Set(contacts.map(c => c.segment))].length
+  const recentContacts = contacts.filter(c => {
+    const activityDate = new Date(c.lastActivity)
+    const daysDiff = Math.floor((new Date() - activityDate) / (1000 * 60 * 60 * 24))
+    return daysDiff <= 7
+  }).length
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading contacts...</p>
+      </div>
+    )
+  }
 
   return (
-    <Container fluid>
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-0">Contact Management</h1>
-              <p className="text-muted">Manage your survey contacts and audience lists</p>
+    <div className="contact-management-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-title-wrapper">
+            <div className="page-icon">
+              <MdContacts />
             </div>
-            <div className="d-flex gap-2">
-              <Button variant="outline-primary" onClick={() => setShowImportModal(true)}>
-                <i className="fas fa-upload me-2"></i>
-                Import
-              </Button>
-              <Button variant="primary" onClick={handleCreateContact}>
-                <i className="fas fa-plus me-2"></i>
-                Add Contact
-              </Button>
+            <div>
+              <h1 className="page-title">Contact Management</h1>
+              <p className="page-subtitle">Manage your survey contacts and audience lists</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="page-actions">
+            <button className="action-button secondary-action" onClick={() => setLoading(true)}>
+              <MdRefresh /> Refresh
+            </button>
+            <button className="action-button secondary-action" onClick={() => setShowImportModal(true)}>
+              <MdUpload /> Import
+            </button>
+            <button className="action-button primary-action" onClick={handleCreateContact}>
+              <MdAdd /> Add Contact
+            </button>
+          </div>
+        </div>
+      </div>
 
-      {/* Filters */}
-      <Row className="mb-4">
-        <Col lg={4}>
-          <InputGroup>
-            <InputGroup.Text>
-              <i className="fas fa-search"></i>
-            </InputGroup.Text>
-            <Form.Control
+      {/* Stats Section */}
+      <div className="stats-section">
+        <div className="stat-card primary-card">
+          <div className="stat-icon">
+            <MdPeople />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{contacts.length}</div>
+            <div className="stat-label">Total Contacts</div>
+          </div>
+        </div>
+        <div className="stat-card success-card">
+          <div className="stat-icon">
+            <MdCheckCircle />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{activeContacts}</div>
+            <div className="stat-label">Active Contacts</div>
+          </div>
+        </div>
+        <div className="stat-card info-card">
+          <div className="stat-icon">
+            <MdContacts />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{totalSegments}</div>
+            <div className="stat-label">Segments</div>
+          </div>
+        </div>
+        <div className="stat-card warning-card">
+          <div className="stat-icon">
+            <MdTrendingUp />
+          </div>
+          <div className="stat-content">
+            <div className="stat-value">{recentContacts}</div>
+            <div className="stat-label">Recent Activity</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="section-card filters-section">
+        <div className="filters-grid">
+          <div className="search-input-container">
+            <MdSearch className="search-icon" />
+            <input
               type="text"
+              className="search-input"
               placeholder="Search contacts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </InputGroup>
-        </Col>
-        <Col lg={3}>
-          <Form.Select value={filterSegment} onChange={(e) => setFilterSegment(e.target.value)}>
-            <option value="all">All Segments</option>
-            {segments.map((segment) => (
-              <option key={segment} value={segment}>
-                {segment}
-              </option>
-            ))}
-          </Form.Select>
-        </Col>
-        <Col lg={3}>
-          <Form.Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="all">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="blocked">Blocked</option>
-          </Form.Select>
-        </Col>
-        <Col lg={2}>
+          </div>
+          <div className="filter-group">
+            <select
+              className="filter-select"
+              value={filterSegment}
+              onChange={(e) => setFilterSegment(e.target.value)}
+            >
+              <option value="all">All Segments</option>
+              {segments.map((segment) => (
+                <option key={segment} value={segment}>
+                  {segment}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <select
+              className="filter-select"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
           {selectedContacts.length > 0 && (
-            <Dropdown>
-              <Dropdown.Toggle variant="outline-secondary" className="w-100">
-                Actions ({selectedContacts.length})
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item>
-                  <i className="fas fa-envelope me-2"></i>
-                  Send Survey
-                </Dropdown.Item>
-                <Dropdown.Item>
-                  <i className="fas fa-tags me-2"></i>
-                  Add Tags
-                </Dropdown.Item>
-                <Dropdown.Item>
-                  <i className="fas fa-layer-group me-2"></i>
-                  Add to Segment
-                </Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item className="text-danger">
-                  <i className="fas fa-trash me-2"></i>
-                  Delete Selected
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+            <div className="bulk-actions-dropdown">
+              <button 
+                className="bulk-actions-toggle"
+                onClick={() => setShowBulkActions(!showBulkActions)}
+              >
+                <MdMoreVert /> Actions ({selectedContacts.length})
+              </button>
+              {showBulkActions && (
+                <div className="bulk-actions-menu">
+                  <button className="bulk-action-item">
+                    <MdEmail /> Send Survey
+                  </button>
+                  <button className="bulk-action-item">
+                    <MdLabel /> Add Tags
+                  </button>
+                  <button className="bulk-action-item">
+                    <MdFilterAlt /> Add to Segment
+                  </button>
+                  <div className="bulk-actions-divider"></div>
+                  <button className="bulk-action-item danger">
+                    <MdDelete /> Delete Selected
+                  </button>
+                </div>
+              )}
+            </div>
           )}
-        </Col>
-      </Row>
+        </div>
+      </div>
 
-      {/* Contacts Table */}
-      <Row>
-        <Col>
-          <Card>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th>
-                        <Form.Check
-                          type="checkbox"
-                          checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
-                          onChange={handleSelectAll}
-                        />
-                      </th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th className="d-none d-md-table-cell">Phone</th>
-                      <th className="d-none d-lg-table-cell">Company</th>
-                      <th>Segment</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentContacts.map((contact) => (
-                      <tr key={contact.id}>
-                        <td>
-                          <Form.Check
-                            type="checkbox"
-                            checked={selectedContacts.includes(contact.id)}
-                            onChange={() => handleSelectContact(contact.id)}
-                          />
-                        </td>
-                        <td>
-                          <div className="fw-medium">{contact.name}</div>
-                          <div className="d-flex gap-1 mt-1">
-                            {contact.tags.map((tag) => (
-                              <Badge key={tag} bg="secondary" className="small">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </td>
-                        <td>{contact.email}</td>
-                        <td className="d-none d-md-table-cell">{contact.phone}</td>
-                        <td className="d-none d-lg-table-cell">{contact.company}</td>
-                        <td>
-                          <Badge bg="info" className="small">
-                            {contact.segment}
-                          </Badge>
-                        </td>
-                        <td>{getStatusBadge(contact.status)}</td>
-                        <td>
-                          <div className="btn-group btn-group-sm">
-                            <Button variant="outline-primary" size="sm" title="View">
-                              <i className="fas fa-eye"></i>
-                            </Button>
-                            <Button variant="outline-secondary" size="sm" title="Edit">
-                              <i className="fas fa-edit"></i>
-                            </Button>
-                            <Button variant="outline-info" size="sm" title="Send Survey">
-                              <i className="fas fa-envelope"></i>
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              title="Delete"
-                              onClick={() => deleteContact(contact.id)}
-                            >
-                              <i className="fas fa-trash"></i>
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-            <Card.Footer>
-              <div className="p-3 border-top">
-                <Pagination
-                  current={pagination.page}
-                  total={filteredContacts.length}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                  darkMode={darkMode}
-                />
-              </div>
-            </Card.Footer>
-          </Card>
-        </Col>
-      </Row>
+      {/* Contacts Table Section */}
+      <div className="section-card contacts-table-section">
+        <div className="section-header">
+          <div className="section-title-wrapper">
+            <h2 className="section-title">Contacts List</h2>
+            <p className="section-subtitle">
+              {filteredContacts.length} {filteredContacts.length === 1 ? 'contact' : 'contacts'} found
+            </p>
+          </div>
+          <button className="section-action">
+            <MdSettings /> Settings
+          </button>
+        </div>
+
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="checkbox-column">
+                  <input
+                    type="checkbox"
+                    className="table-checkbox"
+                    checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th>Name</th>
+                <th>Email</th>
+                <th className="phone-column">Phone</th>
+                <th className="company-column">Company</th>
+                <th>Segment</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentContacts.map((contact) => (
+                <tr key={contact.id}>
+                  <td className="checkbox-column">
+                    <input
+                      type="checkbox"
+                      className="table-checkbox"
+                      checked={selectedContacts.includes(contact.id)}
+                      onChange={() => handleSelectContact(contact.id)}
+                    />
+                  </td>
+                  <td>
+                    <div className="contact-name-cell">
+                      <div className="contact-name">{contact.name}</div>
+                      {contact.tags.length > 0 && (
+                        <div className="contact-tags">
+                          {contact.tags.map((tag) => (
+                            <span key={tag} className="contact-tag">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="contact-email">{contact.email}</div>
+                  </td>
+                  <td className="phone-column">
+                    <div className="contact-phone">{contact.phone}</div>
+                  </td>
+                  <td className="company-column">
+                    <div className="contact-company">{contact.company}</div>
+                  </td>
+                  <td>
+                    <span className="segment-badge">
+                      {contact.segment}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${contact.status.toLowerCase()}-status`}>
+                      {contact.status}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button className="action-btn view-btn" title="View">
+                        <MdVisibility />
+                      </button>
+                      <button className="action-btn edit-btn" title="Edit">
+                        <MdEdit />
+                      </button>
+                      <button className="action-btn email-btn" title="Send Survey">
+                        <MdEmail />
+                      </button>
+                      <button
+                        className="action-btn delete-btn"
+                        title="Delete"
+                        onClick={() => deleteContact(contact.id)}
+                      >
+                        <MdDelete />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="table-footer">
+          <Pagination
+            current={pagination.page}
+            total={filteredContacts.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
+      </div>
 
       {/* Add Contact Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Contact</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter contact name"
-                value={currentContact.name}
-                onChange={(e) => setCurrentContact({ ...currentContact, name: e.target.value })}
-              />
-            </Form.Group>
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                <MdAdd /> Add New Contact
+              </h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <form className="contact-form">
+                <div className="form-group">
+                  <label className="form-label">Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter contact name"
+                    value={currentContact.name}
+                    onChange={(e) => setCurrentContact({ ...currentContact, name: e.target.value })}
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="Enter email address"
-                value={currentContact.email}
-                onChange={(e) => setCurrentContact({ ...currentContact, email: e.target.value })}
-              />
-            </Form.Group>
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    placeholder="Enter email address"
+                    value={currentContact.email}
+                    onChange={(e) => setCurrentContact({ ...currentContact, email: e.target.value })}
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Phone</Form.Label>
-              <Form.Control
-                type="tel"
-                placeholder="Enter phone number"
-                value={currentContact.phone}
-                onChange={(e) => setCurrentContact({ ...currentContact, phone: e.target.value })}
-              />
-            </Form.Group>
+                <div className="form-group">
+                  <label className="form-label">Phone</label>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    placeholder="Enter phone number"
+                    value={currentContact.phone}
+                    onChange={(e) => setCurrentContact({ ...currentContact, phone: e.target.value })}
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Company</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter company name"
-                value={currentContact.company}
-                onChange={(e) => setCurrentContact({ ...currentContact, company: e.target.value })}
-              />
-            </Form.Group>
+                <div className="form-group">
+                  <label className="form-label">Company</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Enter company name"
+                    value={currentContact.company}
+                    onChange={(e) => setCurrentContact({ ...currentContact, company: e.target.value })}
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Segment</Form.Label>
-              <Form.Select
-                value={currentContact.segment}
-                onChange={(e) => setCurrentContact({ ...currentContact, segment: e.target.value })}
-              >
-                <option value="">Select segment</option>
-                {segments.map((segment) => (
-                  <option key={segment} value={segment}>
-                    {segment}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSaveContact}>
-            Add Contact
-          </Button>
-        </Modal.Footer>
-      </Modal>
+                <div className="form-group">
+                  <label className="form-label">Segment</label>
+                  <select
+                    className="form-select"
+                    value={currentContact.segment}
+                    onChange={(e) => setCurrentContact({ ...currentContact, segment: e.target.value })}
+                  >
+                    <option value="">Select segment</option>
+                    {segments.map((segment) => (
+                      <option key={segment} value={segment}>
+                        {segment}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-submit-btn" onClick={handleSaveContact}>
+                <MdAdd /> Add Contact
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Import Modal */}
-      <Modal show={showImportModal} onHide={() => setShowImportModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Import Contacts</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="text-center mb-4">
-            <i className="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-            <p>Upload a CSV file with your contacts</p>
-          </div>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>CSV File</Form.Label>
-              <Form.Control type="file" accept=".csv" />
-              <Form.Text className="text-muted">
-                File should include columns: Name, Email, Phone, Company, Segment
-              </Form.Text>
-            </Form.Group>
-            <div className="d-flex gap-2">
-              <Button variant="outline-secondary" size="sm">
-                <i className="fas fa-download me-2"></i>
-                Download Template
-              </Button>
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                <MdUpload /> Import Contacts
+              </h2>
+              <button className="modal-close" onClick={() => setShowImportModal(false)}>
+                ×
+              </button>
             </div>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowImportModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary">
-            <i className="fas fa-upload me-2"></i>
-            Import Contacts
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+            <div className="modal-body">
+              <div className="import-upload-area">
+                <MdUpload className="upload-icon" />
+                <p className="upload-text">Upload a CSV file with your contacts</p>
+              </div>
+              <form className="import-form">
+                <div className="form-group">
+                  <label className="form-label">CSV File</label>
+                  <input type="file" className="file-input" accept=".csv" />
+                  <p className="help-text">
+                    File should include columns: Name, Email, Phone, Company, Segment
+                  </p>
+                </div>
+                <button type="button" className="download-template-btn">
+                  <MdDownload /> Download Template
+                </button>
+              </form>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowImportModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-submit-btn">
+                <MdUpload /> Import Contacts
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

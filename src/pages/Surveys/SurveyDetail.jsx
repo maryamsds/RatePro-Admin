@@ -17,7 +17,7 @@ import { FaStar, FaRegStar, FaEye, FaUsers, FaChartLine } from 'react-icons/fa';
 import axiosInstance from '../../api/axiosInstance';
 import { QRCodeSVG } from 'qrcode.react';
 import Swal from 'sweetalert2';
-import './SurveyDetail.css';
+
 
 const SurveyDetail = () => {
   const { id } = useParams();

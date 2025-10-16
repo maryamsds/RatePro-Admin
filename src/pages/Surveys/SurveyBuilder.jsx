@@ -27,7 +27,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
-import './SurveyBuilder.css';
+
 
 /**
  * SurveyBuilder Component
@@ -54,7 +54,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   const templateData = location.state?.template;
   const fromTemplates = location.state?.from === 'templates';
   const isEditing = !!surveyId; // Determine if we're editing existing survey or creating new one
-  
+
   // Debug: Log when component renders (AFTER variables are defined)
   console.log('\n=== SurveyBuilder: Component Render ===');
   console.log('surveyId:', surveyId);
@@ -93,7 +93,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
 
   // Survey questions array - stores all questions in the survey
   const [questions, setQuestions] = useState([]);
-  
+
   // UI State Management
   const [activeTab, setActiveTab] = useState('builder'); // Current active tab (builder, preview, settings)
   const [selectedQuestion, setSelectedQuestion] = useState(null); // Currently selected question for editing
@@ -102,12 +102,12 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   const [showAIModal, setShowAIModal] = useState(false); // AI assistant modal
   const [showPreviewModal, setShowPreviewModal] = useState(false); // Survey preview modal
   const [showSettingsOffcanvas, setShowSettingsOffcanvas] = useState(false); // Settings panel
-  
+
   // Loading and Processing States
   const [isGeneratingAI, setIsGeneratingAI] = useState(false); // AI generation in progress
   const [saving, setSaving] = useState(false); // Save operation in progress
   const [loading, setLoading] = useState(true); // Component loading state - starts true, set to false after initialization
-  
+
   // Debug: Log current loading state after it's defined
   console.log('Initial loading state:', loading);
 
@@ -126,7 +126,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
 
   // AI Assistant State
   const [aiPrompt, setAIPrompt] = useState(''); // User input for AI assistance
-  
+
   // Company Profile for AI - used to generate contextual surveys
   const [companyProfile, setCompanyProfile] = useState({
     industry: "",
@@ -273,7 +273,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   // ========================
   // COMPONENT LIFECYCLE HOOKS
   // ========================
-  
+
   // Debug: Log survey state changes for troubleshooting
   useEffect(() => {
     console.log('Survey state changed:', survey);
@@ -298,12 +298,12 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   useEffect(() => {
     console.log('\n=== SurveyBuilder: Initialization useEffect Triggered ===');
     console.log('Dependencies - templateData:', !!templateData, 'fromTemplates:', fromTemplates, 'surveyId:', surveyId);
-    
+
     const initializeSurvey = () => {
       if (templateData && fromTemplates) {
         console.log('🎯 CASE: Initializing from template');
         console.log('Template data structure:', templateData);
-        
+
         // Set survey data from template
         const newSurveyData = {
           title: templateData.name || '',
@@ -311,12 +311,12 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
           category: templateData.category || '',
         };
         console.log('Setting survey data:', newSurveyData);
-        
+
         setSurvey(prev => ({
           ...prev,
           ...newSurveyData
         }));
-        
+
         // Generate initial questions from template
         console.log('Generating questions from template...');
         const initialQuestions = generateQuestionsFromTemplate(templateData);
@@ -333,7 +333,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
           ...prev,
           ...profileUpdate
         }));
-        
+
         console.log('✅ Template initialization complete');
       } else if (!surveyId) {
         // This is a new survey without template
@@ -341,7 +341,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
       } else {
         console.log('📝 CASE: Loading existing survey (surveyId:', surveyId, ')');
       }
-      
+
       // Set loading to false after initialization (if not loading existing survey)
       if (!surveyId) {
         console.log('Setting loading to false for new/template survey');
@@ -363,7 +363,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   useEffect(() => {
     console.log('\n=== SurveyBuilder: LoadSurvey useEffect Triggered ===');
     console.log('Condition check - surveyId:', surveyId, 'templateData:', !!templateData);
-    
+
     const loadSurvey = async () => {
       if (surveyId && !templateData) {
         console.log('📋 LOADING existing survey with ID:', surveyId);
@@ -402,13 +402,13 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
                 ar: surveyData.translations?.ar || {}
               }
             };
-            
+
             console.log('Setting survey state:', newSurveyState);
             setSurvey(newSurveyState);
 
             if (surveyData.questions && surveyData.questions.length > 0) {
               console.log('Raw questions from API:', surveyData.questions);
-              
+
               // Transform backend questions to frontend format
               const transformedQuestions = surveyData.questions.map((q, index) => ({
                 id: q.id || Date.now() + index,
@@ -420,7 +420,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
                 settings: q.settings || {},
                 translations: q.translations || {}
               }));
-              
+
               console.log('Transformed questions:', transformedQuestions);
               setQuestions(transformedQuestions);
             } else {
@@ -850,21 +850,21 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
       if (result.optimized) {
         // Show optimization suggestions
         const suggestions = result.optimized;
-        
+
         let suggestionText = 'AI Optimization Suggestions:\n\n';
-        
+
         if (suggestions.replaceQuestionIds && suggestions.replaceQuestionIds.length > 0) {
           suggestionText += `Questions to improve: ${suggestions.replaceQuestionIds.length}\n`;
         }
-        
+
         if (suggestions.recommendedLength) {
           suggestionText += `Recommended length: ${suggestions.recommendedLength} questions\n`;
         }
-        
+
         if (suggestions.suggestions && Array.isArray(suggestions.suggestions)) {
           suggestionText += '\nSuggestions:\n' + suggestions.suggestions.join('\n');
         }
-        
+
         const { isConfirmed } = await Swal.fire({
           title: 'Survey Optimization',
           text: suggestionText,
@@ -874,7 +874,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
           cancelButtonText: 'Keep Current',
           confirmButtonColor: 'var(--bs-primary)'
         });
-        
+
         if (isConfirmed && suggestions.optimizedQuestions) {
           // Apply optimized questions if provided
           const optimizedQuestions = suggestions.optimizedQuestions.map((q, index) => ({
@@ -886,9 +886,9 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
             options: q.options || [],
             settings: { scale: q.scale ? parseInt(q.scale.split('-')[1]) : 5 }
           }));
-          
+
           setQuestions(optimizedQuestions);
-          
+
           Swal.fire({
             icon: 'success',
             title: 'Survey Optimized!',
@@ -915,7 +915,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   const translateSurvey = async (targetLanguage) => {
     try {
       setAILoadingStates(prev => ({ ...prev, translating: true }));
-      
+
       const textsToTranslate = [
         survey.title,
         survey.description,
@@ -923,15 +923,15 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
         ...questions.map(q => q.description),
         ...questions.flatMap(q => q.options || [])
       ].filter(Boolean).join('\n---\n');
-      
+
       const response = await axiosInstance.post('/ai/translate-survey', {
         text: textsToTranslate,
         from: 'en',
         to: targetLanguage
       });
-      
+
       const result = response.data;
-      
+
       if (result.translated) {
         // Store translation in survey state
         setSurvey(prev => ({
@@ -944,7 +944,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
             }
           }
         }));
-        
+
         Swal.fire({
           icon: 'success',
           title: 'Translation Complete!',
@@ -969,7 +969,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   // Question Management
   const addQuestion = (type) => {
     const questionType = questionTypes.find(qt => qt.id === type);
-    
+
     // Create appropriate default options based on question type
     let defaultOptions = [];
     if (type === 'single_choice' || type === 'multiple_choice') {
@@ -979,7 +979,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
     } else if (type === 'likert') {
       defaultOptions = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
     }
-    
+
     const newQuestion = {
       id: Date.now(),
       type: type,
@@ -1061,9 +1061,9 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
           id: q.id?.toString() || (index + 1).toString(),
           questionText: q.title,
           type: mapQuestionTypeToBackend(q.type),
-                options: q.options || [],
-                required: q.required || false,
-                translations: q.translations || {},
+          options: q.options || [],
+          required: q.required || false,
+          translations: q.translations || {},
           logicRules: q.logicRules || []
         })),
         settings: {
@@ -1249,7 +1249,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   if (loading) {
     console.log('🔄 RENDERING: Loading component (loading = true)');
     console.log('Current state: surveyId:', surveyId, 'templateData:', !!templateData, 'fromTemplates:', fromTemplates);
-    
+
     return (
       <Container fluid className="survey-builder">
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
@@ -1272,1342 +1272,616 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
   }
 
   return (
-          <Container fluid className="survey-builder">
-            {/* Header */}
-            <Row className="mb-4">
-              <Col>
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <div className="d-flex align-items-center mb-2">
-                      <MdEdit className="me-2 text-primary" size={32} />
-                      <h1 className="h3 mb-0 fw-bold">Survey Builder</h1>
-                      {templateData && (
-                        <Badge bg="info" className="ms-3">
-                          From Template: {templateData.name}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-muted mb-2">
-                      Create professional surveys with AI assistance and advanced question types
-                    </p>
+    <Container fluid className="survey-builder">
+      {/* Header */}
+      <div className="survey-header mb-4">
+        {/* Title Section */}
+        <div className="header-title mb-3">
+          <div className="d-flex align-items-center flex-wrap">
+            <div className="d-flex align-items-center me-3 mb-2 mb-md-0">
+              <MdEdit className="me-2 text-primary" size={32} />
+              <h1 className="h3 mb-0 fw-bold">Survey Builder</h1>
+            </div>
+            {templateData && (
+              <Badge bg="info" className="mb-2 mb-md-0">
+                From Template: {templateData.name}
+              </Badge>
+            )}
+          </div>
+          <p className="text-muted mb-0 d-none d-sm-block">
+            Create professional surveys with AI assistance and advanced question types
+          </p>
+        </div>
 
-                    {/* Survey Mode Selector */}
-                    {showModeSelector && !isEditing && (
-                      <div className="bg-light rounded p-3 mb-3">
-                        <h6 className="fw-bold mb-3">Choose Creation Method</h6>
-                        <Row>
-                          <Col md={6}>
-                            <Card
-                              className={`h-100 cursor-pointer border-2 ${surveyMode === 'user-defined' ? 'border-primary' : 'border-light'}`}
-                              onClick={() => {
-                                setSurveyMode('user-defined');
-                                setShowModeSelector(false);
-                              }}
-                            >
-                              <Card.Body className="text-center">
-                                <MdBuild size={48} className="text-primary mb-3" />
-                                <h6 className="fw-bold">Manual Creation</h6>
-                                <p className="text-muted small">Build your survey step-by-step with full control over every question and setting.</p>
-                                <Button
-                                  variant={surveyMode === 'user-defined' ? 'primary' : 'outline-primary'}
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSurveyMode('user-defined');
-                                    setShowModeSelector(false);
-                                  }}
-                                >
-                                  Start Building
-                                </Button>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col md={6}>
-                            <Card
-                              className={`h-100 cursor-pointer border-2 ${surveyMode === 'ai-assisted' ? 'border-success' : 'border-light'}`}
-                              onClick={() => {
-                                setSurveyMode('ai-assisted');
-                                setShowAIModal(true);
-                                setShowModeSelector(false);
-                              }}
-                            >
-                              <Card.Body className="text-center">
-                                <MdSmartToy size={48} className="text-success mb-3" />
-                                <h6 className="fw-bold">AI-Powered Creation</h6>
-                                <p className="text-muted small">Let AI generate your survey based on your industry, goals, and preferences.</p>
-                                <Button
-                                  variant={surveyMode === 'ai-assisted' ? 'success' : 'outline-success'}
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSurveyMode('ai-assisted');
-                                    setShowAIModal(true);
-                                    setShowModeSelector(false);
-                                  }}
-                                >
-                                  Get AI Help
-                                </Button>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        </Row>
-                      </div>
-                    )}
-
-                    {/* AI Workflow Progress Indicator */}
-                    {surveyMode === 'ai-assisted' && !showModeSelector && (
-                      <div className="bg-success bg-opacity-10 rounded p-3 mb-3">
-                        <h6 className="text-success fw-bold mb-2">
-                          <MdSmartToy className="me-2" />
-                          AI-Assisted Survey Creation
-                        </h6>
-                        <div className="d-flex align-items-center">
-                          <div className="progress flex-grow-1 me-3" style={{ height: '8px' }}>
-                            <div
-                              className="progress-bar bg-success"
-                              style={{ width: `${(aiWorkflowStep / 3) * 100}%` }}
-                            />
-                          </div>
-                          <small className="text-muted">
-                            Step {aiWorkflowStep} of 3: {
-                              aiWorkflowStep === 1 ? 'Profile Setup' :
-                                aiWorkflowStep === 2 ? 'Review & Edit' :
-                                  'Customize & Publish'
-                            }
-                          </small>
-                        </div>
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => {
-                            setSurveyMode('user-defined');
-                            setAIWorkflowStep(1);
-                            setShowModeSelector(true);
-                          }}
-                        >
-                          Switch to Manual Mode
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Progress Indicator */}
-                    <div className="d-flex align-items-center gap-3">
-                      <small className="text-muted">Completion:</small>
-                      <ProgressBar
-                        now={getCompletionPercentage()}
-                        style={{ width: '120px', height: '8px' }}
-                        variant={getCompletionPercentage() > 80 ? 'success' : 'primary'}
-                      />
-                      <small className="fw-semibold">{getCompletionPercentage()}%</small>
-                    </div>
-                  </div>
-
-                  <div className="d-flex gap-2">
+        {/* Survey Mode Selector */}
+        {showModeSelector && !isEditing && (
+          <div className="bg-light rounded p-3 mb-3">
+            <h6 className="fw-bold mb-3">Choose Creation Method</h6>
+            <Row>
+              <Col md={6}>
+                <Card
+                  className={`h-100 cursor-pointer border-2 ${surveyMode === 'user-defined' ? 'border-primary' : 'border-light'}`}
+                  onClick={() => {
+                    setSurveyMode('user-defined');
+                    setShowModeSelector(false);
+                  }}
+                >
+                  <Card.Body className="text-center">
+                    <MdBuild size={48} className="text-primary mb-3" />
+                    <h6 className="fw-bold">Manual Creation</h6>
+                    <p className="text-muted small">Build your survey step-by-step with full control over every question and setting.</p>
                     <Button
-                      variant="outline-primary"
-                      onClick={() => setShowAIModal(true)}
-                      className="d-flex align-items-center"
-                      disabled={aiLoadingStates.generating}
+                      variant={surveyMode === 'user-defined' ? 'primary' : 'outline-primary'}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSurveyMode('user-defined');
+                        setShowModeSelector(false);
+                      }}
                     >
-                      {aiLoadingStates.generating ? (
-                        <Spinner size="sm" className="me-2" />
-                      ) : (
-                        <MdAutoAwesome className="me-2" />
-                      )}
-                      AI Assistant
+                      Start Building
                     </Button>
-
-                    {questions.length > 0 && (
-                      <>
-                        <Button
-                          variant="outline-success"
-                          onClick={suggestNextQuestion}
-                          disabled={aiLoadingStates.suggesting}
-                          size="sm"
-                        >
-                          {aiLoadingStates.suggesting ? (
-                            <Spinner size="sm" className="me-2" />
-                          ) : (
-                            <MdAdd className="me-2" />
-                          )}
-                          Suggest Question
-                        </Button>
-
-                        <Button
-                          variant="outline-info"
-                          onClick={optimizeSurvey}
-                          disabled={aiLoadingStates.optimizing}
-                          size="sm"
-                        >
-                          {aiLoadingStates.optimizing ? (
-                            <Spinner size="sm" className="me-2" />
-                          ) : (
-                            <MdTune className="me-2" />
-                          )}
-                          Optimize
-                        </Button>
-                      </>
-                    )}
-
-                    {questions.length > 0 && !survey.language.includes('Arabic') && (
-                      <OverlayTrigger
-                        placement="bottom"
-                        overlay={<Tooltip>Add Arabic translations using AI</Tooltip>}
-                      >
-                        <Button
-                          variant="outline-warning"
-                          onClick={() => translateSurvey('ar')}
-                          disabled={aiLoadingStates.translating}
-                          size="sm"
-                        >
-                          {aiLoadingStates.translating ? (
-                            <Spinner size="sm" className="me-2" />
-                          ) : (
-                            <MdTranslate className="me-2" />
-                          )}
-                          Translate
-                        </Button>
-                      </OverlayTrigger>
-                    )}
-
-
-                    <Button
-                      variant="outline-secondary"
-                      onClick={() => setShowPreviewModal(true)}
-                      className="d-flex align-items-center"
-                    >
-                      <MdPreview className="me-2" />
-                      Preview
-                    </Button>
-                    <Button
-                      variant="outline-info"
-                      onClick={() => setShowSettingsOffcanvas(true)}
-                      className="d-flex align-items-center"
-                    >
-                      <MdSettings className="me-2" />
-                      Settings
-                    </Button>
-                    <Button
-                      variant="success"
-                      onClick={saveSurvey}
-                      disabled={saving}
-                      className="d-flex align-items-center"
-                    >
-                      {saving ? <Spinner size="sm" className="me-2" /> : <MdSave className="me-2" />}
-                      {saving ? 'Saving...' : 'Save'}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={publishSurvey}
-                      disabled={saving || questions.length === 0}
-                      className="d-flex align-items-center"
-                    >
-                      <MdPublish className="me-2" />
-                      Publish
-                    </Button>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-
-            {/* Main Content */}
-            <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-4">
-              {/* Survey Builder Tab */}
-              <Tab eventKey="builder" title={
-                <span className="d-flex align-items-center">
-                  <MdEdit className="me-2" />
-                  Builder
-                </span>
-              }>
-                <Row>
-                  {/* Question Types Sidebar */}
-                  <Col lg={3}>
-                    <Card className="sticky-top" style={{ top: '1rem' }}>
-                      <Card.Header className="d-flex align-items-center">
-                        <MdAdd className="me-2" />
-                        <strong>Add Questions</strong>
-                      </Card.Header>
-                      <Card.Body className="p-0">
-                        {/* Question Categories */}
-                        <Accordion defaultActiveKey={['0']} alwaysOpen>
-                          {['choice', 'rating', 'text', 'input', 'advanced'].map((category, idx) => (
-                            <Accordion.Item eventKey={idx.toString()} key={category}>
-                              <Accordion.Header>
-                                <span className="text-capitalize fw-semibold">{category} Questions</span>
-                              </Accordion.Header>
-                              <Accordion.Body className="p-2">
-                                {questionTypes
-                                  .filter(qt => qt.category === category)
-                                  .map(questionType => (
-                                    <Card
-                                      key={questionType.id}
-                                      className="question-type-card mb-2 border-0 cursor-pointer"
-                                      onClick={() => addQuestion(questionType.id)}
-                                    >
-                                      <Card.Body className="p-3">
-                                        <div className="d-flex align-items-center mb-2">
-                                          <questionType.icon
-                                            size={20}
-                                            style={{ color: questionType.color }}
-                                            className="me-2"
-                                          />
-                                          <strong className="small">{questionType.name}</strong>
-                                        </div>
-                                        <p className="text-muted small mb-1">{questionType.description}</p>
-                                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                          {questionType.example}
-                                        </div>
-                                      </Card.Body>
-                                    </Card>
-                                  ))}
-                              </Accordion.Body>
-                            </Accordion.Item>
-                          ))}
-                        </Accordion>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-
-                  {/* Survey Content */}
-                  <Col lg={9}>
-                    {/* Survey Header */}
-                    <Card className="mb-4">
-                      <Card.Header className="d-flex align-items-center">
-                        <MdSettings className="me-2" />
-                        <strong>Survey Information</strong>
-                      </Card.Header>
-                      <Card.Body>
-                        <Row>
-                          <Col md={8}>
-                            <Form.Group className="mb-3">
-                              <Form.Label className="fw-semibold">Survey Title *</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={survey.title}
-                                onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
-                                placeholder="Enter survey title..."
-                                className="form-control-lg"
-                              />
-                            </Form.Group>
-
-                            <Form.Group className="mb-3">
-                              <Form.Label className="fw-semibold">Description</Form.Label>
-                              <Form.Control
-                                as="textarea"
-                                rows={3}
-                                value={survey.description}
-                                onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
-                                placeholder="Describe the purpose of this survey..."
-                              />
-                            </Form.Group>
-                          </Col>
-                          <Col md={4}>
-                            <Form.Group className="mb-3">
-                              <Form.Label className="fw-semibold">Category</Form.Label>
-                              <Form.Select
-                                value={survey.category}
-                                onChange={(e) => setSurvey({ ...survey, category: e.target.value })}
-                              >
-                                <option value="">Select Category</option>
-                                {industries.map(industry => (
-                                  <option key={industry.id} value={industry.id}>
-                                    {industry.name}
-                                  </option>
-                                ))}
-                              </Form.Select>
-                            </Form.Group>
-
-                            <Form.Group className="mb-3">
-                              <Form.Label className="fw-semibold">Languages</Form.Label>
-                              <div className="d-flex gap-2 flex-wrap">
-                                {['English', 'Arabic'].map(lang => (
-                                  <Form.Check
-                                    key={lang}
-                                    type="checkbox"
-                                    id={`lang-${lang}`}
-                                    label={lang}
-                                    checked={survey.language.includes(lang)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSurvey({ ...survey, language: [...survey.language, lang] });
-                                      } else {
-                                        setSurvey({ ...survey, language: survey.language.filter(l => l !== lang) });
-                                      }
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            </Form.Group>
-                          </Col>
-                        </Row>
-                      </Card.Body>
-                    </Card>
-
-                    {/* Questions List */}
-                    <Card>
-                      <Card.Header className="d-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center">
-                          <MdViewList className="me-2" />
-                          <strong>Questions ({questions.length})</strong>
-                        </div>
-                        <div className="d-flex align-items-center gap-2">
-                          {questions.length > 0 && (
-                            <>
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Get AI suggestions for next question</Tooltip>}
-                              >
-                                <Button
-                                  variant="outline-info"
-                                  size="sm"
-                                  onClick={suggestNextQuestion}
-                                  disabled={isGeneratingAI}
-                                  className="d-flex align-items-center"
-                                >
-                                  <MdAutoAwesome className="me-1" />
-                                  {isGeneratingAI ? <Spinner size="sm" /> : 'Suggest'}
-                                </Button>
-                              </OverlayTrigger>
-
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Analyze and optimize survey structure</Tooltip>}
-                              >
-                                <Button
-                                  variant="outline-warning"
-                                  size="sm"
-                                  onClick={optimizeSurvey}
-                                  disabled={isGeneratingAI}
-                                  className="d-flex align-items-center"
-                                >
-                                  <MdTune className="me-1" />
-                                  {isGeneratingAI ? <Spinner size="sm" /> : 'Optimize'}
-                                </Button>
-                              </OverlayTrigger>
-                            </>
-                          )}
-                          {questions.length > 0 && (
-                            <small className="text-muted">Drag to reorder</small>
-                          )}
-                        </div>
-                      </Card.Header>
-                      <Card.Body className="p-0">
-                        {questions.length === 0 ? (
-                          <div className="text-center py-5">
-                            <MdAdd size={48} className="text-muted mb-3" />
-                            <h5>No Questions Yet</h5>
-                            <p className="text-muted mb-4">
-                              Add questions from the sidebar or use AI to generate a complete survey
-                            </p>
-                            <Button
-                              variant="outline-primary"
-                              onClick={() => setShowAIModal(true)}
-                              className="d-flex align-items-center mx-auto"
-                            >
-                              <MdAutoAwesome className="me-2" />
-                              Generate with AI
-                            </Button>
-                          </div>
-                        ) : (
-                          <DragDropContext onDragEnd={handleOnDragEnd}>
-                            <Droppable droppableId="questions">
-                              {(provided) => (
-                                <div {...provided.droppableProps} ref={provided.innerRef}>
-                                  {questions.map((question, index) => (
-                                    <Draggable
-                                      key={question.id}
-                                      draggableId={question.id.toString()}
-                                      index={index}
-                                    >
-                                      {(provided, snapshot) => (
-                                        <div
-                                          ref={provided.innerRef}
-                                          {...provided.draggableProps}   // yaha rakho
-                                          className={`question-item p-3 border-bottom ${snapshot.isDragging ? 'dragging' : ''
-                                            }`}
-                                        >
-                                          <div className="d-flex align-items-start">
-                                            {/* handle props yaha pass karo */}
-                                            <div
-                                              {...provided.dragHandleProps}
-                                              className="drag-handle me-3 mt-1"
-                                            >
-                                              <MdDragHandle className="text-muted" />
-                                            </div>
-
-                                            <div className="flex-grow-1">
-                                              <div className="d-flex align-items-center mb-2">
-                                                <Badge bg="light" text="dark" className="me-2">
-                                                  Q{index + 1}
-                                                </Badge>
-                                                {questionTypes.find(qt => qt.id === question.type) && (
-                                                  <>
-                                                    {React.createElement(
-                                                      questionTypes.find(qt => qt.id === question.type).icon,
-                                                      {
-                                                        size: 16,
-                                                        className: 'me-2',
-                                                        style: {
-                                                          color: questionTypes.find(qt => qt.id === question.type).color
-                                                        }
-                                                      }
-                                                    )}
-                                                    <small className="text-muted me-3">
-                                                      {questionTypes.find(qt => qt.id === question.type).name}
-                                                    </small>
-                                                  </>
-                                                )}
-                                                {question.required && (
-                                                  <Badge bg="danger" className="me-2">Required</Badge>
-                                                )}
-                                              </div>
-
-                                              <h6 className="mb-1">{question.title}</h6>
-                                              {question.description && (
-                                                <p className="text-muted small mb-2">{question.description}</p>
-                                              )}
-
-                                              {/* Question Preview */}
-                                              {question.options.length > 0 && (
-                                                <div className="mt-2">
-                                                  {question.type === 'single_choice' || question.type === 'multiple_choice' ? (
-                                                    <div className="d-flex gap-2 flex-wrap">
-                                                      {question.options.slice(0, 3).map((option, idx) => (
-                                                        <Badge key={idx} bg="light" text="dark" className="border">
-                                                          {option}
-                                                        </Badge>
-                                                      ))}
-                                                      {question.options.length > 3 && (
-                                                        <Badge bg="light" text="muted">
-                                                          +{question.options.length - 3} more
-                                                        </Badge>
-                                                      )}
-                                                    </div>
-                                                  ) : null}
-                                                </div>
-                                              )}
-                                            </div>
-
-                                            <div className="d-flex gap-1 ms-3">
-                                              <OverlayTrigger
-                                                placement="top"
-                                                overlay={<Tooltip>Edit Question</Tooltip>}
-                                              >
-                                                <Button
-                                                  variant="outline-primary"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    setSelectedQuestion(question);
-                                                    setQuestionModalMode('edit');
-                                                    setShowQuestionModal(true);
-                                                  }}
-                                                >
-                                                  <MdEdit size={14} />
-                                                </Button>
-                                              </OverlayTrigger>
-
-                                              <OverlayTrigger
-                                                placement="top"
-                                                overlay={<Tooltip>Duplicate</Tooltip>}
-                                              >
-                                                <Button
-                                                  variant="outline-secondary"
-                                                  size="sm"
-                                                  onClick={() => duplicateQuestion(question)}
-                                                >
-                                                  <MdContentCopy size={14} />
-                                                </Button>
-                                              </OverlayTrigger>
-
-                                              <OverlayTrigger
-                                                placement="top"
-                                                overlay={<Tooltip>Delete Question</Tooltip>}
-                                              >
-                                                <Button
-                                                  variant="outline-danger"
-                                                  size="sm"
-                                                  onClick={() => deleteQuestion(question.id)}
-                                                >
-                                                  <MdDelete size={14} />
-                                                </Button>
-                                              </OverlayTrigger>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  ))}
-                                  {provided.placeholder}
-                                </div>
-                              )}
-                            </Droppable>
-                          </DragDropContext>
-                        )}
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </Tab>
-
-              {/* Design Tab */}
-              <Tab eventKey="design" title={
-                <span className="d-flex align-items-center">
-                  <FaPalette className="me-2" />
-                  Design
-                </span>
-              }>
-                <Card>
-                  <Card.Header>
-                    <strong>Survey Appearance</strong>
-                  </Card.Header>
-                  <Card.Body>
-                    <Row>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Primary Color</Form.Label>
-                          <Form.Control
-                            type="color"
-                            value={survey.branding.primaryColor}
-                            onChange={(e) => setSurvey({
-                              ...survey,
-                              branding: { ...survey.branding, primaryColor: e.target.value }
-                            })}
-                          />
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Background Color</Form.Label>
-                          <Form.Control
-                            type="color"
-                            value={survey.branding.backgroundColor}
-                            onChange={(e) => setSurvey({
-                              ...survey,
-                              branding: { ...survey.branding, backgroundColor: e.target.value }
-                            })}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={6}>
-                        <div className="survey-preview-mini border rounded p-3" style={{
-                          backgroundColor: survey.branding.backgroundColor,
-                          color: survey.branding.textColor
-                        }}>
-                          <h5 style={{ color: survey.branding.primaryColor }}>
-                            {survey.title || 'Survey Title'}
-                          </h5>
-                          <p className="small">{survey.description || 'Survey description...'}</p>
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <div
-                              className="rounded-circle"
-                              style={{
-                                width: '12px',
-                                height: '12px',
-                                backgroundColor: survey.branding.primaryColor
-                              }}
-                            ></div>
-                            <small>Sample question</small>
-                          </div>
-                        </div>
-                      </Col>
-                    </Row>
                   </Card.Body>
                 </Card>
-              </Tab>
-
-              {/* Settings Tab */}
-              <Tab eventKey="settings" title={
-                <span className="d-flex align-items-center">
-                  <MdTune className="me-2" />
-                  Settings
-                </span>
-              }>
-                <Row>
-                  <Col md={6}>
-                    <Card className="mb-4">
-                      <Card.Header>Response Settings</Card.Header>
-                      <Card.Body>
-                        <Form.Check
-                          type="switch"
-                          id="public-survey"
-                          label="Make survey public"
-                          checked={survey.isPublic}
-                          onChange={(e) => setSurvey({ ...survey, isPublic: e.target.checked })}
-                          className="mb-3"
-                        />
-
-                        <Form.Check
-                          type="switch"
-                          id="anonymous-responses"
-                          label="Allow anonymous responses"
-                          checked={survey.allowAnonymous}
-                          onChange={(e) => setSurvey({ ...survey, allowAnonymous: e.target.checked })}
-                          className="mb-3"
-                        />
-
-                        <Form.Check
-                          type="switch"
-                          id="multiple-responses"
-                          label="Allow multiple responses from same user"
-                          checked={survey.multipleResponses}
-                          onChange={(e) => setSurvey({ ...survey, multipleResponses: e.target.checked })}
-                          className="mb-3"
-                        />
-                      </Card.Body>
-                    </Card>
-                  </Col>
-
-                  <Col md={6}>
-                    <Card className="mb-4">
-                      <Card.Header>Completion Settings</Card.Header>
-                      <Card.Body>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Thank You Message</Form.Label>
-                          <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={survey.thankYouMessage}
-                            onChange={(e) => setSurvey({ ...survey, thankYouMessage: e.target.value })}
-                          />
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Redirect URL (Optional)</Form.Label>
-                          <Form.Control
-                            type="url"
-                            value={survey.redirectUrl}
-                            onChange={(e) => setSurvey({ ...survey, redirectUrl: e.target.value })}
-                            placeholder="https://example.com"
-                          />
-                        </Form.Group>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </Tab>
-            </Tabs>
-
-            {/* AI Assistant Modal */}
-            <Modal
-              show={showAIModal}
-              onHide={() => setShowAIModal(false)}
-              size="lg"
-              centered
-            >
-              <Modal.Header closeButton>
-                <Modal.Title className="d-flex align-items-center">
-                  <MdAutoAwesome className="me-2 text-primary" />
-                  AI Survey Assistant
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Industry/Category *</Form.Label>
-                      <Form.Select
-                        value={companyProfile.industry}
-                        onChange={(e) => {
-                          console.log('Industry selected:', e.target.value);
-                          setCompanyProfile({ ...companyProfile, industry: e.target.value });
-                        }}
-                      >
-                        <option value="">Select Industry</option>
-                        {industries.map(industry => (
-                          <option key={industry.id} value={industry.id}>
-                            {industry.name}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Products/Services</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={companyProfile.products}
-                        onChange={(e) => {
-                          console.log('Products updated:', e.target.value);
-                          setCompanyProfile({ ...companyProfile, products: e.target.value });
-                        }}
-                        placeholder="e.g., Hotel Rooms, Restaurant, Spa"
-                      />
-                      <Form.Text className="text-muted">
-                        Separate multiple items with commas
-                      </Form.Text>
-                    </Form.Group>
-                  </Col>
-
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Target Audience *</Form.Label>
-                      <Form.Select
-                        value={companyProfile.targetAudience}
-                        onChange={(e) => {
-                          console.log('Audience selected:', e.target.value);
-                          setCompanyProfile({ ...companyProfile, targetAudience: e.target.value });
-                        }}
-                      >
-                        <option value="">Select Audience</option>
-                        <option value="customers">Customers</option>
-                        <option value="guests">Guests/Visitors</option>
-                        <option value="employees">Employees</option>
-                        <option value="vendors">Vendors/Partners</option>
-                        <option value="students">Students</option>
-                        <option value="patients">Patients</option>
-                      </Form.Select>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">Survey Goal *</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={2}
-                        value={companyProfile.surveyGoal}
-                        onChange={(e) => {
-                          console.log('Goal updated:', e.target.value);
-                          setCompanyProfile({ ...companyProfile, surveyGoal: e.target.value });
-                        }}
-                        placeholder="e.g., Customer Satisfaction"
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                {/* Advanced AI Configuration */}
-                <Accordion className="mb-4">
-                  <Accordion.Item eventKey="0">
-                    <Accordion.Header>
-                      <MdTune className="me-2" />
-                      Advanced AI Settings
-                    </Accordion.Header>
-                    <Accordion.Body>
-                      <Row>
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>Question Count</Form.Label>
-                            <Form.Select
-                              value={companyProfile.questionCount}
-                              onChange={(e) => setCompanyProfile({
-                                ...companyProfile,
-                                questionCount: parseInt(e.target.value)
-                              })}
-                            >
-                              <option value={5}>5 Questions (Quick)</option>
-                              <option value={8}>8 Questions (Standard)</option>
-                              <option value={12}>12 Questions (Comprehensive)</option>
-                              <option value={15}>15 Questions (Detailed)</option>
-                            </Form.Select>
-                          </Form.Group>
-
-                          <Form.Group className="mb-3">
-                            <Form.Label>Survey Tone</Form.Label>
-                            <Form.Select
-                              value={companyProfile.tone}
-                              onChange={(e) => setCompanyProfile({
-                                ...companyProfile,
-                                tone: e.target.value
-                              })}
-                            >
-                              <option value="friendly-professional">Friendly & Professional</option>
-                              <option value="formal">Formal</option>
-                              <option value="casual">Casual & Relaxed</option>
-                              <option value="neutral">Neutral</option>
-                            </Form.Select>
-                          </Form.Group>
-                        </Col>
-
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>Languages</Form.Label>
-                            <div>
-                              {['English', 'Arabic', 'Both'].map(lang => (
-                                <Form.Check
-                                  key={lang}
-                                  type="checkbox"
-                                  id={`lang-${lang}`}
-                                  label={lang}
-                                  checked={companyProfile.languages.includes(lang)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setCompanyProfile({
-                                        ...companyProfile,
-                                        languages: [...companyProfile.languages, lang]
-                                      });
-                                    } else {
-                                      setCompanyProfile({
-                                        ...companyProfile,
-                                        languages: companyProfile.languages.filter(l => l !== lang)
-                                      });
-                                    }
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </Form.Group>
-
-                          <Form.Group className="mb-3">
-                            <Form.Check
-                              type="checkbox"
-                              id="include-nps"
-                              label="Include NPS Question"
-                              checked={companyProfile.includeNPS}
-                              onChange={(e) => setCompanyProfile({
-                                ...companyProfile,
-                                includeNPS: e.target.checked
-                              })}
-                            />
-                          </Form.Group>
-                        </Col>
-                      </Row>
-
-                      <Form.Group className="mb-3">
-                        <Form.Label>Additional Instructions</Form.Label>
-                        <Form.Control
-                          as="textarea"
-                          rows={4}
-                          value={companyProfile.additionalInstructions}
-                          onChange={(e) => setCompanyProfile({
-                            ...companyProfile,
-                            additionalInstructions: e.target.value
-                          })}
-                          placeholder="Specific requirements, question topics to include/exclude, industry-specific needs..."
-                        />
-                      </Form.Group>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                </Accordion>
-
-                {/* Debug Info */}
-                {import.meta.env.DEV && (
-                  <Alert variant="info" className="small">
-                    <strong>Debug Info:</strong><br />
-                    Industry: {companyProfile.industry || 'Not selected'}<br />
-                    Products: {companyProfile.products || 'Not specified'}<br />
-                    Audience: {companyProfile.targetAudience || 'Not selected'}<br />
-                    Goal: {companyProfile.surveyGoal || 'Not specified'}
-                  </Alert>
-                )}
-
-                <Alert variant="info" className="d-flex align-items-start">
-                  <FaLightbulb className="me-2 mt-1" />
-                  <div>
-                    <strong>AI will generate:</strong>
-                    <ul className="mb-0 mt-1">
-                      <li>8-12 relevant questions based on your industry</li>
-                      <li>Mix of Likert scale, rating, choice, and text questions</li>
-                      <li>Hospitality-focused sections (rooms, restaurant, spa, staff)</li>
-                      <li>Professional yet friendly tone for guest comfort</li>
-                      <li>NPS question for recommendation tracking</li>
-                    </ul>
-                  </div>
-                </Alert>
-              </Modal.Body>
-              <Modal.Footer className="d-flex justify-content-between">
-                <div>
-                  {questions.length > 0 && (
+              </Col>
+              <Col md={6}>
+                <Card
+                  className={`h-100 cursor-pointer border-2 ${surveyMode === 'ai-assisted' ? 'border-success' : 'border-light'}`}
+                  onClick={() => {
+                    setSurveyMode('ai-assisted');
+                    setShowAIModal(true);
+                    setShowModeSelector(false);
+                  }}
+                >
+                  <Card.Body className="text-center">
+                    <MdSmartToy size={48} className="text-success mb-3" />
+                    <h6 className="fw-bold">AI-Powered Creation</h6>
+                    <p className="text-muted small">Let AI generate your survey based on your industry, goals, and preferences.</p>
                     <Button
-                      variant="outline-success"
-                      onClick={suggestNextQuestion}
-                      disabled={aiLoadingStates.suggesting}
+                      variant={surveyMode === 'ai-assisted' ? 'success' : 'outline-success'}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSurveyMode('ai-assisted');
+                        setShowAIModal(true);
+                        setShowModeSelector(false);
+                      }}
+                    >
+                      Get AI Help
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+          </div>
+        )}
+
+        {/* AI Workflow Progress Indicator */}
+        {surveyMode === 'ai-assisted' && !showModeSelector && (
+          <div className="bg-success bg-opacity-10 rounded p-3 mb-3">
+            <h6 className="text-success fw-bold mb-2">
+              <MdSmartToy className="me-2" />
+              AI-Assisted Survey Creation
+            </h6>
+            <div className="d-flex align-items-center">
+              <div className="progress flex-grow-1 me-3" style={{ height: '8px' }}>
+                <div
+                  className="progress-bar bg-success"
+                  style={{ width: `${(aiWorkflowStep / 3) * 100}%` }}
+                />
+              </div>
+              <small className="text-muted">
+                Step {aiWorkflowStep} of 3: {
+                  aiWorkflowStep === 1 ? 'Profile Setup' :
+                    aiWorkflowStep === 2 ? 'Review & Edit' :
+                      'Customize & Publish'
+                }
+              </small>
+            </div>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                setSurveyMode('user-defined');
+                setAIWorkflowStep(1);
+                setShowModeSelector(true);
+              }}
+            >
+              Switch to Manual Mode
+            </Button>
+          </div>
+        )}
+
+        <div className="d-flex justify-content-between align-items-center flex-wrap py-3">
+
+          {/* Progress Indicator */}
+          <div className="d-flex align-items-center gap-3 flex-wrap w-50">
+            <small className="text-muted">Completion:</small>
+            <ProgressBar
+              now={getCompletionPercentage()}
+              className="flex-grow-1"
+              style={{ maxWidth: '200px', height: '8px' }}
+              variant={getCompletionPercentage() > 80 ? 'success' : 'primary'}
+            />
+            <small className="fw-semibold">{getCompletionPercentage()}%</small>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="header-actions mb-3">
+            {/* Primary Actions - Always Visible */}
+            <div className="d-flex gap-2 flex-wrap mb-3">
+              <Button
+                variant="outline-primary"
+                onClick={() => setShowAIModal(true)}
+                className="d-flex align-items-center"
+                disabled={aiLoadingStates.generating}
+                size="sm"
+              >
+                {aiLoadingStates.generating ? (
+                  <Spinner size="sm" className="me-2" />
+                ) : (
+                  <MdAutoAwesome className="me-2" />
+                )}
+                <span className="d-none d-sm-inline">AI Assistant</span>
+                <span className="d-sm-none">AI</span>
+              </Button>
+
+              <Button
+                variant="outline-secondary"
+                onClick={() => setShowPreviewModal(true)}
+                className="d-flex align-items-center"
+                size="sm"
+              >
+                <MdPreview className="me-1 me-sm-2" />
+                <span className="d-none d-sm-inline">Preview</span>
+              </Button>
+
+              <Button
+                variant="outline-info"
+                onClick={() => setShowSettingsOffcanvas(true)}
+                className="d-flex align-items-center"
+                size="sm"
+              >
+                <MdSettings className="me-1 me-sm-2" />
+                <span className="d-none d-sm-inline">Settings</span>
+              </Button>
+
+              <Button
+                variant="success"
+                onClick={saveSurvey}
+                disabled={saving}
+                className="d-flex align-items-center"
+                size="sm"
+              >
+                {saving ? <Spinner size="sm" className="me-2" /> : <MdSave className="me-1 me-sm-2" />}
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+
+              <Button
+                variant="primary"
+                onClick={publishSurvey}
+                disabled={saving || questions.length === 0}
+                className="d-flex align-items-center"
+                size="sm"
+              >
+                <MdPublish className="me-1 me-sm-2" />
+                Publish
+              </Button>
+            </div>
+
+            {/* Secondary AI Actions - Collapsible on Mobile */}
+            {questions.length > 0 && (
+              <div className="d-flex gap-2 flex-wrap">
+                <Button
+                  variant="outline-success"
+                  onClick={suggestNextQuestion}
+                  disabled={aiLoadingStates.suggesting}
+                  size="sm"
+                >
+                  {aiLoadingStates.suggesting ? (
+                    <Spinner size="sm" className="me-1" />
+                  ) : (
+                    <MdAdd className="me-1" />
+                  )}
+                  <span className="d-none d-md-inline">Suggest Question</span>
+                  <span className="d-md-none">Suggest</span>
+                </Button>
+
+                <Button
+                  variant="outline-info"
+                  onClick={optimizeSurvey}
+                  disabled={aiLoadingStates.optimizing}
+                  size="sm"
+                >
+                  {aiLoadingStates.optimizing ? (
+                    <Spinner size="sm" className="me-1" />
+                  ) : (
+                    <MdTune className="me-1" />
+                  )}
+                  <span className="d-none d-md-inline">Optimize</span>
+                </Button>
+
+                {!survey.language.includes('Arabic') && (
+                  <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip>Add Arabic translations using AI</Tooltip>}
+                  >
+                    <Button
+                      variant="outline-warning"
+                      onClick={() => translateSurvey('ar')}
+                      disabled={aiLoadingStates.translating}
                       size="sm"
                     >
-                      {aiLoadingStates.suggesting ? (
-                        <>
-                          <Spinner size="sm" className="me-2" />
-                          Suggesting...
-                        </>
+                      {aiLoadingStates.translating ? (
+                        <Spinner size="sm" className="me-1" />
                       ) : (
-                        <>
-                          <MdAdd className="me-2" />
-                          Suggest Question
-                        </>
+                        <MdTranslate className="me-1" />
                       )}
+                      <span className="d-none d-md-inline">Translate</span>
                     </Button>
-                  )}
-                </div>
+                  </OverlayTrigger>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
-                <div>
-                  <Button variant="secondary" onClick={() => setShowAIModal(false)} className="me-2">
-                    Cancel
-                  </Button>
+      </div>
 
-                  <Button
-                    variant="outline-primary"
-                    onClick={generateAIDraft}
-                    disabled={aiLoadingStates.generating || !companyProfile.industry}
-                    className="me-2"
-                  >
-                    {aiLoadingStates.generating ? (
-                      <Spinner size="sm" className="me-2" />
-                    ) : (
-                      <MdEdit className="me-2" />
-                    )}
-                    Quick Draft
-                  </Button>
-
-                  <Button
-                    variant="primary"
-                    onClick={() => {
-                      console.log('🎯 Generate button clicked with profile:', companyProfile);
-                      generateAISurvey();
-                    }}
-                    disabled={aiLoadingStates.generating || !companyProfile.industry || !companyProfile.targetAudience}
-                  >
-                    {aiLoadingStates.generating ? (
-                      <>
-                        <Spinner size="sm" className="me-2" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <MdAutoAwesome className="me-2" />
-                        Generate Complete Survey
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Modal.Footer>
-            </Modal>
-
-            {/* Dynamic Question Modal - Handles all question types */}
-            <Modal
-              show={showQuestionModal}
-              onHide={() => setShowQuestionModal(false)}
-              size="lg"
-            >
-              <Modal.Header closeButton>
-                <Modal.Title>
-                  {questionModalMode === 'create' ? 'Create' : 'Edit'} Question
-                  {selectedQuestion && (
-                    <Badge bg="secondary" className="ms-2">
-                      {questionTypes.find(qt => qt.id === selectedQuestion.type)?.name}
-                    </Badge>
-                  )}
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                {selectedQuestion && (
-                  <div>
-                    {/* Basic Question Information */}
-                    <Form.Group className="mb-3">
-                      <Form.Label>Question Title *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={selectedQuestion.title}
-                        onChange={(e) => setSelectedQuestion({ ...selectedQuestion, title: e.target.value })}
-                        placeholder="Enter your question..."
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Description (Optional)</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={2}
-                        value={selectedQuestion.description}
-                        onChange={(e) => setSelectedQuestion({ ...selectedQuestion, description: e.target.value })}
-                        placeholder="Add additional context or instructions..."
-                      />
-                    </Form.Group>
-
-                    {/* Question Type Specific Options */}
-                    {(selectedQuestion.type === 'single_choice' || selectedQuestion.type === 'multiple_choice') && (
-                      <div className="mb-3">
-                        <Form.Label>Answer Options</Form.Label>
-                        {selectedQuestion.options.map((option, index) => (
-                          <div key={index} className="d-flex align-items-center mb-2">
-                            <Form.Control
-                              type="text"
-                              value={option}
-                              onChange={(e) => {
-                                const newOptions = [...selectedQuestion.options];
-                                newOptions[index] = e.target.value;
-                                setSelectedQuestion({ ...selectedQuestion, options: newOptions });
-                              }}
-                              placeholder={`Option ${index + 1}`}
-                            />
-                            {selectedQuestion.options.length > 2 && (
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                className="ms-2"
-                                onClick={() => {
-                                  const newOptions = selectedQuestion.options.filter((_, i) => i !== index);
-                                  setSelectedQuestion({ ...selectedQuestion, options: newOptions });
-                                }}
+      {/* Main Content */}
+      <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-4">
+        {/* Survey Builder Tab */}
+        <Tab eventKey="builder" title={
+          <span className="d-flex align-items-center">
+            <MdEdit className="me-2" />
+            Builder
+          </span>
+        }>
+          <Row>
+            {/* Question Types Sidebar */}
+            <Col lg={3}>
+              <Card className="sticky-top" style={{ top: '1rem' }}>
+                <Card.Header className="d-flex align-items-center">
+                  <MdAdd className="me-2" />
+                  <strong>Add Questions</strong>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  {/* Question Categories */}
+                  <Accordion defaultActiveKey={['0']} alwaysOpen>
+                    {['choice', 'rating', 'text', 'input', 'advanced'].map((category, idx) => (
+                      <Accordion.Item eventKey={idx.toString()} key={category}>
+                        <Accordion.Header>
+                          <span className="text-capitalize fw-semibold">{category} Questions</span>
+                        </Accordion.Header>
+                        <Accordion.Body className="p-2">
+                          {questionTypes
+                            .filter(qt => qt.category === category)
+                            .map(questionType => (
+                              <Card
+                                key={questionType.id}
+                                className="question-type-card mb-2 border-0 cursor-pointer"
+                                onClick={() => addQuestion(questionType.id)}
                               >
-                                <MdClose />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          onClick={() => {
-                            const newOptions = [...selectedQuestion.options, `Option ${selectedQuestion.options.length + 1}`];
-                            setSelectedQuestion({ ...selectedQuestion, options: newOptions });
-                          }}
-                        >
-                          <MdAdd className="me-1" /> Add Option
-                        </Button>
-                      </div>
-                    )}
+                                <Card.Body className="p-3">
+                                  <div className="d-flex align-items-center mb-2">
+                                    <questionType.icon
+                                      size={20}
+                                      style={{ color: questionType.color }}
+                                      className="me-2"
+                                    />
+                                    <strong className="small">{questionType.name}</strong>
+                                  </div>
+                                  <p className="text-muted small mb-1">{questionType.description}</p>
+                                  <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                    {questionType.example}
+                                  </div>
+                                </Card.Body>
+                              </Card>
+                            ))}
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    ))}
+                  </Accordion>
+                </Card.Body>
+              </Card>
+            </Col>
 
-                    {selectedQuestion.type === 'yes_no' && (
-                      <div className="mb-3">
-                        <Form.Label>Yes/No Options</Form.Label>
-                        <div className="d-flex gap-3">
-                          <Form.Control
-                            type="text"
-                            value={selectedQuestion.options[0] || 'Yes'}
-                            onChange={(e) => {
-                              const newOptions = [e.target.value, selectedQuestion.options[1] || 'No'];
-                              setSelectedQuestion({ ...selectedQuestion, options: newOptions });
-                            }}
-                            placeholder="Yes option text"
-                          />
-                          <Form.Control
-                            type="text"
-                            value={selectedQuestion.options[1] || 'No'}
-                            onChange={(e) => {
-                              const newOptions = [selectedQuestion.options[0] || 'Yes', e.target.value];
-                              setSelectedQuestion({ ...selectedQuestion, options: newOptions });
-                            }}
-                            placeholder="No option text"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedQuestion.type === 'rating' && (
-                      <div className="mb-3">
-                        <Form.Label>Rating Scale</Form.Label>
-                        <Form.Select
-                          value={selectedQuestion.settings?.scale || 5}
-                          onChange={(e) => setSelectedQuestion({ 
-                            ...selectedQuestion, 
-                            settings: { ...selectedQuestion.settings, scale: parseInt(e.target.value) }
-                          })}
-                        >
-                          <option value={3}>3 Stars</option>
-                          <option value={5}>5 Stars</option>
-                          <option value={10}>10 Stars</option>
-                        </Form.Select>
-                      </div>
-                    )}
-
-                    {selectedQuestion.type === 'likert' && (
-                      <div className="mb-3">
-                        <Form.Label>Likert Scale Options</Form.Label>
-                        {selectedQuestion.options.map((option, index) => (
-                          <div key={index} className="d-flex align-items-center mb-2">
-                            <Form.Control
-                              type="text"
-                              value={option}
-                              onChange={(e) => {
-                                const newOptions = [...selectedQuestion.options];
-                                newOptions[index] = e.target.value;
-                                setSelectedQuestion({ ...selectedQuestion, options: newOptions });
-                              }}
-                              placeholder={`Scale option ${index + 1}`}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {selectedQuestion.type === 'nps' && (
-                      <div className="mb-3">
-                        <Alert variant="info">
-                          <strong>NPS Scale:</strong> 0-10 rating scale where 0 = "Not at all likely" and 10 = "Extremely likely"
-                        </Alert>
-                      </div>
-                    )}
-
-                    {(selectedQuestion.type === 'text_short' || selectedQuestion.type === 'text_long') && (
-                      <div className="mb-3">
-                        <Form.Label>Text Input Settings</Form.Label>
+            {/* Survey Content */}
+            <Col lg={9}>
+              {/* Survey Header */}
+              <Card className="mb-4">
+                <Card.Header className="d-flex align-items-center">
+                  <MdSettings className="me-2" />
+                  <strong>Survey Information</strong>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={8}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-semibold">Survey Title *</Form.Label>
                         <Form.Control
                           type="text"
-                          value={selectedQuestion.settings?.placeholder || ''}
-                          onChange={(e) => setSelectedQuestion({ 
-                            ...selectedQuestion, 
-                            settings: { ...selectedQuestion.settings, placeholder: e.target.value }
-                          })}
-                          placeholder="Placeholder text for input field"
+                          value={survey.title}
+                          onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
+                          placeholder="Enter survey title..."
+                          className="form-control-lg"
                         />
-                      </div>
-                    )}
+                      </Form.Group>
 
-                    <Form.Check
-                      type="switch"
-                      id="required-question"
-                      label="Required Question"
-                      checked={selectedQuestion.required}
-                      onChange={(e) => setSelectedQuestion({ ...selectedQuestion, required: e.target.checked })}
-                      className="mt-3"
-                    />
-                  </div>
-                )}
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={() => setShowQuestionModal(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    updateQuestion(selectedQuestion.id, selectedQuestion);
-                    setShowQuestionModal(false);
-                  }}
-                  disabled={!selectedQuestion?.title?.trim()}
-                >
-                  {questionModalMode === 'create' ? 'Create' : 'Save'} Question
-                </Button>
-              </Modal.Footer>
-            </Modal>
-
-            {/* Preview Modal */}
-            <Modal
-              show={showPreviewModal}
-              onHide={() => setShowPreviewModal(false)}
-              size="lg"
-              centered
-            >
-              <Modal.Header closeButton>
-                <Modal.Title className="d-flex align-items-center">
-                  <MdPreview className="me-2" />
-                  Survey Preview
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <div className="survey-preview" style={{
-                  backgroundColor: survey.branding.backgroundColor,
-                  color: survey.branding.textColor,
-                  padding: '2rem',
-                  borderRadius: '8px'
-                }}>
-                  <h3 style={{ color: survey.branding.primaryColor }}>
-                    {survey.title || 'Untitled Survey'}
-                  </h3>
-                  {survey.description && (
-                    <p className="mb-4">{survey.description}</p>
-                  )}
-
-                  {questions.map((question, index) => (
-                    <div key={question.id} className="mb-4">
-                      <div className="d-flex align-items-center mb-2">
-                        <Badge bg="primary" className="me-2">Q{index + 1}</Badge>
-                        <strong>{question.title}</strong>
-                        {question.required && <span className="text-danger ms-1">*</span>}
-                      </div>
-                      {question.description && (
-                        <p className="text-muted small mb-2">{question.description}</p>
-                      )}
-
-                      {/* Question Type Preview */}
-                      {question.type === 'rating' && (
-                        <div className="d-flex gap-1">
-                          {[1, 2, 3, 4, 5].map(i => (
-                            <MdStar key={i} className="text-warning" />
-                          ))}
-                        </div>
-                      )}
-
-                      {(question.type === 'single_choice' || question.type === 'multiple_choice') && (
-                        <div>
-                          {question.options.map((option, idx) => (
-                            <div key={idx} className="d-flex align-items-center mb-1">
-                              <Form.Check
-                                type={question.type === 'single_choice' ? 'radio' : 'checkbox'}
-                                name={`preview-${question.id}`}
-                                label={option}
-                                disabled
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {question.type.includes('text') && (
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-semibold">Description</Form.Label>
                         <Form.Control
-                          as={question.type === 'text_long' ? 'textarea' : 'input'}
-                          rows={question.type === 'text_long' ? 3 : undefined}
-                          placeholder="Your answer here..."
-                          disabled
+                          as="textarea"
+                          rows={3}
+                          value={survey.description}
+                          onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
+                          placeholder="Describe the purpose of this survey..."
                         />
-                      )}
-                    </div>
-                  ))}
+                      </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-semibold">Category</Form.Label>
+                        <Form.Select
+                          value={survey.category}
+                          onChange={(e) => setSurvey({ ...survey, category: e.target.value })}
+                        >
+                          <option value="">Select Category</option>
+                          {industries.map(industry => (
+                            <option key={industry.id} value={industry.id}>
+                              {industry.name}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
 
-                  <div className="text-center mt-4">
-                    <Button
-                      style={{ backgroundColor: survey.branding.primaryColor }}
-                      disabled
-                    >
-                      Submit Survey
-                    </Button>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-semibold">Languages</Form.Label>
+                        <div className="d-flex gap-2 flex-wrap">
+                          {['English', 'Arabic'].map(lang => (
+                            <Form.Check
+                              key={lang}
+                              type="checkbox"
+                              id={`lang-${lang}`}
+                              label={lang}
+                              checked={survey.language.includes(lang)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSurvey({ ...survey, language: [...survey.language, lang] });
+                                } else {
+                                  setSurvey({ ...survey, language: survey.language.filter(l => l !== lang) });
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+
+              {/* Questions List */}
+              <Card>
+                <Card.Header className="d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center">
+                    <MdViewList className="me-2" />
+                    <strong>Questions ({questions.length})</strong>
                   </div>
-                </div>
-              </Modal.Body>
-            </Modal>
+                  <div className="d-flex align-items-center gap-2">
+                    {questions.length > 0 && (
+                      <>
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip>Get AI suggestions for next question</Tooltip>}
+                        >
+                          <Button
+                            variant="outline-info"
+                            size="sm"
+                            onClick={suggestNextQuestion}
+                            disabled={isGeneratingAI}
+                            className="d-flex align-items-center"
+                          >
+                            <MdAutoAwesome className="me-1" />
+                            {isGeneratingAI ? <Spinner size="sm" /> : 'Suggest'}
+                          </Button>
+                        </OverlayTrigger>
 
-            {/* Settings Offcanvas */}
-            <Offcanvas
-              show={showSettingsOffcanvas}
-              onHide={() => setShowSettingsOffcanvas(false)}
-              placement="end"
-            >
-              <Offcanvas.Header closeButton>
-                <Offcanvas.Title className="d-flex align-items-center">
-                  <MdSettings className="me-2" />
-                  Survey Settings
-                </Offcanvas.Title>
-              </Offcanvas.Header>
-              <Offcanvas.Body>
-                <Form>
-                  <h6 className="mb-3">Response Settings</h6>
+                        <OverlayTrigger
+                          placement="top"
+                          overlay={<Tooltip>Analyze and optimize survey structure</Tooltip>}
+                        >
+                          <Button
+                            variant="outline-warning"
+                            size="sm"
+                            onClick={optimizeSurvey}
+                            disabled={isGeneratingAI}
+                            className="d-flex align-items-center"
+                          >
+                            <MdTune className="me-1" />
+                            {isGeneratingAI ? <Spinner size="sm" /> : 'Optimize'}
+                          </Button>
+                        </OverlayTrigger>
+                      </>
+                    )}
+                    {questions.length > 0 && (
+                      <small className="text-muted">Drag to reorder</small>
+                    )}
+                  </div>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  {questions.length === 0 ? (
+                    <div className="text-center py-5">
+                      <MdAdd size={48} className="text-muted mb-3" />
+                      <h5>No Questions Yet</h5>
+                      <p className="text-muted mb-4">
+                        Add questions from the sidebar or use AI to generate a complete survey
+                      </p>
+                      <Button
+                        variant="outline-primary"
+                        onClick={() => setShowAIModal(true)}
+                        className="d-flex align-items-center mx-auto"
+                      >
+                        <MdAutoAwesome className="me-2" />
+                        Generate with AI
+                      </Button>
+                    </div>
+                  ) : (
+                    <DragDropContext onDragEnd={handleOnDragEnd}>
+                      <Droppable droppableId="questions">
+                        {(provided) => (
+                          <div {...provided.droppableProps} ref={provided.innerRef}>
+                            {questions.map((question, index) => (
+                              <Draggable
+                                key={question.id}
+                                draggableId={question.id.toString()}
+                                index={index}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}   // yaha rakho
+                                    className={`question-item p-3 border-bottom ${snapshot.isDragging ? 'dragging' : ''
+                                      }`}
+                                  >
+                                    <div className="d-flex align-items-start">
+                                      {/* handle props yaha pass karo */}
+                                      <div
+                                        {...provided.dragHandleProps}
+                                        className="drag-handle me-3 mt-1"
+                                      >
+                                        <MdDragHandle className="text-muted" />
+                                      </div>
 
-                  <Form.Check
-                    type="switch"
-                    id="public-survey-off"
-                    label="Make survey public"
-                    checked={survey.isPublic}
-                    onChange={(e) => setSurvey({ ...survey, isPublic: e.target.checked })}
-                    className="mb-3"
-                  />
+                                      <div className="flex-grow-1">
+                                        <div className="d-flex align-items-center mb-2">
+                                          <Badge bg="light" text="dark" className="me-2">
+                                            Q{index + 1}
+                                          </Badge>
+                                          {questionTypes.find(qt => qt.id === question.type) && (
+                                            <>
+                                              {React.createElement(
+                                                questionTypes.find(qt => qt.id === question.type).icon,
+                                                {
+                                                  size: 16,
+                                                  className: 'me-2',
+                                                  style: {
+                                                    color: questionTypes.find(qt => qt.id === question.type).color
+                                                  }
+                                                }
+                                              )}
+                                              <small className="text-muted me-3">
+                                                {questionTypes.find(qt => qt.id === question.type).name}
+                                              </small>
+                                            </>
+                                          )}
+                                          {question.required && (
+                                            <Badge bg="danger" className="me-2">Required</Badge>
+                                          )}
+                                        </div>
 
-                  <Form.Check
-                    type="switch"
-                    id="anonymous-responses-off"
-                    label="Allow anonymous responses"
-                    checked={survey.allowAnonymous}
-                    onChange={(e) => setSurvey({ ...survey, allowAnonymous: e.target.checked })}
-                    className="mb-3"
-                  />
+                                        <h6 className="mb-1">{question.title}</h6>
+                                        {question.description && (
+                                          <p className="text-muted small mb-2">{question.description}</p>
+                                        )}
 
-                  <Form.Check
-                    type="switch"
-                    id="collect-email-off"
-                    label="Collect email addresses"
-                    checked={survey.collectEmail}
-                    onChange={(e) => setSurvey({ ...survey, collectEmail: e.target.checked })}
-                    className="mb-3"
-                  />
+                                        {/* Question Preview */}
+                                        {question.options.length > 0 && (
+                                          <div className="mt-2">
+                                            {question.type === 'single_choice' || question.type === 'multiple_choice' ? (
+                                              <div className="d-flex gap-2 flex-wrap">
+                                                {question.options.slice(0, 3).map((option, idx) => (
+                                                  <Badge key={idx} bg="light" text="dark" className="border">
+                                                    {option}
+                                                  </Badge>
+                                                ))}
+                                                {question.options.length > 3 && (
+                                                  <Badge bg="light" text="muted">
+                                                    +{question.options.length - 3} more
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            ) : null}
+                                          </div>
+                                        )}
+                                      </div>
 
-                  <Form.Check
-                    type="switch"
-                    id="multiple-responses-off"
-                    label="Allow multiple responses from same user"
-                    checked={survey.multipleResponses}
-                    onChange={(e) => setSurvey({ ...survey, multipleResponses: e.target.checked })}
-                    className="mb-4"
-                  />
+                                      <div className="d-flex gap-1 ms-3">
+                                        <OverlayTrigger
+                                          placement="top"
+                                          overlay={<Tooltip>Edit Question</Tooltip>}
+                                        >
+                                          <Button
+                                            variant="outline-primary"
+                                            size="sm"
+                                            onClick={() => {
+                                              setSelectedQuestion(question);
+                                              setQuestionModalMode('edit');
+                                              setShowQuestionModal(true);
+                                            }}
+                                          >
+                                            <MdEdit size={14} />
+                                          </Button>
+                                        </OverlayTrigger>
 
-                  <h6 className="mb-3">Branding</h6>
+                                        <OverlayTrigger
+                                          placement="top"
+                                          overlay={<Tooltip>Duplicate</Tooltip>}
+                                        >
+                                          <Button
+                                            variant="outline-secondary"
+                                            size="sm"
+                                            onClick={() => duplicateQuestion(question)}
+                                          >
+                                            <MdContentCopy size={14} />
+                                          </Button>
+                                        </OverlayTrigger>
 
+                                        <OverlayTrigger
+                                          placement="top"
+                                          overlay={<Tooltip>Delete Question</Tooltip>}
+                                        >
+                                          <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            onClick={() => deleteQuestion(question.id)}
+                                          >
+                                            <MdDelete size={14} />
+                                          </Button>
+                                        </OverlayTrigger>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Tab>
+
+        {/* Design Tab */}
+        <Tab eventKey="design" title={
+          <span className="d-flex align-items-center">
+            <FaPalette className="me-2" />
+            Design
+          </span>
+        }>
+          <Card>
+            <Card.Header>
+              <strong>Survey Appearance</strong>
+            </Card.Header>
+            <Card.Body>
+              <Row>
+                <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Primary Color</Form.Label>
                     <Form.Control
@@ -2631,21 +1905,80 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
                       })}
                     />
                   </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <div className="survey-preview-mini border rounded p-3" style={{
+                    backgroundColor: survey.branding.backgroundColor,
+                    color: survey.branding.textColor
+                  }}>
+                    <h5 style={{ color: survey.branding.primaryColor }}>
+                      {survey.title || 'Survey Title'}
+                    </h5>
+                    <p className="small">{survey.description || 'Survey description...'}</p>
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <div
+                        className="rounded-circle"
+                        style={{
+                          width: '12px',
+                          height: '12px',
+                          backgroundColor: survey.branding.primaryColor
+                        }}
+                      ></div>
+                      <small>Sample question</small>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Tab>
 
-                  <Form.Group className="mb-4">
-                    <Form.Label>Text Color</Form.Label>
-                    <Form.Control
-                      type="color"
-                      value={survey.branding.textColor}
-                      onChange={(e) => setSurvey({
-                        ...survey,
-                        branding: { ...survey.branding, textColor: e.target.value }
-                      })}
-                    />
-                  </Form.Group>
+        {/* Settings Tab */}
+        <Tab eventKey="settings" title={
+          <span className="d-flex align-items-center">
+            <MdTune className="me-2" />
+            Settings
+          </span>
+        }>
+          <Row>
+            <Col md={6}>
+              <Card className="mb-4">
+                <Card.Header>Response Settings</Card.Header>
+                <Card.Body>
+                  <Form.Check
+                    type="switch"
+                    id="public-survey"
+                    label="Make survey public"
+                    checked={survey.isPublic}
+                    onChange={(e) => setSurvey({ ...survey, isPublic: e.target.checked })}
+                    className="mb-3"
+                  />
 
-                  <h6 className="mb-3">Completion</h6>
+                  <Form.Check
+                    type="switch"
+                    id="anonymous-responses"
+                    label="Allow anonymous responses"
+                    checked={survey.allowAnonymous}
+                    onChange={(e) => setSurvey({ ...survey, allowAnonymous: e.target.checked })}
+                    className="mb-3"
+                  />
 
+                  <Form.Check
+                    type="switch"
+                    id="multiple-responses"
+                    label="Allow multiple responses from same user"
+                    checked={survey.multipleResponses}
+                    onChange={(e) => setSurvey({ ...survey, multipleResponses: e.target.checked })}
+                    className="mb-3"
+                  />
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col md={6}>
+              <Card className="mb-4">
+                <Card.Header>Completion Settings</Card.Header>
+                <Card.Body>
                   <Form.Group className="mb-3">
                     <Form.Label>Thank You Message</Form.Label>
                     <Form.Control
@@ -2665,11 +1998,696 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
                       placeholder="https://example.com"
                     />
                   </Form.Group>
-                </Form>
-              </Offcanvas.Body>
-            </Offcanvas>
-          </Container>
-    );
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Tab>
+      </Tabs>
+
+      {/* AI Assistant Modal */}
+      <Modal
+        show={showAIModal}
+        onHide={() => setShowAIModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="d-flex align-items-center">
+            <MdAutoAwesome className="me-2 text-primary" />
+            AI Survey Assistant
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Industry/Category *</Form.Label>
+                <Form.Select
+                  value={companyProfile.industry}
+                  onChange={(e) => {
+                    console.log('Industry selected:', e.target.value);
+                    setCompanyProfile({ ...companyProfile, industry: e.target.value });
+                  }}
+                >
+                  <option value="">Select Industry</option>
+                  {industries.map(industry => (
+                    <option key={industry.id} value={industry.id}>
+                      {industry.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Products/Services</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={companyProfile.products}
+                  onChange={(e) => {
+                    console.log('Products updated:', e.target.value);
+                    setCompanyProfile({ ...companyProfile, products: e.target.value });
+                  }}
+                  placeholder="e.g., Hotel Rooms, Restaurant, Spa"
+                />
+                <Form.Text className="text-muted">
+                  Separate multiple items with commas
+                </Form.Text>
+              </Form.Group>
+            </Col>
+
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Target Audience *</Form.Label>
+                <Form.Select
+                  value={companyProfile.targetAudience}
+                  onChange={(e) => {
+                    console.log('Audience selected:', e.target.value);
+                    setCompanyProfile({ ...companyProfile, targetAudience: e.target.value });
+                  }}
+                >
+                  <option value="">Select Audience</option>
+                  <option value="customers">Customers</option>
+                  <option value="guests">Guests/Visitors</option>
+                  <option value="employees">Employees</option>
+                  <option value="vendors">Vendors/Partners</option>
+                  <option value="students">Students</option>
+                  <option value="patients">Patients</option>
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Survey Goal *</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={companyProfile.surveyGoal}
+                  onChange={(e) => {
+                    console.log('Goal updated:', e.target.value);
+                    setCompanyProfile({ ...companyProfile, surveyGoal: e.target.value });
+                  }}
+                  placeholder="e.g., Customer Satisfaction"
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Advanced AI Configuration */}
+          <Accordion className="mb-4">
+            <Accordion.Item eventKey="0">
+              <Accordion.Header>
+                <MdTune className="me-2" />
+                Advanced AI Settings
+              </Accordion.Header>
+              <Accordion.Body>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Question Count</Form.Label>
+                      <Form.Select
+                        value={companyProfile.questionCount}
+                        onChange={(e) => setCompanyProfile({
+                          ...companyProfile,
+                          questionCount: parseInt(e.target.value)
+                        })}
+                      >
+                        <option value={5}>5 Questions (Quick)</option>
+                        <option value={8}>8 Questions (Standard)</option>
+                        <option value={12}>12 Questions (Comprehensive)</option>
+                        <option value={15}>15 Questions (Detailed)</option>
+                      </Form.Select>
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Survey Tone</Form.Label>
+                      <Form.Select
+                        value={companyProfile.tone}
+                        onChange={(e) => setCompanyProfile({
+                          ...companyProfile,
+                          tone: e.target.value
+                        })}
+                      >
+                        <option value="friendly-professional">Friendly & Professional</option>
+                        <option value="formal">Formal</option>
+                        <option value="casual">Casual & Relaxed</option>
+                        <option value="neutral">Neutral</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Languages</Form.Label>
+                      <div>
+                        {['English', 'Arabic', 'Both'].map(lang => (
+                          <Form.Check
+                            key={lang}
+                            type="checkbox"
+                            id={`lang-${lang}`}
+                            label={lang}
+                            checked={companyProfile.languages.includes(lang)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCompanyProfile({
+                                  ...companyProfile,
+                                  languages: [...companyProfile.languages, lang]
+                                });
+                              } else {
+                                setCompanyProfile({
+                                  ...companyProfile,
+                                  languages: companyProfile.languages.filter(l => l !== lang)
+                                });
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Check
+                        type="checkbox"
+                        id="include-nps"
+                        label="Include NPS Question"
+                        checked={companyProfile.includeNPS}
+                        onChange={(e) => setCompanyProfile({
+                          ...companyProfile,
+                          includeNPS: e.target.checked
+                        })}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Additional Instructions</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={4}
+                    value={companyProfile.additionalInstructions}
+                    onChange={(e) => setCompanyProfile({
+                      ...companyProfile,
+                      additionalInstructions: e.target.value
+                    })}
+                    placeholder="Specific requirements, question topics to include/exclude, industry-specific needs..."
+                  />
+                </Form.Group>
+              </Accordion.Body>
+            </Accordion.Item>
+          </Accordion>
+
+          {/* Debug Info */}
+          {import.meta.env.DEV && (
+            <Alert variant="info" className="small">
+              <strong>Debug Info:</strong><br />
+              Industry: {companyProfile.industry || 'Not selected'}<br />
+              Products: {companyProfile.products || 'Not specified'}<br />
+              Audience: {companyProfile.targetAudience || 'Not selected'}<br />
+              Goal: {companyProfile.surveyGoal || 'Not specified'}
+            </Alert>
+          )}
+
+          <Alert variant="info" className="d-flex align-items-start">
+            <FaLightbulb className="me-2 mt-1" />
+            <div>
+              <strong>AI will generate:</strong>
+              <ul className="mb-0 mt-1">
+                <li>8-12 relevant questions based on your industry</li>
+                <li>Mix of Likert scale, rating, choice, and text questions</li>
+                <li>Hospitality-focused sections (rooms, restaurant, spa, staff)</li>
+                <li>Professional yet friendly tone for guest comfort</li>
+                <li>NPS question for recommendation tracking</li>
+              </ul>
+            </div>
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer className="d-flex justify-content-between">
+          <div>
+            {questions.length > 0 && (
+              <Button
+                variant="outline-success"
+                onClick={suggestNextQuestion}
+                disabled={aiLoadingStates.suggesting}
+                size="sm"
+              >
+                {aiLoadingStates.suggesting ? (
+                  <>
+                    <Spinner size="sm" className="me-2" />
+                    Suggesting...
+                  </>
+                ) : (
+                  <>
+                    <MdAdd className="me-2" />
+                    Suggest Question
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          <div>
+            <Button variant="secondary" onClick={() => setShowAIModal(false)} className="me-2">
+              Cancel
+            </Button>
+
+            <Button
+              variant="outline-primary"
+              onClick={generateAIDraft}
+              disabled={aiLoadingStates.generating || !companyProfile.industry}
+              className="me-2"
+            >
+              {aiLoadingStates.generating ? (
+                <Spinner size="sm" className="me-2" />
+              ) : (
+                <MdEdit className="me-2" />
+              )}
+              Quick Draft
+            </Button>
+
+            <Button
+              variant="primary"
+              onClick={() => {
+                console.log('🎯 Generate button clicked with profile:', companyProfile);
+                generateAISurvey();
+              }}
+              disabled={aiLoadingStates.generating || !companyProfile.industry || !companyProfile.targetAudience}
+            >
+              {aiLoadingStates.generating ? (
+                <>
+                  <Spinner size="sm" className="me-2" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <MdAutoAwesome className="me-2" />
+                  Generate Complete Survey
+                </>
+              )}
+            </Button>
+          </div>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Dynamic Question Modal - Handles all question types */}
+      <Modal
+        show={showQuestionModal}
+        onHide={() => setShowQuestionModal(false)}
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {questionModalMode === 'create' ? 'Create' : 'Edit'} Question
+            {selectedQuestion && (
+              <Badge bg="secondary" className="ms-2">
+                {questionTypes.find(qt => qt.id === selectedQuestion.type)?.name}
+              </Badge>
+            )}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedQuestion && (
+            <div>
+              {/* Basic Question Information */}
+              <Form.Group className="mb-3">
+                <Form.Label>Question Title *</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={selectedQuestion.title}
+                  onChange={(e) => setSelectedQuestion({ ...selectedQuestion, title: e.target.value })}
+                  placeholder="Enter your question..."
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Description (Optional)</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={selectedQuestion.description}
+                  onChange={(e) => setSelectedQuestion({ ...selectedQuestion, description: e.target.value })}
+                  placeholder="Add additional context or instructions..."
+                />
+              </Form.Group>
+
+              {/* Question Type Specific Options */}
+              {(selectedQuestion.type === 'single_choice' || selectedQuestion.type === 'multiple_choice') && (
+                <div className="mb-3">
+                  <Form.Label>Answer Options</Form.Label>
+                  {selectedQuestion.options.map((option, index) => (
+                    <div key={index} className="d-flex align-items-center mb-2">
+                      <Form.Control
+                        type="text"
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...selectedQuestion.options];
+                          newOptions[index] = e.target.value;
+                          setSelectedQuestion({ ...selectedQuestion, options: newOptions });
+                        }}
+                        placeholder={`Option ${index + 1}`}
+                      />
+                      {selectedQuestion.options.length > 2 && (
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          className="ms-2"
+                          onClick={() => {
+                            const newOptions = selectedQuestion.options.filter((_, i) => i !== index);
+                            setSelectedQuestion({ ...selectedQuestion, options: newOptions });
+                          }}
+                        >
+                          <MdClose />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => {
+                      const newOptions = [...selectedQuestion.options, `Option ${selectedQuestion.options.length + 1}`];
+                      setSelectedQuestion({ ...selectedQuestion, options: newOptions });
+                    }}
+                  >
+                    <MdAdd className="me-1" /> Add Option
+                  </Button>
+                </div>
+              )}
+
+              {selectedQuestion.type === 'yes_no' && (
+                <div className="mb-3">
+                  <Form.Label>Yes/No Options</Form.Label>
+                  <div className="d-flex gap-3">
+                    <Form.Control
+                      type="text"
+                      value={selectedQuestion.options[0] || 'Yes'}
+                      onChange={(e) => {
+                        const newOptions = [e.target.value, selectedQuestion.options[1] || 'No'];
+                        setSelectedQuestion({ ...selectedQuestion, options: newOptions });
+                      }}
+                      placeholder="Yes option text"
+                    />
+                    <Form.Control
+                      type="text"
+                      value={selectedQuestion.options[1] || 'No'}
+                      onChange={(e) => {
+                        const newOptions = [selectedQuestion.options[0] || 'Yes', e.target.value];
+                        setSelectedQuestion({ ...selectedQuestion, options: newOptions });
+                      }}
+                      placeholder="No option text"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedQuestion.type === 'rating' && (
+                <div className="mb-3">
+                  <Form.Label>Rating Scale</Form.Label>
+                  <Form.Select
+                    value={selectedQuestion.settings?.scale || 5}
+                    onChange={(e) => setSelectedQuestion({
+                      ...selectedQuestion,
+                      settings: { ...selectedQuestion.settings, scale: parseInt(e.target.value) }
+                    })}
+                  >
+                    <option value={3}>3 Stars</option>
+                    <option value={5}>5 Stars</option>
+                    <option value={10}>10 Stars</option>
+                  </Form.Select>
+                </div>
+              )}
+
+              {selectedQuestion.type === 'likert' && (
+                <div className="mb-3">
+                  <Form.Label>Likert Scale Options</Form.Label>
+                  {selectedQuestion.options.map((option, index) => (
+                    <div key={index} className="d-flex align-items-center mb-2">
+                      <Form.Control
+                        type="text"
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...selectedQuestion.options];
+                          newOptions[index] = e.target.value;
+                          setSelectedQuestion({ ...selectedQuestion, options: newOptions });
+                        }}
+                        placeholder={`Scale option ${index + 1}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedQuestion.type === 'nps' && (
+                <div className="mb-3">
+                  <Alert variant="info">
+                    <strong>NPS Scale:</strong> 0-10 rating scale where 0 = "Not at all likely" and 10 = "Extremely likely"
+                  </Alert>
+                </div>
+              )}
+
+              {(selectedQuestion.type === 'text_short' || selectedQuestion.type === 'text_long') && (
+                <div className="mb-3">
+                  <Form.Label>Text Input Settings</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={selectedQuestion.settings?.placeholder || ''}
+                    onChange={(e) => setSelectedQuestion({
+                      ...selectedQuestion,
+                      settings: { ...selectedQuestion.settings, placeholder: e.target.value }
+                    })}
+                    placeholder="Placeholder text for input field"
+                  />
+                </div>
+              )}
+
+              <Form.Check
+                type="switch"
+                id="required-question"
+                label="Required Question"
+                checked={selectedQuestion.required}
+                onChange={(e) => setSelectedQuestion({ ...selectedQuestion, required: e.target.checked })}
+                className="mt-3"
+              />
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowQuestionModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              updateQuestion(selectedQuestion.id, selectedQuestion);
+              setShowQuestionModal(false);
+            }}
+            disabled={!selectedQuestion?.title?.trim()}
+          >
+            {questionModalMode === 'create' ? 'Create' : 'Save'} Question
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Preview Modal */}
+      <Modal
+        show={showPreviewModal}
+        onHide={() => setShowPreviewModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="d-flex align-items-center">
+            <MdPreview className="me-2" />
+            Survey Preview
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="survey-preview" style={{
+            backgroundColor: survey.branding.backgroundColor,
+            color: survey.branding.textColor,
+            padding: '2rem',
+            borderRadius: '8px'
+          }}>
+            <h3 style={{ color: survey.branding.primaryColor }}>
+              {survey.title || 'Untitled Survey'}
+            </h3>
+            {survey.description && (
+              <p className="mb-4">{survey.description}</p>
+            )}
+
+            {questions.map((question, index) => (
+              <div key={question.id} className="mb-4">
+                <div className="d-flex align-items-center mb-2">
+                  <Badge bg="primary" className="me-2">Q{index + 1}</Badge>
+                  <strong>{question.title}</strong>
+                  {question.required && <span className="text-danger ms-1">*</span>}
+                </div>
+                {question.description && (
+                  <p className="text-muted small mb-2">{question.description}</p>
+                )}
+
+                {/* Question Type Preview */}
+                {question.type === 'rating' && (
+                  <div className="d-flex gap-1">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <MdStar key={i} className="text-warning" />
+                    ))}
+                  </div>
+                )}
+
+                {(question.type === 'single_choice' || question.type === 'multiple_choice') && (
+                  <div>
+                    {question.options.map((option, idx) => (
+                      <div key={idx} className="d-flex align-items-center mb-1">
+                        <Form.Check
+                          type={question.type === 'single_choice' ? 'radio' : 'checkbox'}
+                          name={`preview-${question.id}`}
+                          label={option}
+                          disabled
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {question.type.includes('text') && (
+                  <Form.Control
+                    as={question.type === 'text_long' ? 'textarea' : 'input'}
+                    rows={question.type === 'text_long' ? 3 : undefined}
+                    placeholder="Your answer here..."
+                    disabled
+                  />
+                )}
+              </div>
+            ))}
+
+            <div className="text-center mt-4">
+              <Button
+                style={{ backgroundColor: survey.branding.primaryColor }}
+                disabled
+              >
+                Submit Survey
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+      {/* Settings Offcanvas */}
+      <Offcanvas
+        show={showSettingsOffcanvas}
+        onHide={() => setShowSettingsOffcanvas(false)}
+        placement="end"
+      >
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title className="d-flex align-items-center">
+            <MdSettings className="me-2" />
+            Survey Settings
+          </Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          <Form>
+            <h6 className="mb-3">Response Settings</h6>
+
+            <Form.Check
+              type="switch"
+              id="public-survey-off"
+              label="Make survey public"
+              checked={survey.isPublic}
+              onChange={(e) => setSurvey({ ...survey, isPublic: e.target.checked })}
+              className="mb-3"
+            />
+
+            <Form.Check
+              type="switch"
+              id="anonymous-responses-off"
+              label="Allow anonymous responses"
+              checked={survey.allowAnonymous}
+              onChange={(e) => setSurvey({ ...survey, allowAnonymous: e.target.checked })}
+              className="mb-3"
+            />
+
+            <Form.Check
+              type="switch"
+              id="collect-email-off"
+              label="Collect email addresses"
+              checked={survey.collectEmail}
+              onChange={(e) => setSurvey({ ...survey, collectEmail: e.target.checked })}
+              className="mb-3"
+            />
+
+            <Form.Check
+              type="switch"
+              id="multiple-responses-off"
+              label="Allow multiple responses from same user"
+              checked={survey.multipleResponses}
+              onChange={(e) => setSurvey({ ...survey, multipleResponses: e.target.checked })}
+              className="mb-4"
+            />
+
+            <h6 className="mb-3">Branding</h6>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Primary Color</Form.Label>
+              <Form.Control
+                type="color"
+                value={survey.branding.primaryColor}
+                onChange={(e) => setSurvey({
+                  ...survey,
+                  branding: { ...survey.branding, primaryColor: e.target.value }
+                })}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Background Color</Form.Label>
+              <Form.Control
+                type="color"
+                value={survey.branding.backgroundColor}
+                onChange={(e) => setSurvey({
+                  ...survey,
+                  branding: { ...survey.branding, backgroundColor: e.target.value }
+                })}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-4">
+              <Form.Label>Text Color</Form.Label>
+              <Form.Control
+                type="color"
+                value={survey.branding.textColor}
+                onChange={(e) => setSurvey({
+                  ...survey,
+                  branding: { ...survey.branding, textColor: e.target.value }
+                })}
+              />
+            </Form.Group>
+
+            <h6 className="mb-3">Completion</h6>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Thank You Message</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={survey.thankYouMessage}
+                onChange={(e) => setSurvey({ ...survey, thankYouMessage: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Redirect URL (Optional)</Form.Label>
+              <Form.Control
+                type="url"
+                value={survey.redirectUrl}
+                onChange={(e) => setSurvey({ ...survey, redirectUrl: e.target.value })}
+                placeholder="https://example.com"
+              />
+            </Form.Group>
+          </Form>
+        </Offcanvas.Body>
+      </Offcanvas>
+    </Container>
+  );
 };
 
 export default SurveyBuilder;

@@ -1,7 +1,11 @@
 // src\pages\AccessManagement\RoleManagement.jsx
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { MdAdd, MdEdit, MdDelete, MdSave, MdCancel } from "react-icons/md";
+import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal, OverlayTrigger, Tooltip, Dropdown } from "react-bootstrap";
+import { 
+  MdAdd, MdEdit, MdDelete, MdSave, MdCancel, MdSecurity, MdGroup, 
+  MdMoreVert, MdRefresh, MdAssignmentInd, MdSettings, MdSearch,
+  MdFilterList, MdVpnKey, MdPerson
+} from "react-icons/md";
 import Pagination from "../../components/Pagination/Pagination.jsx";
 import axiosInstance from "../../api/axiosInstance";
 import Swal from "sweetalert2";
@@ -434,353 +438,408 @@ const RoleManagement = () => {
     setRoleDescription(rolePermissionMap[role]?.description || "");
   };
 
-  return (
-    <Container fluid className="py-4">
-      {/* Header */}
-      {/* <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">Role Management</h1>
-              <p className="text-muted mb-0">Create and manage user roles and permissions</p>
-            </div>
-            <Button
-              variant="primary"
-              onClick={() => {
-                resetForm();
-                setShowModal(true);
-              }}
-              disabled={isLoading || authLoading || availablePredefinedRoles.length === 0}
-            >
-              <MdAdd className="me-2" />
-              Create Role
-            </Button>
-          </div>
-        </Col>
-      </Row> */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">Role Management</h1>
-              <p className="text-muted mb-0">Create and manage user roles and permissions</p>
-            </div>
-            <Button
-              variant="primary"
-              onClick={() => {
-                resetForm();
-                setShowModal(true);
-              }}
-              disabled={
-                isLoading ||
-                authLoading ||
-                availablePredefinedRoles.length === 0 ||
-                !memberCanCreate // 🔥 create role permission check
-              }
-            >
-              <MdAdd className="me-2" />
-              Create Role
-            </Button>
-          </div>
-        </Col>
-      </Row>
-
-      {/* Loading Indicator */}
-      {isLoading || authLoading ? (
-        <div className="text-center py-4">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading roles...</span>
+  if (isLoading || authLoading) {
+    return (
+      <div className="role-management-container">
+        <div className="role-management-loading">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
           <p>Loading roles...</p>
         </div>
-      ) : (
-        <>
-          {/* Roles Table */}
-          {/* <Card className="border-0 shadow-sm">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table hover className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Role Name</th>
-                      <th>Description</th>
-                      <th>Permissions</th>
-                      <th>Users</th>
-                      <th>Assign To</th>
-                      <th className="text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roles.length === 0 && (
-                      <tr>
-                        <td colSpan="6" className="text-center">
-                          No roles found
-                        </td>
-                      </tr>
-                    )}
-                    {roles.map((role) => (
-                      <tr key={role._id}>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <div>
-                              <div className="fw-medium">{role.name}</div>
-                              {role.isSystem && (
-                                <Badge bg="warning" className="mt-1">
-                                  System Role
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          {role.description
-                            ? role.description.length > 50
-                              ? role.description.slice(0, 50) + "..."
-                              : role.description
-                            : "No description"}
-                        </td>
-                        <td>
-                          <div className="d-flex flex-wrap gap-1">
-                            {role.permissions && Array.isArray(role.permissions) && role.permissions.length > 0 ? (
-                              <>
-                                {role.permissions.slice(0, 3).map((p) =>
-                                  p && p._id && p.name ? (
-                                    <OverlayTrigger
-                                      key={p._id}
-                                      placement="top"
-                                      overlay={<Tooltip>{p.name.replace(":", " ")}</Tooltip>}
-                                    >
-                                      <Badge bg="secondary" className="small">
-                                        {p.name.replace(":", " ").substring(0, 10) + (p.name.length > 10 ? "..." : "")}
-                                      </Badge>
-                                    </OverlayTrigger>
-                                  ) : null
-                                )}
-                                {role.permissions.length > 3 && (
-                                  <OverlayTrigger
-                                    placement="top"
-                                    overlay={
-                                      <Tooltip>
-                                        {role.permissions.slice(3).map((p) => p?.name?.replace(":", " ") || "Unknown").join(", ")}
-                                      </Tooltip>
-                                    }
-                                  >
-                                    <Badge bg="light" text="dark" className="small">
-                                      +{role.permissions.length - 3} more
-                                    </Badge>
-                                  </OverlayTrigger>
-                                )}
-                              </>
-                            ) : (
-                              <Badge bg="secondary" className="small">
-                                No permissions
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <Badge bg="primary" className="p-2">{role.userCount || 0}</Badge>
-                        </td>
-                        <td>
-                          <div className="d-flex justify-content-center gap-1">
-                            <Button
-                              variant="outline-success"
-                              size="sm"
-                              onClick={async () => {
-                                setAssigningRole(role);
-                                setIsLoading(true);
-                                let assignedIds = [];
-                                try {
-                                  const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
-                                  assignedIds = data.users?.map((u) => u._id) || [];
-                                } catch (err) {
-                                  console.error("Error fetching assigned users:", err);
-                                  Swal.fire("Error", "Failed to fetch assigned users", "error");
-                                } finally {
-                                  setAssignedUserIds(assignedIds);
-                                  setIsLoading(false);
-                                  setShowAssignModal(true);
-                                }
-                              }}
-                              disabled={isLoading}
-                            >
-                              Assign To
-                            </Button>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="d-flex justify-content-center gap-1">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => handleEditRole(role)}
-                              disabled={role.isSystem || isLoading}
-                            >
-                              <MdEdit />
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDeleteRole(role._id)}
-                            // disabled={role.isSystem || (role.userCount || 0) > 0 || isLoading}
-                            >
-                              <MdDelete />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+      </div>
+    );
+  }
+
+  return (
+    <div className="role-management-container">
+      <Container fluid className="p-0">
+        {/* Modern Header Section */}
+        <div className="page-header-section">
+          <div className="header-content">
+            <div className="header-main">
+              <div className="page-title-section">
+                <div className="page-icon">
+                  <MdSecurity />
+                </div>
+                <div className="page-info">
+                  <h1 className="page-title">Role Management</h1>
+                  <p className="page-subtitle">Create and manage user roles and permissions</p>
+                </div>
               </div>
-            </Card.Body>
-            <div className="p-3">
-              <Pagination
-                current={pagination.page}
-                total={pagination.total}
-                limit={pagination.limit}
-                onChange={(page) => {
-                  setPagination((prev) => ({ ...prev, page }));
-                }}
-              />
+              <div className="header-actions d-flex align-items-center gap-2">
+                <Button variant="outline-secondary" size="sm" className="d-none d-md-flex" onClick={() => window.location.reload()}>
+                  <MdRefresh className="me-1" />
+                  Refresh
+                </Button>
+                <Button 
+                  variant="primary"
+                  onClick={() => {
+                    resetForm();
+                    setShowModal(true);
+                  }}
+                  disabled={
+                    isLoading ||
+                    authLoading ||
+                    availablePredefinedRoles.length === 0 ||
+                    !memberCanCreate
+                  }
+                >
+                  <MdAdd className="me-1" />
+                  <span className="d-none d-sm-inline">Create Role</span>
+                  <span className="d-sm-none">Create</span>
+                </Button>
+                <Dropdown className="d-md-none">
+                  <Dropdown.Toggle variant="outline-secondary" size="sm">
+                    <MdMoreVert />
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu align="end">
+                    <Dropdown.Item onClick={() => window.location.reload()}>
+                      <MdRefresh className="me-2" />
+                      Refresh
+                    </Dropdown.Item>
+                    <Dropdown.Item>
+                      <MdSettings className="me-2" />
+                      Settings
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
             </div>
-          </Card> */}
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table hover className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Role Name</th>
-                      <th>Description</th>
-                      <th>Permissions</th>
-                      <th>Users</th>
-                      <th>Assign To</th>
-                      <th className="text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* 🔥 agar read ki permission nahi to bas ek row show karo */}
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="stats-section">
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-roles">
+                <MdGroup />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{roles.length}</div>
+                <div className="stat-label">Total Roles</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-permissions">
+                <MdVpnKey />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{permissions.length}</div>
+                <div className="stat-label">Permissions</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-users">
+                <MdAssignmentInd />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{roles.reduce((sum, role) => sum + (role.userCount || 0), 0)}</div>
+                <div className="stat-label">Assigned Users</div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon stat-icon-active">
+                <MdSecurity />
+              </div>
+              <div className="stat-content">
+                <div className="stat-number">{availablePredefinedRoles.length}</div>
+                <div className="stat-label">Available Roles</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="content-grid">
+          <div className="roles-section">
+            <div className="section-card">
+              <div className="section-header">
+                <div className="section-title">
+                  <h3>System Roles</h3>
+                  <p>Manage role permissions and user assignments</p>
+                </div>
+                <div className="section-actions d-none d-md-flex">
+                  <Button variant="outline-secondary" size="sm">
+                    <MdFilterList className="me-1" />
+                    Filter
+                  </Button>
+                </div>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="roles-table d-none d-md-block">
+                <div className="modern-table">
+                  <div className="table-header">
+                    <div className="table-row">
+                      <div className="table-cell">Role</div>
+                      <div className="table-cell">Permissions</div>
+                      <div className="table-cell">Users</div>
+                      <div className="table-cell text-center">Actions</div>
+                    </div>
+                  </div>
+                  <div className="table-body">
                     {!memberCanRead ? (
-                      <tr>
-                        <td colSpan="6" className="text-center text-danger">
-                          No permission to view roles
-                        </td>
-                      </tr>
+                      <div className="empty-state">
+                        <div className="empty-state-icon">
+                          <MdSecurity />
+                        </div>
+                        <p>No permission to view roles</p>
+                      </div>
                     ) : roles.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="text-center">
-                          No roles found
-                        </td>
-                      </tr>
+                      <div className="empty-state">
+                        <div className="empty-state-icon">
+                          <MdGroup />
+                        </div>
+                        <p>No roles found</p>
+                      </div>
                     ) : (
                       roles.map((role) => (
-                        <tr key={role._id}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <div>
-                                <div className="fw-medium">{role.name}</div>
+                        <div key={role._id} className="table-row">
+                          <div className="table-cell">
+                            <div className="role-info">
+                              <div className="role-icon">
+                                <MdSecurity />
+                              </div>
+                              <div className="role-details">
+                                <div className="role-name">{role.name}</div>
+                                <div className="role-description">
+                                  {role.description || "No description"}
+                                </div>
                                 {role.isSystem && (
-                                  <Badge bg="warning" className="mt-1">
-                                    System Role
-                                  </Badge>
+                                  <span className="system-badge">System Role</span>
                                 )}
                               </div>
                             </div>
-                          </td>
-                          <td>
-                            {role.description
-                              ? role.description.length > 50
-                                ? role.description.slice(0, 50) + "..."
-                                : role.description
-                              : "No description"}
-                          </td>
-                          <td>
-                            <div className="d-flex flex-wrap gap-1">
+                          </div>
+                          <div className="table-cell">
+                            <div className="permissions-list">
                               {role.permissions && role.permissions.length > 0 ? (
                                 <>
-                                  {role.permissions.slice(0, 3).map((permission, index) => {
-                                    // Agar permission object he to name dikhado
+                                  {role.permissions.slice(0, 2).map((permission, index) => {
                                     const permName = typeof permission === "string"
-                                      ? permission // string aa jaye to directly use karo (ya backend se map karo)
+                                      ? permission
                                       : permission.name;
-
                                     return (
-                                      <Badge key={permission._id || index} bg="secondary" className="small">
+                                      <span key={permission._id || index} className="permission-badge">
                                         {permName.replace(":", " ")}
-                                      </Badge>
+                                      </span>
                                     );
                                   })}
-                                  {role.permissions.length > 3 && (
-                                    <Badge bg="light" text="dark" className="small">
-                                      +{role.permissions.length - 3} more
-                                    </Badge>
+                                  {role.permissions.length > 2 && (
+                                    <span className="permission-count">
+                                      +{role.permissions.length - 2} more
+                                    </span>
                                   )}
                                 </>
                               ) : (
-                                <Badge bg="secondary" className="small">No permissions</Badge>
+                                <span className="no-permissions">No permissions</span>
                               )}
                             </div>
-                          </td>
-                          <td>
-                            <Badge bg="primary" className="p-2">{role.userCount || 0}</Badge>
-                          </td>
-                          <td>
-                            <div className="d-flex justify-content-center gap-1">
-                              <Button
-                                variant="outline-success"
-                                size="sm"
-                                onClick={async () => {
-                                  setAssigningRole(role);
-                                  setIsLoading(true);
-                                  let assignedIds = [];
-                                  try {
-                                    const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
-                                    assignedIds = data.users?.map((u) => u._id) || [];
-                                  } catch (err) {
-                                    console.error("Error fetching assigned users:", err);
-                                    Swal.fire("Error", "Failed to fetch assigned users", "error");
-                                  } finally {
-                                    setAssignedUserIds(assignedIds);
-                                    setIsLoading(false);
-                                    setShowAssignModal(true);
-                                  }
-                                }}
-                                disabled={isLoading || !memberCanAssign} // 🔥 assign permission check
-                              >
-                                Assign To
-                              </Button>
+                          </div>
+                          <div className="table-cell">
+                            <div className="user-count-wrapper">
+                              <span className="user-count">{role.userCount || 0}</span>
+                              <span className="user-count-label">users</span>
+                              {memberCanAssign && (
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="assign-btn"
+                                  onClick={async () => {
+                                    setAssigningRole(role);
+                                    setIsLoading(true);
+                                    let assignedIds = [];
+                                    try {
+                                      const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
+                                      assignedIds = data.users?.map((u) => u._id) || [];
+                                    } catch (err) {
+                                      console.error("Error fetching assigned users:", err);
+                                      Swal.fire("Error", "Failed to fetch assigned users", "error");
+                                    } finally {
+                                      setAssignedUserIds(assignedIds);
+                                      setIsLoading(false);
+                                      setShowAssignModal(true);
+                                    }
+                                  }}
+                                  disabled={isLoading}
+                                >
+                                  <MdAssignmentInd />
+                                </Button>
+                              )}
                             </div>
-                          </td>
-                          <td>
-                            <div className="d-flex justify-content-center gap-1">
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() => handleEditRole(role)}
-                                disabled={role.isSystem || isLoading || !memberCanUpdate} // 🔥 edit permission check
-                              >
-                                <MdEdit />
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => handleDeleteRole(role._id)}
-                                disabled={role.isSystem || isLoading || !memberCanDelete} // 🔥 delete permission check
-                              >
-                                <MdDelete />
-                              </Button>
+                          </div>
+                          <div className="table-cell">
+                            <div className="action-buttons">
+                              {memberCanUpdate && (
+                                <Button
+                                  variant="outline-primary"
+                                  size="sm"
+                                  className="action-btn"
+                                  onClick={() => handleEditRole(role)}
+                                  disabled={role.isSystem || isLoading}
+                                >
+                                  <MdEdit />
+                                </Button>
+                              )}
+                              {memberCanDelete && (
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  className="action-btn"
+                                  onClick={() => handleDeleteRole(role._id)}
+                                  disabled={role.isSystem || isLoading}
+                                >
+                                  <MdDelete />
+                                </Button>
+                              )}
                             </div>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))
                     )}
-                  </tbody>
-                </Table>
+                  </div>
+                </div>
               </div>
-            </Card.Body>
-          </Card>
 
+              {/* Mobile Cards View */}
+              <div className="roles-cards d-md-none">
+                {!memberCanRead ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <MdSecurity />
+                    </div>
+                    <p>No permission to view roles</p>
+                  </div>
+                ) : roles.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <MdGroup />
+                    </div>
+                    <p>No roles found</p>
+                  </div>
+                ) : (
+                  roles.map((role) => (
+                    <div key={role._id} className="role-card">
+                      <div className="role-card-header">
+                        <div className="role-icon">
+                          <MdSecurity />
+                        </div>
+                        <div className="role-info">
+                          <div className="role-name">{role.name}</div>
+                          <div className="role-description">{role.description || "No description"}</div>
+                        </div>
+                        <div className="role-actions">
+                          <Dropdown>
+                            <Dropdown.Toggle variant="link" size="sm">
+                              <MdMoreVert />
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu align="end">
+                              {memberCanUpdate && (
+                                <Dropdown.Item 
+                                  onClick={() => handleEditRole(role)}
+                                  disabled={role.isSystem || isLoading}
+                                >
+                                  <MdEdit className="me-2" />
+                                  Edit
+                                </Dropdown.Item>
+                              )}
+                              {memberCanAssign && (
+                                <Dropdown.Item
+                                  onClick={async () => {
+                                    setAssigningRole(role);
+                                    setIsLoading(true);
+                                    let assignedIds = [];
+                                    try {
+                                      const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
+                                      assignedIds = data.users?.map((u) => u._id) || [];
+                                    } catch (err) {
+                                      console.error("Error fetching assigned users:", err);
+                                      Swal.fire("Error", "Failed to fetch assigned users", "error");
+                                    } finally {
+                                      setAssignedUserIds(assignedIds);
+                                      setIsLoading(false);
+                                      setShowAssignModal(true);
+                                    }
+                                  }}
+                                  disabled={isLoading}
+                                >
+                                  <MdAssignmentInd className="me-2" />
+                                  Assign Users
+                                </Dropdown.Item>
+                              )}
+                              {memberCanDelete && (
+                                <Dropdown.Item 
+                                  className="text-danger"
+                                  onClick={() => handleDeleteRole(role._id)}
+                                  disabled={role.isSystem || isLoading}
+                                >
+                                  <MdDelete className="me-2" />
+                                  Delete
+                                </Dropdown.Item>
+                              )}
+                            </Dropdown.Menu>
+                          </Dropdown>
+                        </div>
+                      </div>
+                      <div className="role-card-content">
+                        <div className="role-meta">
+                          <div className="meta-item">
+                            <span className="meta-label">Permissions:</span>
+                            <div className="permissions-mobile">
+                              {role.permissions && role.permissions.length > 0 ? (
+                                <>
+                                  {role.permissions.slice(0, 3).map((permission, index) => {
+                                    const permName = typeof permission === "string"
+                                      ? permission
+                                      : permission.name;
+                                    return (
+                                      <span key={permission._id || index} className="permission-badge-mobile">
+                                        {permName.replace(":", " ")}
+                                      </span>
+                                    );
+                                  })}
+                                  {role.permissions.length > 3 && (
+                                    <span className="permission-count-mobile">
+                                      +{role.permissions.length - 3}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="no-permissions-mobile">None</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="meta-item">
+                            <span className="meta-label">Users:</span>
+                            <span className="meta-value">{role.userCount || 0} assigned</span>
+                          </div>
+                          {role.isSystem && (
+                            <div className="meta-item">
+                              <span className="system-badge-mobile">System Role</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Pagination */}
+              <div className="pagination-section">
+                <Pagination
+                  current={pagination.page}
+                  total={pagination.total}
+                  limit={pagination.limit}
+                  onChange={(page) => {
+                    setPagination((prev) => ({ ...prev, page }));
+                  }}
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Create/Edit Role Modal */}
           <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
@@ -1007,9 +1066,10 @@ const RoleManagement = () => {
               </Button>
             </Modal.Footer>
           </Modal>
-        </>
-      )}
-    </Container>
+
+        </div>
+      </Container>
+    </div>
   );
 };
 

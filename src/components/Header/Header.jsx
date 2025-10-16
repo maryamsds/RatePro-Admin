@@ -22,7 +22,7 @@ import {
 } from "react-icons/md"
 import LanguageSelector from "../LanguageSelector/LanguageSelector.jsx"
 import { capitalize } from "../../utilities/capitalize"
-import "./Header.css"
+
 
 
 const Header = ({ 

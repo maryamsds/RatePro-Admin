@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container, Row, Col, Card, Button, Badge, Form,
-  InputGroup, Modal, Spinner, Alert,
+  InputGroup, Modal, Spinner, Alert, Offcanvas,
   OverlayTrigger, Tooltip
 } from 'react-bootstrap';
 import {
@@ -17,7 +17,7 @@ import { FaUsers, FaChartBar, FaClock, FaLanguage } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import Pagination from '../../components/Pagination/Pagination';
 import Swal from 'sweetalert2';
-import './SurveyTemplates.css';
+
 
 const SurveyTemplates = ({ darkMode }) => {
   const navigate = useNavigate();
@@ -35,6 +35,7 @@ const SurveyTemplates = ({ darkMode }) => {
   // Modal States
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   
   // Pagination State
   const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0 });
@@ -458,236 +459,240 @@ const SurveyTemplates = ({ darkMode }) => {
   }
 
   return (
-    <Container fluid>
-      {/* Header Section */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-start">
-            <div>
+    <div className="survey-templates-container">
+      <Container fluid>
+        {/* Header Section */}
+        <div className="templates-header">
+          <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
+            <div className="header-content">
               <div className="d-flex align-items-center mb-2">
-                <MdDescription className="me-2 text-primary" size={32} />
-                <h1 className="h3 mb-0 fw-bold">Survey Templates</h1>
+                <MdDescription className="me-2" style={{ color: 'var(--primary-color, #1fdae4)' }} size={28} />
+                <h1 className="h4 mb-0 fw-bold">Survey Templates</h1>
               </div>
-              <p className="text-muted mb-2">
+              <p className="text-muted mb-0 d-none d-sm-block">
                 Choose from {stats.total} professional templates across {stats.categories} industries
               </p>
-              
-              {/* Quick Stats */}
-              <div className="d-flex gap-3">
-                <Badge bg="primary" className="d-flex align-items-center">
-                  <MdStar className="me-1" size={12} />
-                  {stats.popular} Popular
-                </Badge>
-                <Badge bg="success" className="d-flex align-items-center">
-                  {stats.new} New
-                </Badge>
-                <Badge bg="info" className="d-flex align-items-center">
-                  <MdCategory className="me-1" size={12} />
-                  {stats.categories} Categories
-                </Badge>
-              </div>
             </div>
             <Button 
-              variant="primary" 
-              className="d-flex align-items-center"
+              variant="outline-primary" 
+              className="d-flex align-items-center create-template-btn"
               onClick={handleCreateCustomTemplate}
+              size="sm"
             >
-              <MdAdd className="me-2" size={16} />
-              Create Custom Template
+              <MdAdd className="me-1 me-sm-2" size={16} />
+              <span className="d-none d-sm-inline">Create Custom</span>
+              <span className="d-sm-none">Create</span>
             </Button>
           </div>
-        </Col>
-      </Row>
-
-      {/* Search and Filters */}
-      <Card className="mb-4 border-0 shadow-sm">
-        <Card.Body className="py-3">
-          <Row className="g-3 align-items-center">
-            <Col lg={4}>
-              <InputGroup>
-                <InputGroup.Text className="bg-light border-end-0">
-                  <MdSearch className="text-muted" size={16} />
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Search templates by name, category, or keyword..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border-start-0 ps-0"
-                />
-              </InputGroup>
-            </Col>
-            <Col lg={3}>
-              <div className="d-flex align-items-center">
-                <MdFilterList className="me-2 text-muted" size={16} />
-                <Form.Select 
-                  value={selectedCategory} 
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="border-0 bg-light"
-                >
-                  {categoryOptions.map((category) => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </Form.Select>
-              </div>
-            </Col>
-            <Col lg={3}>
-              <div className="d-flex align-items-center">
-                <FaLanguage className="me-2 text-muted" size={14} />
-                <Form.Select 
-                  value={selectedLanguage} 
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="border-0 bg-light"
-                >
-                  <option value="all">All Languages</option>
-                  <option value="english">English</option>
-                  <option value="arabic">Arabic</option>
-                </Form.Select>
-              </div>
-            </Col>
-            <Col lg={2}>
-              <div className="d-flex align-items-center">
-                <FaChartBar className="me-2 text-muted" size={14} />
-                <Form.Select 
-                  value={sortBy} 
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="border-0 bg-light"
-                >
-                  <option value="popular">Most Popular</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="newest">Newest</option>
-                  <option value="alphabetical">A-Z</option>
-                </Form.Select>
-              </div>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-
-      {/* Results Summary */}
-      {searchTerm || selectedCategory !== 'all' || selectedLanguage !== 'all' ? (
-        <Row className="mb-3">
-          <Col>
-            <div className="d-flex align-items-center justify-content-between">
-              <p className="mb-0 text-muted">
-                Showing {filteredTemplates.length} of {templates.length} templates
-                {searchTerm && ` for "${searchTerm}"`}
-                {selectedCategory !== 'all' && ` in ${categoryOptions.find(c => c.value === selectedCategory)?.label}`}
-              </p>
-              {(searchTerm || selectedCategory !== 'all' || selectedLanguage !== 'all') && (
-                <Button 
-                  variant="outline-secondary" 
-                  size="sm"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategory('all');
-                    setSelectedLanguage('all');
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              )}
+          
+          {/* Quick Stats */}
+          <div className="stats-container d-flex gap-2 flex-wrap mb-3">
+            <div className="stat-badge">
+              <MdStar className="me-1" size={14} />
+              <span>{stats.popular} Popular</span>
             </div>
-          </Col>
-        </Row>
-      ) : null}
+            <div className="stat-badge">
+              <span>{stats.new} New</span>
+            </div>
+            <div className="stat-badge">
+              <MdCategory className="me-1" size={14} />
+              <span>{stats.categories} Categories</span>
+            </div>
+            <div className="stat-badge d-none d-sm-flex">
+              <span>{stats.total} Total</span>
+            </div>
+          </div>
+        </div>
 
-      <Row>
-        {filteredTemplates
-          .slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit)
-          .map((template) => (
-            <Col key={template.id} lg={4} md={6} className="mb-4">
-              <Card className="h-100 template-card border-0 shadow-sm">
-                <Card.Body className="d-flex flex-column p-4">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="d-flex flex-wrap gap-2">
+        {/* Search and Filters */}
+        <div className="search-filters-section">
+          {/* Search Bar - Always Visible */}
+          <div className="search-container mb-3">
+            <InputGroup className="search-input-group">
+              <InputGroup.Text>
+                <MdSearch size={18} />
+              </InputGroup.Text>
+              <Form.Control
+                type="text"
+                placeholder="Search templates..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              {/* Mobile Filter Button */}
+              <Button 
+                variant="outline-secondary"
+                className="d-lg-none filter-toggle-btn"
+                onClick={() => setShowMobileFilters(true)}
+              >
+                <MdFilterList size={18} />
+                <span className="ms-1">Filter</span>
+              </Button>
+            </InputGroup>
+          </div>
+
+          {/* Desktop Filters */}
+          <div className="d-none d-lg-flex filters-row align-items-center gap-3">
+            <div className="filter-group">
+              <label className="filter-label">Category</label>
+              <Form.Select 
+                value={selectedCategory} 
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="filter-select"
+                size="sm"
+              >
+                {categoryOptions.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+            
+            <div className="filter-group">
+              <label className="filter-label">Language</label>
+              <Form.Select 
+                value={selectedLanguage} 
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="filter-select"
+                size="sm"
+              >
+                <option value="all">All Languages</option>
+                <option value="english">English</option>
+                <option value="arabic">Arabic</option>
+              </Form.Select>
+            </div>
+            
+            <div className="filter-group">
+              <label className="filter-label">Sort by</label>
+              <Form.Select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-select"
+                size="sm"
+              >
+                <option value="popular">Most Popular</option>
+                <option value="rating">Highest Rated</option>
+                <option value="newest">Newest</option>
+                <option value="alphabetical">A-Z</option>
+              </Form.Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        {(searchTerm || selectedCategory !== 'all' || selectedLanguage !== 'all') && (
+          <div className="results-summary d-flex align-items-center justify-content-between flex-wrap mb-3">
+            <div className="results-info">
+              <span className="results-count">{filteredTemplates.length}</span>
+              <span className="text-muted ms-1"> of {templates.length} templates</span>
+              {searchTerm && <span className="text-muted d-none d-sm-inline"> for "{searchTerm}"</span>}
+            </div>
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              className="clear-filters-btn"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedCategory('all');
+                setSelectedLanguage('all');
+              }}
+            >
+              <span className="d-none d-sm-inline">Clear Filters</span>
+              <span className="d-sm-none">Clear</span>
+            </Button>
+          </div>
+        )}
+
+        {/* Templates Grid */}
+        <div className="templates-grid">
+          {filteredTemplates
+            .slice((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit)
+            .map((template) => (
+              <div key={template.id} className="template-card-wrapper">
+                <div className="template-card">
+                  {/* Template Header */}
+                  <div className="template-header">
+                    <div className="template-badges">
                       {getCategoryBadge(template.category)}
                       {template.popular && (
-                        <Badge bg="danger" className="d-flex align-items-center">
-                          <MdStar className="me-1" size={12} />
-                          Popular
-                        </Badge>
+                        <div className="template-badge popular">
+                          <MdStar size={12} />
+                          <span>Popular</span>
+                        </div>
                       )}
                       {template.isNew && (
-                        <Badge bg="success" className="d-flex align-items-center">
-                          New
-                        </Badge>
+                        <div className="template-badge new">
+                          <span>New</span>
+                        </div>
                       )}
                       {template.isPremium && (
-                        <Badge bg="warning" text="dark" className="d-flex align-items-center">
-                          Premium
-                        </Badge>
+                        <div className="template-badge premium">
+                          <span>Premium</span>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  <h5 className="card-title mb-2 fw-semibold">{template.name}</h5>
-                  <p className="card-text text-muted flex-grow-1 small">{template.description}</p>
-
-                  <div className="template-stats mb-3">
-                    <div className="row g-2 text-muted small">
-                      <div className="col-6 d-flex align-items-center">
-                        <FaUsers className="me-2" size={12} />
-                        <span>{template.usageCount.toLocaleString()} used</span>
-                      </div>
-                      <div className="col-6 d-flex align-items-center">
-                        <FaClock className="me-2" size={12} />
-                        <span>{template.estimatedTime}</span>
-                      </div>
-                      <div className="col-6 d-flex align-items-center">
-                        <MdDescription className="me-2" size={12} />
-                        <span>{template.questions} questions</span>
-                      </div>
-                      <div className="col-6 d-flex align-items-center">
-                        <MdStar className="me-2" size={12} />
-                        <span>{template.rating}/5.0</span>
-                      </div>
-                    </div>
+                  {/* Template Content */}
+                  <div className="template-content">
+                    <h5 className="template-title">{template.name}</h5>
+                    <p className="template-description">{template.description}</p>
                   </div>
 
-                  {/* Language Support */}
-                  <div className="mb-3">
-                    <div className="d-flex align-items-center gap-1 text-muted small">
+                  {/* Template Stats */}
+                  <div className="template-stats">
+                    <div className="stats-row">
+                      <div className="stat-item">
+                        <FaUsers size={12} />
+                        <span>{template.usageCount > 1000 ? `${Math.round(template.usageCount/1000)}k` : template.usageCount}</span>
+                      </div>
+                      <div className="stat-item">
+                        <FaClock size={12} />
+                        <span>{template.estimatedTime}</span>
+                      </div>
+                      <div className="stat-item">
+                        <MdDescription size={12} />
+                        <span>{template.questions}Q</span>
+                      </div>
+                      <div className="stat-item">
+                        <MdStar size={12} />
+                        <span>{template.rating}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Language Support */}
+                    <div className="template-languages">
                       <FaLanguage size={12} />
                       <span>{template.language.join(', ')}</span>
                     </div>
                   </div>
 
-                  <div className="d-flex gap-2">
-                    <OverlayTrigger
-                      placement="top"
-                      overlay={<Tooltip>Use this template to create a new survey</Tooltip>}
+                  {/* Template Actions */}
+                  <div className="template-actions">
+                    <Button 
+                      variant="primary" 
+                      className="use-template-btn" 
+                      onClick={() => handleUseTemplate(template)}
                     >
-                      <Button 
-                        variant="primary" 
-                        className="flex-grow-1" 
-                        size="sm"
-                        onClick={() => handleUseTemplate(template)}
-                      >
-                        <MdAdd className="me-1" size={16} />
-                        Use Template
-                      </Button>
-                    </OverlayTrigger>
-                    <OverlayTrigger
-                      placement="top"
-                      overlay={<Tooltip>Preview template questions</Tooltip>}
+                      <MdAdd size={16} />
+                      <span>Use Template</span>
+                    </Button>
+                    <Button 
+                      variant="outline-secondary" 
+                      className="preview-btn"
+                      onClick={() => handlePreviewTemplate(template)}
                     >
-                      <Button 
-                        variant="outline-secondary" 
-                        size="sm"
-                        onClick={() => handlePreviewTemplate(template)}
-                      >
-                        <MdVisibility size={16} />
-                      </Button>
-                    </OverlayTrigger>
+                      <MdVisibility size={16} />
+                    </Button>
                   </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        <div className="p-3 border-top">
+                </div>
+              </div>
+            ))}
+        </div>
+        
+        {/* Pagination */}
+        <div className="pagination-container">
           <Pagination
             current={pagination.page}
             total={filteredTemplates.length}
@@ -696,7 +701,87 @@ const SurveyTemplates = ({ darkMode }) => {
             darkMode={darkMode}
           />
         </div>
-      </Row>
+
+        {/* Mobile Filters Drawer */}
+        <Offcanvas
+          show={showMobileFilters}
+          onHide={() => setShowMobileFilters(false)}
+          placement="end"
+          className="mobile-filters-drawer"
+        >
+          <Offcanvas.Header closeButton>
+            <Offcanvas.Title>
+              <MdFilterList className="me-2" />
+              Filter Templates
+            </Offcanvas.Title>
+          </Offcanvas.Header>
+          <Offcanvas.Body>
+            <div className="mobile-filters">
+              <div className="filter-section">
+                <label className="filter-label">Category</label>
+                <Form.Select 
+                  value={selectedCategory} 
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="filter-select mb-3"
+                >
+                  {categoryOptions.map((category) => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </Form.Select>
+              </div>
+              
+              <div className="filter-section">
+                <label className="filter-label">Language</label>
+                <Form.Select 
+                  value={selectedLanguage} 
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="filter-select mb-3"
+                >
+                  <option value="all">All Languages</option>
+                  <option value="english">English</option>
+                  <option value="arabic">Arabic</option>
+                </Form.Select>
+              </div>
+              
+              <div className="filter-section">
+                <label className="filter-label">Sort by</label>
+                <Form.Select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="filter-select mb-3"
+                >
+                  <option value="popular">Most Popular</option>
+                  <option value="rating">Highest Rated</option>
+                  <option value="newest">Newest</option>
+                  <option value="alphabetical">A-Z</option>
+                </Form.Select>
+              </div>
+              
+              <div className="filter-actions">
+                <Button 
+                  variant="outline-secondary"
+                  className="w-100 mb-2"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                    setSelectedLanguage('all');
+                  }}
+                >
+                  Clear All Filters
+                </Button>
+                <Button 
+                  variant="primary"
+                  className="w-100"
+                  onClick={() => setShowMobileFilters(false)}
+                >
+                  Apply Filters
+                </Button>
+              </div>
+            </div>
+          </Offcanvas.Body>
+        </Offcanvas>
 
       {/* Loading State */}
       {loading && (
@@ -845,7 +930,8 @@ const SurveyTemplates = ({ darkMode }) => {
         </Modal.Footer>
       </Modal>
 
-    </Container>
+      </Container>
+    </div>
   )
 }
 

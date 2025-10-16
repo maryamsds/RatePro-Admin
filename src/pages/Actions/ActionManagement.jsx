@@ -23,7 +23,7 @@ import {
 } from 'react-icons/fa';
 import axiosInstance from '../../api/axiosInstance';
 import Swal from 'sweetalert2';
-import './ActionManagement.css';
+
 
 const ActionManagement = () => {
   const navigate = useNavigate();
@@ -418,7 +418,7 @@ const ActionManagement = () => {
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="stats-card h-100">
             <Card.Body className="p-3 text-center">
-              <div className="stats-icon bg-primary bg-opacity-10 text-primary rounded-circle p-3 mx-auto mb-2">
+              <div className="stats-icon bg-info bg-opacity-10 text-primary rounded-circle p-3 mx-auto mb-2">
                 <MdAssignment size={24} />
               </div>
               <h5 className="mb-0">{stats.total}</h5>

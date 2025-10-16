@@ -22,6 +22,7 @@ import {
   MdPoll,
   MdPeople,
   MdTrendingUp,
+  MdTrendingDown,
   MdAccessTime,
   MdVisibility,
   MdEdit,
@@ -32,11 +33,14 @@ import {
   MdBarChart,
   MdShowChart,
   MdPieChart,
+  MdChevronLeft,
+  MdChevronRight,
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 import { Link, useNavigate } from "react-router-dom"
 import Swal from "sweetalert2"
 import { useAuth } from "../../context/AuthContext.jsx"
+
 
 // Register Chart.js components including Filler
 ChartJS.register(
@@ -122,17 +126,23 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
     }, 1000)
   }, [])
 
-  // Chart data with dark mode support and proper filler configuration
+  // Chart data with visible colors for both light and dark modes
   const responseData = {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
       {
         label: "Responses",
         data: [65, 78, 90, 81, 96, 105],
-        borderColor: "rgb(var(--bs-primary-rgb))",
-        backgroundColor: "rgba(var(--bs-primary-rgb), 0.2)",
+        borderColor: "#054a4eff",
+        backgroundColor: darkMode ? "#054a4eff" : "#054a4eff",
         fill: true,
         tension: 0.4,
+        borderWidth: 3,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: "#054a4eff",
+        pointBorderWidth: 2,
+        pointBorderColor: darkMode ? "#1e293b" : "#ffffff",
       },
     ],
   }
@@ -143,20 +153,15 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
       {
         data: [30, 25, 20, 15, 10],
         backgroundColor: [
-          "rgba(31, 218, 228, 0.8)",
-          "rgba(40, 167, 69, 0.8)",
-          "rgba(255, 193, 7, 0.8)",
-          "rgba(220, 53, 69, 0.8)",
-          "rgba(108, 117, 125, 0.8)",
+          "#0d6efd",
+          "#198754",
+          "#ffc107",
+          "#dc3545",
+          "#6c757d",
         ],
-        borderColor: [
-          "rgb(31, 218, 228)",
-          "rgb(40, 167, 69)",
-          "rgb(255, 193, 7)",
-          "rgb(220, 53, 69)",
-          "rgb(108, 117, 125)",
-        ],
-        borderWidth: 2,
+        borderColor: darkMode ? "#1e293b" : "#ffffff",
+        borderWidth: 3,
+        hoverOffset: 8,
       },
     ],
   }
@@ -167,10 +172,10 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
       {
         label: "Completion Rate %",
         data: [75, 82, 78, 85],
-        backgroundColor: "rgba(var(--bs-primary-rgb), 0.6)",
-        borderColor: "rgba(var(--bs-primary-rgb), 1)",
-        borderWidth: 2,
-        borderRadius: 4,
+        backgroundColor: "#054a4eff",
+        borderColor: "#012a2dff",
+        borderWidth: 0,
+        borderRadius: 8,
       },
     ],
   }
@@ -185,32 +190,44 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
           color: darkMode ? "#e9ecef" : "#212529",
           usePointStyle: true,
           padding: 20,
+          font: {
+            size: 12,
+          },
         },
       },
       tooltip: {
-        backgroundColor: darkMode ? "#2a2e35" : "#ffffff",
-        titleColor: darkMode ? "#e9ecef" : "#212529",
-        bodyColor: darkMode ? "#e9ecef" : "#212529",
-        borderColor: darkMode ? "#343a40" : "#dee2e6",
+        backgroundColor: darkMode ? "#2d3748" : "#ffffff",
+        titleColor: darkMode ? "#ffffff" : "#212529",
+        bodyColor: darkMode ? "#e9ecef" : "#495057",
+        borderColor: darkMode ? "#4a5568" : "#dee2e6",
         borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          labelTextColor: function() {
+            return darkMode ? "#e9ecef" : "#495057";
+          }
+        }
       },
     },
     scales: {
       x: {
         ticks: {
-          color: darkMode ? "#e9ecef" : "#212529",
+          color: darkMode ? "#cbd5e0" : "#495057",
         },
         grid: {
-          color: darkMode ? "#343a40" : "#dee2e6",
+          color: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+          borderColor: darkMode ? "#4a5568" : "#dee2e6",
         },
       },
       y: {
         beginAtZero: true,
         ticks: {
-          color: darkMode ? "#e9ecef" : "#212529",
+          color: darkMode ? "#cbd5e0" : "#495057",
         },
         grid: {
-          color: darkMode ? "#343a40" : "#dee2e6",
+          color: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+          borderColor: darkMode ? "#4a5568" : "#dee2e6",
         },
       },
     },
@@ -226,14 +243,24 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
           color: darkMode ? "#e9ecef" : "#212529",
           usePointStyle: true,
           padding: 15,
+          font: {
+            size: 12,
+          },
         },
       },
       tooltip: {
-        backgroundColor: darkMode ? "#2a2e35" : "#ffffff",
-        titleColor: darkMode ? "#e9ecef" : "#212529",
-        bodyColor: darkMode ? "#e9ecef" : "#212529",
-        borderColor: darkMode ? "#343a40" : "#dee2e6",
+        backgroundColor: darkMode ? "#2d3748" : "#ffffff",
+        titleColor: darkMode ? "#ffffff" : "#212529",
+        bodyColor: darkMode ? "#e9ecef" : "#495057",
+        borderColor: darkMode ? "#4a5568" : "#dee2e6",
         borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          labelTextColor: function() {
+            return darkMode ? "#e9ecef" : "#495057";
+          }
+        }
       },
     },
   }
@@ -319,303 +346,262 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
     return "danger"
   }
 
-  if (loading) {
-    return (
-      <Container fluid className="dashboard-container py-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className={darkMode ? "text-white" : "text-dark"}>Loading dashboard...</p>
-        </div>
-      </Container>
-    )
-  }
+  // if (loading) {
+  //   return (
+  //     <Container fluid className="dashboard-container">
+  //       <div className="loading-container">
+  //         <div className="loading-spinner"></div>
+  //         <p className="loading-text">Loading dashboard...</p>
+  //       </div>
+  //     </Container>
+  //   )
+  // }
 
   return (
-    <Container fluid className="dashboard-container py-4 fade-in">
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center flex-wrap">
-            <div className="d-flex align-items-center">
-              <MdDashboard size={32} className="text-primary me-3" />
-              <div>
-                <h1 className={`h3 mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Dashboard</h1>
-                <p className="text-muted mb-0">Welcome back! Here's what's happening with your surveys.</p>
+    <Container fluid className="dashboard-container">
+      {/* Header Section */}
+      <div className="dashboard-header">
+        <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+          <div>
+            <h2>Dashboard Overview</h2>
+            <p>Welcome back! Here's what's happening with your surveys today.</p>
+          </div>
+          <div className="d-flex gap-2 flex-wrap">
+            <Button variant="outline-secondary" size="sm">
+              <MdRefresh size={16} className="me-1" />
+              Refresh
+            </Button>
+            <Button variant="outline-secondary" size="sm">
+              <MdDownload size={16} className="me-1" />
+              Export
+            </Button>
+            <Button variant="primary" onClick={createNewSurvey} size="sm">
+              <MdAdd size={16} className="me-1" />
+              New Survey
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <Row className="g-3 mb-4">
+        <Col xl={3} lg={6} md={6} xs={12}>
+          <div className="stats-card">
+            <div className="stats-card-header">
+              <div className="stats-icon icon-primary">
+                <MdPoll />
+              </div>
+              <div className="stats-trend trend-up">
+                <MdTrendingUp size={14} />
+                <span>+12%</span>
               </div>
             </div>
-            <div className="d-flex gap-2 mt-2 mt-md-0">
-              <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
-              <Button variant="outline-secondary" size="sm" className="btn-enhanced">
-                <MdDownload className="me-1" />
-                Export
-              </Button>
-              <Button variant="primary" onClick={createNewSurvey} size="sm" className="btn-enhanced">
-                <MdAdd className="me-1" />
-                New Survey
-              </Button>
+            <div className="stats-card-body">
+              <h3>{stats.totalSurveys}</h3>
+              <p>Total Surveys</p>
             </div>
           </div>
         </Col>
-      </Row>
-
-      {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col xl={3} lg={6} md={6} sm={6} className="mb-3">
-          <Card className="stats-card h-100 card-enhanced">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div
-                  className="stats-icon bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
-                  style={{ width: "48px", height: "48px" }}
-                >
-                  <MdPoll className="text-white" size={24} />
-                </div>
-                <div className="ms-3">
-                  <div className={`stats-number h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {stats.totalSurveys}
-                  </div>
-                  <div className="stats-label text-muted">Total Surveys</div>
-                </div>
+        
+        <Col xl={3} lg={6} md={6} xs={12}>
+          <div className="stats-card">
+            <div className="stats-card-header">
+              <div className="stats-icon icon-success">
+                <MdPeople />
               </div>
-            </Card.Body>
-          </Card>
+              <div className="stats-trend trend-up">
+                <MdTrendingUp size={14} />
+                <span>+8%</span>
+              </div>
+            </div>
+            <div className="stats-card-body">
+              <h3>{stats.activeResponses.toLocaleString()}</h3>
+              <p>Active Responses</p>
+            </div>
+          </div>
         </Col>
-        <Col xl={3} lg={6} md={6} sm={6} className="mb-3">
-          <Card className="stats-card h-100 card-enhanced">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div
-                  className="stats-icon bg-success rounded-circle d-flex align-items-center justify-content-center me-3"
-                  style={{ width: "48px", height: "48px" }}
-                >
-                  <MdPeople className="text-white" size={24} />
-                </div>
-                <div className="ms-3">
-                  <div className={`stats-number h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {stats.activeResponses.toLocaleString()}
-                  </div>
-                  <div className="stats-label text-muted">Active Responses</div>
-                </div>
+        
+        <Col xl={3} lg={6} md={6} xs={12}>
+          <div className="stats-card">
+            <div className="stats-card-header">
+              <div className="stats-icon icon-info">
+                <MdTrendingUp />
               </div>
-            </Card.Body>
-          </Card>
+              <div className="stats-trend trend-up">
+                <MdTrendingUp size={14} />
+                <span>+5%</span>
+              </div>
+            </div>
+            <div className="stats-card-body">
+              <h3>{stats.completionRate}%</h3>
+              <p>Completion Rate</p>
+            </div>
+          </div>
         </Col>
-        <Col xl={3} lg={6} md={6} sm={6} className="mb-3">
-          <Card className="stats-card h-100 card-enhanced">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div
-                  className="stats-icon bg-info rounded-circle d-flex align-items-center justify-content-center me-3"
-                  style={{ width: "48px", height: "48px" }}
-                >
-                  <MdTrendingUp className="text-white" size={24} />
-                </div>
-                <div className="ms-3">
-                  <div className={`stats-number h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {stats.completionRate}%
-                  </div>
-                  <div className="stats-label text-muted">Completion Rate</div>
-                </div>
+        
+        <Col xl={3} lg={6} md={6} xs={12}>
+          <div className="stats-card">
+            <div className="stats-card-header">
+              <div className="stats-icon icon-warning">
+                <MdAccessTime />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xl={3} lg={6} md={6} sm={6} className="mb-3">
-          <Card className="stats-card h-100 card-enhanced">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div
-                  className="stats-icon bg-warning rounded-circle d-flex align-items-center justify-content-center me-3"
-                  style={{ width: "48px", height: "48px" }}
-                >
-                  <MdAccessTime className="text-white" size={24} />
-                </div>
-                <div className="ms-3">
-                  <div className={`stats-number h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {stats.avgResponseTime}
-                  </div>
-                  <div className="stats-label text-muted">Avg Response Time</div>
-                </div>
+              <div className="stats-trend trend-down">
+                <MdTrendingDown size={14} />
+                <span>-2%</span>
               </div>
-            </Card.Body>
-          </Card>
+            </div>
+            <div className="stats-card-body">
+              <h3>{stats.avgResponseTime}</h3>
+              <p>Avg Response Time</p>
+            </div>
+          </div>
         </Col>
       </Row>
 
       {/* Charts Row */}
-      <Row className="mb-4">
-        <Col lg={8} className="mb-3">
-          <Card className="h-100 card-enhanced">
-            <Card.Header className="border-0 d-flex justify-content-between align-items-center">
-              <div className="d-flex align-items-center">
-                <MdShowChart className="text-primary me-2" size={20} />
-                <Card.Title className={`mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Response Trends</Card.Title>
-              </div>
-              <Button variant="outline-primary" onClick={ViewTrendsAnalytics} size="sm" className="btn-enhanced">
-                <MdBarChart className="me-1" />
-                View Details
+      <Row className="g-3 mb-4">
+        <Col lg={8}>
+          <div className="chart-card">
+            <h5>
+              <MdShowChart size={20} style={{ marginBottom: '2px' }} />
+              Response Trends
+              <Button 
+                variant="link" 
+                onClick={ViewTrendsAnalytics} 
+                size="sm" 
+                className="float-end"
+                style={{ textDecoration: 'none' }}
+              >
+                View Details →
               </Button>
-            </Card.Header>
-            <Card.Body>
-              <div style={{ height: "300px" }}>
-                <Line data={responseData} options={chartOptions} />
-              </div>
-            </Card.Body>
-          </Card>
+            </h5>
+            <div className="chart-container">
+              <Line data={responseData} options={chartOptions} />
+            </div>
+          </div>
         </Col>
-        <Col lg={4} className="mb-3">
-          <Card className="h-100 card-enhanced">
-            <Card.Header className="border-0 d-flex justify-content-between align-items-center">
-              <div className="d-flex align-items-center">
-                <MdPieChart className="text-primary me-2" size={20} />
-                <Card.Title className={`mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Survey Types</Card.Title>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <div style={{ height: "300px" }}>
-                <Doughnut data={surveyTypeData} options={doughnutOptions} />
-              </div>
-            </Card.Body>
-          </Card>
+        <Col lg={4}>
+          <div className="chart-card">
+            <h5>
+              <MdPieChart size={20} style={{ marginBottom: '2px' }} />
+              Survey Types Distribution
+            </h5>
+            <div className="chart-container">
+              <Doughnut data={surveyTypeData} options={doughnutOptions} />
+            </div>
+          </div>
         </Col>
       </Row>
 
       {/* Recent Surveys and Completion Rates */}
-      <Row>
-        <Col lg={8} className="mb-3">
-          <Card className="card-enhanced">
-            <Card.Header className="d-flex justify-content-between align-items-center border-0">
-              <div className="d-flex align-items-center">
-                <MdPoll className="text-primary me-2" size={20} />
-                <Card.Title className={`mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Recent Surveys Response</Card.Title>
-              </div>
-              <Button variant="outline-primary" onClick={ViewRecentSurveys} size="sm" className="btn-enhanced">
-                <MdVisibility className="me-1" />
-                View All
+      <Row className="g-3">
+        <Col lg={8}>
+          <div className="recent-surveys-section">
+            <div className="section-header">
+              <h5>
+                <MdPoll size={20} />
+                Recent Surveys
+              </h5>
+              <Button 
+                variant="link" 
+                onClick={ViewRecentSurveys} 
+                size="sm"
+                style={{ textDecoration: 'none' }}
+              >
+                View All →
               </Button>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0 table-enhanced" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th className="border-0 py-3 px-4">
-                        <div className="d-flex align-items-center">
-                          <MdPoll className="me-2" size={16} />
-                          Survey Name
-                        </div>
-                      </th>
-                      <th className="border-0 py-3 d-none d-md-table-cell">
-                        <div className="d-flex align-items-center">
-                          <MdPeople className="me-2" size={16} />
-                          Respondent
-                        </div>
-                      </th>
-                      <th className="border-0 py-3">Satisfaction</th>
-                      <th className="border-0 py-3 d-none d-lg-table-cell">
-                        <div className="d-flex align-items-center">
-                          <MdTrendingUp className="me-2" size={16} />
-                          Actions
-                        </div>
-                      </th>
-                      <th className="border-0 py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {responses.map((response) => (
-                      <tr key={response.id}>
-                        <td>
-                          <Link to={`/surveys/${response.surveyId}`} className="text-primary text-decoration-none fw-medium">
-                            {response.surveyTitle}
-                          </Link>
-                        </td>
-                        <td>
-                          <div>
-                            <div className="fw-medium">{response.respondent}</div>
-                            <small className="text-muted">{response.email}</small>
+            </div>
+            <div className="table-container">
+              <Table className="custom-table" hover responsive>
+                <thead>
+                  <tr>
+                    <th>Survey Name</th>
+                    <th className="d-none d-md-table-cell">Responses</th>
+                    <th>Status</th>
+                    <th className="d-none d-lg-table-cell">Progress</th>
+                    <th className="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentSurveys.map((survey) => (
+                    <tr key={survey.id}>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{survey.name}</div>
+                        <small className="d-md-none text-muted">{survey.responses} responses</small>
+                      </td>
+                      <td className="d-none d-md-table-cell">
+                        <strong>{survey.responses}</strong>
+                      </td>
+                      <td>
+                        <span className={`status-badge status-${survey.status.toLowerCase()}`}>
+                          {survey.status}
+                        </span>
+                      </td>
+                      <td className="d-none d-lg-table-cell">
+                        <div className="progress-container" style={{ width: '120px' }}>
+                          <div className="progress-bar-wrapper">
+                            <div 
+                              className="progress-bar-fill" 
+                              style={{ width: `${survey.completion}%` }}
+                            ></div>
                           </div>
-                        </td>
-                        <td>{response.submittedAt}</td>
-                        <td className="text-center">
-                          <Badge bg={getSatisfactionVariant(response.satisfaction)}>{response.satisfaction.toFixed(1)}</Badge>
-                        </td>
-                        <td className="text-center">
-                          <button className="btn btn-sm btn-outline-primary" title="View Response">
-                            <MdVisibility />
+                          <span className="progress-text">{survey.completion}%</span>
+                        </div>
+                      </td>
+                      <td className="text-center">
+                        <div className="d-flex gap-1 justify-content-center">
+                          <button className="action-button" title="View Survey">
+                            <MdVisibility size={18} />
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {/* {currentSurveys.map((survey) => (
-                      <tr key={survey.id}>
-                        <td className="border-0 py-3 px-4">
-                          <div className={`fw-medium ${darkMode ? "text-white" : "text-dark"}`}>{survey.name}</div>
-                          <small className="text-muted d-md-none">{survey.responses} responses</small>
-                        </td>
-                        <td className="border-0 py-3 d-none d-md-table-cell">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{survey.responses}</span>
-                        </td>
-                        <td className="border-0 py-3">{getStatusBadge(survey.status)}</td>
-                        <td className="border-0 py-3 d-none d-lg-table-cell">
-                          <div className="d-flex align-items-center">
-                            <ProgressBar
-                              now={survey.completion}
-                              style={{ width: "80px", height: "6px" }}
-                              className="me-2"
-                            />
-                            <small className={darkMode ? "text-white" : "text-dark"}>{survey.completion}%</small>
-                          </div>
-                        </td>
-                        <td className="border-0 py-3">
-                          <div className="btn-group btn-group-sm">
-                            <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                              <MdVisibility size={14} />
-                            </Button>
-                            <Button variant="outline-secondary" size="sm" className="btn-enhanced">
-                              <MdEdit size={14} />
-                            </Button>
-                            <Button variant="outline-secondary" size="sm" className="btn-enhanced">
-                              <MdMoreVert size={14} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))} */}
-                  </tbody>
-                </Table>
+                          <button className="action-button" title="Edit Survey">
+                            <MdEdit size={18} />
+                          </button>
+                          <button className="action-button" title="More Options">
+                            <MdMoreVert size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              <div className="pagination-container">
+                <div className="pagination-info">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} surveys
+                </div>
+                <div className="pagination-controls">
+                  <button 
+                    className="pagination-button"
+                    disabled={pagination.page === 1}
+                    onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                  >
+                    <MdChevronLeft size={18} />
+                    Previous
+                  </button>
+                  <button 
+                    className="pagination-button"
+                    disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                    onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                  >
+                    Next
+                    <MdChevronRight size={18} />
+                  </button>
+                </div>
               </div>
-              <div className="p-3 border-top">
-                <Pagination
-                  current={pagination.page}
-                  total={pagination.total}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                  darkMode={darkMode}
-                />
-              </div>
-            </Card.Body>
-          </Card>
+            </div>
+          </div>
         </Col>
-        <Col lg={4} className="mb-3">
-          <Card className="h-100 card-enhanced">
-            <Card.Header className="border-0 d-flex justify-content-between align-items-center">
-              <div className="d-flex align-items-center">
-                <MdBarChart className="text-primary me-2" size={20} />
-                <Card.Title className={`mb-0 ${darkMode ? "text-white" : "text-dark"}`}>
-                  Weekly Completion Rates
-                </Card.Title>
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <div style={{ height: "250px" }}>
-                <Bar data={completionData} options={chartOptions} />
-              </div>
-            </Card.Body>
-          </Card>
+        
+        <Col lg={4}>
+          <div className="chart-card">
+            <h5>
+              <MdBarChart size={20} style={{ marginBottom: '2px' }} />
+              Weekly Completion
+            </h5>
+            <div className="chart-container">
+              <Bar data={completionData} options={chartOptions} />
+            </div>
+          </div>
         </Col>
       </Row>
     </Container>

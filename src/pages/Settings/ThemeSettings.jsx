@@ -1,13 +1,20 @@
-// src/pages/Settings/ThemeSettings.jsx
-"use client"
-
 import { useState } from "react"
-import { MdColorLens, MdUpload, MdSave } from "react-icons/md"
+import { 
+  MdColorLens, 
+  MdUpload, 
+  MdSave, 
+  MdRefresh,
+  MdPalette,
+  MdCheck,
+  MdClose,
+  MdImage
+} from "react-icons/md"
 
 const ThemeSettings = () => {
+  const [saved, setSaved] = useState(false)
   const [theme, setTheme] = useState({
-    primaryColor: 'var(--bs-primary)',
-    secondaryColor: 'var(--bs-secondary)',
+    primaryColor: '#1fdae4',
+    secondaryColor: '#6366f1',
     logo: null,
     logoPreview: ''
   })
@@ -32,72 +39,171 @@ const ThemeSettings = () => {
     }
   }
 
+  const resetTheme = () => {
+    setTheme({
+      primaryColor: '#1fdae4',
+      secondaryColor: '#6366f1',
+      logo: null,
+      logoPreview: ''
+    })
+  }
+
   const saveTheme = (e) => {
     e.preventDefault()
     // Save theme settings
     console.log('Theme saved:', theme)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
   }
 
   return (
-    <div className="theme-settings">
-      <div className="page-header">
-        <h1>Theme Customization</h1>
+    <div className="theme-settings-container">
+      {/* Page Header */}
+      <div className="page-header-section">
+        <div className="page-header-content">
+          <div className="page-header-left">
+            <div className="page-header-icon">
+              <MdPalette />
+            </div>
+            <div className="page-header-text">
+              <h1>Theme Customization</h1>
+              <p>Customize colors, branding, and visual appearance</p>
+            </div>
+          </div>
+          <div className="page-header-actions">
+            <button className="secondary-action" onClick={resetTheme}>
+              <MdRefresh />
+              Reset to Default
+            </button>
+            <button className="primary-action" onClick={saveTheme}>
+              <MdSave />
+              Save Theme
+            </button>
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={saveTheme}>
-        <div className="form-row">
-          <div className="form-group">
-            <label>Primary Color</label>
-            <div className="color-picker">
-              <input
-                type="color"
-                name="primaryColor"
-                value={theme.primaryColor}
-                onChange={handleColorChange}
-              />
-              <span>{theme.primaryColor}</span>
+      {/* Success Notification */}
+      {saved && (
+        <div className="notification-overlay" onClick={() => setSaved(false)}>
+          <div className="notification-container success">
+            <div className="notification-icon">
+              <MdCheck />
             </div>
-          </div>
-          <div className="form-group">
-            <label>Secondary Color</label>
-            <div className="color-picker">
-              <input
-                type="color"
-                name="secondaryColor"
-                value={theme.secondaryColor}
-                onChange={handleColorChange}
-              />
-              <span>{theme.secondaryColor}</span>
+            <div className="notification-content">
+              <h4>Theme Saved</h4>
+              <p>Your theme customization has been applied successfully!</p>
             </div>
+            <button className="notification-close" onClick={() => setSaved(false)}>
+              <MdClose />
+            </button>
           </div>
         </div>
+      )}
 
-        <div className="form-group">
-          <label>Logo</label>
-          <div className="logo-upload">
-            {theme.logoPreview ? (
-              <img src={theme.logoPreview} alt="Logo Preview" className="logo-preview" />
-            ) : (
-              <div className="logo-placeholder">
-                <MdColorLens />
+      {/* Theme Content */}
+      <div className="theme-content">
+        {/* Color Customization */}
+        <div className="section-card">
+          <div className="section-header">
+            <div className="section-title">
+              <MdColorLens className="section-icon" />
+              <div>
+                <h2>Color Scheme</h2>
+                <p>Customize the primary and secondary colors</p>
               </div>
-            )}
-            <label className="upload-btn">
-              <MdUpload /> Upload Logo
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                style={{ display: 'none' }}
-              />
-            </label>
+            </div>
+          </div>
+          <div className="section-content">
+            <div className="color-grid">
+              <div className="color-group">
+                <label>Primary Color</label>
+                <div className="color-picker-wrapper">
+                  <input
+                    type="color"
+                    name="primaryColor"
+                    value={theme.primaryColor}
+                    onChange={handleColorChange}
+                    className="color-input"
+                  />
+                  <div className="color-preview" style={{ backgroundColor: theme.primaryColor }}>
+                    <span className="color-value">{theme.primaryColor}</span>
+                  </div>
+                </div>
+                <span className="color-description">Main brand color used throughout the interface</span>
+              </div>
+
+              <div className="color-group">
+                <label>Secondary Color</label>
+                <div className="color-picker-wrapper">
+                  <input
+                    type="color"
+                    name="secondaryColor"
+                    value={theme.secondaryColor}
+                    onChange={handleColorChange}
+                    className="color-input"
+                  />
+                  <div className="color-preview" style={{ backgroundColor: theme.secondaryColor }}>
+                    <span className="color-value">{theme.secondaryColor}</span>
+                  </div>
+                </div>
+                <span className="color-description">Accent color for highlights and emphasis</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <button type="submit" className="btn btn-primary">
-          <MdSave /> Save Theme
-        </button>
-      </form>
+        {/* Logo Upload */}
+        <div className="section-card">
+          <div className="section-header">
+            <div className="section-title">
+              <MdImage className="section-icon" />
+              <div>
+                <h2>Brand Logo</h2>
+                <p>Upload your company logo for the application</p>
+              </div>
+            </div>
+          </div>
+          <div className="section-content">
+            <div className="logo-upload-section">
+              <div className="logo-preview-container">
+                {theme.logoPreview ? (
+                  <div className="logo-preview-wrapper">
+                    <img src={theme.logoPreview} alt="Logo Preview" className="logo-preview" />
+                    <button 
+                      className="logo-remove"
+                      onClick={() => setTheme(prev => ({ ...prev, logo: null, logoPreview: '' }))}
+                    >
+                      <MdClose />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="logo-placeholder">
+                    <MdImage />
+                    <p>No logo uploaded</p>
+                  </div>
+                )}
+              </div>
+              <div className="logo-upload-actions">
+                <label className="upload-button">
+                  <MdUpload />
+                  Choose Logo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <div className="upload-info">
+                  <p className="upload-hint">Recommended: PNG or SVG format</p>
+                  <p className="upload-hint">Maximum size: 2MB</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

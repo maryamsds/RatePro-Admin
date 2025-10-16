@@ -36,7 +36,7 @@ import {
 } from 'chart.js';
 import axiosInstance from '../../api/axiosInstance';
 import Swal from 'sweetalert2';
-import './SurveyResponses.css';
+
 
 // Register Chart.js components
 ChartJS.register(
