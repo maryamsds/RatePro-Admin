@@ -359,7 +359,7 @@ const UserForm = () => {
                   <MdPerson />
                 </div>
                 <div>
-                  <h3 className="section-title" style={{ color: '#1fdae4' }} style={{ color: '#1fdae4' }}>Basic Information</h3>
+                  <h3 className="section-title" style={{ color: '#1fdae4' }}>Basic Information</h3>
                   <p className="section-subtitle">Personal details and identification</p>
                 </div>
               </div>

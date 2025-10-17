@@ -29,7 +29,7 @@ const ThankYouPage = () => {
   }
 
   return (
-    <Container fluid className="min-vh-100 py-4" style={{ backgroundColor: "var(--light-bg)" }}>
+    <Container fluid className="min-vh-100 py-4">
       <Row className="justify-content-center">
         <Col xs={12} lg={8}>
           {/* Header */}
@@ -140,7 +140,6 @@ const ThankYouPage = () => {
                   <div
                     className="p-4 border rounded"
                     style={{
-                      backgroundColor: "var(--light-card)",
                       minHeight: "400px",
                     }}
                   >
