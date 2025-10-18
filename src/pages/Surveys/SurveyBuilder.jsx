@@ -81,7 +81,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
     branding: {
       logo: '',
       primaryColor: 'var(--bs-primary)',
-      backgroundColor: 'var(--bs-body-bg)',
+      // backgroundColor: 'var(--bs-body-bg)',
       textColor: 'var(--bs-body-color)',
       showBranding: true
     },
@@ -1914,7 +1914,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
                     <h5 style={{ color: survey.branding.primaryColor }}>
                       {survey.title || 'Survey Title'}
                     </h5>
-                    <p className="small">{survey.description || 'Survey description...'}</p>
+                    <p className="small temp">{survey.description || 'Survey description...'}</p>
                     <div className="d-flex align-items-center gap-2 mb-2">
                       <div
                         className="rounded-circle"
@@ -1924,7 +1924,7 @@ const SurveyBuilder = ({ darkMode }) => { // eslint-disable-line no-unused-vars
                           backgroundColor: survey.branding.primaryColor
                         }}
                       ></div>
-                      <small>Sample question</small>
+                      <small className='temp'>Sample question</small>
                     </div>
                   </div>
                 </Col>

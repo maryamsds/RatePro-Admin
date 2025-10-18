@@ -1,6 +1,10 @@
 // /api/axiosInstance.js
+// ========================================
+// 📦 Axios Instance (Pro Version)
+// ========================================
 import axios from "axios";
 
+// 🌐 Base Configuration
 export const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
   withCredentials: true,
@@ -9,14 +13,20 @@ export const axiosInstance = axios.create({
   },
 });
 
-// ===== // Attach token dynamically from localStorage before each request =====
+// ========================================
+// 🧭 Request Interceptor — Attach Token
+// ========================================
 axiosInstance.interceptors.request.use(
   (config) => {
-    const authUser = localStorage.getItem("authUser");
-    if (authUser) {
-      const user = JSON.parse(authUser);
-      if (user.accessToken) {
-        config.headers['Authorization'] = `Bearer ${user.accessToken}`;
+    const storedUser = localStorage.getItem("authUser");
+    if (storedUser) {
+      try {
+        const { accessToken } = JSON.parse(storedUser);
+        if (accessToken) {
+          config.headers["Authorization"] = `Bearer ${accessToken}`;
+        }
+      } catch (e) {
+        console.warn("⚠️ Failed to parse authUser from localStorage:", e);
       }
     }
     return config;
@@ -24,19 +34,17 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ===== Response interceptor with refresh token logic =====
+// ========================================
+// 🔁 Response Interceptor — Refresh Token Logic
+// ========================================
 let isRefreshing = false;
 let failedQueue = [];
 
+// Helper to handle queued requests
 const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
+  failedQueue.forEach(({ resolve, reject }) => {
+    error ? reject(error) : resolve(token);
   });
-
   failedQueue = [];
 };
 
@@ -47,22 +55,22 @@ axiosInstance.interceptors.response.use(
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message;
 
-    console.log("Response Interceptor Triggered:", {
-      status,
-      message,
-      url: originalRequest?.url,
-      method: originalRequest?.method,
-    });
+    console.groupCollapsed("📡 Axios Response Interceptor");
+    console.log("URL:", originalRequest?.url);
+    console.log("Method:", originalRequest?.method);
+    console.log("Status:", status);
+    console.log("Message:", message);
+    console.groupEnd();
 
-    // ✅ 1. Handle 401 (token expired)
+    // ✅ Handle Access Token Expiry (401)
     if (status === 401 && !originalRequest._retry) {
+      // Agar refresh chal raha hai → queue me daal do
       if (isRefreshing) {
-        // 🚧 Agar refresh already chal raha hai → queue me daal do
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
-            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          .then((newToken) => {
+            originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
             return axiosInstance(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -72,26 +80,31 @@ axiosInstance.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshRes = await axiosInstance.post("/auth/refresh", {}, { withCredentials: true });
+        // 🚀 Refresh token request
+        const refreshRes = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+
         const newAccessToken = refreshRes.data.accessToken;
 
-        // 🧠 Save to localStorage
-        const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
-        localStorage.setItem("authUser", JSON.stringify({ ...authUser, accessToken: newAccessToken }));
-        // console.log(accessToken);
+        // 🧠 Update Local Storage
+        const oldUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+        const updatedUser = { ...oldUser, accessToken: newAccessToken };
+        localStorage.setItem("authUser", JSON.stringify(updatedUser));
 
         // 🧠 Update axios headers
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
-        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
-        // ✅ Process queue of failed requests
+        // ⏳ Process failed queue
         processQueue(null, newAccessToken);
 
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        console.error("🔁 Refresh Token Failed:", refreshError?.response?.data || refreshError.message);
+        console.error("❌ Refresh Token Failed:", refreshError);
 
-        // ⚠️ Sirf tab logout karo jab refresh token actual me invalid ho
         const isInvalidToken =
           refreshError.response?.status === 401 &&
           (refreshError.response?.data?.message?.includes("Invalid refresh token") ||
@@ -109,23 +122,18 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // 🚫 2. Silent fail for login verification
-    if (status === 401 && message?.includes("Login verification required")) {
-      return Promise.reject(error);
+    // ⚠️ Optional: Handle other statuses globally
+    if (status === 403) {
+      console.warn("🚫 Forbidden — User not authorized.");
     }
 
-    // 🧾 3. Debug log
-    console.error("📦 API Error:", {
-      status,
-      message,
-      url: originalRequest?.url,
-      method: originalRequest?.method,
-    });
+    if (status === 500) {
+      console.error("💥 Server error:", message);
+    }
 
     return Promise.reject(error);
   }
 );
-
 
 export default axiosInstance;
 

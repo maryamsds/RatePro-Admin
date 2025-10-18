@@ -398,9 +398,7 @@ body {
     color: var(--bs-body-color);
     text-align: center;
     white-space: nowrap;
-    background-color: var(--bs-tertiary-bg);
-    /* border: var(--bs-border-width) solid var(--bs-border-color); */
-    border-radius: var(--bs-border-radius);
+    /* border-radius: var(--bs-border-radius); */
 }
 
 /* List group dark theme */
@@ -481,6 +479,11 @@ body {
 .sidebar-transition {
   transition: all 0.3s ease;
 }
+
+
+.dark .temp{
+  color: #ffffff;
+} 
 
 /* Status badges */
 .status-badge {
@@ -708,7 +711,7 @@ body {
 
   .form-control,
   .form-select {
-    padding: 0.375rem 0.5rem;
+    /* padding: 0.375rem 0.5rem; */
     font-size: 0.875rem;
   }
 }
@@ -751,7 +754,7 @@ body {
 
 .dropdown-menu[data-bs-popper] {
   margin-top: var(--bs-dropdown-spacer) !important;
-  left: auto !important;
+  left: 0 !important;
   right: 0 !important;
   transform: none !important;
 }
@@ -1003,6 +1006,252 @@ button.btn-outline-danger:disabled {
 
 
 /* ========================================================================== */
+/* ========================= MOBILE SIDEBAR ENHANCEMENT ===================== */
+/* ========================================================================== */
+
+/* 
+ * Mobile sidebar implementation (≤ 767px) that maintains perfect theme consistency
+ * with desktop sidebar. All colors use the same CSS variables as desktop to ensure
+ * light/dark theme switching works identically across all screen sizes.
+ * Fixed mobile sidebar toggle issue after theme update.
+ */
+
+/* Mobile-specific styles for viewport ≤ 767px */
+@media (max-width: 767px) {
+  /* Body scroll prevention when sidebar is open */
+  body.sidebar-open {
+    overflow: hidden !important;
+    position: fixed;
+    width: 100%;
+  }
+
+  /* Mobile hamburger button styling - inherits theme colors */
+  #mobile-hamburger {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    pointer-events: auto !important; /* Ensure button is clickable */
+    cursor: pointer !important;
+  }
+
+  #mobile-hamburger:hover,
+  #mobile-hamburger:focus {
+    background-color: rgba(31, 218, 228, 0.1);
+    transform: scale(1.05);
+  }
+
+  /* Mobile sidebar overlay */
+  #sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    backdrop-filter: blur(2px);
+    /* animation: overlayFadeIn 0.25s ease-out; */
+  }
+
+  /* Mobile sidebar positioning and animation - uses theme variables for consistency */
+  /* Fixed mobile sidebar toggle issue after theme update - higher specificity rules */
+  .sidebar.mobile#mobile-sidebar,
+  #mobile-sidebar.sidebar.mobile {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: var(--sidebar-width, 280px) !important;
+    height: 100vh !important;
+    z-index: 1050 !important;
+    display: flex !important; /* Ensure sidebar is visible on mobile */
+    flex-direction: column !important;
+    visibility: visible !important; /* Ensure sidebar is not hidden */
+    opacity: 1 !important; /* Ensure sidebar is not transparent */
+    /* Background and border colors inherited from React component using theme variables */
+    background-color: var(--light-card); /* Default light theme */
+    border-right: 1px solid var(--light-border);
+    transform: translateX(-100%) !important; /* Hidden by default - !important to override inline styles */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Dark theme colors for mobile sidebar - consistent with desktop */
+  .dark .sidebar.mobile#mobile-sidebar,
+  .dark #mobile-sidebar.sidebar.mobile {
+    background-color: var(--dark-card);
+    border-right-color: var(--dark-border);
+  }
+
+  /* Fixed mobile sidebar toggle issue after theme update - ensure open state works */
+  .sidebar.mobile.open#mobile-sidebar,
+  #mobile-sidebar.sidebar.mobile.open {
+    transform: translateX(0) !important; /* Show sidebar when open - !important to override inline styles */
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Mobile sidebar close button - uses theme-aware hover states */
+  .sidebar.mobile .mobile-close-button {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    margin-left: auto;
+  }
+
+  .sidebar.mobile .mobile-close-button:hover,
+  .sidebar.mobile .mobile-close-button:focus {
+    background-color: rgba(220, 53, 69, 0.1);
+    transform: scale(1.05);
+  }
+
+  /* Mobile sidebar content - consistent theme colors with desktop */
+  .sidebar.mobile .sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--light-border); /* Light theme border */
+    min-height: 60px;
+    background: var(--light-card); /* Ensure header background matches */
+  }
+
+  /* Dark theme styles for mobile sidebar header - matches desktop exactly */
+  .dark .sidebar.mobile .sidebar-header {
+    border-bottom-color: var(--dark-border);
+    background: var(--dark-card);
+  }
+
+  /* Mobile sidebar logo inherits theme colors */
+  .sidebar.mobile .sidebar-logo {
+    color: var(--light-text);
+  }
+
+  .dark .sidebar.mobile .sidebar-logo {
+    color: var(--dark-text);
+  }
+
+  .sidebar.mobile .sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+    background: #ffffff;
+    /* Text and background colors inherited from parent sidebar theme */
+  }
+
+  /* Ensure mobile sidebar nav items inherit theme colors exactly like desktop */
+  .sidebar.mobile .nav-link,
+  .sidebar.mobile .submenu-link {
+    color: var(--light-text); /* Default light theme text */
+  }
+
+  .dark .sidebar.mobile .nav-link,
+  .dark .sidebar.mobile .submenu-link {
+    color: var(--dark-text); /* Dark theme text */
+  }
+
+  /* Mobile sidebar scrollbar inherits theme colors */
+  .sidebar.mobile::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .sidebar.mobile::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar.mobile::-webkit-scrollbar-thumb {
+    background: var(--light-border);
+    border-radius: 3px;
+  }
+
+  .dark .sidebar.mobile::-webkit-scrollbar-thumb {
+    background: var(--dark-border);
+  }
+
+  .sidebar.mobile::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+  }
+
+  /* Hide desktop/tablet toggle on mobile */
+  .sidebar.mobile .sidebar-toggle:not(.mobile-close-button) {
+    display: none !important;
+  }
+  
+  /* Mobile sidebar animation states - Critical fix for toggle issue */
+  .sidebar.mobile#mobile-sidebar:not(.open) {
+    transform: translateX(-100%) !important;
+  }
+  
+  .sidebar.mobile#mobile-sidebar.open {
+    transform: translateX(0) !important;
+  }
+}
+
+/* Animations for mobile sidebar */
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sidebarSlideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Ensure desktop behavior is unchanged for screens > 767px */
+@media (min-width: 768px) {
+  #mobile-hamburger {
+    display: none !important;
+  }
+
+  #sidebar-overlay {
+    display: none !important;
+  }
+
+  body.sidebar-open {
+    overflow: auto !important;
+    position: static;
+  }
+
+  .mobile-close-button {
+    display: none !important;
+  }
+  
+  /* Ensure mobile sidebar positioning is reset for desktop */
+  .sidebar.mobile,
+  #mobile-sidebar {
+    transform: none !important;
+    position: static !important;
+  }
+}
+
+/* High contrast and accessibility improvements */
+@media (prefers-contrast: high) {
+  #sidebar-overlay {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #mobile-sidebar,
+  #sidebar-overlay {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ========================================================================== */
 /* ========================= CUSTOM CSS CONSOLIDATION ======================= */
 /* ========================================================================== */
 
@@ -1098,7 +1347,7 @@ button.btn-outline-danger:disabled {
 }
 
 .search-input-group.focused {
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   box-shadow: 0 4px 20px rgba(var(--bs-primary-rgb), 0.15) !important;
 }
 
@@ -1264,7 +1513,7 @@ button.btn-outline-danger:disabled {
   }
 
   .search-container.search-active {
-    left: 50px;
+    left: 70px;
     right: 50px;
   }
 
@@ -1306,11 +1555,12 @@ button.btn-outline-danger:disabled {
 @media (min-width: 576px) and (max-width: 767.98px) {
   .header-content {
     padding: 0.375rem 0.75rem;
+    min-height: auto;
   }
 
   .search-container.search-active {
-    left: 55px;
-    right: 55px;
+    left: unset;
+    right: 0px;
   }
 
   .notifications-dropdown .dropdown-menu {
@@ -1364,8 +1614,20 @@ button.btn-outline-danger:disabled {
 
   .brand-logo {
     font-size: 1.25rem !important;
+    left: 10px !important;
   }
 }
+@media (min-width: 576px) and (max-width: 767.98px){
+  .brand-logo {
+    padding-left: 60px !important;
+  }
+}
+@media(max-width: 375px) {
+  .brand-logo {
+    padding-left: 70px !important;
+  }
+}
+
 
 /* ===================================
    DARK MODE OVERRIDES
@@ -1463,9 +1725,7 @@ button.btn-outline-danger:disabled {
   }
 }
 
-.search-container.search-active {
-  animation: searchExpand 0.3s ease-out;
-}
+/* Search container active animation removed - handled by individual transforms */
 /* Modern Sidebar Styles - Following theme.md guidelines */
 
 .sidebar {
@@ -1888,8 +2148,8 @@ button.btn-outline-danger:disabled {
   top: 1rem;
   left: 1rem;
   z-index: 1055;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
   border: none;
   border-radius: 12px;
@@ -1900,10 +2160,10 @@ button.btn-outline-danger:disabled {
   transition: var(--transition);
   align-items: center;
   justify-content: center;
-  animation: slideInLeft 0.3s ease-out;
+  /* animation: slideInLeft 0.3s ease-out; */
 }
 
-@keyframes slideInLeft {
+/* @keyframes slideInLeft {
   from {
     transform: translateX(-100%);
     opacity: 0;
@@ -1912,30 +2172,16 @@ button.btn-outline-danger:disabled {
     transform: translateX(0);
     opacity: 1;
   }
-}
+} */
 
 .mobile-sidebar-toggle:hover {
-  transform: scale(1.08) rotate(5deg);
+  /* transform: scale(1.08) rotate(5deg); */
   box-shadow: 0 6px 20px rgba(31, 218, 228, 0.7);
 }
 
-.mobile-sidebar-toggle:active {
+/* .mobile-sidebar-toggle:active {
   transform: scale(0.92);
-}
-
-/* Pulse animation for attention */
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 4px 16px rgba(31, 218, 228, 0.5);
-  }
-  50% {
-    box-shadow: 0 6px 24px rgba(31, 218, 228, 0.8);
-  }
-}
-
-.mobile-sidebar-toggle {
-  animation: slideInLeft 0.3s ease-out, pulse 2s infinite;
-}
+} */
 
 /* Dark mode for mobile toggle */
 .dark .mobile-sidebar-toggle {
@@ -1957,7 +2203,11 @@ button.btn-outline-danger:disabled {
     font-size: 1.625rem;
   }
 }
-
+@media (min-width: 576px) and (max-width: 767.98px){
+  .mobile-sidebar-toggle {
+    top: 0.65rem;
+  } 
+}
 /* Small mobile adjustments */
 @media (max-width: 576px) {
   .mobile-sidebar-toggle {
@@ -2006,12 +2256,12 @@ button.btn-outline-danger:disabled {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: white;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
     z-index: -1;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(0px);
   }
   
   .sidebar.open::before {
@@ -2268,7 +2518,13 @@ button.btn-outline-danger:disabled {
   top: 0;
   left: 0;
   width: 100%;
+  background: white;
   transition: transform 0.3s ease-in-out;
+}
+
+.dark .sidebar.collapsed.mobile .sidebar-nav,
+.sidebar.collapsed.tablet .sidebar-nav{
+  background: var(--dark-card);
 }
 
 /* Sidebar Header */
@@ -2324,7 +2580,7 @@ button.btn-outline-danger:disabled {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0.5rem;
+  /* padding: 0.5rem; */
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb, #ccc) transparent;
 }
@@ -2864,7 +3120,7 @@ button.btn-outline-danger:disabled {
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(2px);
   z-index: 1040;
-  animation: fadeIn var(--transition-fast) ease-out;
+  /* animation: fadeIn var(--transition-fast) ease-out; */
   cursor: pointer;
 }
 
@@ -3091,10 +3347,6 @@ button.btn-outline-danger:disabled {
     margin-bottom: var(--spacing-md);
   }
 
-  .input-group {
-    flex-direction: column;
-  }
-
   .input-group .form-control,
   .input-group .btn {
     border-radius: 0.375rem !important;
@@ -3256,7 +3508,7 @@ button.btn-outline-danger:disabled {
   .nav-link,
   .dropdown-item {
     min-height: 44px;
-    padding: 0.75rem 1rem;
+    /* padding: 0.75rem 1rem; */
   }
 
   /* Better focus indicators */
@@ -3556,28 +3808,31 @@ button.btn-outline-danger:disabled {
 .search-input-group {
   position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: 400px;
+  height: 40px;
+  padding: 0 24px;
 }
 
 .search-icon {
   position: absolute;
-  left: 1rem;
+  left: 1px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--bs-secondary-color);
   font-size: 1.1rem;
-  z-index: 10;
+  z-index: 1;
   pointer-events: none;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 3rem;
+  /* padding: 0.75rem 1rem 0.75rem 3rem; */
   border-radius: var(--border-radius);
   border: 1px solid var(--border-color);
   transition: var(--transition);
   background: var(--bs-body-bg);
   color: var(--bs-body-color);
+  left: 10px;
 }
 
 .search-input:focus {
@@ -3765,12 +4020,15 @@ button.btn-outline-danger:disabled {
 
 .user-email {
   font-size: 0.875rem;
-  color: white;
-  margin: 0.25rem 0 0 0;
+  color: var(--light-bg);
+  /* margin: 0.25rem 0 0 0; */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.light .user-email {
+  color: var(--bs-secondary-color);
+} 
 
 .user-status-badges {
   display: flex;
@@ -3899,7 +4157,7 @@ button.btn-outline-danger:disabled {
 .user-info-cell .user-name {
   font-weight: 600;
   color: var(--bs-body-color);
-  margin-bottom: 0.25rem;
+  /* margin-bottom: 0.25rem; */
 }
 
 .user-info-cell .user-email {
@@ -3934,14 +4192,17 @@ button.btn-outline-danger:disabled {
   justify-content: space-between;
   align-items: center;
   margin-top: 2rem;
-  padding: 1rem;
+  padding: 2rem 0 0 2rem;
   background: var(--bs-body-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   flex-wrap: wrap;
   gap: 1rem;
 }
-
+ .dark .pagination-section {
+  background: var(--dark-color);
+  border-color: #495057;
+ }
 .pagination-info {
   color: var(--bs-secondary-color);
   font-size: 0.875rem;
@@ -3996,6 +4257,8 @@ button.btn-outline-danger:disabled {
 
   .stat-card {
     padding: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .stat-icon {
@@ -4231,7 +4494,7 @@ button.btn-outline-danger:disabled {
 } */
 
 .animate-fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
+  /* animation: fadeIn 0.4s ease-out forwards; */
 }
 
 /* Main Container */
@@ -4393,12 +4656,14 @@ button.btn-outline-danger:disabled {
 .form-label {
   display: block;
   font-weight: 600;
-  color: #ffffff;
   margin: 0.5rem;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+.dark .form-label {
+  color: var(--dark-text);
+} 
 
 .form-check-label {
   color: #06b6d4;
@@ -4580,7 +4845,7 @@ button.btn-outline-danger:disabled {
 
 .status-label {
   font-weight: 600;
-  color: var(--bs-body-color);
+  /* color: var(--bs-body-color); */
   margin-bottom: 0.25rem;
 }
 
@@ -5258,12 +5523,6 @@ button.btn-outline-danger:disabled {
     font-size: 0.875rem;
 }
 
-.pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 .pagination-button {
     padding: 0.5rem 1rem;
     border: 1px solid var(--border-color);
@@ -5833,7 +6092,7 @@ button.btn-outline-danger:disabled {
   background: var(--card-bg);
   color: var(--text-primary);
   font-size: 0.95rem;
-  padding: 0.75rem 1rem;
+  /* padding: 0.75rem 1rem; */
   transition: var(--transition);
 }
 
@@ -6673,12 +6932,16 @@ button.btn-outline-danger:disabled {
 
 .stat-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  /* color: var(--text-primary); */
   line-height: 1;
 }
 
@@ -6827,7 +7090,7 @@ button.btn-outline-danger:disabled {
 
 .info-value {
   font-size: 0.875rem;
-  color: var(--text-primary);
+  /* color: var(--text-primary); */
   font-weight: 500;
 }
 
@@ -7064,6 +7327,8 @@ button.btn-outline-danger:disabled {
   .stat-card {
     min-width: calc(50% - 0.25rem);
     padding: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
   .stat-value {
@@ -7127,6 +7392,7 @@ button.btn-outline-danger:disabled {
   .stat-card {
     min-width: calc(50% - 0.5rem);
   }
+  
 }
 
 /* Medium screens (768px - 992px) */
@@ -7141,6 +7407,12 @@ button.btn-outline-danger:disabled {
   
   .stat-card {
     min-width: calc(25% - 0.75rem);
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+  .stat-content{
+    justify-content: center;
   }
 }
 
@@ -8239,7 +8511,7 @@ button.btn-outline-danger:disabled {
 .form-control-lg {
   font-size: 1.1rem;
   font-weight: 500;
-  padding: 0.75rem 1rem;
+  /* padding: 0.75rem 1rem; */
 }
 
 /* Button Enhancements */
@@ -8247,7 +8519,7 @@ button.btn-outline-danger:disabled {
   border-radius: var(--border-radius);
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 0.625rem 1.25rem;
+  /* padding: 0.625rem 1.25rem; */
   font-size: 0.875rem;
 }
 
@@ -9076,6 +9348,10 @@ input[type="color"]::-webkit-color-swatch-wrapper {
   border-bottom: 1px solid var(--border-color);
   transition: all 0.2s ease;
   font-size: 0.9rem;
+  /* vertical-align: middle; */
+  color: var(--light-text);
+  border-bottom: 1px solid var(--light-border);
+  transition: var(--transition);
 }
 
 .survey-table tbody tr {
@@ -9168,18 +9444,6 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 }
 
 /* Action Buttons */
-.action-btn {
-  background: transparent;
-  border: none;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--text-secondary);
-}
 
 .action-btn:hover {
   transform: scale(1.15);
@@ -9800,14 +10064,6 @@ input[type="color"]::-webkit-color-swatch-wrapper {
   color: var(--primary-color);
 }
 
-.survey-table tbody td {
-  padding: 1rem;
-  vertical-align: middle;
-  color: var(--light-text);
-  border-bottom: 1px solid var(--light-border);
-  transition: var(--transition);
-}
-
 .survey-table-card.dark-mode .survey-table tbody td {
   color: var(--dark-text);
   border-bottom-color: var(--dark-border);
@@ -9900,7 +10156,6 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 /* Action Buttons */
 .action-btn {
   background: transparent;
-  border: none;
   padding: 0.5rem;
   border-radius: var(--border-radius);
   transition: var(--transition);
@@ -9908,6 +10163,9 @@ input[type="color"]::-webkit-color-swatch-wrapper {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
 }
 
 .action-btn:hover {
@@ -12738,17 +12996,9 @@ canvas {
   align-items: center;
 }
 
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  color: var(--text-secondary);
-  font-size: 1.125rem;
-  z-index: 2;
-}
-
 .search-input {
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  /* padding: 0.75rem 0.75rem 0.75rem 2.5rem; */
   border: 1px solid var(--light-border);
   border-radius: var(--border-radius);
   background: var(--light-bg);
@@ -12807,6 +13057,23 @@ canvas {
 
 .dark .table-row {
   border-bottom-color: var(--dark-border);
+  background-color: var(--dark-bg);
+}
+
+.primary-action {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem 1.5rem;
+    background: linear-gradient(135deg,var(--primary-color),#17c1ca);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+    box-shadow: 0 4px 12px #1fdae440;
 }
 
 .table-header .table-row {
@@ -12859,16 +13126,11 @@ canvas {
 .user-name {
   font-weight: 500;
   color: var(--light-text);
-  margin-bottom: 0.125rem;
+  /* margin-bottom: 0.125rem; */
 }
 
 .dark .user-name {
   color: var(--dark-text);
-}
-
-.user-email {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
 }
 
 /* Badges */
@@ -13226,13 +13488,6 @@ canvas {
 .assigned-user {
   color: var(--primary-color);
   font-weight: 500;
-}
-
-/* Pagination Section */
-.pagination-section {
-  padding: 1.5rem;
-  border-top: 1px solid var(--light-border);
-  background: var(--bs-dark);
 }
 
 .dark .pagination-section {
@@ -13837,14 +14092,6 @@ canvas {
   letter-spacing: 0.025em;
 }
 
-/* Pagination Section */
-.pagination-section {
-  margin-top: 2rem;
-  padding: 1rem;
-  border-top: 1px solid var(--border-color);
-  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-}
-
 .dark .pagination-section {
   border-color: var(--dark-border);
   /* background: var(--dark-card-bg); */
@@ -14407,8 +14654,12 @@ canvas {
   .page-info h1.page-title {
     font-size: 1.5rem;
   }
-  
-  .header-content,
+
+  .header-content{
+    justify-content: end;
+    padding: 0 0.75rem 0.75rem 0;
+  }
+
   .stats-section,
   .chart-section,
   .sidebar-section,
@@ -14499,8 +14750,11 @@ canvas {
 /* Pagination Controls */
 .pagination-controls {
   display: flex;
+  flex-direction: row;
+  justify-content: center;
   align-items: center;
   gap: 0.5rem;
+  margin: 0 2rem 0 0;
 }
 
 .pagination-pages {
@@ -29543,7 +29797,7 @@ canvas {
 
 .status-value {
   font-size: 0.875rem;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-weight: 600;
 }
 
@@ -29659,7 +29913,7 @@ canvas {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.875rem;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   background-color: var(--input-bg);
   transition: all 0.2s ease;
 }
@@ -29722,7 +29976,7 @@ canvas {
 .switch-content h4 {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--text-primary);
+  /* color: var(--text-primary); */
   margin: 0 0 0.25rem 0;
 }
 
@@ -29784,7 +30038,7 @@ canvas {
 
 .action-button:hover {
   border-color: var(--primary-color);
-  /* background-color: rgba(31, 218, 228, 0.05); */
+  background-color: rgba(31, 218, 228, 0.05);
   /* color: var(--primary-color); */
 }
 
@@ -30157,21 +30411,15 @@ canvas {
 }
 
 .user-name {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--light-text);
-  margin: 1rem 0 0.5rem 0;
+  margin: 0 0.5rem 0;
   letter-spacing: -0.5px;
 }
 
 .dark .user-name {
   color: var(--dark-text);
-}
-
-.user-email {
-  font-size: 0.9375rem;
-  color: white;
-  margin: 0 0 1rem 0;
 }
 
 .user-email::before {

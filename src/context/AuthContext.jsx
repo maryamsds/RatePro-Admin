@@ -116,6 +116,14 @@ export const AuthProvider = ({ children }) => {
   const [globalLoading, setGlobalLoading] = useState(false);
 
   useEffect(() => {
+    const savedUser = localStorage.getItem("authUser");
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      if (parsed.accessToken) {
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${parsed.accessToken}`;
+      }
+    }
+    
     const checkAuth = async () => {
       const hasAuthUser = localStorage.getItem("authUser");
 
@@ -128,18 +136,20 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await axiosInstance.get("/auth/me", { withCredentials: true });
         setUser(res.data.user);
+        localStorage.setItem("authUser", JSON.stringify(res.data.user));
       } catch (err) {
-        console.error("checkAuth error:", err);
+        console.error("❌ Startup auth failed:", err);
+        setUser(null);
+        localStorage.removeItem("authUser");
         // Try refresh token
         try {
           const refreshRes = await axiosInstance.post("/auth/refresh", {}, { withCredentials: true });
+          const newAccessToken = refreshRes.data.accessToken;
+          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
 
-          // Set new access token in axios headers
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${refreshRes.data.accessToken}`;
-
-          // Retry /auth/me with new access token
           const res = await axiosInstance.get("/auth/me", { withCredentials: true });
           setUser(res.data.user);
+          localStorage.setItem("authUser", JSON.stringify({ ...res.data.user, accessToken: newAccessToken }));
         } catch (refreshErr) {
           console.error("Refresh token failed:", refreshErr);
           // Logout if refresh also fails

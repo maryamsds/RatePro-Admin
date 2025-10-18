@@ -842,7 +842,7 @@ const SurveyTemplates = ({ darkMode }) => {
               <div className="mb-4">
                 <div className="d-flex align-items-center mb-3">
                   {getCategoryBadge(selectedTemplate.category)}
-                  <h4 className="ms-3 mb-0">{selectedTemplate.name}</h4>
+                  <h4 className="ms-3 mb-0 temp">{selectedTemplate.name}</h4>
                 </div>
                 <p className="text-muted">{selectedTemplate.description}</p>
               </div>
@@ -851,45 +851,45 @@ const SurveyTemplates = ({ darkMode }) => {
                 <Col md={3}>
                   <div className="text-center p-3 bg-light rounded">
                     <MdDescription size={24} className="text-primary mb-2" />
-                    <div className="fw-semibold">{selectedTemplate.questions}</div>
+                    <div className="fw-semibold temp">{selectedTemplate.questions}</div>
                     <small className="text-muted">Questions</small>
                   </div>
                 </Col>
                 <Col md={3}>
                   <div className="text-center p-3 bg-light rounded">
                     <FaClock size={20} className="text-success mb-2" />
-                    <div className="fw-semibold">{selectedTemplate.estimatedTime}</div>
+                    <div className="fw-semibold temp">{selectedTemplate.estimatedTime}</div>
                     <small className="text-muted">Duration</small>
                   </div>
                 </Col>
                 <Col md={3}>
                   <div className="text-center p-3 bg-light rounded">
                     <MdStar size={24} className="text-warning mb-2" />
-                    <div className="fw-semibold">{selectedTemplate.rating}/5.0</div>
+                    <div className="fw-semibold temp">{selectedTemplate.rating}/5.0</div>
                     <small className="text-muted">Rating</small>
                   </div>
                 </Col>
                 <Col md={3}>
                   <div className="text-center p-3 bg-light rounded">
                     <FaUsers size={20} className="text-info mb-2" />
-                    <div className="fw-semibold">{selectedTemplate.usageCount.toLocaleString()}</div>
+                    <div className="fw-semibold temp">{selectedTemplate.usageCount.toLocaleString()}</div>
                     <small className="text-muted">Used</small>
                   </div>
                 </Col>
               </Row>
 
               <div className="mb-4">
-                <h6 className="mb-3">Sample Questions Preview:</h6>
+                <h6 className="mb-3 temp">Sample Questions Preview:</h6>
                 <div className="bg-light p-3 rounded">
-                  <div className="mb-3">
+                  <div className="mb-3 temp">
                     <strong>1. Overall Satisfaction</strong>
                     <p className="mb-0 text-muted small">How would you rate your overall experience?</p>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-3 temp">
                     <strong>2. Service Quality</strong>
                     <p className="mb-0 text-muted small">How satisfied are you with the quality of service?</p>
                   </div>
-                  <div className="mb-0">
+                  <div className="mb-0 temp">
                     <strong>3. Recommendation</strong>
                     <p className="mb-0 text-muted small">How likely are you to recommend us to others?</p>
                   </div>
@@ -900,7 +900,7 @@ const SurveyTemplates = ({ darkMode }) => {
               </div>
 
               <div>
-                <h6 className="mb-2">Available Languages:</h6>
+                <h6 className="mb-2 temp">Available Languages:</h6>
                 <div className="d-flex gap-2">
                   {selectedTemplate.language.map((lang, index) => (
                     <Badge key={index} bg="secondary" className="d-flex align-items-center">

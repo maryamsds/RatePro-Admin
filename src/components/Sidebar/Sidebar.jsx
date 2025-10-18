@@ -22,7 +22,6 @@ import {
   MdEmail,
   MdNotifications,
   MdSupport,
-  MdCardGiftcard,
   MdSchedule,
   MdApi,
   MdSegment,
@@ -250,6 +249,73 @@ const Sidebar = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobile, isTablet, isOpen, onClose, collapsed]);
 
+  // Focus management for mobile - accessibility enhancement
+  useEffect(() => {
+    console.log('Sidebar state changed:', { isMobile, isOpen, collapsed }); // Debug log
+    if (isMobile && isOpen) {
+      // When sidebar opens on mobile, focus the close button
+      const closeButton = sidebarRef.current?.querySelector('.mobile-close-button');
+      if (closeButton) {
+        closeButton.focus();
+      }
+      
+      // Prevent body scrolling when sidebar is open on mobile
+      document.body.style.overflow = 'hidden';
+      document.body.classList.add('sidebar-open');
+    } else if (isMobile && !isOpen) {
+      // When sidebar closes on mobile, restore body scroll and focus hamburger button
+      document.body.style.overflow = '';
+      document.body.classList.remove('sidebar-open');
+      
+      // Return focus to hamburger button
+      const hamburgerButton = document.getElementById('mobile-hamburger');
+      if (hamburgerButton) {
+        hamburgerButton.focus();
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (isMobile) {
+        document.body.style.overflow = '';
+        document.body.classList.remove('sidebar-open');
+      }
+    };
+  }, [isMobile, isOpen, collapsed]);
+
+  // Keyboard event handler for mobile accessibility
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (isMobile && isOpen) {
+        // Close sidebar on Escape key
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          onClose();
+        }
+        
+        // Trap focus within sidebar on mobile
+        if (event.key === 'Tab' && sidebarRef.current) {
+          const focusableElements = sidebarRef.current.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
+
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMobile, isOpen, onClose]);
+
   const toggleSubmenu = (submenuName) => {
     // Check if the clicked submenu is already open
     let isCurrentlyOpen = false;
@@ -410,10 +476,10 @@ const Sidebar = ({
     height: "100vh",
     position: "fixed",
     top: 0,
-    left: 0,
+    left: isMobile ? undefined : 0, // Let CSS handle mobile positioning, set desktop positioning
     zIndex: 1050,
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
+    transition: isMobile ? undefined : "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // Let CSS handle mobile transitions
+    backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)", // Theme colors for consistency
     borderRight: `1px solid ${
       darkMode ? "var(--dark-border)" : "var(--light-border)"
     }`,
@@ -776,8 +842,8 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Mobile Toggle Button - Shows when sidebar is closed on mobile */}
-      {isMobile && (
+      {/* Mobile Toggle Button - Shows when sidebar is closed on mobile (kept for backward compatibility) */}
+      {isMobile && !isOpen && (
         <button
           className="mobile-sidebar-toggle"
           onClick={onToggle}
@@ -788,41 +854,53 @@ const Sidebar = ({
       )}
 
       <div
+        id="mobile-sidebar"
         ref={sidebarRef}
         style={sidebarStyle}
         className={`sidebar d-flex flex-column ${
           collapsed ? "collapsed" : "expanded"
         } ${isMobile ? "mobile" : ""} ${isTablet ? "tablet" : ""} ${
           darkMode ? "dark-mode" : ""
-        }`}
+        } ${isOpen ? "open" : ""}`}
+        role={isMobile ? "dialog" : undefined}
+        aria-modal={isMobile ? "true" : undefined}
+        aria-label={isMobile ? "Navigation menu" : undefined}
+        aria-labelledby={isMobile ? undefined : "sidebar-nav"}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
       >
-        {/* Header */}
+        {/* Header with mobile close button */}
         <div className="sidebar-header">
           {!collapsed && <h4 className="sidebar-logo">Rate Pro</h4>}
-          {/* <Button
-          variant="link"
-          className="sidebar-toggle"
-          onClick={onToggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          tabIndex={0}
-        >
-          {collapsed ? <MdMenu size={isMobile ? 20 : 24} /> : <MdClose size={isMobile ? 20 : 24} />}
-        </Button> */}
-          <Button
-            variant="link"
-            className="sidebar-toggle"
-            onClick={() => onToggle(!collapsed)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            tabIndex={0}
-          >
-            {collapsed ? (
-              <MdMenu size={isMobile ? 20 : 24} />
-            ) : (
-              <MdClose size={isMobile ? 20 : 24} />
-            )}
-          </Button>
+          
+          {/* Mobile close button - only shows when sidebar is open on mobile */}
+          {isMobile && isOpen ? (
+            <Button
+              variant="link"
+              className="sidebar-toggle mobile-close-button"
+              onClick={onClose}
+              aria-label="Close navigation menu"
+              tabIndex={0}
+              autoFocus
+            >
+              <MdClose size={24} />
+            </Button>
+          ) : !isMobile ? (
+            /* Desktop/tablet toggle button */
+            <Button
+              variant="link"
+              className="sidebar-toggle"
+              onClick={() => onToggle(!collapsed)}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              tabIndex={0}
+            >
+              {collapsed ? (
+                <MdMenu size={isMobile ? 20 : 24} />
+              ) : (
+                <MdClose size={isMobile ? 20 : 24} />
+              )}
+            </Button>
+          ) : null}
         </div>
 
         {/* Navigation */}

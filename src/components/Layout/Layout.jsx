@@ -24,7 +24,7 @@ const Layout = ({ darkMode, toggleTheme }) => {
   const updateScreenSize = useCallback(() => {
     const width = window.innerWidth
     const newScreenSize = {
-      isMobile: width < 768,
+      isMobile: width <= 767, // Changed to match requirement: ≤ 767px
       isTablet: width >= 768 && width < 1024,
       isDesktop: width >= 1024,
       width
@@ -102,20 +102,22 @@ const Layout = ({ darkMode, toggleTheme }) => {
 
   // Enhanced sidebar control functions
   const toggleSidebar = useCallback(() => {
+    console.log('toggleSidebar called:', { screenSize, sidebarOpen }); // Debug log
     if (screenSize.isMobile) {
       setSidebarOpen(prev => !prev)
     } else {
       setSidebarCollapsed(prev => !prev)
     }
-  }, [screenSize.isMobile])
+  }, [screenSize, sidebarOpen])
 
   const closeSidebar = useCallback(() => {
+    console.log('closeSidebar called:', { screenSize, sidebarOpen }); // Debug log
     if (screenSize.isMobile) {
       setSidebarOpen(false)
     } else {
       setSidebarCollapsed(true)
     }
-  }, [screenSize.isMobile])
+  }, [screenSize, sidebarOpen])
 
   // Enhanced content styling with better responsive behavior
   const getContentStyle = useCallback(() => {
@@ -138,21 +140,21 @@ const Layout = ({ darkMode, toggleTheme }) => {
       // Tablet: Always account for collapsed sidebar
       return {
         ...baseStyle,
-        marginLeft: "var(--sidebar-collapsed-width, 70px)",
+        // marginLeft: "var(--sidebar-collapsed-width, 0px)",
         width: "calc(100% - var(--sidebar-collapsed-width, 70px))",
         padding: "0 8px"
       }
     }
 
     // Desktop
-    const sidebarWidth = sidebarCollapsed ? "var(--sidebar-collapsed-width, 70px)" : "var(--sidebar-width, 280px)"
-    return {
-      ...baseStyle,
-      marginLeft: sidebarWidth,
-      width: `calc(100% - ${sidebarWidth})`,
-      padding: "0"
-    }
-  }, [screenSize.isMobile, screenSize.isTablet, sidebarCollapsed])
+    // const sidebarWidth = sidebarCollapsed ? "var(--sidebar-collapsed-width, 70px)" : "var(--sidebar-width, 280px)"
+    // return {
+    //   ...baseStyle,
+    //   marginLeft: sidebarWidth,
+    //   width: `calc(100% - ${sidebarWidth})`,
+    //   padding: "0"
+    // }
+  }, [screenSize.isMobile, screenSize.isTablet])
 
   // Get container padding based on screen size
   const getContainerPadding = useCallback(() => {
@@ -202,15 +204,19 @@ const Layout = ({ darkMode, toggleTheme }) => {
         </main>
       </div>
 
-      {/* Enhanced mobile overlay with better UX */}
+      {/* Mobile overlay - only for screens ≤ 767px */}
       {screenSize.isMobile && sidebarOpen && (
         <div
+          id="sidebar-overlay"
           className="sidebar-overlay"
           onClick={closeSidebar}
-          onTouchStart={closeSidebar}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            closeSidebar();
+          }}
           role="button"
           tabIndex={-1}
-          aria-label="Close sidebar"
+          aria-label="Close navigation menu"
         />
       )}
 
