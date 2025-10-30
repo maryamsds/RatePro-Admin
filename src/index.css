@@ -4498,10 +4498,6 @@ button.btn-outline-danger:disabled {
   opacity: 0;
 } */
 
-.animate-fade-in {
-  /* animation: fadeIn 0.4s ease-out forwards; */
-}
-
 /* Main Container */
 .user-form-container {
   min-height: 100vh;
@@ -6327,6 +6323,11 @@ button.btn-outline-danger:disabled {
   gap: 0.75rem;
   margin-top: auto;
   
+}
+.template-actions-dropdown{
+  border: none;
+  background: var(--card-bg);
+  color: var(--text-primary);
 }
 .dark .dropdown-toggle {
   border: none;

@@ -25,11 +25,13 @@ import {
   MdEdit,
   MdPublish,
   MdSave,
+  MdDelete,
 } from "react-icons/md";
 import { FaUsers, FaClock, FaLanguage } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import Pagination from "../../components/Pagination/Pagination";
 import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import axiosInstance from "../../api/axiosInstance.js";
 
 const SurveyTemplates = ({ darkMode }) => {
@@ -353,6 +355,44 @@ const SurveyTemplates = ({ darkMode }) => {
       }
     });
   };
+  // ✅ DELETE TEMPLATE FUNCTION (Admin only)
+  const MySwal = withReactContent(Swal);
+
+  const handleDeleteTemplate = async (id) => {
+    try {
+      const result = await MySwal.fire({
+        title: "Delete Template?",
+        text: "This action cannot be undone!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Delete",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#1fdae4",  // teal vibe
+        cancelButtonColor: "#6C757D",   // dark tone
+        background: "#ffffff",          // dark mode background
+        color: "#545454",               // text color
+      });
+
+      if (!result.isConfirmed) return;
+
+      const response = await axiosInstance.delete(`/survey-templates/delete/${id}`);
+      console.log("Template deleted:", response.data);
+
+      await MySwal.fire({
+        title: "Deleted!",
+        text: "Your template has been removed.",
+        icon: "success",
+        confirmButtonColor: "#1fdae4",
+        background: "#ffffff",          // dark mode background
+        color: "#545454",               // text color
+      });
+
+      fetchTemplates();
+    } catch (error) {
+      console.error("Error deleting template:", error);
+    }
+  };
+
 
   // ✅ GET STATISTICS - From real backend data only
   const getTemplateStats = () => {
@@ -562,7 +602,7 @@ const SurveyTemplates = ({ darkMode }) => {
               </span>
               {searchTerm && (
                 <span className="text-muted d-none d-sm-inline">
-                 for "{searchTerm}"
+                  for "{searchTerm}"
                 </span>
               )}
             </div>
@@ -585,7 +625,7 @@ const SurveyTemplates = ({ darkMode }) => {
               <div key={template._id} className="template-card-wrapper">
                 <div className="template-card">
                   {/* Template Header */}
-                  <div className="template-header">
+                  <div className="template-header d-flex justify-content-between align-items-start">
                     <div className="template-badges">
                       {getCategoryBadge(template.category)}
                       {/* ✅ NEW: Status Badge */}
@@ -633,6 +673,13 @@ const SurveyTemplates = ({ darkMode }) => {
                                 Move to Draft
                               </>
                             )}
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleDeleteTemplate(template._id)}>
+                            <>
+                              <MdDelete className="me-2" />
+                              Delete
+                            </>
                           </Dropdown.Item>
                         </Dropdown.Menu>
                       </Dropdown>
