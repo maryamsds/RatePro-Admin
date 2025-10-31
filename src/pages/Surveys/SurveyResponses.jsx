@@ -373,7 +373,7 @@ const SurveyResponses = () => {
                   <Button
                     variant="link"
                     className="p-0 mb-2 text-primary"
-                    onClick={() => navigate(`/surveys/${id}`)}
+                    onClick={() => navigate(`/app/surveys/`)}
                   >
                     <i className="fas fa-arrow-left me-2"></i>
                     Back to Survey Details
