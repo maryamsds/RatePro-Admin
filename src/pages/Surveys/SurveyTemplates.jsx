@@ -345,13 +345,21 @@ const SurveyTemplates = ({ darkMode }) => {
   };
 
   // ✅ EDIT TEMPLATE FUNCTION (Admin only)
+  // const handleEditTemplate = (template) => {
+  //   navigate(`/app/surveys/builder/${template._id}`, {
+  //     state: {
+  //       templateData: template,
+  //       source: "templates",
+  //       mode: "template-edit",
+  //       isEditing: true
+  //     }
+  //   });
+  // };
   const handleEditTemplate = (template) => {
-    navigate('/app/surveys/builder', {
+    navigate(`/app/surveys/builder/${template._id}`, {
       state: {
-        templateData: template,
-        source: "templates",
-        mode: "template-edit",
-        isEditing: true
+        templateData: template,     // Fast load ke liye
+        mode: "template-edit"       // Mode detection
       }
     });
   };
@@ -653,7 +661,7 @@ const SurveyTemplates = ({ darkMode }) => {
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
                           {/* ✅ EDIT OPTION - Hide for Admin */}
-                          {user?.role !== 'admin' && (
+                          {user?.role == 'admin' && (
                             <Dropdown.Item onClick={() => handleEditTemplate(template)}>
                               <MdEdit className="me-2" />
                               Edit Template
@@ -927,7 +935,7 @@ const SurveyTemplates = ({ darkMode }) => {
                     {user?.role === 'admin' && (
                       <StatusBadge status={selectedTemplate.status} />
                     )}
-                    <h4 className="ms-3 mb-0">{selectedTemplate.name}</h4>
+                    <h4 className="ms-3 mb-0 text">{selectedTemplate.name}</h4>
                   </div>
                   <p className="text-muted">{selectedTemplate.description}</p>
                 </div>
@@ -936,7 +944,7 @@ const SurveyTemplates = ({ darkMode }) => {
                   <Col md={3}>
                     <div className="text-center p-3 bg-light rounded">
                       <MdDescription size={24} className="text-primary mb-2" />
-                      <div className="fw-semibold">
+                      <div className="fw-semibold text">
                         {selectedTemplate.questions?.length || 0}
                       </div>
                       <small className="text-muted">Questions</small>
@@ -945,7 +953,7 @@ const SurveyTemplates = ({ darkMode }) => {
                   <Col md={3}>
                     <div className="text-center p-3 bg-light rounded">
                       <FaClock size={20} className="text-success mb-2" />
-                      <div className="fw-semibold">
+                      <div className="fw-semibold text">
                         {selectedTemplate.estimatedTime}
                       </div>
                       <small className="text-muted">Duration</small>
@@ -954,7 +962,7 @@ const SurveyTemplates = ({ darkMode }) => {
                   <Col md={3}>
                     <div className="text-center p-3 bg-light rounded">
                       <MdStar size={24} className="text-warning mb-2" />
-                      <div className="fw-semibold">
+                      <div className="fw-semibold text">
                         {selectedTemplate.rating}/5.0
                       </div>
                       <small className="text-muted">Rating</small>
@@ -963,7 +971,7 @@ const SurveyTemplates = ({ darkMode }) => {
                   <Col md={3}>
                     <div className="text-center p-3 bg-light rounded">
                       <FaUsers size={20} className="text-info mb-2" />
-                      <div className="fw-semibold">
+                      <div className="fw-semibold text">
                         {selectedTemplate.usageCount?.toLocaleString()}
                       </div>
                       <small className="text-muted">Used</small>
@@ -972,8 +980,8 @@ const SurveyTemplates = ({ darkMode }) => {
                 </Row>
 
                 <div className="mb-4">
-                  <h6 className="mb-3">Sample Questions Preview:</h6>
-                  <div className="bg-light p-3 rounded">
+                  <h6 className="mb-3 text">Sample Questions Preview:</h6>
+                  <div className="bg-light p-3 rounded text">
                     {(
                       selectedTemplate.sampleQuestions ||
                       selectedTemplate.questions?.slice(0, 3) ||
@@ -1004,7 +1012,7 @@ const SurveyTemplates = ({ darkMode }) => {
                 </div>
 
                 <div>
-                  <h6 className="mb-2">Available Languages:</h6>
+                  <h6 className="mb-2 text">Available Languages:</h6>
                   <div className="d-flex gap-2">
                     {Array.isArray(selectedTemplate.language) ? (
                       selectedTemplate.language.map((lang, index) => (

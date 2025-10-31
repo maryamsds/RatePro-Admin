@@ -281,7 +281,6 @@ const SurveyBuilder = ({ darkMode }) => {
 
         // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
         if (isTemplateBasedSurvey && user?.role === 'admin') {
-          console.log("🚫 Admin cannot use templates - redirecting");
           Swal.fire({
             icon: 'warning',
             title: 'Access Restricted',
@@ -295,35 +294,38 @@ const SurveyBuilder = ({ darkMode }) => {
 
         // CASE 1: Editing existing survey
         if (isEditing && surveyId && !isTemplateMode) {
-          console.log("🎯 MODE: Editing existing survey");
           await fetchExistingSurvey(surveyId);
           setShowModeSelector(false);
           setSurveyMode('user-defined');
         }
         // CASE 2: Creating from template
         else if (templateData && !isTemplateMode) {
-          console.log("🎯 MODE: Creating survey from template");
           initializeFromTemplate(templateData);
           setShowModeSelector(false);
           setSurveyMode('user-defined');
         }
         // CASE 3: Admin editing template
         else if (isTemplateMode && surveyId) {
-          console.log("🎯 MODE: Admin editing template");
-          await fetchTemplateData(surveyId);
+
+          // Agar state mein templateData hai → usko use karo
+          if (templateData) {
+            initializeFromTemplate(templateData); // Reuse existing function
+          } else {
+            // Warna backend se fetch karo
+            await fetchTemplateData(surveyId);
+          }
+
           setShowModeSelector(false);
           setSurveyMode('user-defined');
         }
         // CASE 4: Admin creating new template
         else if (isTemplateMode && !surveyId) {
-          console.log("🎯 MODE: Admin creating new template");
           setShowModeSelector(false);
           setSurveyMode('ai-assisted');
           setShowAIModal(true);
         }
         // CASE 5: Creating new survey (manual/AI)
         else {
-          console.log("🎯 MODE: Creating new survey");
           setShowModeSelector(true);
           setSurveyMode('user-defined');
         }
@@ -345,13 +347,12 @@ const SurveyBuilder = ({ darkMode }) => {
     };
 
     initializeSurveyBuilder();
-  }, [surveyId, isTemplateMode, templateData, isEditing, user, navigate]); 
+  }, [surveyId, isTemplateMode, templateData, isEditing, user, navigate]);
 
   // ✅ FIXED: Fetch template data for admin editing
   const fetchTemplateData = async (templateId) => {
     try {
-      console.log("📡 Fetching template data for ID:", templateId);
-      const response = await axiosInstance.get(`/templates/${templateId}`);
+      const response = await axiosInstance.get(`/survey-templates/${templateId}`);
 
       if (response.data.success && response.data.template) {
         const template = response.data.template;
@@ -386,7 +387,6 @@ const SurveyBuilder = ({ darkMode }) => {
         })) || [];
 
         setQuestions(transformedQuestions);
-        console.log("✅ Template data loaded successfully");
       }
     } catch (error) {
       console.error('Error fetching template:', error);
@@ -400,11 +400,8 @@ const SurveyBuilder = ({ darkMode }) => {
       setLoading(true);
       setError(null);
 
-      console.log("📡 Fetching survey data for ID:", surveyId);
-
       // ✅ CORRECTED: Use /api prefix
       const response = await axiosInstance.get(`/surveys/${surveyId}`);
-      console.log("📦 Survey API Response:", response.data);
 
       if (response.data) {
         const surveyData = response.data.survey || response.data;
@@ -470,11 +467,56 @@ const SurveyBuilder = ({ darkMode }) => {
     }
   };
   // ✅ FIXED: Initialize from template for tenant
-  const initializeFromTemplate = (template) => {
-    console.log("🔄 Initializing from template:", template);
+  // const initializeFromTemplate = (template) => {
+  //   console.log("🔄 Initializing from template:", template);
 
-    const newSurveyData = {
-      title: `${template.name} - Copy`,
+  //   const newSurveyData = {
+  //     title: `${template.name}`,
+  //     description: template.description || '',
+  //     category: template.category || '',
+  //     language: template.language || ['English'],
+  //     isPublic: true,
+  //     allowAnonymous: true,
+  //     collectEmail: false,
+  //     multipleResponses: false,
+  //     thankYouMessage: 'Thank you for completing our survey!',
+  //     redirectUrl: '',
+  //     branding: {
+  //       primaryColor: 'var(--bs-primary)',
+  //       backgroundColor: 'var(--bs-body-bg)',
+  //       textColor: 'var(--bs-body-color)',
+  //       showBranding: true
+  //     }
+  //   };
+
+  //   setSurvey(newSurveyData);
+
+  //   const initialQuestions = template.questions?.map((q, index) => ({
+  //     id: q.id || `q${index + 1}`,
+  //     type: mapQuestionTypeFromBackend(q.type),
+  //     title: q.questionText || q.title || `Question ${index + 1}`,
+  //     description: q.description || '',
+  //     required: q.required || false,
+  //     options: q.options || [],
+  //     settings: q.settings || {}
+  //   })) || [];
+
+  //   setQuestions(initialQuestions);
+
+  //   const profileUpdate = {
+  //     industry: template.category,
+  //     surveyGoal: template.description || `Collect feedback using ${template.name} template`,
+  //     targetAudience: 'customers'
+  //   };
+  //   setCompanyProfile(prev => ({ ...prev, ...profileUpdate }));
+
+  //   console.log("✅ Template initialization complete");
+  // };
+
+  const initializeFromTemplate = (template) => {
+
+    setSurvey({
+      title: template.name || '',
       description: template.description || '',
       category: template.category || '',
       language: template.language || ['English'],
@@ -490,9 +532,7 @@ const SurveyBuilder = ({ darkMode }) => {
         textColor: 'var(--bs-body-color)',
         showBranding: true
       }
-    };
-
-    setSurvey(newSurveyData);
+    });
 
     const initialQuestions = template.questions?.map((q, index) => ({
       id: q.id || `q${index + 1}`,
@@ -505,15 +545,6 @@ const SurveyBuilder = ({ darkMode }) => {
     })) || [];
 
     setQuestions(initialQuestions);
-
-    const profileUpdate = {
-      industry: template.category,
-      surveyGoal: template.description || `Collect feedback using ${template.name} template`,
-      targetAudience: 'customers'
-    };
-    setCompanyProfile(prev => ({ ...prev, ...profileUpdate }));
-
-    console.log("✅ Template initialization complete");
   };
 
   // Helper functions for question type mapping
@@ -605,8 +636,6 @@ const SurveyBuilder = ({ darkMode }) => {
         const aiData = response.data.data || response.data;
         const aiSurvey = aiData.survey || {};
         const aiQuestions = aiData.questions || [];
-
-        console.log('✅ AI Response received:', { aiSurvey, questionCount: aiQuestions.length });
 
         const transformedQuestions = aiQuestions.map((q, index) => ({
           id: Date.now() + index,
@@ -744,14 +773,8 @@ const SurveyBuilder = ({ darkMode }) => {
   // ✅ DEBUG: Check survey details before update
   const checkSurveyAccess = async () => {
     try {
-      console.log("🔍 Checking survey access...");
-      console.log("Survey ID:", surveyId);
-      console.log("User:", user);
-      console.log("User Tenant:", user?.tenant);
-
       // Test GET request to check if survey exists
       const testResponse = await axiosInstance.get(`/surveys/${surveyId}`);
-      console.log("✅ Survey GET Response:", testResponse.data);
 
       return true;
     } catch (error) {
@@ -850,17 +873,34 @@ const SurveyBuilder = ({ darkMode }) => {
           isPremium: false
         };
 
-        console.log("🚀 Sending template with status:", finalStatus);
-        console.log("👤 User role:", user?.role);
-
         if (isEditing && surveyId) {
           // Update existing template
-          console.log("🔄 Updating existing template...");
-          response = await axiosInstance.put(`/survey-templates/${surveyId}`, templateData);
-          successMessage = `Template ${publish ? 'published' : 'updated'} successfully!`;
+          // Detect whether to update published or save as draft
+          const wasPublished = survey.isPublic === true;
+          const isUpdatingPublished = wasPublished;
+
+          if (isUpdatingPublished) {
+            // Keep published status, just update content
+            response = await axiosInstance.put(`/survey-templates/${surveyId}`, templateData);
+            successMessage = "Template updated successfully!";
+          } else if (publish) {
+            // Publish new or previously draft template
+            response = await axiosInstance.put(`/survey-templates/${surveyId}`, {
+              ...templateData,
+              status: "published"
+            });
+            successMessage = "Template published successfully!";
+          } else {
+            // Save draft version
+            response = await axiosInstance.put(`/survey-templates/${surveyId}`, {
+              ...templateData,
+              status: "draft"
+            });
+            successMessage = "Template saved as draft!";
+          }
+
         } else {
           // Create new template - ✅ CORRECT ENDPOINT
-          console.log("🆕 Creating new template...");
           response = await axiosInstance.post('/survey-templates/create', templateData);
           successMessage = `Template ${publish ? 'published' : 'created'} successfully!`;
         }
@@ -897,21 +937,15 @@ const SurveyBuilder = ({ darkMode }) => {
           status: finalStatus, // ✅ Use the properly determined status
         };
 
-        console.log("📤 Sending survey data with status:", finalStatus);
-
         if (isEditing && surveyId) {
-          console.log("🔄 Updating existing survey...");
           response = await axiosInstance.put(`/surveys/${surveyId}`, surveyData);
           successMessage = `Survey ${publish ? 'published' : 'updated'} successfully!`;
         } else {
-          console.log("🆕 Creating new survey...");
           const endpoint = publish ? '/surveys/create' : '/surveys/save-draft';
           response = await axiosInstance.post(endpoint, surveyData);
           successMessage = `Survey ${publish ? 'published' : 'saved as draft'} successfully!`;
         }
       }
-
-      console.log("✅ API Response:", response.data);
 
       Swal.fire({
         icon: 'success',
@@ -955,7 +989,7 @@ const SurveyBuilder = ({ darkMode }) => {
   // ✅ FIXED: Save as Draft Function
   const saveAsDraft = async () => {
     const result = await Swal.fire({
-      title: 'Save as Draft?',
+      title: 'Save as Draft!',
       text: 'Your survey will be saved as draft and can be published later.',
       icon: 'question',
       showCancelButton: true,
@@ -994,8 +1028,6 @@ const SurveyBuilder = ({ darkMode }) => {
           status: 'draft'
         };
 
-        console.log("🚀 Sending DRAFT save request...");
-
         let response;
         if (isEditMode && surveyId) {
           // ✅ CORRECTED: Use /api prefix
@@ -1004,8 +1036,6 @@ const SurveyBuilder = ({ darkMode }) => {
           // ✅ CORRECTED: Use /api prefix  
           response = await axiosInstance.post('/surveys/save-draft', surveyData);
         }
-
-        console.log("✅ Draft save response:", response.data);
 
         if (response.data) {
           Swal.fire({
@@ -1036,412 +1066,17 @@ const SurveyBuilder = ({ darkMode }) => {
     }
   };
 
-  // ✅ FIXED: Publish Survey Function with consistent API endpoint
-  const publishSurvey = async () => {
-    const result = await Swal.fire({
-      title: 'Publish Survey?',
-      text: 'Once published, the survey will be available for responses.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: 'var(--bs-success)',
-      cancelButtonColor: 'var(--bs-secondary)',
-      confirmButtonText: 'Yes, Publish Survey'
-    });
-
-
-    if (result.isConfirmed) {
-      setSaving(true);
-      try {
-        if (!survey.title.trim() || questions.length === 0) {
-          throw new Error('Title and at least one question are required');
-        }
-
-        const surveyData = {
-          title: survey.title,
-          description: survey.description,
-          category: survey.category,
-          themeColor: survey.branding?.primaryColor || '#007bff',
-          questions: questions.map((q, index) => ({
-            id: q.id?.toString() || (index + 1).toString(),
-            questionText: q.title,
-            type: mapQuestionTypeToBackend(q.type),
-            options: q.options || [],
-            required: q.required || false,
-            translations: q.translations || {},
-            logicRules: q.logicRules || []
-          })),
-          settings: {
-            isPublic: survey.isPublic,
-            isAnonymous: survey.allowAnonymous
-          },
-          status: 'active'
-        };
-
-        let response;
-
-        console.log("🎯 Updated Mode:", {
-          isTemplateMode,
-          isEditing,
-          surveyId
-        });
-
-        if (isTemplateMode) {
-          // Template publishing
-          if (isEditing && surveyId) {
-            response = await axiosInstance.put(`/templates/${surveyId}`, {
-              ...surveyData,
-              status: 'published'
-            });
-          } else {
-            response = await axiosInstance.post('/templates/create', {
-              ...surveyData,
-              status: 'published'
-            });
-          }
-        } else {
-          // ✅ FIXED: Use PUT for publishing existing surveys instead of PATCH
-          if (isEditing && surveyId) {
-            response = await axiosInstance.put(`/surveys/${surveyId}`, {
-              ...surveyData,
-              status: 'active'
-            });
-          } else {
-            response = await axiosInstance.post('/surveys/create', surveyData);
-          }
-        }
-
-        if (response.data) {
-          Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: 'Survey updated successfully!',
-            timer: 2000,
-            showConfirmButton: false
-          });
-
-          setTimeout(() => navigate('/app/surveys'), 1500);
-        }
-
-      } catch (error) {
-        console.error('Update error:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Update Failed',
-          text: error.response?.data?.message || error.message || 'Failed to publish survey. Please try again.'
-        });
-      } finally {
-        setSaving(false);
-      }
-    }
-  };
-
-  // ✅ FIXED: Enhanced action buttons with proper mode-based conditions
-  // const renderActionButtons = () => {
-  //   return (
-  //     <div className="d-flex gap-2 flex-wrap">
-  //       {/* AI Assistant Button - Show for all modes */}
-  //       <Button
-  //         variant="outline-primary"
-  //         onClick={() => setShowAIModal(true)}
-  //         className="d-flex align-items-center"
-  //         disabled={aiLoadingStates.generating}
-  //         size="sm"
-  //       >
-  //         {aiLoadingStates.generating ? (
-  //           <Spinner size="sm" className="me-2" />
-  //         ) : (
-  //           <MdAutoAwesome className="me-2" />
-  //         )}
-  //         <span className="d-none d-sm-inline">AI Assistant</span>
-  //       </Button>
-
-  //       {/* Preview Button */}
-  //       <Button
-  //         variant="outline-secondary"
-  //         onClick={() => setShowPreviewModal(true)}
-  //         className="d-flex align-items-center"
-  //         size="sm"
-  //       >
-  //         <MdPreview className="me-2" />
-  //         <span className="d-none d-sm-inline">Preview</span>
-  //       </Button>
-
-  //       {isTemplateMode && user?.role === 'companyAdmin' && (
-  //         <>
-  //           <Button
-  //             variant="outline-warning"
-  //             onClick={() => saveSurvey(false)} // Save Template Draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Save Draft
-  //           </Button>
-  //           <Button
-  //             variant="success"
-  //             onClick={() => saveSurvey(true)} // Publish Template
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Publish
-  //           </Button>
-  //         </>
-  //       )}
-
-  //       {/* 🎯 MODE-BASED ACTION BUTTONS */}
-  //       {/* CASE 1: Admin Template Create Mode */}
-  //       {isTemplateCreateMode && (
-  //         <>
-  //           <Button
-  //             variant="outline-warning"
-  //             onClick={() => saveSurvey(false)} // Save Template Draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Save Template Draft
-  //           </Button>
-  //           <Button
-  //             variant="success"
-  //             onClick={() => saveSurvey(true)} // Publish Template
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Publish Template
-  //           </Button>
-  //         </>
-  //       )}
-
-
-  //       {/* CASE 3: Tenant Survey Edit Mode */}
-  //       {isEditMode && !isTemplateMode && (
-  //         <>
-  //           {/* <Button
-  //             variant="outline-warning"
-  //             onClick={saveAsDraft} // Save as draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Update Draft
-  //           </Button> */}
-  //           <Button
-  //             variant="success"
-  //             onClick={saveSurvey} // Publish survey
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Update
-  //           </Button>
-  //         </>
-  //       )}
-
-  //       {/* CASE 3: Tenant Create Survey Mode (New Survey) */}
-  //       {/* {isCreateMode && !isTemplateMode && (
-  //         <>
-  //           <Button
-  //             variant="outline-warning"
-  //             onClick={saveAsDraft} // Save as Draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Save as Draft
-  //           </Button>
-  //           <Button
-  //             variant="success"
-  //             onClick={publishSurvey} // Publish Survey
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Publish Survey
-  //           </Button>
-  //         </>
-  //       )} */}
-
-
-  //       {/* CASE 5: Template-based Survey Creation */}
-  //       {isTemplateBasedSurvey && (
-  //         <>
-  //           <Button
-  //             variant="outline-warning"
-  //             onClick={saveAsDraft} // Save as draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Save as Draft
-  //           </Button>
-  //           <Button
-  //             variant="success"
-  //             onClick={publishSurvey} // Publish survey
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Publish Survey
-  //           </Button>
-  //         </>
-  //       )}
-
-  //     </div>
-  //   );
-  // };
-  // ✅ FIXED: Enhanced action buttons with proper mode-based conditions
-  // ✅ FIXED: Enhanced action buttons with proper mode-based conditions
-  // const renderActionButtons = () => {
-  //   return (
-  //     <div className="d-flex gap-2 flex-wrap">
-  //       {/* AI Assistant Button - Show for all modes */}
-  //       <Button
-  //         variant="outline-primary"
-  //         onClick={() => setShowAIModal(true)}
-  //         className="d-flex align-items-center"
-  //         disabled={aiLoadingStates.generating}
-  //         size="sm"
-  //       >
-  //         {aiLoadingStates.generating ? (
-  //           <Spinner size="sm" className="me-2" />
-  //         ) : (
-  //           <MdAutoAwesome className="me-2" />
-  //         )}
-  //         <span className="d-none d-sm-inline">AI Assistant</span>
-  //       </Button>
-
-  //       {/* Preview Button */}
-  //       <Button
-  //         variant="outline-secondary"
-  //         onClick={() => setShowPreviewModal(true)}
-  //         className="d-flex align-items-center"
-  //         size="sm"
-  //       >
-  //         <MdPreview className="me-2" />
-  //         <span className="d-none d-sm-inline">Preview</span>
-  //       </Button>
-
-  //       {/* 🎯 MODE-BASED ACTION BUTTONS */}
-
-  //       {/* CASE 1: CompanyAdmin creating new survey */}
-  //       {(user?.role === 'companyAdmin' && isCreateMode && !isTemplateMode) && (
-  //         <>
-  //           <Button
-  //             variant="outline-warning"
-  //             onClick={() => saveSurvey(false)} // Save as draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Save Draft
-  //           </Button>
-  //           <Button
-  //             variant="success"
-  //             onClick={() => saveSurvey(true)} // Publish as active
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Publish Survey
-  //           </Button>
-  //         </>
-  //       )}
-
-  //       {/* CASE 2: Admin Template Create Mode */}
-  //       {isTemplateCreateMode && (
-  //         <>
-  //           <Button
-  //             variant="outline-warning"
-  //             onClick={() => saveSurvey(false)} // Save Template Draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Save Template Draft
-  //           </Button>
-  //           <Button
-  //             variant="success"
-  //             onClick={() => saveSurvey(true)} // Publish Template
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Publish Template
-  //           </Button>
-  //         </>
-  //       )}
-
-  //       {/* CASE 3: Tenant Survey Edit Mode */}
-  //       {isEditMode && !isTemplateMode && (
-  //         <>
-  //           <Button
-  //             variant="success"
-  //             onClick={() => saveSurvey(true)} // Update survey
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Update
-  //           </Button>
-  //         </>
-  //       )}
-
-  //       {/* CASE 4: Template-based Survey Creation */}
-  //       {isTemplateBasedSurvey && (
-  //         <>
-  //           <Button
-  //             variant="outline-warning"
-  //             onClick={() => saveSurvey(false)} // Save as draft
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdSave className="me-2" />
-  //             Save as Draft
-  //           </Button>
-  //           <Button
-  //             variant="success"
-  //             onClick={() => saveSurvey(true)} // Publish survey
-  //             disabled={saving}
-  //             className="d-flex align-items-center"
-  //             size="sm"
-  //           >
-  //             <MdPublish className="me-2" />
-  //             Publish Survey
-  //           </Button>
-  //         </>
-  //       )}
-  //     </div>
-  //   );
-  // };
-
   const renderActionButtons = () => {
     return (
       <div className="d-flex gap-2 flex-wrap">
-        {/* AI Assistant Button - Show for all modes */}
+
+        {/* AI Assistant */}
         <Button
           variant="outline-primary"
           onClick={() => setShowAIModal(true)}
-          className="d-flex align-items-center"
           disabled={aiLoadingStates.generating}
           size="sm"
+          className="d-flex align-items-center"
         >
           {aiLoadingStates.generating ? (
             <Spinner size="sm" className="me-2" />
@@ -1451,112 +1086,66 @@ const SurveyBuilder = ({ darkMode }) => {
           <span className="d-none d-sm-inline">AI Assistant</span>
         </Button>
 
-        {/* Preview Button */}
+        {/* Preview */}
         <Button
           variant="outline-secondary"
           onClick={() => setShowPreviewModal(true)}
-          className="d-flex align-items-center"
           size="sm"
+          className="d-flex align-items-center"
         >
           <MdPreview className="me-2" />
           <span className="d-none d-sm-inline">Preview</span>
         </Button>
 
-        {/* CASE 1: CompanyAdmin creating new survey */}
-        {(user?.role === 'companyAdmin' && isCreateMode && !isTemplateMode) && (
+        {/* 1. CompanyAdmin: Create New Survey */}
+        {user?.role === 'companyAdmin' && isCreateMode && !isTemplateMode && (
           <>
-            <Button
-              variant="outline-warning"
-              onClick={() => saveSurvey(false)} // Save as draft
-              disabled={saving}
-              className="d-flex align-items-center"
-              size="sm"
-            >
-              <MdSave className="me-2" />
-              Save Draft
+            <Button variant="outline-warning" onClick={() => saveSurvey(false)} disabled={saving} size="sm" className="d-flex align-items-center">
+              <MdSave className="me-2" /> Save Draft
             </Button>
-            <Button
-              variant="success"
-              onClick={() => saveSurvey(true)} // Publish as active
-              disabled={saving}
-              className="d-flex align-items-center"
-              size="sm"
-            >
-              <MdPublish className="me-2" />
-              Publish Survey
+            <Button variant="success" onClick={() => saveSurvey(true)} disabled={saving} size="sm" className="d-flex align-items-center">
+              <MdPublish className="me-2" /> Publish
             </Button>
           </>
         )}
 
-        {/* 🎯 MODE-BASED ACTION BUTTONS */}
-        {/* CASE 1: Admin Template Create Mode */}
+        {/* 2. Admin: Create New Template */}
         {isTemplateCreateMode && (
           <>
-            <Button
-              variant="outline-warning"
-              onClick={() => saveSurvey(false)} // Save Template Draft
-              disabled={saving}
-              className="d-flex align-items-center"
-              size="sm"
-            >
-              <MdSave className="me-2" />
-              Save Template Draft
+            <Button variant="outline-warning"
+              onClick={() => saveSurvey(false)} disabled={saving} size="sm"
+              className="d-flex align-items-center">
+              <MdSave className="me-2" /> Save Template Draft
             </Button>
-            <Button
-              variant="success"
-              onClick={() => saveSurvey(true)} // Publish Template
-              disabled={saving}
-              className="d-flex align-items-center"
-              size="sm"
-            >
-              <MdPublish className="me-2" />
-              Publish Template
+            <Button variant="success"
+              onClick={() => saveSurvey(true)} disabled={saving} size="sm"
+              className="d-flex align-items-center">
+              <MdPublish className="me-2" /> Publish Template
             </Button>
           </>
         )}
 
+        {/* 3. Admin: Edit Existing Template ← YE MISSING THA */}
+        {isTemplateEditMode && (
+          <>
+            <Button variant="outline-warning"
+              onClick={() => saveSurvey(false)} disabled={saving} size="sm"
+              className="d-flex align-items-center">
+              <MdSave className="me-2" /> Save Draft
+            </Button>
+            <Button variant="success"
+              onClick={() => saveSurvey(true)} disabled={saving} size="sm"
+              className="d-flex align-items-center">
+              <MdPublish className="me-2" /> Update Template
+            </Button>
+          </>
+        )}
 
-        {/* CASE 3: Tenant Survey Edit Mode */}
+        {/* 4. Tenant: Edit Survey */}
         {isEditMode && !isTemplateMode && (
-          <>
-            <Button
-              variant="success"
-              onClick={saveSurvey} // Publish survey
-              disabled={saving}
-              className="d-flex align-items-center"
-              size="sm"
-            >
-              <MdPublish className="me-2" />
-              Update
-            </Button>
-          </>
-        )}
-
-
-        {/*  Template-based Survey Creation */}
-        {isTemplateBasedSurvey && (
-          <>
-            <Button
-              variant="outline-warning"
-              onClick={saveAsDraft} // Save as draft
-              disabled={saving}
-              className="d-flex align-items-center"
-              size="sm"
-            >
-              <MdSave className="me-2" />
-              Save as Draft
-            </Button>
-            <Button
-              variant="success"
-              onClick={publishSurvey} // Publish survey
-              disabled={saving}
-              className="d-flex align-items-center"
-              size="sm"
-            >
-              <MdPublish className="me-2" />
-              Publish Survey
-            </Button>
-          </>
+          <Button variant="success" onClick={saveSurvey} disabled={saving} size="sm" className="d-flex align-items-center">
+            <MdPublish className="me-2" /> Update
+          </Button>
         )}
 
       </div>
@@ -1571,9 +1160,9 @@ const SurveyBuilder = ({ darkMode }) => {
 
     if (isTemplateMode) {
       if (isTemplateEditMode) {
-        title = 'Create Survey Template';
+        title = 'Update Survey Template';
         subtitle = 'Modify an existing survey template';
-        badge = <Badge bg="warning">Create Template</Badge>;
+        badge = <Badge bg="warning">Update Template</Badge>;
       } else {
         title = 'Create Survey Template';
         subtitle = 'Create a reusable survey template for tenants';
@@ -1671,7 +1260,7 @@ const SurveyBuilder = ({ darkMode }) => {
             {isTemplateMode ? (
               <>
                 <MdBuild className="me-2" />
-                Template Creation Mode
+                Template Updation Mode
               </>
             ) : isTemplateBasedSurvey ? (
               <>
@@ -2261,7 +1850,6 @@ const SurveyBuilder = ({ darkMode }) => {
                 <Form.Select
                   value={companyProfile.industry}
                   onChange={(e) => {
-                    console.log('Industry selected:', e.target.value);
                     setCompanyProfile({ ...companyProfile, industry: e.target.value });
                   }}
                 >
@@ -2280,7 +1868,6 @@ const SurveyBuilder = ({ darkMode }) => {
                   type="text"
                   value={companyProfile.products}
                   onChange={(e) => {
-                    console.log('Products updated:', e.target.value);
                     setCompanyProfile({ ...companyProfile, products: e.target.value });
                   }}
                   placeholder="e.g., Hotel Rooms, Restaurant, Spa"
@@ -2297,7 +1884,6 @@ const SurveyBuilder = ({ darkMode }) => {
                 <Form.Select
                   value={companyProfile.targetAudience}
                   onChange={(e) => {
-                    console.log('Audience selected:', e.target.value);
                     setCompanyProfile({ ...companyProfile, targetAudience: e.target.value });
                   }}
                 >
@@ -2318,7 +1904,6 @@ const SurveyBuilder = ({ darkMode }) => {
                   rows={2}
                   value={companyProfile.surveyGoal}
                   onChange={(e) => {
-                    console.log('Goal updated:', e.target.value);
                     setCompanyProfile({ ...companyProfile, surveyGoal: e.target.value });
                   }}
                   placeholder="e.g., Customer Satisfaction"
@@ -2339,7 +1924,7 @@ const SurveyBuilder = ({ darkMode }) => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Question Count</Form.Label>
-                      <Form.Select
+                      {/* <Form.Select
                         value={companyProfile.questionCount}
                         onChange={(e) => setCompanyProfile({
                           ...companyProfile,
@@ -2350,7 +1935,20 @@ const SurveyBuilder = ({ darkMode }) => {
                         <option value={8}>8 Questions (Standard)</option>
                         <option value={12}>12 Questions (Comprehensive)</option>
                         <option value={15}>15 Questions (Detailed)</option>
-                      </Form.Select>
+                      </Form.Select> */}
+                      <Form.Control
+                        type="number"
+                        min={1}
+                        max={15} // optional: set your own limit
+                        placeholder="Enter number of questions"
+                        value={companyProfile.questionCount}
+                        onChange={(e) =>
+                          setCompanyProfile({
+                            ...companyProfile,
+                            questionCount: parseInt(e.target.value) || 0
+                          })
+                        }
+                      />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -2488,7 +2086,6 @@ const SurveyBuilder = ({ darkMode }) => {
             <Button
               variant="primary"
               onClick={() => {
-                console.log('🎯 Generate button clicked with profile:', companyProfile);
                 generateAISurvey();
               }}
               disabled={aiLoadingStates.generating || !companyProfile.industry || !companyProfile.targetAudience}

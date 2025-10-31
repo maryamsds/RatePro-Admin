@@ -139,6 +139,7 @@ function App() {
               <Route path="surveys/create" element={<SurveyBuilder darkMode={darkMode} />} />
               <Route path="surveys/builder" element={<SurveyBuilder darkMode={darkMode} />} />
               <Route path="surveys/builder/edit/:id" element={<SurveyBuilder darkMode={darkMode} />} />
+              <Route path="surveys/builder/:id" element={<SurveyBuilder darkMode={darkMode} />} />
               <Route path="templates" element={<SurveyTemplates darkMode={darkMode} />} />
               <Route path="templates/create" element={<SurveyBuilder darkMode={darkMode} />} />
               <Route path="surveys/detail/:id" element={<SurveyDetail />} />

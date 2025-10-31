@@ -484,21 +484,23 @@ const SurveyList = ({ darkMode }) => {
                             className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
                               }`}
                             onClick={() => toggleStatus(survey._id, survey.status)}
-                            title={`${survey.status === "active" ? "Deactivate" : "Activate"} Survey`}
+                            title={`${survey.status === "active" ? "Deactivate" : "Activate"
+                              } Survey`}
                           >
                             <MdToggleOn size={20} />
                           </Button>
 
-                          {/* Edit (disabled for admin) */}
-                          <Button
-                            variant="link"
-                            className="action-btn edit me-2"
-                            onClick={() => handleEdit(survey._id)}
-                            title="Edit Survey"
-                            disabled={user?.role === "admin"}
-                          >
-                            <MdEdit size={20} />
-                          </Button>
+                          {/* Edit Button — show only if NOT admin */}
+                          {user?.role !== "admin" && (
+                            <Button
+                              variant="link"
+                              className="action-btn edit me-2"
+                              onClick={() => handleEdit(survey._id)}
+                              title="Edit Survey"
+                            >
+                              <MdEdit size={20} />
+                            </Button>
+                          )}
 
                           {/* Analytics */}
                           <Button
@@ -520,33 +522,39 @@ const SurveyList = ({ darkMode }) => {
                             <MdShare size={20} />
                           </Button>
 
-                          {/* Delete (disabled for admin) */}
+                          {/* Delete Button — show only if NOT admin */}
+                          {user?.role !== "admin" && (
+                            <Button
+                              variant="link"
+                              className="action-btn delete me-2"
+                              onClick={() => handleDelete(survey)}
+                              title="Delete Survey"
+                            >
+                              <MdDelete size={20} />
+                            </Button>
+                          )}
+
+                          {/* View Survey */}
                           <Button
                             variant="link"
-                            className="action-btn delete me-2"
-                            onClick={() => handleDelete(survey)}
-                            title="Delete Survey"
-                            disabled={user?.role === "admin"}
+                            className="action-btn view me-2"
+                            onClick={() => handleViewSurvey(survey._id)}
+                            title="View Survey Details"
                           >
-                            <MdDelete size={20} />
+                            <MdVisibility size={20} />
                           </Button>
-                            <Button
-                              variant="link"
-                              className="action-btn view me-2"
-                              onClick={() => handleViewSurvey(survey._id)}
-                              title="View Survey Details"
-                            >
-                              <MdVisibility size={20} />
-                            </Button>
-                            <Button
-                              variant="link"
-                              className="action-btn feedback"
-                              onClick={() => handleFeedback(survey._id)}
-                              title="View Survey Feedback"
-                            >
-                              <MdFeedback size={20} />
-                            </Button>
+
+                          {/* Feedback */}
+                          <Button
+                            variant="link"
+                            className="action-btn feedback"
+                            onClick={() => handleFeedback(survey._id)}
+                            title="View Survey Feedback"
+                          >
+                            <MdFeedback size={20} />
+                          </Button>
                         </td>
+
                       </tr>
                     ))
                   ) : (

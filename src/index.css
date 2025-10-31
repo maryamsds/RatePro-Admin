@@ -10233,7 +10233,20 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 .action-btn.delete:hover {
   background: rgba(220, 53, 69, 0.1);
 }
-
+.action-btn.view{
+  color: #6f42c1;
+}
+.action-btn.view:hover {
+  background: rgba(111, 66, 193, 0.1);
+  color: #6f42c1;
+}
+.action-btn.feedback{
+  color: #1fdae4;
+}
+.action-btn.feedback:hover {
+  background: rgba(31, 218, 228, 0.1);
+  color: #1fdae4;
+}
 /* Empty State */
 .empty-state {
   padding: 4rem 2rem;
