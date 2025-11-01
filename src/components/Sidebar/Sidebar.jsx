@@ -62,6 +62,7 @@ import {
 } from "react-icons/md";
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { useAuth } from "../../context/AuthContext";
+import SupportTickets from "../../pages/Support/SupportTickets";
 
 const Sidebar = ({
   darkMode,
@@ -85,6 +86,7 @@ const Sidebar = ({
   const [settingsSubmenuOpen, setSettingsSubmenuOpen] = useState(false);
   const [incentivesSubmenuOpen, setIncentivesSubmenuOpen] = useState(false);
   const [contentmanagement, setcontentmanagement] = useState(false);
+  const [supportTickets, setSupportTickets] = useState(false);
 
   const [_hoveredItem, setHoveredItem] = useState(null);
   const [collapsedDropdownOpen, setCollapsedDropdownOpen] = useState(null);
@@ -105,6 +107,7 @@ const Sidebar = ({
       setSettingsSubmenuOpen(false);
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
+      setSupportTickets(false);
       setCollapsedDropdownOpen(null);
     }
   }, [collapsed]);
@@ -133,6 +136,7 @@ const Sidebar = ({
       setSettingsSubmenuOpen(false);
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
+      setSupportTickets(false);
     } else if (currentPath.startsWith("/surveys")) {
       setSurveySubmenuOpen(true);
       setAuthSubmenuOpen(false);
@@ -210,6 +214,19 @@ const Sidebar = ({
       setCommunicationSubmenuOpen(false);
       setSettingsSubmenuOpen(false);
       setcontentmanagement(false);
+      setSupportTickets(false);
+    } else if (currentPath.startsWith("/app/support")) {
+      setSupportTickets(true);
+      setAuthSubmenuOpen(false);
+      setSurveySubmenuOpen(false);
+      setUserSubmenuOpen(false);
+      setAccessSubmenuOpen(false);
+      setAnalyticsSubmenuOpen(false);
+      setAudienceSubmenuOpen(false);
+      setCommunicationSubmenuOpen(false);
+      setSettingsSubmenuOpen(false);
+      setIncentivesSubmenuOpen(false);
+      setcontentmanagement(false);
     } else if (currentPath.startsWith("/settings")) {
       setSettingsSubmenuOpen(true);
       setAuthSubmenuOpen(false);
@@ -221,6 +238,7 @@ const Sidebar = ({
       setCommunicationSubmenuOpen(false);
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
+      setSupportTickets(false);
     } else {
       // Close all submenus for single pages
       setAuthSubmenuOpen(false);
@@ -233,6 +251,7 @@ const Sidebar = ({
       setSettingsSubmenuOpen(false);
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
+      setSupportTickets(false);
     }
   }, [location.pathname]);
 
@@ -354,6 +373,9 @@ const Sidebar = ({
       case "content":
         isCurrentlyOpen = contentmanagement;
         break;
+      case "support":
+        isCurrentlyOpen = supportTickets;
+        break;
     }
 
     // Close all submenus first
@@ -367,6 +389,7 @@ const Sidebar = ({
     setSettingsSubmenuOpen(false);
     setIncentivesSubmenuOpen(false);
     setcontentmanagement(false);
+    setSupportTickets(false);
 
     // If the clicked submenu was not open, open it
     if (!isCurrentlyOpen) {
@@ -400,6 +423,9 @@ const Sidebar = ({
           break;
         case "content":
           setcontentmanagement(true);
+          break;
+        case "support":
+          setSupportTickets(true);
           break;
       }
     }
@@ -772,10 +798,37 @@ const Sidebar = ({
       ],
     },
     {
-      path: "/app/support",
+      // path: "/app/support",
       name: "Support Tickets",
       icon: <MdSupport />,
-      roles: ["admin"],
+      toggle: () => toggleSubmenu("support"),
+      submenu: true,
+      isOpen: supportTickets,
+      roles: ["admin", "companyAdmin"],
+      permissions: ["support:view", "support:create"],
+      submenuItems: [
+        {
+          path: "/app/support",
+          name: "View Tickets",
+          icon: <MdSupport />,
+          roles: ["admin", "companyAdmin"],
+          permissions: ["support:view"],
+        },
+        {
+          path: "/app/support/create",
+          name: "Create Ticket",
+          icon: <MdAddCircleOutline />,
+          roles: ["companyAdmin"],
+          permissions: ["support:create"],
+        },
+        {
+          path: "/app/support/1",
+          name: "Ticket Details",
+          icon: <MdVisibility />,
+          roles: ["admin", "companyAdmin"],
+          permissions: ["support:view"],
+        },
+      ],
     },
     {
       name: "Settings",

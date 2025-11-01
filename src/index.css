@@ -4639,7 +4639,7 @@ button.btn-outline-danger:disabled {
 }
 
 .section-subtitle {
-  color: var(--bs-secondary-color);
+  color: #9ca3af;
   margin: 0.25rem 0 0 0;
   font-size: 0.875rem;
   line-height: 1.3;
@@ -4754,7 +4754,7 @@ button.btn-outline-danger:disabled {
 }
 
 .field-help {
-  color: var(--bs-secondary-color);
+  color: #9ca3af;
   font-size: 0.75rem;
   margin-top: 0.5rem;
   line-height: 1.4;

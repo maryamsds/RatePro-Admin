@@ -3,6 +3,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   MdSupport,
   MdAdd,
@@ -19,10 +20,12 @@ import {
   MdSchedule,
   MdCheckCircle,
   MdClose,
+  MdVisibility,
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 
 const SupportTickets = ({ darkMode }) => {
+  const navigate = useNavigate()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -222,10 +225,10 @@ const SupportTickets = ({ darkMode }) => {
             </div>
           </div>
           <div className="page-header-actions">
-            <button className="secondary-action">
+            <button className="secondary-action" onClick={() => window.location.reload()}>
               <MdRefresh /> Refresh
             </button>
-            <button className="primary-action">
+            <button className="primary-action" onClick={() => navigate("/app/support/create")}>
               <MdAdd /> Create Ticket
             </button>
           </div>
@@ -332,7 +335,7 @@ const SupportTickets = ({ darkMode }) => {
               {currentTickets.length > 0 ? (
                 currentTickets.map((ticket) => (
                   <tr key={ticket.id}>
-                    <td>
+                    <td onClick={() => navigate(`/app/support/${ticket.id}`)} style={{ cursor: "pointer" }}>
                       <div className="ticket-details-cell">
                         <div className="ticket-number">{ticket.ticketNumber}</div>
                         <div className="ticket-subject">{ticket.subject}</div>
@@ -351,6 +354,9 @@ const SupportTickets = ({ darkMode }) => {
                             <MdMoreVert />
                           </button>
                           <div className="dropdown-menu">
+                            <button className="dropdown-item" onClick={() => navigate(`/app/support/${ticket.id}`)}>
+                              <MdVisibility /> View Details
+                            </button>
                             <button className="dropdown-item">
                               <MdReply /> Reply
                             </button>
