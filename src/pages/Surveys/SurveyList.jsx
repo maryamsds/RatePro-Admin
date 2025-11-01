@@ -16,6 +16,7 @@ import {
   MdErrorOutline,
   MdBarChart,
   MdToggleOn,
+  MdToggleOff,
   MdShare,
   MdVisibility,
   MdFeedback
@@ -128,7 +129,7 @@ const SurveyList = ({ darkMode }) => {
       setGlobalLoading(true);
       const newStatus = currentStatus.toLowerCase() === 'active' ? 'inactive' : 'active';
 
-      await axiosInstance.patch(`/surveys/${surveyId}/status`, {
+      await axiosInstance.put(`/surveys/toggle/${surveyId}`, {
         status: newStatus
       });
 
@@ -431,55 +432,9 @@ const SurveyList = ({ darkMode }) => {
                             day: "numeric",
                           })}
                         </td>
-                        {/* <td className="text-end">
-                          <Button
-                            variant="link"
-                            className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active"
-                              ? "active"
-                              : "inactive"
-                              }`}
-                            onClick={() => toggleStatus(survey._id, survey.status)}
-                            title={`${survey.status === "active" ? "Deactivate" : "Activate"
-                              } Survey`}
-                          >
-                            <MdToggleOn size={20} />
-                          </Button>
-                          <Button
-                            variant="link"
-                            className="action-btn edit me-2"
-                            onClick={() => handleEdit(survey._id)}
-                            title="Edit Survey"
-                          >
-                            <MdEdit size={20} />
-                          </Button>
-                          <Button
-                            variant="link"
-                            className="action-btn analytics me-2"
-                            onClick={() => handleAnalytics(survey._id)}
-                            title="View Analytics"
-                          >
-                            <MdBarChart size={20} />
-                          </Button>
-                          <Button
-                            variant="link"
-                            className="action-btn distribution me-2"
-                            onClick={() => handleDistribution(survey._id)}
-                            title="Distribution & QR Codes"
-                          >
-                            <MdShare size={20} />
-                          </Button>
-                          <Button
-                            variant="link"
-                            className="action-btn delete"
-                            onClick={() => handleDelete(survey)}
-                            title="Delete Survey"
-                          >
-                            <MdDelete size={20} />
-                          </Button>
-                        </td> */}
                         <td className="text-end">
                           {/* Toggle Button */}
-                          <Button
+                          {/* <Button
                             variant="link"
                             className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
                               }`}
@@ -488,6 +443,21 @@ const SurveyList = ({ darkMode }) => {
                               } Survey`}
                           >
                             <MdToggleOn size={20} />
+                          </Button> */}
+
+                          <Button
+                            variant="link"
+                            className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
+                              }`}
+                            onClick={() => toggleStatus(survey._id, survey.status)}
+                            title={`${survey.status === "active" ? "Deactivate" : "Activate"
+                              } Survey`}
+                          >
+                            {survey.status.toLowerCase() === "active" ? (
+                              <MdToggleOn size={20} />
+                            ) : (
+                              <MdToggleOff size={20} />
+                            )}
                           </Button>
 
                           {/* Edit Button — show only if NOT admin */}

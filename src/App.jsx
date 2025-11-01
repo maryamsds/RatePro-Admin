@@ -66,6 +66,8 @@ import ContactManagement from "./pages/Audiences/ContactManagement"
 import Support from "./pages/Support/CreateTicket"
 import VerifyEmail from "./pages/Auth/VerifyEmail"
 import TokenRedirector from "./components/TokenRedirector"
+import IncentiveManagement from "./pages/Incentives/IncentiveManagement"
+import RewardSystem from "./pages/Incentives/RewardSystem"
 import WhatsAppSettings from "./pages/Communication/WhatsAppSettings"
 import SMSSettings from "./pages/Communication/SMSSettings"
 import FeedbackAnalysis from "./pages/Analytics/FeedbackAnalysis"
@@ -177,6 +179,10 @@ function App() {
               <Route path="analytics/trends" element={<TrendAnalysis />} />
               <Route path="analytics/response-overview" element={<ResponseOverview />} />
 
+              {/* Incentives */}
+              <Route path="incentives/incentives-management" element={<IncentiveManagement />} />
+              <Route path="incentives/reward-system" element={<RewardSystem />} />
+              
               {/* Support */}
               <Route path="support" element={<SupportTickets />} />
               <Route path="support/create" element={<CreateTicket />} />

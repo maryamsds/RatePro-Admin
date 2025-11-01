@@ -7229,7 +7229,7 @@ button.btn-outline-danger:disabled {
 }
 
 .survey-cell .fw-medium {
-  color: var(--text-primary);
+  /* color: var(--text-primary); */
   margin-bottom: 0.25rem;
 }
 
@@ -7294,7 +7294,7 @@ button.btn-outline-danger:disabled {
 }
 
 .modal-body-custom .form-label {
-  color: var(--text-primary);
+  /* color: var(--text-primary); */
   font-weight: 500;
 }
 
@@ -9631,6 +9631,7 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 }
 
 .survey-delete-modal .modal-body p {
+  color: white;
   margin-bottom: 1rem;
   font-size: 0.95rem;
 }
@@ -9654,6 +9655,7 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 .survey-delete-modal .btn-light:hover {
   background: var(--table-header-bg);
   border-color: var(--border-hover);
+  color: white;
 }
 
 .survey-delete-modal .btn-danger {
@@ -11480,7 +11482,6 @@ canvas {
 }
 /* Survey Distribution Styles */
 .survey-distribution {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   min-height: 100vh;
   padding: 2rem 0;
 }
@@ -11507,7 +11508,7 @@ canvas {
 
 /* QR Code Preview */
 #qr-preview {
-  background: linear-gradient(145deg, #f8f9fa, #ffffff);
+  /* background: linear-gradient(145deg, #f8f9fa, #ffffff); */
   border: 2px dashed #dee2e6;
   border-radius: 12px;
   transition: all 0.3s ease;
@@ -11515,9 +11516,12 @@ canvas {
 
 #qr-preview:hover {
   border-color: #007bff;
-  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  /* background: linear-gradient(145deg, #ffffff, #f8f9fa); */
 }
 
+/* #qr-code{
+  background-image: url(../public/images/logo.jpg);
+} */
 /* Social Share Cards */
 .social-share-card {
   border: 2px solid transparent;
@@ -11537,7 +11541,7 @@ canvas {
 
 /* Embed Preview */
 .embed-preview {
-  background: linear-gradient(145deg, #f1f3f4, #ffffff);
+  /* background: linear-gradient(145deg, #f1f3f4, #ffffff); */
   border-radius: 8px;
   min-height: 300px;
 }

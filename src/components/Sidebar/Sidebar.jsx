@@ -56,6 +56,9 @@ import {
   MdMessage,
   MdSms,
   MdFeedback,
+  MdMonetizationOn,
+  MdOutlineCardGiftcard
+
 } from "react-icons/md";
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { useAuth } from "../../context/AuthContext";
@@ -635,6 +638,34 @@ const Sidebar = ({
           name: "Response Overview",
           icon: <MdShowChart />,
           roles: ["companyAdmin", "admin"],
+        },
+      ],
+    },
+    {
+      name: "Incentives Management",
+      icon: <MdMonetizationOn />,
+      submenu: true,
+      isOpen: incentivesSubmenuOpen,
+      toggle: () => toggleSubmenu("incentives"),
+      roles: ["companyAdmin"],
+      permissions: [
+        "incentives:create",
+        "incentives:read",
+        "incentives:update",
+        "incentives:delete",
+      ],
+      submenuItems: [
+        {
+          path: "/app/incentives/incentives-management",
+          name: "Incentives Management",
+          icon: <MdMonetizationOn />,
+          roles: ["companyAdmin"],
+        },
+        {
+          path: "/app/incentives/reward-system",
+          name: "Reward System",
+          icon: <MdOutlineCardGiftcard/>,
+          roles: ["companyAdmin"],
         },
       ],
     },

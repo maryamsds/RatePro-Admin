@@ -24,7 +24,13 @@ const SurveyDetail = () => {
   const navigate = useNavigate();
 
   // State Management
-  const [survey, setSurvey] = useState(null);
+  const [survey, setSurvey] = useState({
+    title: '',
+    description: '',
+    questions: [],
+    settings: {},
+    thankYouPage: {},
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
@@ -59,7 +65,8 @@ const SurveyDetail = () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/surveys/${id}`);
-      setSurvey(response.data.survey);
+      console.log('response:', response.data.questions)
+      setSurvey(response.data);
       setError('');
       console.log('Fetched survey:', response.data);
     } catch (err) {
@@ -70,24 +77,15 @@ const SurveyDetail = () => {
     }
   };
 
-  // const fetchSurveyStats = async () => {
-
-  //   try {
-  //     const response = await axiosInstance.get(`/analytics/survey/${id}`);
-  //     setStats(response.data.stats);
-  //   } catch (err) {
-  //     console.error('Error fetching stats:', err);
-  //   }
-  // };
-
   const fetchSurveyStats = async () => {
-  try {
-    const response = await axiosInstance.get(`/analytics/survey/${id}`);
-    setStats(response.data.stats);
-  } catch (err) {
-    console.error('Error fetching stats:', err);
-  }
-};
+    try {
+      const response = await axiosInstance.get(`/analytics/survey/${id}`);
+      console.log("Stats Response", response.da)
+      setStats(response.data.stats);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+    }
+  };
 
   // Survey Actions
   const handleToggleStatus = async () => {
@@ -217,7 +215,7 @@ const SurveyDetail = () => {
           <MdFlag className="me-2" size={24} />
           {error}
           <div className="mt-3">
-            <Button variant="outline-danger" onClick={() => navigate('/surveys')}>
+            <Button variant="outline-danger" onClick={() => navigate('/app/surveys')}>
               Back to Surveys
             </Button>
           </div>
@@ -225,7 +223,7 @@ const SurveyDetail = () => {
       </Container>
     );
   }
- 
+
   return (
     <Container fluid className="py-4">
       {/* Header Section */}
@@ -239,7 +237,7 @@ const SurveyDetail = () => {
                     <Button
                       variant="link"
                       className="p-0 me-3 text-primary"
-                      onClick={() => navigate('/surveys')}
+                      onClick={() => navigate('/app/surveys')}
                     >
                       <i className="fas fa-arrow-left me-2"></i>
                       Back to Surveys
@@ -265,7 +263,7 @@ const SurveyDetail = () => {
                     {getStatusBadge(survey?.status)}
                     <Badge bg="light" text="dark" className="d-flex align-items-center">
                       <MdLanguage className="me-1" />
-                      {survey?.language === 'both' ? 'Bilingual' : survey?.language.toUpperCase()}
+                      {survey?.language === 'both' ? 'Bilingual' : survey?.language?.toUpperCase()}
                     </Badge>
                     <Badge bg="light" text="dark" className="d-flex align-items-center">
                       <MdPeople className="me-1" />
@@ -377,7 +375,9 @@ const SurveyDetail = () => {
                   <FaStar size={24} />
                 </div>
                 <div>
-                  <h5 className="mb-0">{stats?.avgRating.toFixed(1)}</h5>
+                  {/* <h5 className="mb-0">{stats?.avgRating ? stats.avgRating.toFixed(1) : 0}</h5> */}
+                  <h5 className="mb-0">{stats?.avgRating ? stats.avgRating.toFixed(1) : '0.0'}</h5>
+
                   <small className="text-muted">Average Rating</small>
                 </div>
               </div>
@@ -393,7 +393,7 @@ const SurveyDetail = () => {
                   <MdTrendingUp size={24} />
                 </div>
                 <div>
-                  <h5 className="mb-0">{stats?.completionRate}%</h5>
+                  <h5 className="mb-0">{stats?.completionRate ?? 0}%</h5>
                   <small className="text-muted">Completion Rate</small>
                 </div>
               </div>
@@ -409,7 +409,7 @@ const SurveyDetail = () => {
                   <FaChartLine size={24} />
                 </div>
                 <div>
-                  <h5 className="mb-0">{stats?.npsScore}</h5>
+                  <h5 className="mb-0">{stats?.npsScore ?? 0}</h5>
                   <small className="text-muted">NPS Score</small>
                 </div>
               </div>
@@ -442,14 +442,14 @@ const SurveyDetail = () => {
                           <Card.Body>
                             {survey?.questions && survey.questions.length > 0 ? (
                               <div className="questions-list">
-                                {survey.questions.map((question, index) => (
+                                {survey?.questions?.map((question, index) => (
                                   <div key={question._id || index} className="question-item mb-4 p-3 border rounded">
                                     <div className="d-flex align-items-start">
                                       <span className="question-number me-3">{index + 1}</span>
                                       <div className="flex-grow-1">
                                         <div className="d-flex align-items-center mb-2">
                                           <i className={`${getQuestionIcon(question.type)} me-2 text-primary`}></i>
-                                          <h6 className="mb-0">{question.title}</h6>
+                                          <h6 className="mb-0">{question.questionText || question.title || question.label || "Untitled Question"}</h6>
                                           {question.required && (
                                             <Badge bg="danger" className="ms-2 rounded-pill">Required</Badge>
                                           )}
@@ -612,7 +612,7 @@ const SurveyDetail = () => {
                                     <div className="d-flex align-items-center">
                                       <Badge bg="light" text="dark">
                                         <MdLanguage className="me-1" />
-                                        {survey?.language === 'both' ? 'Bilingual' : survey?.language.toUpperCase()}
+                                        {survey?.language === 'both' ? 'Bilingual' : survey?.language?.toUpperCase()}
                                       </Badge>
                                     </div>
                                   </Form.Group>
@@ -809,7 +809,7 @@ const SurveyDetail = () => {
               includeMargin={true}
             /> */}
             <QRCodeSVG
-              value={`${window.location.origin}/survey/${survey?.shareableLink || id}`}
+              value={`${window.location.origin}/survey/${survey?.shareableLink || id || ""}`}
               size={256}
               level="H" // high error correction taake logo hone ke bawajood QR scan ho jaye
               includeMargin={true}

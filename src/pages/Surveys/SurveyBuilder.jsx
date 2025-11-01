@@ -16,7 +16,9 @@ import {
   MdQrCode, MdShare, MdAnalytics, MdBusiness, MdBuild,
   MdSchool, MdLocalHospital, MdHotel, MdSports,
   MdAccountBalance, MdShoppingCart, MdLocationCity,
-  MdConstruction, MdDirectionsCar, MdComputer
+  MdConstruction, MdDirectionsCar, MdComputer,
+  MdOutlineAccessTime , MdEvent, MdBarChart, MdAlternateEmail, MdImage,
+  Md123, MdQuestionAnswer,
 } from 'react-icons/md';
 import {
   FaUsers, FaClock, FaLanguage, FaMagic, FaRocket,
@@ -130,112 +132,175 @@ const SurveyBuilder = ({ darkMode }) => {
   // Question Types Configuration
   const questionTypes = [
     {
-      id: 'rating',
-      name: 'Star Rating',
-      icon: MdStar,
-      color: 'var(--bs-warning)',
-      category: 'rating',
-      description: 'Rate using stars (1-5)',
-      example: '⭐⭐⭐⭐⭐'
-    },
-    {
-      id: 'single_choice',
-      name: 'Single Choice',
-      icon: MdRadioButtonChecked,
-      color: 'var(--bs-primary)',
-      category: 'choice',
-      description: 'Select one option',
-      example: '🔘 ○ ○'
-    },
-    {
-      id: 'multiple_choice',
-      name: 'Multiple Choice',
-      icon: MdCheckBox,
-      color: 'var(--bs-success)',
-      category: 'choice',
-      description: 'Select multiple options',
-      example: '☑️ ☐ ☐'
-    },
-    {
-      id: 'text_short',
-      name: 'Short Text',
+      id: "text",
+      name: "Short Text",
       icon: MdTextFields,
-      color: 'var(--bs-info)',
-      category: 'text',
-      description: 'Single line text input',
-      example: '📝 Short answer'
+      color: "var(--bs-info)",
+      category: "text",
+      description: "Single line text input",
+      example: "📝 Short answer"
     },
     {
-      id: 'text_long',
-      name: 'Long Text',
+      id: "textarea",
+      name: "Long Text",
       icon: MdViewList,
-      color: 'var(--bs-secondary)',
-      category: 'text',
-      description: 'Multi-line text area',
-      example: '📝 Detailed response'
+      color: "var(--bs-secondary)",
+      category: "text",
+      description: "Multi-line text area",
+      example: "📝 Detailed response"
     },
     {
-      id: 'nps',
-      name: 'NPS Score',
-      icon: MdLinearScale,
-      color: 'var(--bs-pink)',
-      category: 'rating',
-      description: 'Net Promoter Score (0-10)',
-      example: '0️⃣ 1️⃣ ... 🔟'
+      id: "numeric",
+      name: "Number Input",
+      icon: Md123,
+      color: "var(--bs-primary)",
+      category: "input",
+      description: "Enter numeric value",
+      example: "🔢 12345"
     },
     {
-      id: 'likert',
-      name: 'Likert Scale',
-      icon: MdLinearScale,
-      color: 'var(--bs-orange)',
-      category: 'rating',
-      description: 'Agreement scale (1-5)',
-      example: '1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣'
+      id: "email",
+      name: "Email Input",
+      icon: MdAlternateEmail,
+      color: "var(--bs-blue)",
+      category: "input",
+      description: "Enter a valid email address",
+      example: "📧 name@example.com"
     },
     {
-      id: 'yes_no',
-      name: 'Yes/No',
-      icon: MdToggleOn,
-      color: 'var(--bs-teal)',
-      category: 'choice',
-      description: 'Simple yes or no',
-      example: '✅ ❌'
+      id: "radio",
+      name: "Single Choice",
+      icon: MdRadioButtonChecked,
+      color: "var(--bs-primary)",
+      category: "choice",
+      description: "Select one option",
+      example: "🔘 ○ ○"
     },
     {
-      id: 'date',
-      name: 'Date Picker',
-      icon: MdDateRange,
-      color: 'var(--bs-purple)',
-      category: 'input',
-      description: 'Select a date',
-      example: '📅 2025-01-01'
+      id: "checkbox",
+      name: "Multiple Choice",
+      icon: MdCheckBox,
+      color: "var(--bs-success)",
+      category: "choice",
+      description: "Select multiple options",
+      example: "☑️ ☐ ☐"
     },
     {
-      id: 'file_upload',
-      name: 'File Upload',
-      icon: MdCloudUpload,
-      color: 'var(--bs-danger)',
-      category: 'media',
-      description: 'Upload files/images',
-      example: '📂 ⬆️'
+      id: "select",
+      name: "Dropdown Select",
+      icon: MdQuestionAnswer,
+      color: "var(--bs-cyan)",
+      category: "choice",
+      description: "Select one option from dropdown",
+      example: "⬇️ Choose one"
     },
     {
-      id: 'ranking',
-      name: 'Ranking',
+      id: "imageChoice",
+      name: "Image Choice",
+      icon: MdImage,
+      color: "var(--bs-warning)",
+      category: "media",
+      description: "Choose using images",
+      example: "🖼️ 🖼️ 🖼️"
+    },
+    {
+      id: "ranking",
+      name: "Ranking",
       icon: MdDragHandle,
-      color: 'var(--bs-dark)',
-      category: 'advanced',
-      description: 'Drag & drop ranking',
-      example: '⬆️ 1️⃣ 2️⃣ 3️⃣ ⬇️'
+      color: "var(--bs-dark)",
+      category: "advanced",
+      description: "Rank options by order",
+      example: "⬆️ 1️⃣ 2️⃣ 3️⃣ ⬇️"
     },
     {
-      id: 'matrix',
-      name: 'Matrix/Grid',
+      id: "matrix",
+      name: "Matrix/Grid",
       icon: MdGridOn,
-      color: 'var(--bs-gray-dark)',
-      category: 'advanced',
-      description: 'Grid of questions',
-      example: 'Rows × Columns'
+      color: "var(--bs-gray-dark)",
+      category: "advanced",
+      description: "Grid-style rating or choice questions",
+      example: "Rows × Columns"
+    },
+    {
+      id: "likert",
+      name: "Likert Scale",
+      icon: MdLinearScale,
+      color: "var(--bs-orange)",
+      category: "rating",
+      description: "Agreement scale (1-5)",
+      example: "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣"
+    },
+    {
+      id: "scale",
+      name: "Scale",
+      icon: MdBarChart,
+      color: "var(--bs-indigo)",
+      category: "rating",
+      description: "Numeric or visual scale",
+      example: "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣"
+    },
+    {
+      id: "nps",
+      name: "NPS Score",
+      icon: MdLinearScale,
+      color: "var(--bs-pink)",
+      category: "rating",
+      description: "Net Promoter Score (0-10)",
+      example: "0️⃣ 1️⃣ ... 🔟"
+    },
+    {
+      id: "rating",
+      name: "Star Rating",
+      icon: MdStar,
+      color: "var(--bs-warning)",
+      category: "rating",
+      description: "Rate using stars (1-5)",
+      example: "⭐⭐⭐⭐⭐"
+    },
+    {
+      id: "yesno",
+      name: "Yes/No",
+      icon: MdToggleOn,
+      color: "var(--bs-teal)",
+      category: "choice",
+      description: "Simple yes or no question",
+      example: "✅ ❌"
+    },
+    {
+      id: "date",
+      name: "Date Picker",
+      icon: MdDateRange,
+      color: "var(--bs-purple)",
+      category: "input",
+      description: "Select a date",
+      example: "📅 2025-01-01"
+    },
+    {
+      id: "time",
+      name: "Time Picker",
+      icon: MdOutlineAccessTime,
+      color: "var(--bs-purple)",
+      category: "input",
+      description: "Select a time",
+      example: "⏰ 10:30 AM"
+    },
+    {
+      id: "datetime",
+      name: "Date & Time",
+      icon: MdEvent,
+      color: "var(--bs-purple)",
+      category: "input",
+      description: "Select date and time",
+      example: "📅 2025-01-01 ⏰ 10:30 AM"
+    },
+    {
+      id: "multiple_choice",
+      name: "Multiple Choice (Alt)",
+      icon: MdCheckBox,
+      color: "var(--bs-success)",
+      category: "choice",
+      description: "Choose multiple answers",
+      example: "☑️ ☐ ☐"
     }
   ];
 

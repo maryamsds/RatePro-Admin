@@ -1032,7 +1032,7 @@ const SurveyDistribution = () => {
                       <h6>Your Website Content</h6>
                       <p className="text-muted small mb-3">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
                       
-                      <div className="p-3 border rounded" style={{ backgroundColor: 'var(--bs-light)' }}>
+                      <div className="p-3 border rounded">
                         <div className="text-center">
                           <h6 className="text-primary">{survey.title}</h6>
                           <p className="small text-muted">{survey.description}</p>
