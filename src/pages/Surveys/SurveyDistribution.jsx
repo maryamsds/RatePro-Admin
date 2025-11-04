@@ -26,6 +26,7 @@ import { QRCodeSVG } from 'qrcode.react';
 // import axiosInstance from '../../api/axiosInstance'; // TODO: Use for actual API calls
 // import { useAuth } from '../../context/AuthContext'; // TODO: Use for user context
 import Swal from 'sweetalert2';
+import logo from '../../../public/images/qr_logo.png';
 
 
 const SurveyDistribution = () => {
@@ -41,17 +42,27 @@ const SurveyDistribution = () => {
   const [showSMSModal, setShowSMSModal] = useState(false);
   // const [showEmbedModal, setShowEmbedModal] = useState(false); // TODO: Implement embed modal
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
-  
+
   // Distribution Settings
+  // const [qrSettings, setQrSettings] = useState({
+  //   size: 256,
+  //   includeTitle: true,
+  //   includeLogo: true,
+  //   customText: 'Scan to share your feedback',
+  //   backgroundColor: 'var(--primary-color)',
+  //   foregroundColor: 'var(--bs-dark)',
+  //   logoUrl: '',
+  //   errorCorrectionLevel: 'M'
+  // });
+
   const [qrSettings, setQrSettings] = useState({
     size: 256,
     includeTitle: true,
     includeLogo: true,
     customText: 'Scan to share your feedback',
-    backgroundColor: 'var(--bs-white)',
+    backgroundColor: 'var(--card-bg)',
     foregroundColor: 'var(--bs-dark)',
-    logoUrl: '',
-    errorCorrectionLevel: 'M'
+    errorCorrectionLevel: 'H' // use high level to keep logo readable
   });
 
   const [emailSettings, setEmailSettings] = useState({
@@ -136,37 +147,37 @@ const SurveyDistribution = () => {
   // Load survey data
   useEffect(() => {
     const fetchSurvey = async () => {
-    try {
-      setLoading(true);
-      // Mock survey data - in production, this would be an API call
-      const mockSurvey = {
-        id: id,
-        title: 'Customer Satisfaction Survey',
-        description: 'Help us improve by sharing your experience',
-        url: `${window.location.origin}/survey/${id}`,
-        shortUrl: `https://ratepro.me/s/${id}`,
-        isActive: true,
-        responseCount: 245,
-        distributionStats: {
-          qr: 128,
-          email: 67,
-          sms: 32,
-          social: 18
-        }
-      };
-      
-      setSurvey(mockSurvey);
-    } catch (error) {
-      console.error('Error fetching survey:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to load survey data.'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        setLoading(true);
+        // Mock survey data - in production, this would be an API call
+        const mockSurvey = {
+          id: id,
+          title: 'Customer Satisfaction Survey',
+          description: 'Help us improve by sharing your experience',
+          url: `${window.location.origin}/survey/${id}`,
+          shortUrl: `https://ratepro.me/s/${id}`,
+          isActive: true,
+          responseCount: 245,
+          distributionStats: {
+            qr: 128,
+            email: 67,
+            sms: 32,
+            social: 18
+          }
+        };
+
+        setSurvey(mockSurvey);
+      } catch (error) {
+        console.error('Error fetching survey:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load survey data.'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
     if (id) {
       fetchSurvey();
@@ -180,25 +191,25 @@ const SurveyDistribution = () => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       canvas.width = qrSettings.size;
       canvas.height = qrSettings.size;
       ctx.drawImage(img, 0, 0);
-      
+
       const link = document.createElement('a');
       link.download = `survey-qr-${survey.id}.${format}`;
       link.href = canvas.toDataURL(`image/${format}`);
       link.click();
     };
-    
+
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
   const printQR = () => {
     const printWindow = window.open('', '', 'width=600,height=400');
     const qrElement = document.getElementById('qr-preview').innerHTML;
-    
+
     printWindow.document.write(`
       <html>
         <head>
@@ -218,7 +229,7 @@ const SurveyDistribution = () => {
         </body>
       </html>
     `);
-    
+
     printWindow.document.close();
     printWindow.print();
   };
@@ -240,7 +251,7 @@ const SurveyDistribution = () => {
   const shareOnSocial = (platform) => {
     const url = encodeURIComponent(survey.url);
     const text = encodeURIComponent(`${survey.title} - ${survey.description}`);
-    
+
     const socialUrls = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
       twitter: `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
@@ -248,7 +259,7 @@ const SurveyDistribution = () => {
       whatsapp: `https://wa.me/?text=${text} ${url}`,
       telegram: `https://t.me/share/url?url=${url}&text=${text}`
     };
-    
+
     if (socialUrls[platform]) {
       window.open(socialUrls[platform], '_blank', 'width=600,height=400');
     }
@@ -268,7 +279,7 @@ const SurveyDistribution = () => {
 
       // Mock API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Email Campaign Sent!',
@@ -276,7 +287,7 @@ const SurveyDistribution = () => {
         timer: 3000,
         showConfirmButton: false
       });
-      
+
       setShowEmailModal(false);
     } catch (error) {
       console.error('Error sending email:', error);
@@ -302,7 +313,7 @@ const SurveyDistribution = () => {
 
       // Mock API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       Swal.fire({
         icon: 'success',
         title: 'SMS Campaign Sent!',
@@ -310,7 +321,7 @@ const SurveyDistribution = () => {
         timer: 3000,
         showConfirmButton: false
       });
-      
+
       setShowSMSModal(false);
     } catch (error) {
       console.error('Error sending SMS:', error);
@@ -354,7 +365,7 @@ const SurveyDistribution = () => {
               <p className="text-muted mb-2">
                 Distribute "{survey.title}" across multiple channels
               </p>
-              
+
               {/* Survey Stats */}
               <div className="d-flex gap-3">
                 <Badge bg="primary" className="d-flex align-items-center">
@@ -366,9 +377,9 @@ const SurveyDistribution = () => {
                 </Badge>
               </div>
             </div>
-            
+
             <div className="d-flex gap-2">
-              <Button 
+              <Button
                 variant="outline-secondary"
                 onClick={() => navigate(`/surveys/detail/${id}`)}
                 className="d-flex align-items-center"
@@ -376,7 +387,7 @@ const SurveyDistribution = () => {
                 <MdVisibility className="me-2" />
                 View Survey
               </Button>
-              <Button 
+              <Button
                 variant="outline-info"
                 onClick={() => navigate(`/surveys/analytics/${id}`)}
                 className="d-flex align-items-center"
@@ -396,21 +407,21 @@ const SurveyDistribution = () => {
           <Row>
             {distributionChannels.map(channel => (
               <Col lg={2} md={4} sm={6} key={channel.id} className="mb-3">
-                <Card 
+                <Card
                   className="distribution-channel-card h-100 cursor-pointer"
                   onClick={() => setActiveTab(channel.id)}
                   style={{ borderColor: activeTab === channel.id ? channel.color : '' }}
                 >
                   <Card.Body className="text-center p-3">
-                    <channel.icon 
-                      size={32} 
-                      className="mb-2" 
+                    <channel.icon
+                      size={32}
+                      className="mb-2"
                       style={{ color: channel.color }}
                     />
                     <h6 className="mb-1">{channel.name}</h6>
                     <p className="text-muted small mb-2">{channel.description}</p>
-                    <Badge 
-                      bg="light" 
+                    <Badge
+                      bg="light"
                       text="dark"
                       className="small"
                     >
@@ -439,24 +450,24 @@ const SurveyDistribution = () => {
                 <Card.Header className="d-flex justify-content-between align-items-center">
                   <strong>QR Code Generator</strong>
                   <div className="d-flex gap-2">
-                    <Button 
-                      variant="outline-primary" 
+                    <Button
+                      variant="outline-primary"
                       size="sm"
                       onClick={() => setShowCustomizeModal(true)}
                     >
                       <MdSettings className="me-1" />
                       Customize
                     </Button>
-                    <Button 
-                      variant="outline-success" 
+                    <Button
+                      variant="outline-success"
                       size="sm"
                       onClick={() => downloadQR('png')}
                     >
                       <MdDownload className="me-1" />
                       Download PNG
                     </Button>
-                    <Button 
-                      variant="outline-info" 
+                    <Button
+                      variant="outline-info"
                       size="sm"
                       onClick={printQR}
                     >
@@ -468,20 +479,39 @@ const SurveyDistribution = () => {
                 <Card.Body>
                   <Row>
                     <Col md={6}>
-                      <div id="qr-preview" className="text-center p-4 bg-light rounded">
-                        {qrSettings.includeTitle && (
-                          <h5 className="mb-2">{survey.title}</h5>
-                        )}
+                      <div
+                        id="qr-preview"
+                        className="text-center p-4 rounded"
+                      >
+                        {qrSettings.includeTitle && <h5 className="mb-2">{survey.title}</h5>}
                         <p className="text-muted mb-3">{qrSettings.customText}</p>
-                        <QRCodeSVG
-                          id="qr-code"
-                          value={survey.url}
-                          size={qrSettings.size}
-                          bgColor={qrSettings.backgroundColor}
-                          fgColor={qrSettings.foregroundColor}
-                          level={qrSettings.errorCorrectionLevel}
-                          includeMargin={true}
-                        />
+
+                        <div
+                          style={{
+                            display: 'inline-block',
+                            position: 'relative',
+                            backgroundColor: 'white',
+                            padding: '16px',
+                            borderRadius: '12px'
+                          }}
+                        >
+                          <QRCodeSVG
+                            value={survey.url}
+                            size={qrSettings.size}
+                            // bgColor="var(--primary-hover)"
+                            fgColor={qrSettings.foregroundColor}
+                            level={qrSettings.errorCorrectionLevel}
+                            includeMargin={false}
+                            imageSettings={{
+                              src: logo,
+                              x: undefined,
+                              y: undefined,
+                              height: 80,
+                              width: 80,
+                              excavate: true,
+                            }}
+                          />
+                        </div>
                         <p className="small text-muted mt-2">
                           Scan with your phone camera
                         </p>
@@ -499,9 +529,9 @@ const SurveyDistribution = () => {
                             <Accordion.Body>
                               <div className="d-flex flex-wrap gap-2">
                                 {location.suggestions.map(suggestion => (
-                                  <Badge 
+                                  <Badge
                                     key={suggestion}
-                                    bg="primary" 
+                                    bg="primary"
                                     className="cursor-pointer"
                                     onClick={() => {
                                       setQrSettings(prev => ({
@@ -529,7 +559,7 @@ const SurveyDistribution = () => {
                 <Card.Header><strong>QR Code Formats</strong></Card.Header>
                 <Card.Body>
                   <div className="d-grid gap-2">
-                    <Button 
+                    <Button
                       variant="outline-primary"
                       onClick={() => downloadQR('png')}
                       className="d-flex justify-content-between align-items-center"
@@ -537,7 +567,7 @@ const SurveyDistribution = () => {
                       <span>PNG Image</span>
                       <MdDownload />
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline-primary"
                       onClick={() => downloadQR('jpg')}
                       className="d-flex justify-content-between align-items-center"
@@ -545,7 +575,7 @@ const SurveyDistribution = () => {
                       <span>JPEG Image</span>
                       <MdDownload />
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline-primary"
                       onClick={() => downloadQR('svg')}
                       className="d-flex justify-content-between align-items-center"
@@ -553,7 +583,7 @@ const SurveyDistribution = () => {
                       <span>SVG Vector</span>
                       <MdDownload />
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline-secondary"
                       onClick={printQR}
                       className="d-flex justify-content-between align-items-center"
@@ -569,7 +599,7 @@ const SurveyDistribution = () => {
                 <Card.Header><strong>Quick Actions</strong></Card.Header>
                 <Card.Body>
                   <div className="d-grid gap-2">
-                    <Button 
+                    <Button
                       variant="primary"
                       onClick={() => copyLink(survey.url)}
                       className="d-flex justify-content-between align-items-center"
@@ -577,7 +607,7 @@ const SurveyDistribution = () => {
                       <span>Copy Survey Link</span>
                       <MdContentCopy />
                     </Button>
-                    <Button 
+                    <Button
                       variant="success"
                       onClick={() => copyLink(survey.shortUrl)}
                       className="d-flex justify-content-between align-items-center"
@@ -585,7 +615,7 @@ const SurveyDistribution = () => {
                       <span>Copy Short Link</span>
                       <MdContentCopy />
                     </Button>
-                    <Button 
+                    <Button
                       variant="info"
                       onClick={() => window.open(survey.url, '_blank')}
                       className="d-flex justify-content-between align-items-center"
@@ -615,12 +645,12 @@ const SurveyDistribution = () => {
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-semibold">Full Survey URL</Form.Label>
                     <InputGroup>
-                      <Form.Control 
-                        type="text" 
-                        value={survey.url} 
-                        readOnly 
+                      <Form.Control
+                        type="text"
+                        value={survey.url}
+                        readOnly
                       />
-                      <Button 
+                      <Button
                         variant="outline-primary"
                         onClick={() => copyLink(survey.url)}
                       >
@@ -632,12 +662,12 @@ const SurveyDistribution = () => {
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-semibold">Short URL</Form.Label>
                     <InputGroup>
-                      <Form.Control 
-                        type="text" 
-                        value={survey.shortUrl} 
-                        readOnly 
+                      <Form.Control
+                        type="text"
+                        value={survey.shortUrl}
+                        readOnly
                       />
-                      <Button 
+                      <Button
                         variant="outline-success"
                         onClick={() => copyLink(survey.shortUrl)}
                       >
@@ -699,7 +729,7 @@ const SurveyDistribution = () => {
           <Card>
             <Card.Header className="d-flex justify-content-between align-items-center">
               <strong>Email Campaign Setup</strong>
-              <Button 
+              <Button
                 variant="primary"
                 onClick={() => setShowEmailModal(true)}
                 className="d-flex align-items-center"
@@ -789,7 +819,7 @@ const SurveyDistribution = () => {
           <Card>
             <Card.Header className="d-flex justify-content-between align-items-center">
               <strong>Mobile Messaging Campaign</strong>
-              <Button 
+              <Button
                 variant="success"
                 onClick={() => setShowSMSModal(true)}
                 className="d-flex align-items-center"
@@ -851,7 +881,7 @@ const SurveyDistribution = () => {
                   </Row>
 
                   <Alert variant="warning" className="small">
-                    <strong>Note:</strong> Ensure you have proper consent before sending marketing messages. 
+                    <strong>Note:</strong> Ensure you have proper consent before sending marketing messages.
                     Follow local regulations (GDPR, CCPA) for message marketing.
                   </Alert>
                 </Col>
@@ -883,19 +913,19 @@ const SurveyDistribution = () => {
                       { platform: 'instagram', name: 'Instagram', icon: FaInstagram, color: '#e1306c' }
                     ].map(social => (
                       <Col md={4} sm={6} key={social.platform} className="mb-3">
-                        <Card 
+                        <Card
                           className="social-share-card text-center cursor-pointer h-100"
                           onClick={() => shareOnSocial(social.platform)}
                         >
                           <Card.Body className="p-3">
-                            <social.icon 
-                              size={32} 
+                            <social.icon
+                              size={32}
                               className="mb-2"
                               style={{ color: social.color }}
                             />
                             <h6 className="mb-1">{social.name}</h6>
-                            <Button 
-                              variant="outline-primary" 
+                            <Button
+                              variant="outline-primary"
                               size="sm"
                               style={{ borderColor: social.color, color: social.color }}
                             >
@@ -962,7 +992,7 @@ const SurveyDistribution = () => {
           <Card>
             <Card.Header className="d-flex justify-content-between align-items-center">
               <strong>Website Integration</strong>
-              <Button 
+              <Button
                 variant="info"
                 onClick={() => alert('Embed modal coming soon!')}
                 className="d-flex align-items-center"
@@ -975,7 +1005,7 @@ const SurveyDistribution = () => {
               <Row>
                 <Col lg={6}>
                   <h6 className="mb-3">Embed Options</h6>
-                  
+
                   <Card className="mb-3 border">
                     <Card.Body>
                       <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1027,11 +1057,11 @@ const SurveyDistribution = () => {
                         <div className="rounded-circle bg-success" style={{ width: '8px', height: '8px' }}></div>
                       </div>
                     </div>
-                    
+
                     <div className="p-3 bg-white border rounded">
                       <h6>Your Website Content</h6>
                       <p className="text-muted small mb-3">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                      
+
                       <div className="p-3 border rounded">
                         <div className="text-center">
                           <h6 className="text-primary">{survey.title}</h6>
@@ -1059,27 +1089,27 @@ const SurveyDistribution = () => {
             <Form.Control
               type="text"
               value={emailSettings.subject}
-              onChange={(e) => setEmailSettings({...emailSettings, subject: e.target.value})}
+              onChange={(e) => setEmailSettings({ ...emailSettings, subject: e.target.value })}
             />
           </Form.Group>
-          
+
           <Form.Group className="mb-3">
             <Form.Label>Message Content</Form.Label>
             <Form.Control
               as="textarea"
               rows={4}
               value={emailSettings.message}
-              onChange={(e) => setEmailSettings({...emailSettings, message: e.target.value})}
+              onChange={(e) => setEmailSettings({ ...emailSettings, message: e.target.value })}
             />
           </Form.Group>
-          
+
           <Form.Group className="mb-3">
             <Form.Label>Recipients (comma-separated emails)</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
               value={emailSettings.recipients}
-              onChange={(e) => setEmailSettings({...emailSettings, recipients: e.target.value})}
+              onChange={(e) => setEmailSettings({ ...emailSettings, recipients: e.target.value })}
               placeholder="email1@example.com, email2@example.com, ..."
             />
           </Form.Group>
@@ -1106,21 +1136,21 @@ const SurveyDistribution = () => {
               as="textarea"
               rows={3}
               value={smsSettings.message}
-              onChange={(e) => setSmsSettings({...smsSettings, message: e.target.value})}
+              onChange={(e) => setSmsSettings({ ...smsSettings, message: e.target.value })}
               maxLength={160}
             />
             <Form.Text className="text-muted">
               {smsSettings.message.length}/160 characters
             </Form.Text>
           </Form.Group>
-          
+
           <Form.Group className="mb-3">
             <Form.Label>Recipients (comma-separated phone numbers)</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
               value={smsSettings.recipients}
-              onChange={(e) => setSmsSettings({...smsSettings, recipients: e.target.value})}
+              onChange={(e) => setSmsSettings({ ...smsSettings, recipients: e.target.value })}
               placeholder="+1234567890, +0987654321, ..."
             />
           </Form.Group>
@@ -1149,17 +1179,17 @@ const SurveyDistribution = () => {
                   min="128"
                   max="512"
                   value={qrSettings.size}
-                  onChange={(e) => setQrSettings({...qrSettings, size: parseInt(e.target.value)})}
+                  onChange={(e) => setQrSettings({ ...qrSettings, size: parseInt(e.target.value) })}
                 />
                 <Form.Text>{qrSettings.size}px</Form.Text>
               </Form.Group>
-              
+
               <Form.Group className="mb-3">
                 <Form.Label>Custom Text</Form.Label>
                 <Form.Control
                   type="text"
                   value={qrSettings.customText}
-                  onChange={(e) => setQrSettings({...qrSettings, customText: e.target.value})}
+                  onChange={(e) => setQrSettings({ ...qrSettings, customText: e.target.value })}
                 />
               </Form.Group>
             </Col>
@@ -1169,21 +1199,21 @@ const SurveyDistribution = () => {
                 <Form.Control
                   type="color"
                   value={qrSettings.backgroundColor}
-                  onChange={(e) => setQrSettings({...qrSettings, backgroundColor: e.target.value})}
+                  onChange={(e) => setQrSettings({ ...qrSettings, backgroundColor: e.target.value })}
                 />
               </Form.Group>
-              
+
               <Form.Group className="mb-3">
                 <Form.Label>Foreground Color</Form.Label>
                 <Form.Control
                   type="color"
                   value={qrSettings.foregroundColor}
-                  onChange={(e) => setQrSettings({...qrSettings, foregroundColor: e.target.value})}
+                  onChange={(e) => setQrSettings({ ...qrSettings, foregroundColor: e.target.value })}
                 />
               </Form.Group>
             </Col>
           </Row>
-          
+
           <div className="text-center mt-3">
             <QRCodeSVG
               value={survey.url}
