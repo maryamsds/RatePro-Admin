@@ -54,7 +54,7 @@ import UserList from "./pages/UserManagement/UserList"
 import UserForm from "./pages/UserManagement/UserForm"
 import AccessManagement from "./pages/AccessManagement/AccessManagement"
 import RoleManagement from "./pages/AccessManagement/RoleManagement"
-import EmailTemplates from "./pages/Communication/EmailTemplates"
+import EmailTemplates from "./pages/Settings/EmailTemplates"
 import SupportTickets from "./pages/Support/SupportTickets"
 import TicketDetail from "./pages/Support/TicketDetail"
 import CreateTicket from "./pages/Support/CreateTicket"
@@ -186,7 +186,7 @@ function App() {
               {/* Support */}
               <Route path="support" element={<SupportTickets />} />
               <Route path="support/create" element={<CreateTicket />} />
-              <Route path="support/:id" element={<TicketDetail />} />
+              <Route path="support/tickets/:id" element={<TicketDetail />} />
 
               {/* Actions */}
               <Route path="actions" element={<ActionManagement />} />
@@ -198,6 +198,7 @@ function App() {
               {/* Settings */}
               <Route path="settings" element={<Settings />} />
               <Route path="settings/thank-you" element={<CustomThankYou />} />
+
               {/* <Route path="settings/billing-plans" element={<BillingPlans />} /> */}
               <Route path="settings/custom-thank-you" element={<ThankYouPage />} />
               <Route path="settings/email-templates" element={<EmailTemplates />} />

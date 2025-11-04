@@ -204,3 +204,14 @@ export const sendUserNotification = (userId, subject, message) =>
 // ------------------- Company APIs -------------------
 export const getCompanyById = (companyId) =>
   axiosInstance.get(`/api/company/${companyId}`);
+
+// ------------------- Email Template APIs -------------------
+export const emailTemplateAPI = {
+  getAll: () => axiosInstance.get("/email-templates/"),
+  getById: (id) => axiosInstance.get(`/email-templates/${id}`),
+  getByType: (type) => axiosInstance.get(`/email-templates/type/${type}`),
+  create: (data) => axiosInstance.post("/email-templates", data),
+  update: (id, data) => axiosInstance.put(`/email-templates/${id}`, data),
+  delete: (id) => axiosInstance.delete(`/email-templates/${id}`),
+  toggleStatus: (id) => axiosInstance.patch(`/email-templates/${id}/toggle-status`),
+};

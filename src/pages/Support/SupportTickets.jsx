@@ -23,6 +23,14 @@ import {
   MdVisibility,
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
+import { 
+  getTickets, 
+  deleteTicket, 
+  updateTicketStatus,
+  getTicketStatuses,
+  formatTicketForDisplay 
+} from "../../api/ticketApi"
+import Swal from "sweetalert2"
 
 const SupportTickets = ({ darkMode }) => {
   const navigate = useNavigate()
@@ -34,127 +42,62 @@ const SupportTickets = ({ darkMode }) => {
   const [selectedTicket, setSelectedTicket] = useState(null)
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
 
-  useEffect(() => {
-    setTimeout(() => {
-      const allTickets = [
-        {
-          id: 1,
-          ticketNumber: "TKT-2024-001",
-          subject: "Unable to access survey dashboard",
-          description: "User cannot log into the survey dashboard after password reset",
-          status: "Open",
-          priority: "High",
-          category: "Technical",
-          submittedBy: "john.doe@company.com",
-          assignedTo: "Support Team",
-          createdDate: "2024-01-20 14:30",
-          lastUpdated: "2024-01-20 16:45",
-          responseTime: "2h 15m",
-        },
-        {
-          id: 2,
-          ticketNumber: "TKT-2024-002",
-          subject: "Survey responses not saving",
-          description: "Survey responses are not being saved when users submit the form",
-          status: "In Progress",
-          priority: "Critical",
-          category: "Bug",
-          submittedBy: "jane.smith@company.com",
-          assignedTo: "Dev Team",
-          createdDate: "2024-01-20 10:15",
-          lastUpdated: "2024-01-20 15:30",
-          responseTime: "5h 15m",
-        },
-        {
-          id: 3,
-          ticketNumber: "TKT-2024-003",
-          subject: "Request for custom survey template",
-          description: "Need a custom template for employee satisfaction survey",
-          status: "Resolved",
-          priority: "Medium",
-          category: "Feature Request",
-          submittedBy: "hr@company.com",
-          assignedTo: "Design Team",
-          createdDate: "2024-01-19 09:30",
-          lastUpdated: "2024-01-20 11:20",
-          responseTime: "1d 2h",
-        },
-        {
-          id: 4,
-          ticketNumber: "TKT-2024-004",
-          subject: "Email notifications not working",
-          description: "Survey invitation emails are not being sent to participants",
-          status: "Open",
-          priority: "High",
-          category: "Technical",
-          submittedBy: "marketing@company.com",
-          assignedTo: "Support Team",
-          createdDate: "2024-01-19 16:45",
-          lastUpdated: "2024-01-19 17:30",
-          responseTime: "45m",
-        },
-        {
-          id: 5,
-          ticketNumber: "TKT-2024-005",
-          subject: "Data export functionality issue",
-          description: "Cannot export survey results to Excel format",
-          status: "Closed",
-          priority: "Low",
-          category: "Bug",
-          submittedBy: "analytics@company.com",
-          assignedTo: "Dev Team",
-          createdDate: "2024-01-18 14:20",
-          lastUpdated: "2024-01-19 10:15",
-          responseTime: "19h 55m",
-        },
-        {
-          id: 6,
-          ticketNumber: "TKT-2024-006",
-          subject: "Account access permission request",
-          description: "Request for admin access to survey management system",
-          status: "Pending",
-          priority: "Medium",
-          category: "Access Request",
-          submittedBy: "manager@company.com",
-          assignedTo: "Admin Team",
-          createdDate: "2024-01-18 11:30",
-          lastUpdated: "2024-01-18 12:45",
-          responseTime: "1h 15m",
-        },
-        {
-          id: 7,
-          ticketNumber: "TKT-2024-007",
-          subject: "Survey link not working on mobile",
-          description: "Survey link redirects to error page when accessed from mobile devices",
-          status: "In Progress",
-          priority: "High",
-          category: "Bug",
-          submittedBy: "mobile.user@company.com",
-          assignedTo: "Dev Team",
-          createdDate: "2024-01-17 13:15",
-          lastUpdated: "2024-01-18 09:30",
-          responseTime: "20h 15m",
-        },
-        {
-          id: 8,
-          ticketNumber: "TKT-2024-008",
-          subject: "Training request for new features",
-          description: "Request for training session on new survey analytics features",
-          status: "Scheduled",
-          priority: "Low",
-          category: "Training",
-          submittedBy: "training@company.com",
-          assignedTo: "Training Team",
-          createdDate: "2024-01-16 10:45",
-          lastUpdated: "2024-01-17 14:20",
-          responseTime: "1d 3h 35m",
-        },
-      ]
-      setTickets(allTickets)
-      setPagination((prev) => ({ ...prev, total: allTickets.length }))
+  // Fetch tickets function
+  const fetchTickets = async () => {
+    try {
+      setLoading(true)
+      
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: searchTerm || undefined,
+        status: filterStatus !== "all" ? filterStatus : undefined,
+        sort: "-createdAt"
+      }
+
+      const response = await getTickets(params)
+      const { data, pagination: paginationData } = response.data
+
+      // Format tickets for display
+      const formattedTickets = data.map(ticket => ({
+        id: ticket._id,
+        ticketNumber: `TKT-${ticket._id.slice(-6).toUpperCase()}`,
+        subject: ticket.subject,
+        description: ticket.description,
+        status: ticket.status,
+        // priority: ticket.priority,
+        category: ticket.category,
+        submittedBy: ticket.createdBy?.email || ticket.contactEmail,
+        submittedByName: ticket.createdBy?.name || "Unknown",
+        assignedTo: ticket.assignedTo?.name || "Unassigned",
+        createdDate: new Date(ticket.createdAt).toLocaleString(),
+        lastUpdated: new Date(ticket.lastUpdated || ticket.updatedAt).toLocaleString(), // ✅ added support for lastUpdated
+        responseTime: ticket.daysSinceCreation ? `${ticket.daysSinceCreation}d` : "New",
+        attachmentCount: ticket.attachmentCount || 0,
+        ...formatTicketForDisplay(ticket)
+      }))
+
+      setTickets(formattedTickets)
+      setPagination(prev => ({
+        ...prev,
+        total: paginationData.totalCount,
+        totalPages: paginationData.totalPages
+      }))
+    } catch (error) {
+      console.error("Error fetching tickets:", error)
+      Swal.fire({
+        icon: "error",
+        title: "Error Loading Tickets",
+        text: error.response?.data?.message || "Failed to load tickets. Please try again.",
+      })
+    } finally {
       setLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }
+
+  useEffect(() => {
+    fetchTickets()
+  }, [pagination.page, pagination.limit, searchTerm, filterStatus])
 
   const getStatusBadge = (status) => {
     const statusClass = status.toLowerCase().replace(" ", "-")
@@ -165,15 +108,6 @@ const SupportTickets = ({ darkMode }) => {
     )
   }
 
-  const getPriorityBadge = (priority) => {
-    const priorityClass = priority.toLowerCase()
-    return (
-      <span className={`priority-badge priority-${priorityClass}`}>
-        {priority === "Critical" && <MdPriorityHigh />}
-        {priority}
-      </span>
-    )
-  }
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch =
@@ -190,15 +124,71 @@ const SupportTickets = ({ darkMode }) => {
     pagination.page * pagination.limit,
   )
 
+  // Handle ticket deletion
   const handleDelete = (ticket) => {
     setSelectedTicket(ticket)
     setShowDeleteModal(true)
   }
 
-  const confirmDelete = () => {
-    setTickets(tickets.filter((t) => t.id !== selectedTicket.id))
-    setShowDeleteModal(false)
-    setSelectedTicket(null)
+  const confirmDelete = async () => {
+    try {
+      await deleteTicket(selectedTicket.id)
+      
+      // Remove from local state
+      setTickets(tickets.filter((t) => t.id !== selectedTicket.id))
+      
+      Swal.fire({
+        icon: "success",
+        title: "Ticket Deleted",
+        text: "The ticket has been deleted successfully.",
+        timer: 2000,
+        showConfirmButton: false,
+      })
+    } catch (error) {
+      console.error("Delete ticket error:", error)
+      Swal.fire({
+        icon: "error",
+        title: "Delete Failed",
+        text: error.response?.data?.message || "Failed to delete ticket. Please try again.",
+      })
+    } finally {
+      setShowDeleteModal(false)
+      setSelectedTicket(null)
+    }
+  }
+
+  // Handle status update
+  const handleStatusUpdate = async (ticketId, newStatus) => {
+    try {
+      await updateTicketStatus(ticketId, newStatus)
+      
+      // Update local state
+      setTickets(prev => prev.map(ticket => 
+        ticket.id === id 
+          ? { ...ticket, status: newStatus, lastUpdated: new Date().toLocaleString() }
+          : ticket
+      ))
+      
+      Swal.fire({
+        icon: "success",
+        title: "Status Updated",
+        text: `Ticket status changed to ${newStatus}.`,
+        timer: 2000,
+        showConfirmButton: false,
+      })
+    } catch (error) {
+      console.error("Status update error:", error)
+      Swal.fire({
+        icon: "error",
+        title: "Update Failed",
+        text: error.response?.data?.message || "Failed to update status. Please try again.",
+      })
+    }
+  }
+
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchTickets()
   }
 
   if (loading) {
@@ -260,7 +250,7 @@ const SupportTickets = ({ darkMode }) => {
             <MdSchedule />
           </div>
           <div className="stat-details">
-            <div className="stat-value">{tickets.filter((t) => t.status === "In Progress").length}</div>
+            <div className="stat-value">{tickets.status.filter((t) => t.status === "In Progress").length}</div>
             <div className="stat-label">In Progress</div>
           </div>
         </div>
@@ -320,7 +310,6 @@ const SupportTickets = ({ darkMode }) => {
                   </div>
                 </th>
                 <th>Status</th>
-                <th>Priority</th>
                 <th>
                   <div className="th-content">
                     <MdPerson /> Assigned To
@@ -343,7 +332,7 @@ const SupportTickets = ({ darkMode }) => {
                       </div>
                     </td>
                     <td>{getStatusBadge(ticket.status)}</td>
-                    <td>{getPriorityBadge(ticket.priority)}</td>
+                    {/* <td>{getPriorityBadge(ticket.priority)}</td> */}
                     <td className="ticket-assigned">{ticket.assignedTo}</td>
                     <td className="ticket-time">{ticket.responseTime}</td>
                     <td className="ticket-time">{ticket.lastUpdated}</td>
@@ -354,7 +343,7 @@ const SupportTickets = ({ darkMode }) => {
                             <MdMoreVert />
                           </button>
                           <div className="dropdown-menu">
-                            <button className="dropdown-item" onClick={() => navigate(`/app/support/${ticket.id}`)}>
+                            <button className="dropdown-item" onClick={() => navigate(`/app/support/tickets/${ticket._id}`)}>
                               <MdVisibility /> View Details
                             </button>
                             <button className="dropdown-item">

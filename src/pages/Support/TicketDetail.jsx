@@ -23,9 +23,19 @@ import {
   MdUpdate,
 } from "react-icons/md"
 import Swal from "sweetalert2"
+import {
+  getTicketById,
+  updateTicketStatus,
+  updateTicket,
+  formatTicketForDisplay,
+  getTicketStatuses
+} from "../../api/ticketApi"
+import { useAuth } from '../../context/AuthContext';
+import axiosInstance from "../../api/axiosInstance"
 
 const TicketDetail = () => {
   const navigate = useNavigate()
+  const { user, setGlobalLoading } = useAuth();
   const { id } = useParams()
   const [loading, setLoading] = useState(true)
   const [ticket, setTicket] = useState(null)
@@ -33,143 +43,157 @@ const TicketDetail = () => {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
-  useEffect(() => {
-    // Simulate API call to fetch ticket details
-    setTimeout(() => {
-      const mockTicket = {
-        id: id,
-        ticketNumber: `TKT-2024-${String(id).padStart(3, "0")}`,
-        subject: "Unable to access survey dashboard",
-        description:
-          "I am unable to log into the survey dashboard after resetting my password. I've tried clearing my browser cache and using different browsers, but the issue persists. When I enter my credentials, the page just refreshes without any error message.",
-        status: "Open",
-        priority: "High",
-        category: "Technical Issue",
+  const fetchTicketDetails = async () => {
+    if (!id) return;
+
+    try {
+      setLoading(true);
+      const response = await getTicketById(id);
+      const ticketData = response.data.data;
+
+      console.log("Fetched ticket data:", ticketData);
+
+      // ✅ Real formatting logic
+      const formattedTicket = {
+        id: ticketData._id,
+        ticketNumber: `TKT-${ticketData._id.slice(-6).toUpperCase()}`,
+        subject: ticketData.subject,
+        description: ticketData.description,
+        status: ticketData.status,
+        // priority: ticketData.priority,
+        category: ticketData.category,
         submittedBy: {
-          name: "John Doe",
-          email: "john.doe@company.com",
-          phone: "+1 234 567 8900",
+          name: ticketData.createdBy?.name || "Unknown",
+          email: ticketData.createdBy?.email || ticketData.contactEmail,
+          phone: ticketData.createdBy?.phone || "N/A",
         },
         assignedTo: {
-          name: "Support Team",
-          email: "support@ratepro.com",
+          name: ticketData.assignedTo?.name || "Unassigned",
+          email: ticketData.assignedTo?.email || "N/A",
         },
-        createdAt: "2024-01-20 14:30",
-        updatedAt: "2024-01-20 16:45",
-        responseTime: "2h 15m",
-        attachments: [
-          { name: "screenshot-error.png", size: "245 KB", url: "#" },
-          { name: "browser-console.txt", size: "12 KB", url: "#" },
-        ],
-        comments: [
-          {
-            id: 1,
-            author: "Support Agent",
-            role: "support",
-            timestamp: "2024-01-20 15:00",
-            message:
-              "Thank you for reporting this issue. We're investigating the login problem. Could you please provide your browser version and operating system?",
-          },
-          {
-            id: 2,
-            author: "John Doe",
-            role: "customer",
-            timestamp: "2024-01-20 15:30",
-            message:
-              "I'm using Chrome 120.0 on Windows 11. I've also attached screenshots of the error console.",
-          },
-          {
-            id: 3,
-            author: "Support Agent",
-            role: "support",
-            timestamp: "2024-01-20 16:45",
-            message:
-              "We've identified the issue - it's related to a recent update. Our development team is working on a fix. We'll update you within the next 2 hours.",
-          },
-        ],
-        timeline: [
-          {
-            id: 1,
-            action: "Ticket Created",
-            timestamp: "2024-01-20 14:30",
-            user: "John Doe",
-          },
-          {
-            id: 2,
-            action: "Assigned to Support Team",
-            timestamp: "2024-01-20 14:35",
-            user: "System",
-          },
-          {
-            id: 3,
-            action: "Status changed to In Progress",
-            timestamp: "2024-01-20 15:00",
-            user: "Support Agent",
-          },
-          {
-            id: 4,
-            action: "Comment Added",
-            timestamp: "2024-01-20 16:45",
-            user: "Support Agent",
-          },
-        ],
-      }
-      setTicket(mockTicket)
-      setLoading(false)
-    }, 800)
-  }, [id])
+        createdAt: new Date(ticketData.createdAt).toLocaleString(),
+        updatedAt: new Date(ticketData.updatedAt).toLocaleString(),
+        responseTime: ticketData.daysSinceCreation ? `${ticketData.daysSinceCreation}d` : "New",
+        attachments: ticketData.attachments?.map(att => ({
+          name: att.fileName,
+          size: att.fileSize ? `${(att.fileSize / 1024).toFixed(2)} KB` : "Unknown",
+          url: att.fileUrl,
+          type: att.fileType
+        })) || [],
+        comments: ticketData.internalNotes?.map(note => ({
+          id: note._id,
+          author: note.createdBy?.name || "System",
+          role: "support",
+          timestamp: new Date(note.createdAt).toLocaleString(),
+          message: note.note,
+        })) || [],
+        canEdit: ticketData.canEdit || false,
+        canDelete: ticketData.canDelete || false,
+        isOwner: ticketData.isOwner || false,
+        ...formatTicketForDisplay(ticketData) // ✅ use helper if you’ve defined it
+      };
 
+      setTicket(formattedTicket);
+    } catch (error) {
+      console.error("Error fetching ticket:", error);
+
+      if (error.response?.status === 404) {
+        Swal.fire({
+          icon: "error",
+          title: "Ticket Not Found",
+          text: "The requested ticket could not be found.",
+        }).then(() => navigate("/app/support"));
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error Loading Ticket",
+          text: error.response?.data?.message || "Failed to load ticket details.",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchTicketDetails();
+  }, [id]);
+
+  // Handle status change
   const handleStatusChange = async (newStatus) => {
-    setIsUpdatingStatus(true)
+    if (!ticket?.id) return;
+
+    // normalize or map status
+    const statusMap = {
+      open: "open",
+      "Open": "open",
+      "In Progress": "in-progress",
+      "in progress": "in-progress",
+      "In-Progress": "in-progress",
+      resolved: "resolved",
+      "Resolved": "resolved",
+      closed: "closed",
+      "Closed": "closed",
+    };
+
+    const mappedStatus = statusMap[newStatus] || newStatus.toLowerCase().trim();
+
+    setIsUpdatingStatus(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setTicket((prev) => ({ ...prev, status: newStatus }))
+      await updateTicketStatus(ticket.id, mappedStatus);
+
+      setTicket((prev) => ({
+        ...prev,
+        status: mappedStatus,
+        updatedAt: new Date().toLocaleString(),
+      }));
+
       Swal.fire({
         icon: "success",
         title: "Status Updated",
-        text: `Ticket status changed to ${newStatus}`,
+        text: `Ticket status changed to ${mappedStatus}`,
         timer: 2000,
         showConfirmButton: false,
-      })
+      });
     } catch (error) {
+      console.error("Status update error:", error);
       Swal.fire({
         icon: "error",
         title: "Update Failed",
-        text: "Failed to update ticket status",
-      })
+        text: error.response?.data?.message || "Failed to update ticket status",
+      });
     } finally {
-      setIsUpdatingStatus(false)
+      setIsUpdatingStatus(false);
     }
-  }
+  };
 
   const handleAddComment = async (e) => {
     e.preventDefault()
-    if (!newComment.trim()) return
+    if (!newComment.trim() || !id) return
 
     setIsSubmittingComment(true)
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      const comment = {
-        id: ticket.comments.length + 1,
-        author: "You",
-        role: "support",
-        timestamp: new Date().toLocaleString(),
+      console.log("Sending comment payload:", {
         message: newComment,
-      }
-      setTicket((prev) => ({
-        ...prev,
-        comments: [...prev.comments, comment],
-      }))
+      });
+      const response = await axiosInstance.post(`/tickets/${id}/comments`, {
+        message: newComment,
+      });
+      console.log("Response received");
+
+      setTicket(response.data)
       setNewComment("")
+
       Swal.fire({
         icon: "success",
         title: "Comment Added",
+        text: "Your comment has been added.",
         timer: 1500,
         showConfirmButton: false,
       })
     } catch (error) {
+      console.error("Add comment error:", error)
       Swal.fire({
         icon: "error",
         title: "Failed",
@@ -179,6 +203,7 @@ const TicketDetail = () => {
       setIsSubmittingComment(false)
     }
   }
+
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -230,23 +255,23 @@ const TicketDetail = () => {
   return (
     <div className="container-fluid p-0">
       {/* Page Header */}
-      <div className="bg-light border-bottom mb-4" style={{ 
-        backgroundColor: 'var(--light-card)', 
-        borderColor: 'var(--light-border)' 
+      <div className="bg-light border-bottom mb-4" style={{
+        backgroundColor: 'var(--light-card)',
+        borderColor: 'var(--light-border)'
       }}>
         <div className="container-fluid px-3 px-md-4 py-3">
           <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
             <div className="d-flex align-items-center gap-3 flex-grow-1">
-              <div className="d-flex align-items-center justify-content-center rounded" 
-                style={{ 
-                  width: '48px', 
-                  height: '48px', 
+              <div className="d-flex align-items-center justify-content-center rounded"
+                style={{
+                  width: '48px',
+                  height: '48px',
                   backgroundColor: '#1fdae4',
                   // color: 'white'
                 }}>
                 <MdSupport size={24} />
               </div>
-              
+
               <div className="flex-grow-1">
                 <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 mb-1">
                   <h1 className="h4 mb-0 me-2">
@@ -270,20 +295,20 @@ const TicketDetail = () => {
           {/* Left Column - Ticket Details & Comments */}
           <div className="col-12 col-lg-8">
             {/* Ticket Information */}
-            <div className="card shadow-sm mb-4" style={{ 
+            <div className="card shadow-sm mb-4" style={{
               backgroundColor: 'var(--light-card)',
               borderColor: 'var(--light-border)',
               borderRadius: 'var(--border-radius)'
             }}>
-              <div className="card-header border-bottom" style={{ 
+              <div className="card-header border-bottom" style={{
                 // backgroundColor: 'var(--light-bg)',
                 borderColor: 'var(--light-border)'
               }}>
                 <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded" 
-                    style={{ 
-                      width: '40px', 
-                      height: '40px', 
+                  <div className="d-flex align-items-center justify-content-center rounded"
+                    style={{
+                      width: '40px',
+                      height: '40px',
                       backgroundColor: '#1fdae4',
                       color: 'white'
                     }}>
@@ -306,16 +331,16 @@ const TicketDetail = () => {
                   </p>
                 </div>
 
-                {ticket.attachments.length > 0 && (
-                  <div className="mt-4">``
+                {ticket?.attachments?.length > 0 && (
+                  <div className="mt-4">
                     <h6 className="mb-3 d-flex align-items-center gap-2">
                       <MdAttachFile /> Attachments
                     </h6>
                     <div className="row g-2">
                       {ticket.attachments.map((file, index) => (
                         <div key={index} className="col-12 col-sm-6">
-                          <div className="d-flex align-items-center justify-content-between p-3 rounded border" 
-                            style={{ 
+                          <div className="d-flex align-items-center justify-content-between p-3 rounded border"
+                            style={{
                               backgroundColor: 'var(--light-bg)',
                               borderColor: 'var(--light-border)'
                             }}>
@@ -323,9 +348,9 @@ const TicketDetail = () => {
                               <MdAttachFile className="text-muted" size={20} />
                               <div>
                                 <div className="fw-medium small" style={{ color: 'var(--light-text)' }}>
-                                  {file.name}
+                                  {file.fileName}
                                 </div>
-                                <div className="text-muted small">{file.size}</div>
+                                <div className="text-muted small">{file.fileSize}</div>
                               </div>
                             </div>
                             <Button variant="link" size="sm" className="p-1 text-primary">
@@ -341,20 +366,20 @@ const TicketDetail = () => {
             </div>
 
             {/* Comments Section */}
-            <div className="card shadow-sm mb-4" style={{ 
+            <div className="card shadow-sm mb-4" style={{
               backgroundColor: 'var(--light-card)',
               borderColor: 'var(--light-border)',
               borderRadius: 'var(--border-radius)'
             }}>
-              <div className="card-header border-bottom" style={{ 
+              <div className="card-header border-bottom" style={{
                 // backgroundColor: 'var(--light-bg)',
                 borderColor: 'var(--light-border)'
               }}>
                 <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded" 
-                    style={{ 
-                      width: '40px', 
-                      height: '40px', 
+                  <div className="d-flex align-items-center justify-content-center rounded"
+                    style={{
+                      width: '40px',
+                      height: '40px',
                       backgroundColor: '#1fdae4',
                       color: 'white'
                     }}>
@@ -364,31 +389,33 @@ const TicketDetail = () => {
                     <h5 className="mb-1" style={{ color: '#1fdae4' }}>
                       Comments & Activity
                     </h5>
-                    <p className="mb-0 small text-muted">{ticket.comments.length} comment(s)</p>
+                    <p className="mb-0 small text-muted">{ticket?.comments?.length} comment(s)</p>
                   </div>
                 </div>
               </div>
 
               <div className="card-body p-3 p-md-4">
                 <div className="mb-4">
-                  {ticket.comments.map((comment, index) => (
+                  {ticket?.comments?.map((comment, index) => (
                     <div key={comment.id} className={`mb-4 ${index === ticket.comments.length - 1 ? 'mb-0' : ''}`}>
                       <div className="d-flex gap-3">
-                        <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" 
-                          style={{ 
-                            width: '40px', 
+                        <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                          style={{
+                            width: '40px',
                             height: '40px',
                             backgroundColor: comment.role === 'support' ? '#1fdae4' : 'var(--light-border)',
                             color: comment.role === 'support' ? 'white' : 'var(--light-text)'
                           }}>
                           <MdPerson size={20} />
                         </div>
-                        
+
                         <div className="flex-grow-1">
                           <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between mb-2">
                             <div className="d-flex align-items-center gap-2 flex-wrap">
                               <span className="fw-medium">
-                                {comment.author}
+                                {comment.author?._id === user._id
+                                  ? "You"
+                                  : comment.author?.name || "Unknown User"}
                               </span>
                               {comment.role === "support" && (
                                 <Badge bg="primary" className="small">Support</Badge>
@@ -399,9 +426,9 @@ const TicketDetail = () => {
                               {comment.timestamp}
                             </div>
                           </div>
-                          
-                          <div className="p-3 rounded" 
-                            style={{ 
+
+                          <div className="p-3 rounded"
+                            style={{
                               backgroundColor: 'var(--light-bg)',
                               borderLeft: `3px solid ${comment.role === 'support' ? '#1fdae4' : 'var(--light-border)'}`,
                               color: 'var(--light-text)',
@@ -429,7 +456,7 @@ const TicketDetail = () => {
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Type your response here..."
                         className="border"
-                        style={{ 
+                        style={{
                           borderColor: 'var(--light-border)',
                           backgroundColor: 'var(--light-bg)',
                           color: 'var(--light-text)',
@@ -443,7 +470,7 @@ const TicketDetail = () => {
                         type="submit"
                         disabled={!newComment.trim() || isSubmittingComment}
                         className="d-flex align-items-center"
-                        style={{ 
+                        style={{
                           backgroundColor: '#1fdae4',
                           borderColor: '#1fdae4',
                           color: 'white'
@@ -471,20 +498,20 @@ const TicketDetail = () => {
           {/* Right Column - Metadata & Actions */}
           <div className="col-12 col-lg-4">
             {/* Ticket Status Management */}
-            <div className="card shadow-sm mb-4" style={{ 
+            <div className="card shadow-sm mb-4" style={{
               backgroundColor: 'var(--light-card)',
               borderColor: 'var(--light-border)',
               borderRadius: 'var(--border-radius)'
             }}>
-              <div className="card-header border-bottom" style={{ 
+              <div className="card-header border-bottom" style={{
                 // backgroundColor: 'var(--light-bg)',
                 borderColor: 'var(--light-border)'
               }}>
                 <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded" 
-                    style={{ 
-                      width: '40px', 
-                      height: '40px', 
+                  <div className="d-flex align-items-center justify-content-center rounded"
+                    style={{
+                      width: '40px',
+                      height: '40px',
                       backgroundColor: '#1fdae4',
                       color: 'white'
                     }}>
@@ -499,11 +526,11 @@ const TicketDetail = () => {
                 </div>
               </div>
 
-              <div className="card-body p-3">
+              {/* <div className="card-body p-3">
                 <div className="d-grid gap-2">
                   <Button
                     variant="outline-warning"
-                    className="d-flex align-items-center justify-content-center"
+                    className="d-flex align-items-center justify-content-center button"
                     onClick={() => handleStatusChange("In Progress")}
                     disabled={isUpdatingStatus || ticket.status === "In Progress"}
                   >
@@ -512,7 +539,7 @@ const TicketDetail = () => {
                   </Button>
                   <Button
                     variant="outline-success"
-                    className="d-flex align-items-center justify-content-center"
+                    className="d-flex align-items-center justify-content-center button resolved"
                     onClick={() => handleStatusChange("Resolved")}
                     disabled={isUpdatingStatus || ticket.status === "Resolved"}
                   >
@@ -521,9 +548,52 @@ const TicketDetail = () => {
                   </Button>
                   <Button
                     variant="outline-secondary"
-                    className="d-flex align-items-center justify-content-center"
+                    className="d-flex align-items-center justify-content-center button closed"
                     onClick={() => handleStatusChange("Closed")}
                     disabled={isUpdatingStatus || ticket.status === "Closed"}
+                  >
+                    <MdClose className="me-2" size={18} />
+                    Close Ticket
+                  </Button>
+                </div>
+              </div> */}
+              <div className="card-body p-3">
+                <div className="d-grid gap-2">
+                  {/* In Progress Button */}
+                  {ticket.status !== "resolved" && ticket.status !== "closed" && (
+                    <Button
+                      variant={ticket.status === "in-progress" ? "warning" : "outline-warning"}
+                      className={`d-flex align-items-center justify-content-center button ${ticket.status === "in-progress" ? "active" : ""
+                        }`}
+                      onClick={() => handleStatusChange("In Progress")}
+                      disabled={isUpdatingStatus || ticket.status === "in-progress"}
+                    >
+                      <MdSchedule className="me-2" size={18} />
+                      In Progress
+                    </Button>
+                  )}
+
+                  {/* Resolved Button */}
+                  {ticket.status !== "closed" && (
+                    <Button
+                      variant={ticket.status === "resolved" ? "success" : "outline-success"}
+                      className={`d-flex align-items-center justify-content-center button resolved ${ticket.status === "resolved" ? "active" : ""
+                        }`}
+                      onClick={() => handleStatusChange("Resolved")}
+                      disabled={isUpdatingStatus || ticket.status === "resolved"}
+                    >
+                      <MdCheckCircle className="me-2" size={18} />
+                      Mark as Resolved
+                    </Button>
+                  )}
+
+                  {/* Closed Button */}
+                  <Button
+                    variant={ticket.status === "closed" ? "secondary" : "outline-secondary"}
+                    className={`d-flex align-items-center justify-content-center button closed ${ticket.status === "closed" ? "active" : ""
+                      }`}
+                    onClick={() => handleStatusChange("Closed")}
+                    disabled={isUpdatingStatus || ticket.status === "closed"}
                   >
                     <MdClose className="me-2" size={18} />
                     Close Ticket
@@ -533,20 +603,20 @@ const TicketDetail = () => {
             </div>
 
             {/* Ticket Metadata */}
-            <div className="card shadow-sm mb-4" style={{ 
+            <div className="card shadow-sm mb-4" style={{
               backgroundColor: 'var(--light-card)',
               borderColor: 'var(--light-border)',
               borderRadius: 'var(--border-radius)'
             }}>
-              <div className="card-header border-bottom" style={{ 
+              <div className="card-header border-bottom" style={{
                 // backgroundColor: 'var(--light-bg)',
                 borderColor: 'var(--light-border)'
               }}>
                 <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded" 
-                    style={{ 
-                      width: '40px', 
-                      height: '40px', 
+                  <div className="d-flex align-items-center justify-content-center rounded"
+                    style={{
+                      width: '40px',
+                      height: '40px',
                       backgroundColor: '#1fdae4',
                       color: 'white'
                     }}>
@@ -563,7 +633,7 @@ const TicketDetail = () => {
               <div className="card-body p-3">
                 <div className="row g-3">
                   <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom" 
+                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                       style={{ borderColor: 'var(--light-border)' }}>
                       <div className="d-flex align-items-center gap-2 text-muted">
                         <MdCategory size={16} />
@@ -576,7 +646,7 @@ const TicketDetail = () => {
                   </div>
 
                   <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom" 
+                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                       style={{ borderColor: 'var(--light-border)' }}>
                       <div className="d-flex align-items-center gap-2 text-muted">
                         <MdPriorityHigh size={16} />
@@ -587,7 +657,7 @@ const TicketDetail = () => {
                   </div>
 
                   <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom" 
+                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                       style={{ borderColor: 'var(--light-border)' }}>
                       <div className="d-flex align-items-center gap-2 text-muted">
                         <MdSchedule size={16} />
@@ -600,7 +670,7 @@ const TicketDetail = () => {
                   </div>
 
                   <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom" 
+                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                       style={{ borderColor: 'var(--light-border)' }}>
                       <div className="d-flex align-items-center gap-2 text-muted">
                         <MdUpdate size={16} />
@@ -628,20 +698,20 @@ const TicketDetail = () => {
             </div>
 
             {/* Contact Information */}
-            <div className="card shadow-sm" style={{ 
+            <div className="card shadow-sm" style={{
               backgroundColor: 'var(--light-card)',
               borderColor: 'var(--light-border)',
               borderRadius: 'var(--border-radius)'
             }}>
-              <div className="card-header border-bottom" style={{ 
+              <div className="card-header border-bottom" style={{
                 // backgroundColor: 'var(--light-bg)', 
                 borderColor: 'var(--light-border)'
               }}>
                 <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded" 
-                    style={{ 
-                      width: '40px', 
-                      height: '40px', 
+                  <div className="d-flex align-items-center justify-content-center rounded"
+                    style={{
+                      width: '40px',
+                      height: '40px',
                       backgroundColor: '#1fdae4',
                       color: 'white'
                     }}>
@@ -662,14 +732,14 @@ const TicketDetail = () => {
                   </h6>
                   <div className="row g-2">
                     <div className="col-12">
-                      <div className="d-flex align-items-center justify-content-between py-2 border-bottom" 
+                      <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                         style={{ borderColor: 'var(--light-border)' }}>
                         <div className="d-flex align-items-center gap-2 text-muted">
                           <MdPerson size={16} />
                           <span className="small">Name</span>
                         </div>
                         <span className="small fw-medium">
-                          {ticket.submittedBy.name}
+                          {ticket?.submittedBy?.name}
                         </span>
                       </div>
                     </div>
@@ -679,12 +749,12 @@ const TicketDetail = () => {
                           <MdEmail size={16} />
                           <span className="small">Email</span>
                         </div>
-                        <a 
-                          href={`mailto:${ticket.submittedBy.email}`} 
+                        <a
+                          href={`mailto:${ticket?.submittedBy?.email}`}
                           className="small text-decoration-none"
                           style={{ color: '#1fdae4' }}
                         >
-                          {ticket.submittedBy.email}
+                          {ticket?.submittedBy?.email}
                         </a>
                       </div>
                     </div>
@@ -697,14 +767,14 @@ const TicketDetail = () => {
                   </h6>
                   <div className="row g-2">
                     <div className="col-12">
-                      <div className="d-flex align-items-center justify-content-between py-2 border-bottom" 
+                      <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                         style={{ borderColor: 'var(--light-border)' }}>
                         <div className="d-flex align-items-center gap-2 text-muted">
                           <MdPerson size={16} />
                           <span className="small">Team</span>
                         </div>
                         <span className="small fw-medium">
-                          {ticket.assignedTo.name}
+                          {ticket?.assignedTo?.name}
                         </span>
                       </div>
                     </div>
@@ -714,12 +784,12 @@ const TicketDetail = () => {
                           <MdEmail size={16} />
                           <span className="small">Email</span>
                         </div>
-                        <a 
-                          href={`mailto:${ticket.assignedTo.email}`} 
+                        <a
+                          href={`mailto:${ticket?.assignedTo?.email}`}
                           className="small text-decoration-none"
                           style={{ color: '#1fdae4' }}
                         >
-                          {ticket.assignedTo.email}
+                          {ticket?.assignedTo?.email}
                         </a>
                       </div>
                     </div>

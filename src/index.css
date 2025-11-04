@@ -4866,8 +4866,8 @@ button.btn-outline-danger:disabled {
 
 /* Form Actions */
 .form-actions {
-  margin-top: 2rem;
-  padding: 1.5rem;
+  /* margin-top: 2rem; */
+  padding: 1rem;
   background: rgba(31, 218, 228, 0.02);
   border-top: 1px solid var(--border-color);
 }
@@ -10720,9 +10720,9 @@ canvas {
   font-size: 0.875rem;
 }
 
-.table tbody tr:hover {
+/* .table tbody tr:hover {
   background-color: #f8f9ff;
-}
+} */
 
 /* Badge styling */
 .badge {
@@ -11089,7 +11089,7 @@ canvas {
 }
 
 .table tbody tr:hover {
-  background-color: #f8f9ff;
+  /* background-color: #f8f9ff; */
 }
 
 /* Badge styling */
@@ -11672,7 +11672,7 @@ canvas {
 
 /* Table Enhancements */
 .table {
-  background: #fff;
+  /* background: #fff; */
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -11686,7 +11686,7 @@ canvas {
 }
 
 .table tbody tr:hover {
-  background: rgba(31, 218, 228, 0.08);
+  /* background: rgba(31, 218, 228, 0.08); */
 }
 
 /* Alert Enhancements */
@@ -27310,7 +27310,10 @@ canvas {
   position: relative;
   display: inline-block;
 }
-
+.button .active{
+  background-color: var(--primary-color);
+  color: white;
+}
 .support-tickets-container .action-menu-btn {
   display: flex;
   align-items: center;
@@ -27345,7 +27348,7 @@ canvas {
   display: none;
   position: absolute;
   right: 0;
-  top: 100%;
+  top: 75%;
   margin-top: 0.5rem;
   background: white;
   border: 1px solid #e5e7eb;
