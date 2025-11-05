@@ -60,7 +60,7 @@ const SurveyDistribution = () => {
     includeTitle: true,
     includeLogo: true,
     customText: 'Scan to share your feedback',
-    backgroundColor: 'var(--card-bg)',
+    backgroundColor: 'var(--primary-color)',
     foregroundColor: 'var(--bs-dark)',
     errorCorrectionLevel: 'H' // use high level to keep logo readable
   });
@@ -490,7 +490,7 @@ const SurveyDistribution = () => {
                           style={{
                             display: 'inline-block',
                             position: 'relative',
-                            backgroundColor: 'white',
+                            backgroundColor: '#1fdae4',
                             padding: '16px',
                             borderRadius: '12px'
                           }}
@@ -498,7 +498,7 @@ const SurveyDistribution = () => {
                           <QRCodeSVG
                             value={survey.url}
                             size={qrSettings.size}
-                            // bgColor="var(--primary-hover)"
+                            bgColor="var(--primary-color)"
                             fgColor={qrSettings.foregroundColor}
                             level={qrSettings.errorCorrectionLevel}
                             includeMargin={false}
@@ -506,8 +506,8 @@ const SurveyDistribution = () => {
                               src: logo,
                               x: undefined,
                               y: undefined,
-                              height: 80,
-                              width: 80,
+                              height: 60,
+                              width: 60,
                               excavate: true,
                             }}
                           />

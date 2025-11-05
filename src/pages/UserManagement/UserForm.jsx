@@ -57,27 +57,30 @@ const UserForm = () => {
   const memberCanCreate = hasPermission("user:create");
   const memberCanUpdate = hasPermission("user:update");
 
+ 
   // === FETCH USER CATEGORIES ===
   const fetchUserCategories = async (tenantId) => {
+    if (!tenantId) {
+      setCategoryOptions([]);
+      return;
+    }
+
     try {
       const res = await axiosInstance.get(`/user-categories?tenantId=${tenantId}`);
-
       let categoriesData = [];
-      if (Array.isArray(res?.data?.categories)) {
+      if (Array.isArray(res?.data?.data?.categories)) {
+        categoriesData = res.data.data.categories;
+      } else if (Array.isArray(res?.data?.categories)) {
         categoriesData = res.data.categories;
       } else if (Array.isArray(res?.data)) {
         categoriesData = res.data;
-      } else if (Array.isArray(res?.data?.data)) {
-        // sometimes backend sends { data: [...] }
-        categoriesData = res.data.data;
       }
 
-      const options = categoriesData.map(cat => ({
+      const options = categoriesData.map((cat) => ({
         value: cat._id,
         label: cat.name,
-        type: cat.type
+        type: cat.type,
       }));
-
       setCategoryOptions(options);
     } catch (err) {
       console.error("Failed to load user categories:", err);
@@ -106,12 +109,12 @@ const UserForm = () => {
 
   // === HANDLE CATEGORY SELECT ===
   const handleCategoryChange = (selected) => {
-    const ids = selected.map(opt => opt.value);
-    const labels = selected.map(opt => opt.label);
-    setUser(prev => ({
+    const ids = selected.map((opt) => opt.value);
+    const labels = selected.map((opt) => opt.label);
+    setUser((prev) => ({
       ...prev,
       userCategoryIds: ids,
-      userCategories: labels
+      userCategories: labels,
     }));
     setFormChanged(true);
   };
@@ -139,17 +142,19 @@ const UserForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // === FETCH TENANT DATA + CATEGORIES ===
   const fetchTenantData = async (tenantId) => {
     try {
-      const res = await axiosInstance.get(`/tenants/${tenantId}`, { withCredentials: true });
+      const res = await axiosInstance.get(`/tenants/${tenantId}`, {
+        withCredentials: true,
+      });
       const tenant = res.data.tenant;
-      setUser(prev => ({
+      setUser((prev) => ({
         ...prev,
         tenantId: tenant._id,
         tenantName: tenant.name || "",
         departments: tenant.departments || [],
       }));
-      // Fetch categories
       await fetchUserCategories(tenant._id);
     } catch (err) {
       console.error("fetchTenantData error:", err);
@@ -281,16 +286,50 @@ const UserForm = () => {
     }
   };
 
-  // === REACT-SELECT STYLES ===
-  const selectStyles = {
-    control: (base) => ({ ...base, minHeight: 48, borderRadius: 8 }),
-    menu: (base) => ({ ...base, zIndex: 9999 })
-  };
-
   return (
     <div className="user-form-container">
-      {/* ... HEADER SAME ... */}
+{/* ... PAGE HEADER ... */}
+      <div className="user-form-header">
+        <div className="header-content">
+          <div className="header-left">
+            <Button
+              variant="outline-secondary"
+              className="back-btn"
+              onClick={() => navigate("/app/users")}
+            >
+              <MdArrowBack className="me-2" /> Back
+            </Button>
 
+            <div className="page-title-section">
+              <div className="page-icon">
+                {isEditMode ? <MdPerson /> : <MdGroup />}
+              </div>
+              <div>
+                <h1 className="page-title">
+                  {isEditMode ? 'Edit User' : 'Create User'}
+                </h1>
+                <p className="page-subtitle">
+                  {isEditMode ? 'Update user information and settings' : 'Add a new user to the system'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {formChanged && (
+            <div className="form-status-indicator">
+              <MdInfo className="me-1" />
+              <span>Unsaved changes</span>
+            </div>
+          )}
+
+          {saveSuccess && (
+            <div className="success-indicator animate-fade-in">
+              <MdCheckCircle className="me-1" />
+              <span>Saved successfully!</span>
+            </div>
+          )}
+        </div>
+      </div>
       <div className="form-content">
         <div className="form-wrapper">
           <Form onSubmit={handleSubmit} className="user-form">
@@ -612,25 +651,26 @@ const UserForm = () => {
                       </div>
                     </Col>
 
-                    {/* NEW: USER CATEGORIES */}
                     <Col md={6}>
                       <div className="form-group">
                         <label className="form-label required">User Categories</label>
                         <div className="input-wrapper">
-                          <MdCategory className="input-icon" />
-                          <Select
-                            isMulti
-                            options={categoryOptions}
-                            value={categoryOptions.filter(opt => user.userCategoryIds.includes(opt.value))}
+                          <MdGroup className="input-icon" />
+                          <Form.Select
+                            name="userCategories"
+                            value={user.userCategoryIds}
                             onChange={handleCategoryChange}
-                            placeholder="Select categories..."
-                            styles={selectStyles}
-                            className="react-select-container"
-                            classNamePrefix="react-select"
-                          />
+                            className="form-input form-select"
+                          >
+                            <option value="">Select Category</option>
+                            {categoryOptions.map(cat => (
+                              <option key={cat.value} value={cat.value}>
+                                {cat.label}
+                              </option>
+                            ))}
+                          </Form.Select>
                         </div>
                         {errors.userCategories && <div className="field-error">{errors.userCategories}</div>}
-                        <div className="field-help">Assign user to Vendor, Customer, Partner, etc.</div>
                       </div>
                     </Col>
                   </Row>
