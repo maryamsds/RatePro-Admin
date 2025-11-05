@@ -27062,9 +27062,9 @@ canvas {
 }
 
 /* Table */
-/* .support-tickets-container .table-container {
+.support-tickets-container .table-container {
   overflow-x: auto;
-} */
+}
 
 .support-tickets-container .data-table {
   width: 100%;
