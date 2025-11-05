@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Container, Row, Col, Card, Form, Button, Spinner } from "react-bootstrap";
-import Select from "react-select"; // <-- ADD THIS
 import Swal from "sweetalert2";
 import {
   MdSave,
@@ -51,13 +50,14 @@ const UserForm = () => {
   const [formChanged, setFormChanged] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [validationState, setValidationState] = useState({});
-  const [categoryOptions, setCategoryOptions] = useState([]); // <-- NEW
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [showDepartment, setShowDepartment] = useState(false);
 
   const currentUserRole = currentUser?.role || "";
   const memberCanCreate = hasPermission("user:create");
   const memberCanUpdate = hasPermission("user:update");
 
- 
+
   // === FETCH USER CATEGORIES ===
   const fetchUserCategories = async (tenantId) => {
     if (!tenantId) {
@@ -108,17 +108,35 @@ const UserForm = () => {
   };
 
   // === HANDLE CATEGORY SELECT ===
+  // const handleCategoryChange = (selected) => {
+  //   const ids = selected.map((opt) => opt.value);
+  //   const labels = selected.map((opt) => opt.label);
+  //   setUser((prev) => ({
+  //     ...prev,
+  //     userCategoryIds: ids,
+  //     userCategories: labels,
+  //   }));
+  //   setFormChanged(true);
+  // };
+
   const handleCategoryChange = (selected) => {
-    const ids = selected.map((opt) => opt.value);
-    const labels = selected.map((opt) => opt.label);
-    setUser((prev) => ({
+    setUser(prev => ({
       ...prev,
-      userCategoryIds: ids,
-      userCategories: labels,
+      userCategories: selected,
     }));
-    setFormChanged(true);
+
+    // Agar selected category internal nahi hai, department clear kar do
+    const selectedLabels = selected.map(opt => opt.label.toLowerCase());
+    const hasInternal = selectedLabels.includes('internal');
+
+    if (!hasInternal) {
+      setUser(prev => ({ ...prev, department: '' }));
+    }
+
+    setShowDepartment(hasInternal); // state to toggle UI
   };
 
+  // === FORM VALIDATION ===
   const validateForm = () => {
     const newErrors = {};
     if (!user.name.trim()) newErrors.name = "Name is required";
@@ -130,8 +148,8 @@ const UserForm = () => {
     if (currentUserRole === "admin" && user.role === "companyAdmin" && !user.tenantName.trim())
       newErrors.tenantName = "Company name is required";
 
-    if ((currentUserRole === "companyAdmin" || (currentUserRole === "member" && user.role === "member")) && !user.departmentId)
-      newErrors.departmentId = "Department is required";
+    if ((currentUserRole === "companyAdmin" || (currentUserRole === "member" && user.role === "member")) && showDepartment && !user.departmentId)
+      newErrors.departmentId = "Department is required for internal user";
 
     // NEW: Category validation for member
     if (user.role === "member" && user.userCategoryIds.length === 0) {
@@ -162,6 +180,72 @@ const UserForm = () => {
     }
   };
 
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     if (!id) return;
+  //     try {
+  //       const res = await getUserById(id);
+  //       const userData = res.data.user;
+
+  //       let tenantName = "", departments = [], tenantId = "", departmentId = "", categoryIds = [];
+
+  //       if (userData.tenant && typeof userData.tenant === 'object') {
+  //         tenantName = userData.tenant.name || "";
+  //         tenantId = userData.tenant._id?.toString() || "";
+  //         departments = userData.tenant.departments?.map(dept => ({
+  //           _id: dept._id?.toString(),
+  //           name: dept.name
+  //         })) || [];
+  //         departmentId = userData.department?._id?.toString() || "";
+  //       }
+
+  //       // Load user categories
+  //       // if (userData.userCategories && Array.isArray(userData.userCategories)) {
+  //       //   categoryIds = userData.userCategories.map(c => c._id?.toString()).filter(Boolean);
+  //       // }
+  //       if (userData.userCategories && Array.isArray(userData.userCategories)) {
+  //         // agar backend se sirf IDs aati hain (strings)
+  //         if (typeof userData.userCategories[0] === "string") {
+  //           categoryIds = userData.userCategories;
+  //         } else {
+  //           // agar backend populated objects bhejta hai
+  //           categoryIds = userData.userCategories.map(c => c._id?.toString()).filter(Boolean);
+  //         }
+  //       }
+
+  //       setUser({
+  //         _id: userData._id,
+  //         name: userData.name || "",
+  //         email: userData.email || "",
+  //         password: "",
+  //         role: userData.role || "",
+  //         isActive: userData.isActive?.toString() || "true",
+  //         tenantId,
+  //         tenantName,
+  //         departments,
+  //         departmentId,
+  //         userCategoryIds: categoryIds,
+  //         originalCategoryIds: categoryIds,
+  //         // userCategories: userData.userCategories?.map(c => c.name) || []
+  //         userCategories: categoryIds.length ? categoryOptions
+  //           .filter(opt => categoryIds.includes(opt.value))
+  //           .map(opt => opt.label)
+  //           : []
+  //       });
+
+  //       // Fetch categories for edit mode
+  //       if (tenantId) await fetchUserCategories(tenantId);
+
+  //     } catch (err) {
+  //       console.error("Error loading user:", err);
+  //       Swal.fire("Error", err.response?.data?.message || "Failed to load user", "error");
+  //       navigate("/app/users", { replace: true });
+  //     }
+  //   };
+
+  //   if (isEditMode) fetchUser();
+  // }, [id, navigate, isEditMode]);
+
   useEffect(() => {
     const fetchUser = async () => {
       if (!id) return;
@@ -181,11 +265,25 @@ const UserForm = () => {
           departmentId = userData.department?._id?.toString() || "";
         }
 
-        // Load user categories
+        // 🧠 Step 1: Pehle categories load karo
+        if (tenantId) await fetchUserCategories(tenantId);
+
+        // 🧠 Step 2: Ab category IDs extract karo
         if (userData.userCategories && Array.isArray(userData.userCategories)) {
-          categoryIds = userData.userCategories.map(c => c._id?.toString()).filter(Boolean);
+          if (typeof userData.userCategories[0] === "string") {
+            categoryIds = userData.userCategories;
+          } else {
+            categoryIds = userData.userCategories.map(c => c._id?.toString()).filter(Boolean);
+          }
         }
 
+        // 🧠 Step 3: ab categoryOptions available hain, label mil jayega
+        const selectedCategory = categoryOptions.find(
+          opt => opt.value === (categoryIds?.[0] || "")
+        );
+        const selectedLabel = selectedCategory?.label?.toLowerCase() || "";
+
+        // 🧠 Step 4: ab state set karo
         setUser({
           _id: userData._id,
           name: userData.name || "",
@@ -198,11 +296,15 @@ const UserForm = () => {
           departments,
           departmentId,
           userCategoryIds: categoryIds,
-          userCategories: userData.userCategories?.map(c => c.name) || []
+          originalCategoryIds: categoryIds,
+          userCategories: categoryIds.length ? categoryOptions
+            .filter(opt => categoryIds.includes(opt.value))
+            .map(opt => opt.label)
+            : []
         });
 
-        // Fetch categories for edit mode
-        if (tenantId) await fetchUserCategories(tenantId);
+        // ✅ Step 5: showDepartment set karo
+        setShowDepartment(selectedLabel === "internal" || selectedLabel === "employee");
 
       } catch (err) {
         console.error("Error loading user:", err);
@@ -212,7 +314,7 @@ const UserForm = () => {
     };
 
     if (isEditMode) fetchUser();
-  }, [id, navigate, isEditMode]);
+  }, [id, navigate, isEditMode, categoryOptions]);
 
   useEffect(() => {
     if (!isEditMode && (currentUserRole === "companyAdmin" || currentUserRole === "member")) {
@@ -267,6 +369,7 @@ const UserForm = () => {
           Swal.fire({ icon: "info", title: "No changes" });
           return;
         }
+        console.log("Updating user with:", updates); // ye line jb me department change krta hn to chal rahi he, lakin jb category change krta hn to nhi chal rahi
         await updateUser(id, updates);
         Swal.fire({ icon: "success", title: "User Updated" });
       } else {
@@ -288,7 +391,7 @@ const UserForm = () => {
 
   return (
     <div className="user-form-container">
-{/* ... PAGE HEADER ... */}
+      {/* ... PAGE HEADER ... */}
       <div className="user-form-header">
         <div className="header-content">
           <div className="header-left">
@@ -632,38 +735,52 @@ const UserForm = () => {
                   <Row className="g-3">
                     <Col md={6}>
                       <div className="form-group">
-                        <label className="form-label required">Department</label>
-                        <div className="input-wrapper">
-                          <MdGroup className="input-icon" />
-                          <Form.Select
-                            name="departmentId"
-                            value={user.departmentId}
-                            onChange={handleChange}
-                            className="form-input form-select"
-                          >
-                            <option value="">Select Department</option>
-                            {user.departments.map(dept => (
-                              <option key={dept._id} value={dept._id}>{dept.name}</option>
-                            ))}
-                          </Form.Select>
-                        </div>
-                        {errors.departmentId && <div className="field-error">{errors.departmentId}</div>}
-                      </div>
-                    </Col>
-
-                    <Col md={6}>
-                      <div className="form-group">
                         <label className="form-label required">User Categories</label>
                         <div className="input-wrapper">
                           <MdGroup className="input-icon" />
                           <Form.Select
-                            name="userCategories"
-                            value={user.userCategoryIds}
-                            onChange={handleCategoryChange}
+                            name="userCategory"
+                            value={user.userCategoryIds?.[0] || ""} // ✅ single value only
+                            // onChange={(e) => {
+                            //   const selectedId = e.target.value;
+                            //   const selectedLabel = e.target.options[e.target.selectedIndex].text;
+
+                            //   setUser((prev) => ({
+                            //     ...prev,
+                            //     userCategoryIds: [selectedId],    // store single id inside array
+                            //     userCategories: [selectedLabel],  // store single label inside array
+                            //   }));
+
+                            //   if (selectedLabel?.toLowerCase() === "employee" || selectedOption?.userType === "internal") {
+                            //     setShowDepartment(true);
+                            //   } else {
+                            //     setShowDepartment(false);
+                            //     setUser(prev => ({ ...prev, departmentId: "" })); // clear department
+                            //   }
+
+                            //   setFormChanged(true);
+                            // }}
+                            onChange={(e) => {
+                              const selectedId = e.target.value;
+                              const selectedOption = categoryOptions.find(opt => opt.value === selectedId) || null;
+                              const selectedLabel = selectedOption?.label?.toLowerCase() || "";
+
+                              const showDept = selectedLabel === "internal" || selectedLabel === "employee";
+
+                              setUser(prev => ({
+                                ...prev,
+                                userCategoryIds: [selectedId],
+                                userCategories: [selectedOption?.label || ""],
+                                departmentId: showDept ? prev.departmentId : "" // clear department if not internal
+                              }));
+
+                              setShowDepartment(showDept);
+                              setFormChanged(true);
+                            }}
                             className="form-input form-select"
                           >
                             <option value="">Select Category</option>
-                            {categoryOptions.map(cat => (
+                            {categoryOptions.map((cat) => (
                               <option key={cat.value} value={cat.value}>
                                 {cat.label}
                               </option>
@@ -673,6 +790,29 @@ const UserForm = () => {
                         {errors.userCategories && <div className="field-error">{errors.userCategories}</div>}
                       </div>
                     </Col>
+
+                    {showDepartment && (
+                      <Col md={6}>
+                        <div className="form-group">
+                          <label className="form-label required">Department</label>
+                          <div className="input-wrapper">
+                            <MdGroup className="input-icon" />
+                            <Form.Select
+                              name="departmentId"
+                              value={user.departmentId}
+                              onChange={handleChange}
+                              className="form-input form-select"
+                            >
+                              <option value="">Select Department</option>
+                              {user.departments.map(dept => (
+                                <option key={dept._id} value={dept._id}>{dept.name}</option>
+                              ))}
+                            </Form.Select>
+                          </div>
+                          {errors.departmentId && <div className="field-error">{errors.departmentId}</div>}
+                        </div>
+                      </Col>
+                    )}
                   </Row>
                 </div>
               </div>

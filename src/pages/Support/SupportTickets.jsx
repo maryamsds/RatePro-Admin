@@ -30,10 +30,12 @@ import {
   getTicketStatuses,
   formatTicketForDisplay 
 } from "../../api/ticketApi"
+import { useAuth } from "../../context/AuthContext.jsx"
 import Swal from "sweetalert2"
 
 const SupportTickets = ({ darkMode }) => {
   const navigate = useNavigate()
+  const { user, setGlobalLoading } = useAuth();
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -218,9 +220,11 @@ const SupportTickets = ({ darkMode }) => {
             <button className="secondary-action" onClick={() => window.location.reload()}>
               <MdRefresh /> Refresh
             </button>
+            {user.role !== "admin" &&  (
             <button className="primary-action" onClick={() => navigate("/app/support/create")}>
               <MdAdd /> Create Ticket
             </button>
+            )}
           </div>
         </div>
       </div>
@@ -250,7 +254,7 @@ const SupportTickets = ({ darkMode }) => {
             <MdSchedule />
           </div>
           <div className="stat-details">
-            <div className="stat-value">{tickets.status.filter((t) => t.status === "In Progress").length}</div>
+            <div className="stat-value">{tickets.status?.filter((t) => t.status === "In Progress").length}</div>
             <div className="stat-label">In Progress</div>
           </div>
         </div>
