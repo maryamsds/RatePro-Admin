@@ -5342,7 +5342,7 @@ button.btn-outline-danger:disabled {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    overflow: hidden;
+    /* overflow: hidden; */
     transition: all 0.3s ease;
 }
 
@@ -12980,7 +12980,7 @@ canvas {
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .dark .section-card {
@@ -27018,7 +27018,7 @@ canvas {
   background: white;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
+  /* overflow: hidden; */
   animation: fadeInUp 0.7s ease-out;
 }
 
@@ -27062,9 +27062,9 @@ canvas {
 }
 
 /* Table */
-.support-tickets-container .table-container {
+/* .support-tickets-container .table-container {
   overflow-x: auto;
-}
+} */
 
 .support-tickets-container .data-table {
   width: 100%;
