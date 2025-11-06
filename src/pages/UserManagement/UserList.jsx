@@ -112,6 +112,7 @@ const UserList = ({ darkMode }) => {
     setCurrentUserId(loggedInUser?._id || null)
   }, [])
 
+  // Fetch Users Function
   const fetchUsers = async () => {
     setLoading(true)
     try {
@@ -175,12 +176,14 @@ const UserList = ({ darkMode }) => {
     }
   }
 
+  //  Handle Filter Change
   const handleFilterChange = (e) => {
     const { name, value } = e.target
     setFilters((prev) => ({ ...prev, [name]: value }))
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
 
+  // Handle Delete User
   const handleDeleteUser = async (userId) => {
     if (userId === currentUserId) {
       Swal.fire({
@@ -247,6 +250,7 @@ const UserList = ({ darkMode }) => {
     }
   }
 
+  // Handle Toggle Active Status
   const handleToggleActive = async (userId, currentStatus) => {
     try {
       const res = await toggleUserActiveStatus(userId)
@@ -277,6 +281,7 @@ const UserList = ({ darkMode }) => {
     }
   }
 
+  // Get Role Badge Variant
   const getRoleVariant = (role) => {
     const map = {
       admin: "primary",
@@ -286,6 +291,7 @@ const UserList = ({ darkMode }) => {
     return map[role] || "secondary"
   }
 
+  // Get Status Badge Variant
   const getStatusVariant = (status) => {
     const map = {
       Active: "success",
@@ -295,12 +301,14 @@ const UserList = ({ darkMode }) => {
     return map[status] || "secondary"
   }
 
+  // Handle Open Email Modal
   const handleOpenEmailModal = (id, email) => {
     setSelectedEmail(email)
     setSelectedUserId(id)
     setShowEmailModal(true)
   }
 
+  // Handle Send Email
   const handleSendEmail = async () => {
     if (!emailSubject.trim() || !emailMessage.trim()) {
       Swal.fire("Error", "Please fill out both subject and message.", "error")
@@ -321,6 +329,7 @@ const UserList = ({ darkMode }) => {
     }
   }
 
+  // Handle Export User PDF 
   const handleExport = async (userId) => {
     try {
       const response = await exportUserPDF(userId)
@@ -348,22 +357,19 @@ const UserList = ({ darkMode }) => {
     setFile(e.target.files[0]);
   };
 
+  // Handle File Upload
   const handleFileUpload = async (file) => {
     if (!file) return alert("Please select a file first!");
     const formData = new FormData();
     formData.append("excel", file);
 
-    console.log("📤 Uploading file:", file.name, file.type, file.size);
-
     try {
-      console.log("👉 setGlobalLoading(true) chal raha hai");
       setGlobalLoading(true); // 👈 loader start
 
       const res = await axiosInstance.post("/users/bulk-upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
-      console.log("✅ API Response aya:", res.data);
       const { createdUsers = [], errors: rawErrors, message } = res.data;
 
       const errors = rawErrors || []; // null protection
@@ -398,18 +404,11 @@ const UserList = ({ darkMode }) => {
       });
       console.error("❌ Upload error:", err.response?.data || err.message);
     } finally {
-      console.log("👉 setGlobalLoading(false) chal raha hai");
       setGlobalLoading(false); // 👈 loader stop
     }
   };
 
-  // const handleFileChange = (e) => {
-  //   const file = e.target.files[0];
-  //   console.log("📂 File selected:", file?.name);
-
-  //   if (file) handleFileUpload(file);
-  // };
-
+  // Handle No Permission
   const handleNoPermission = (action = "perform this action") => {
     Swal.fire({
       icon: "error",

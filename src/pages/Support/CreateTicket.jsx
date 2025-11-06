@@ -126,23 +126,19 @@ const CreateTicket = () => {
       };
 
       const response = await createTicket(ticketData, ticket.attachments);
-
+      
       Swal.fire({
         icon: "success",
         title: "Ticket Created Successfully!",
-        text: `Your support ticket #${response.data.data._id.slice(-6)} has been submitted.`,
-        timer: 3000,
-        showConfirmButton: true,
-        confirmButtonText: "View Ticket",
-        showCancelButton: true,
-        cancelButtonText: "Create Another",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          navigate(`/app/support/${response.data.data._id}`);
-        } else {
-          navigate("/app/support/create");
-        }
+        text: "Your support ticket has been submitted.",
+        timer: 2000, // optional
+        showConfirmButton: false,
       });
+
+      // redirect after small delay to let Swal show
+      setTimeout(() => {
+        navigate("/app/support");
+      }, 2000);
     } catch (error) {
       console.error("Create ticket error:", error);
       const errorMessage =

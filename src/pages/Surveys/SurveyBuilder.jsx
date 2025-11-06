@@ -531,52 +531,6 @@ const SurveyBuilder = ({ darkMode }) => {
       setGlobalLoading(false);
     }
   };
-  // ✅ FIXED: Initialize from template for tenant
-  // const initializeFromTemplate = (template) => {
-  //   console.log("🔄 Initializing from template:", template);
-
-  //   const newSurveyData = {
-  //     title: `${template.name}`,
-  //     description: template.description || '',
-  //     category: template.category || '',
-  //     language: template.language || ['English'],
-  //     isPublic: true,
-  //     allowAnonymous: true,
-  //     collectEmail: false,
-  //     multipleResponses: false,
-  //     thankYouMessage: 'Thank you for completing our survey!',
-  //     redirectUrl: '',
-  //     branding: {
-  //       primaryColor: 'var(--bs-primary)',
-  //       backgroundColor: 'var(--bs-body-bg)',
-  //       textColor: 'var(--bs-body-color)',
-  //       showBranding: true
-  //     }
-  //   };
-
-  //   setSurvey(newSurveyData);
-
-  //   const initialQuestions = template.questions?.map((q, index) => ({
-  //     id: q.id || `q${index + 1}`,
-  //     type: mapQuestionTypeFromBackend(q.type),
-  //     title: q.questionText || q.title || `Question ${index + 1}`,
-  //     description: q.description || '',
-  //     required: q.required || false,
-  //     options: q.options || [],
-  //     settings: q.settings || {}
-  //   })) || [];
-
-  //   setQuestions(initialQuestions);
-
-  //   const profileUpdate = {
-  //     industry: template.category,
-  //     surveyGoal: template.description || `Collect feedback using ${template.name} template`,
-  //     targetAudience: 'customers'
-  //   };
-  //   setCompanyProfile(prev => ({ ...prev, ...profileUpdate }));
-
-  //   console.log("✅ Template initialization complete");
-  // };
 
   const initializeFromTemplate = (template) => {
 

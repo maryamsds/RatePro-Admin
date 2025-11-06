@@ -1,7 +1,5 @@
 // src\pages\UserManagement\RolePermissions.jsx
-
 "use client"
-
 import { useState } from "react"
 import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal } from "react-bootstrap"
 

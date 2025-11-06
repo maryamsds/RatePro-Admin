@@ -23,17 +23,18 @@ import {
   FaTelegram, FaInstagram
 } from 'react-icons/fa';
 import { QRCodeSVG } from 'qrcode.react';
-// import axiosInstance from '../../api/axiosInstance'; // TODO: Use for actual API calls
-// import { useAuth } from '../../context/AuthContext'; // TODO: Use for user context
+import axiosInstance from '../../api/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
 import logo from '../../../public/images/qr_logo.png';
+import { Canvg } from "canvg";
 
 
 const SurveyDistribution = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  // const { user } = useAuth(); // TODO: Use for user permissions
-
+  const { user } = useAuth();
+  console.log('Survey ID:', id);
   // State Management
   const [survey, setSurvey] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,18 +43,6 @@ const SurveyDistribution = () => {
   const [showSMSModal, setShowSMSModal] = useState(false);
   // const [showEmbedModal, setShowEmbedModal] = useState(false); // TODO: Implement embed modal
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
-
-  // Distribution Settings
-  // const [qrSettings, setQrSettings] = useState({
-  //   size: 256,
-  //   includeTitle: true,
-  //   includeLogo: true,
-  //   customText: 'Scan to share your feedback',
-  //   backgroundColor: 'var(--primary-color)',
-  //   foregroundColor: 'var(--bs-dark)',
-  //   logoUrl: '',
-  //   errorCorrectionLevel: 'M'
-  // });
 
   const [qrSettings, setQrSettings] = useState({
     size: 256,
@@ -149,24 +138,18 @@ const SurveyDistribution = () => {
     const fetchSurvey = async () => {
       try {
         setLoading(true);
-        // Mock survey data - in production, this would be an API call
-        const mockSurvey = {
-          id: id,
-          title: 'Customer Satisfaction Survey',
-          description: 'Help us improve by sharing your experience',
-          url: `${window.location.origin}/survey/${id}`,
-          shortUrl: `https://ratepro.me/s/${id}`,
-          isActive: true,
-          responseCount: 245,
-          distributionStats: {
-            qr: 128,
-            email: 67,
-            sms: 32,
-            social: 18
-          }
-        };
-
-        setSurvey(mockSurvey);
+        const survey = await axiosInstance.get(`/surveys/${id}`);
+        console.log('Fetched Survey Data:', survey.data);
+        setSurvey({
+          id: survey.data._id,
+          title: survey.data.title,
+          description: survey.data.description,
+          url: `${import.meta.env.VITE_PUBLIC_URL}/survey/${survey.data._id}`,
+          // shortUrl: `https://ratepro.me/s/${survey.data._id}`,
+          isActive: survey.data.isActive,
+          responseCount: survey.data.responseCount,
+          distributionStats: survey.data.distributionStats
+        });
       } catch (error) {
         console.error('Error fetching survey:', error);
         Swal.fire({
@@ -185,54 +168,180 @@ const SurveyDistribution = () => {
   }, [id]);
 
   // QR Code Generation and Download
-  const downloadQR = (format = 'png') => {
-    const svg = document.getElementById('qr-code');
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
+  // const downloadQR = async (format = "png") => {
+  //   const svgElement = document
+  //     .getElementById("qr-preview")
+  //     .getElementsByTagName("svg")[0];
 
-    img.onload = () => {
-      canvas.width = qrSettings.size;
-      canvas.height = qrSettings.size;
-      ctx.drawImage(img, 0, 0);
+  //   if (!svgElement) {
+  //     console.error("SVG not found inside #qr-preview");
+  //     return;
+  //   }
 
-      const link = document.createElement('a');
-      link.download = `survey-qr-${survey.id}.${format}`;
-      link.href = canvas.toDataURL(`image/${format}`);
-      link.click();
-    };
+  //   const canvas = document.createElement("canvas");
+  //   const ctx = canvas.getContext("2d");
 
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  //   // Make sure the size matches your QR settings
+  //   canvas.width = qrSettings.size;
+  //   canvas.height = qrSettings.size;
+
+  //   // Convert SVG to PNG using Canvg
+  //   const svgString = new XMLSerializer().serializeToString(svgElement);
+  //   const v = await Canvg.fromString(ctx, svgString);
+
+  //   // White background
+  //   ctx.fillStyle = "#fff";
+  //   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  //   await v.render();
+
+  //   // Download
+  //   const link = document.createElement("a");
+  //   link.download = `survey-qr-${survey?._id || "code"}.${format}`;
+  //   link.href = canvas.toDataURL(`image/${format}`);
+  //   link.click();
+  // };
+  const downloadQR = async (format = "png") => {
+    const svgElement = document
+      .getElementById("qr-preview")
+      .getElementsByTagName("svg")[0];
+
+    if (!svgElement) {
+      console.error("SVG not found inside #qr-preview");
+      return;
+    }
+
+    // Clone the SVG so we don't mess the original
+    const clone = svgElement.cloneNode(true);
+
+    // Replace CSS variables manually
+    const computedBg = getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary-color")
+      .trim() || "#ffffff";
+
+    clone.querySelectorAll("*").forEach((el) => {
+      if (el.getAttribute("fill") === "var(--primary-color)") {
+        el.setAttribute("fill", computedBg);
+      }
+    });
+
+    const svgString = new XMLSerializer().serializeToString(clone);
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = qrSettings.size + 32;
+    canvas.height = qrSettings.size + 32;
+
+    // White background
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const v = await Canvg.fromString(ctx, svgString, { ignoreClear: true });
+    await v.render();
+
+    const link = document.createElement("a");
+    link.download = `survey-qr-${survey?._id || "code"}.${format}`;
+    link.href = canvas.toDataURL(`image/${format}`);
+    link.click();
   };
+  // Print QR Code
+  // const printQR = () => {
+  //   const printWindow = window.open('', '', 'width=600,height=400');
+  //   const qrElement = document.getElementById('qr-preview').innerHTML;
 
-  const printQR = () => {
-    const printWindow = window.open('', '', 'width=600,height=400');
-    const qrElement = document.getElementById('qr-preview').innerHTML;
+  //   printWindow.document.write(`
+  //     <html>
+  //       <head>
+  //         <title>Survey QR Code - ${survey.title}</title>
+  //         <style>
+  //           body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+  //           .qr-container { margin: 20px auto; }
+  //           h2 { color: #333; margin-bottom: 10px; }
+  //           p { color: #666; margin: 5px 0; }
+  //         </style>
+  //       </head>
+  //       <body>
+  //         <h2>${survey.title}</h2>
+  //         <p>${qrSettings.customText}</p>
+  //         <div class="qr-container">${qrElement}</div>
+  //         <p>Scan with your phone camera to participate</p>
+  //       </body>
+  //     </html>
+  //   `);
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Survey QR Code - ${survey.title}</title>
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-            .qr-container { margin: 20px auto; }
-            h2 { color: #333; margin-bottom: 10px; }
-            p { color: #666; margin: 5px 0; }
-          </style>
-        </head>
-        <body>
-          <h2>${survey.title}</h2>
-          <p>${qrSettings.customText}</p>
-          <div class="qr-container">${qrElement}</div>
-          <p>Scan with your phone camera to participate</p>
-        </body>
-      </html>
-    `);
+  //   printWindow.document.close();
+  //   printWindow.print();
+  // };
+ const printQR = () => {
+  const qrContainer = document.getElementById("qr-preview");
+  if (!qrContainer) return console.error("QR preview not found!");
 
-    printWindow.document.close();
-    printWindow.print();
-  };
+  const cloned = qrContainer.cloneNode(true);
+
+  // Replace CSS vars with actual values (just like download fix)
+  const computedBg = getComputedStyle(document.documentElement)
+    .getPropertyValue("--primary-color")
+    .trim() || "#1fdae4";
+
+  cloned.querySelectorAll("*").forEach((el) => {
+    if (el.getAttribute("fill") === "var(--primary-color)") {
+      el.setAttribute("fill", computedBg);
+    }
+  });
+
+  const qrHTML = cloned.innerHTML;
+  const title = survey?.title || "Survey QR Code";
+  const customText = qrSettings?.customText || "";
+
+  const printWindow = window.open("", "", "width=700,height=900");
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+          body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 40px;
+            background: #fff;
+          }
+          h2 {
+            color: #333;
+            margin-bottom: 8px;
+          }
+          p {
+            color: #666;
+            margin: 8px 0;
+          }
+          .qr-container {
+            display: inline-block;
+            background: ${computedBg};
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px auto;
+          }
+          svg {
+            width: ${qrSettings.size || 256}px;
+            height: ${qrSettings.size || 256}px;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>${title}</h2>
+        <p>${customText}</p>
+        <div class="qr-container">${qrHTML}</div>
+        <p>Scan with your phone camera to participate</p>
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.onload = () => setTimeout(() => printWindow.print(), 500);
+};
+ 
 
   // Copy survey link
   const copyLink = (url) => {
@@ -420,13 +529,13 @@ const SurveyDistribution = () => {
                     />
                     <h6 className="mb-1">{channel.name}</h6>
                     <p className="text-muted small mb-2">{channel.description}</p>
-                    <Badge
+                    {/* <Badge
                       bg="light"
                       text="dark"
                       className="small"
                     >
-                      {survey.distributionStats[channel.id] || 0} sent
-                    </Badge>
+                      {survey?.distributionStats[channel.id] || 0} sent
+                    </Badge> */}
                   </Card.Body>
                 </Card>
               </Col>
@@ -608,14 +717,6 @@ const SurveyDistribution = () => {
                       <MdContentCopy />
                     </Button>
                     <Button
-                      variant="success"
-                      onClick={() => copyLink(survey.shortUrl)}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      <span>Copy Short Link</span>
-                      <MdContentCopy />
-                    </Button>
-                    <Button
                       variant="info"
                       onClick={() => window.open(survey.url, '_blank')}
                       className="d-flex justify-content-between align-items-center"
@@ -659,7 +760,7 @@ const SurveyDistribution = () => {
                     </InputGroup>
                   </Form.Group>
 
-                  <Form.Group className="mb-3">
+                  {/* <Form.Group className="mb-3">
                     <Form.Label className="fw-semibold">Short URL</Form.Label>
                     <InputGroup>
                       <Form.Control
@@ -674,7 +775,7 @@ const SurveyDistribution = () => {
                         <MdContentCopy />
                       </Button>
                     </InputGroup>
-                  </Form.Group>
+                  </Form.Group> */}
 
                   <Alert variant="info" className="d-flex align-items-start">
                     <FaLightbulb className="me-2 mt-1" />

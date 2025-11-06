@@ -1,7 +1,6 @@
 // src\pages\Support\SupportTickets.jsx
 
 "use client"
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
@@ -13,7 +12,6 @@ import {
   MdEdit,
   MdDelete,
   MdRefresh,
-  MdReply,
   MdAssignment,
   MdPriorityHigh,
   MdPerson,
@@ -23,13 +21,13 @@ import {
   MdVisibility,
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
-import { 
-  getTickets, 
-  deleteTicket, 
+import {
+  getTickets,
+  deleteTicket,
   updateTicketStatus,
-  getTicketStatuses,
-  formatTicketForDisplay 
+  formatTicketForDisplay
 } from "../../api/ticketApi"
+import { Button } from "react-bootstrap";
 import { useAuth } from "../../context/AuthContext.jsx"
 import Swal from "sweetalert2"
 
@@ -48,7 +46,7 @@ const SupportTickets = ({ darkMode }) => {
   const fetchTickets = async () => {
     try {
       setLoading(true)
-      
+
       const params = {
         page: pagination.page,
         limit: pagination.limit,
@@ -59,7 +57,6 @@ const SupportTickets = ({ darkMode }) => {
 
       const response = await getTickets(params)
       const { data, pagination: paginationData } = response.data
-
       // Format tickets for display
       const formattedTickets = data.map(ticket => ({
         id: ticket._id,
@@ -134,11 +131,12 @@ const SupportTickets = ({ darkMode }) => {
 
   const confirmDelete = async () => {
     try {
+      setGlobalLoading(true)
       await deleteTicket(selectedTicket.id)
-      
+
       // Remove from local state
       setTickets(tickets.filter((t) => t.id !== selectedTicket.id))
-      
+
       Swal.fire({
         icon: "success",
         title: "Ticket Deleted",
@@ -154,6 +152,7 @@ const SupportTickets = ({ darkMode }) => {
         text: error.response?.data?.message || "Failed to delete ticket. Please try again.",
       })
     } finally {
+      setGlobalLoading(false)
       setShowDeleteModal(false)
       setSelectedTicket(null)
     }
@@ -163,14 +162,14 @@ const SupportTickets = ({ darkMode }) => {
   const handleStatusUpdate = async (ticketId, newStatus) => {
     try {
       await updateTicketStatus(ticketId, newStatus)
-      
+
       // Update local state
-      setTickets(prev => prev.map(ticket => 
-        ticket.id === id 
+      setTickets(prev => prev.map(ticket =>
+        ticket.id === id
           ? { ...ticket, status: newStatus, lastUpdated: new Date().toLocaleString() }
           : ticket
       ))
-      
+
       Swal.fire({
         icon: "success",
         title: "Status Updated",
@@ -220,10 +219,10 @@ const SupportTickets = ({ darkMode }) => {
             <button className="secondary-action" onClick={() => window.location.reload()}>
               <MdRefresh /> Refresh
             </button>
-            {user.role !== "admin" &&  (
-            <button className="primary-action" onClick={() => navigate("/app/support/create")}>
-              <MdAdd /> Create Ticket
-            </button>
+            {user.role !== "admin" && (
+              <button className="primary-action" onClick={() => navigate("/app/support/create")}>
+                <MdAdd /> Create Ticket
+              </button>
             )}
           </div>
         </div>
@@ -245,7 +244,7 @@ const SupportTickets = ({ darkMode }) => {
             <MdAssignment />
           </div>
           <div className="stat-details">
-            <div className="stat-value">{tickets.filter((t) => t.status === "Open").length}</div>
+            <div className="stat-value">{tickets.filter((t) => t.status === "open").length}</div>
             <div className="stat-label">Open Tickets</div>
           </div>
         </div>
@@ -254,7 +253,7 @@ const SupportTickets = ({ darkMode }) => {
             <MdSchedule />
           </div>
           <div className="stat-details">
-            <div className="stat-value">{tickets.status?.filter((t) => t.status === "In Progress").length}</div>
+            <div className="stat-value">{tickets.filter((t) => t.status === "in-progress").length}</div>
             <div className="stat-label">In Progress</div>
           </div>
         </div>
@@ -263,7 +262,7 @@ const SupportTickets = ({ darkMode }) => {
             <MdCheckCircle />
           </div>
           <div className="stat-details">
-            <div className="stat-value">{tickets.filter((t) => t.status === "Resolved").length}</div>
+            <div className="stat-value">{tickets.filter((t) => t.status === "resolved").length}</div>
             <div className="stat-label">Resolved</div>
           </div>
         </div>
@@ -341,7 +340,7 @@ const SupportTickets = ({ darkMode }) => {
                     <td className="ticket-time">{ticket.responseTime}</td>
                     <td className="ticket-time">{ticket.lastUpdated}</td>
                     <td>
-                      <div className="ticket-actions">
+                      {/* <div className="ticket-actions">
                         <div className="dropdown">
                           <button className="action-menu-btn">
                             <MdMoreVert />
@@ -350,13 +349,8 @@ const SupportTickets = ({ darkMode }) => {
                             <button className="dropdown-item" onClick={() => navigate(`/app/support/tickets/${ticket._id}`)}>
                               <MdVisibility /> View Details
                             </button>
-                            <button className="dropdown-item">
-                              <MdReply /> Reply
-                            </button>
-                            <button className="dropdown-item">
-                              <MdEdit /> Edit
-                            </button>
-                            <button className="dropdown-item">
+                          
+                            {/* <button className="dropdown-item">
                               <MdAssignment /> Assign
                             </button>
                             <div className="dropdown-divider"></div>
@@ -365,6 +359,23 @@ const SupportTickets = ({ darkMode }) => {
                             </button>
                           </div>
                         </div>
+                      </div> */}
+                      <div className="action-buttons">
+                        <Button
+                          size="sm"
+                          variant="outline-primary"
+                          onClick={() => navigate(`/app/support/tickets/${ticket._id}`)}
+                        >
+                          <MdVisibility />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => handleDelete(ticket)}
+                        >
+                          <MdDelete />
+                        </Button>
+                        {/* text-danger */}
                       </div>
                     </td>
                   </tr>

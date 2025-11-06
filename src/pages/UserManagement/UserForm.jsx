@@ -88,6 +88,7 @@ const UserForm = () => {
     }
   };
 
+  // === HANDLE FORM FIELD CHANGES ===
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUser(prev => ({ ...prev, [name]: value }));
@@ -107,18 +108,7 @@ const UserForm = () => {
     }
   };
 
-  // === HANDLE CATEGORY SELECT ===
-  // const handleCategoryChange = (selected) => {
-  //   const ids = selected.map((opt) => opt.value);
-  //   const labels = selected.map((opt) => opt.label);
-  //   setUser((prev) => ({
-  //     ...prev,
-  //     userCategoryIds: ids,
-  //     userCategories: labels,
-  //   }));
-  //   setFormChanged(true);
-  // };
-
+  // === HANDLE CATEGORY CHANGE ===
   const handleCategoryChange = (selected) => {
     setUser(prev => ({
       ...prev,
@@ -180,72 +170,7 @@ const UserForm = () => {
     }
   };
 
-  // useEffect(() => {
-  //   const fetchUser = async () => {
-  //     if (!id) return;
-  //     try {
-  //       const res = await getUserById(id);
-  //       const userData = res.data.user;
-
-  //       let tenantName = "", departments = [], tenantId = "", departmentId = "", categoryIds = [];
-
-  //       if (userData.tenant && typeof userData.tenant === 'object') {
-  //         tenantName = userData.tenant.name || "";
-  //         tenantId = userData.tenant._id?.toString() || "";
-  //         departments = userData.tenant.departments?.map(dept => ({
-  //           _id: dept._id?.toString(),
-  //           name: dept.name
-  //         })) || [];
-  //         departmentId = userData.department?._id?.toString() || "";
-  //       }
-
-  //       // Load user categories
-  //       // if (userData.userCategories && Array.isArray(userData.userCategories)) {
-  //       //   categoryIds = userData.userCategories.map(c => c._id?.toString()).filter(Boolean);
-  //       // }
-  //       if (userData.userCategories && Array.isArray(userData.userCategories)) {
-  //         // agar backend se sirf IDs aati hain (strings)
-  //         if (typeof userData.userCategories[0] === "string") {
-  //           categoryIds = userData.userCategories;
-  //         } else {
-  //           // agar backend populated objects bhejta hai
-  //           categoryIds = userData.userCategories.map(c => c._id?.toString()).filter(Boolean);
-  //         }
-  //       }
-
-  //       setUser({
-  //         _id: userData._id,
-  //         name: userData.name || "",
-  //         email: userData.email || "",
-  //         password: "",
-  //         role: userData.role || "",
-  //         isActive: userData.isActive?.toString() || "true",
-  //         tenantId,
-  //         tenantName,
-  //         departments,
-  //         departmentId,
-  //         userCategoryIds: categoryIds,
-  //         originalCategoryIds: categoryIds,
-  //         // userCategories: userData.userCategories?.map(c => c.name) || []
-  //         userCategories: categoryIds.length ? categoryOptions
-  //           .filter(opt => categoryIds.includes(opt.value))
-  //           .map(opt => opt.label)
-  //           : []
-  //       });
-
-  //       // Fetch categories for edit mode
-  //       if (tenantId) await fetchUserCategories(tenantId);
-
-  //     } catch (err) {
-  //       console.error("Error loading user:", err);
-  //       Swal.fire("Error", err.response?.data?.message || "Failed to load user", "error");
-  //       navigate("/app/users", { replace: true });
-  //     }
-  //   };
-
-  //   if (isEditMode) fetchUser();
-  // }, [id, navigate, isEditMode]);
-
+  // === LOAD USER DATA IF EDIT MODE ===  
   useEffect(() => {
     const fetchUser = async () => {
       if (!id) return;
@@ -316,6 +241,7 @@ const UserForm = () => {
     if (isEditMode) fetchUser();
   }, [id, navigate, isEditMode, categoryOptions]);
 
+  // === FETCH TENANT DATA IF NOT ADMIN ===
   useEffect(() => {
     if (!isEditMode && (currentUserRole === "companyAdmin" || currentUserRole === "member")) {
       const tenantId = currentUser?.tenant?._id || currentUser?.tenant;
@@ -325,6 +251,7 @@ const UserForm = () => {
     }
   }, [isEditMode, currentUserRole, currentUser]);
 
+  // === HANDLE FORM SUBMISSION ===
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -369,7 +296,6 @@ const UserForm = () => {
           Swal.fire({ icon: "info", title: "No changes" });
           return;
         }
-        console.log("Updating user with:", updates); // ye line jb me department change krta hn to chal rahi he, lakin jb category change krta hn to nhi chal rahi
         await updateUser(id, updates);
         Swal.fire({ icon: "success", title: "User Updated" });
       } else {

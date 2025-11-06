@@ -3,7 +3,7 @@ export const formatLocalDateTime = (dateString) => {
     if (!dateString || dateString === "—") return "—";
   
     const date = new Date(dateString);
-    return date.toLocaleString(undefined, {
+    return date.toLocaleString("en-US", {
       year: "numeric",
       month: "short",
       day: "2-digit",

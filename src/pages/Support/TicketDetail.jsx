@@ -9,7 +9,6 @@ import {
   MdPerson,
   MdEmail,
   MdSchedule,
-  MdPriorityHigh,
   MdCategory,
   MdInfo,
   MdAttachFile,
@@ -32,6 +31,7 @@ import {
 } from "../../api/ticketApi"
 import { useAuth } from '../../context/AuthContext';
 import axiosInstance from "../../api/axiosInstance"
+import { formatLocalDateTime } from "../../utilities/dateUtils"
 
 const TicketDetail = () => {
   const navigate = useNavigate()
@@ -42,6 +42,7 @@ const TicketDetail = () => {
   const [newComment, setNewComment] = useState("")
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isTicketCreator, setIsTicketCreator] = useState(false)
 
   const fetchTicketDetails = async () => {
     if (!id) return;
@@ -49,48 +50,46 @@ const TicketDetail = () => {
     try {
       setLoading(true);
       const response = await getTicketById(id);
-      const ticketData = response.data.data;
-
-      console.log("Fetched ticket data:", ticketData);
+      const updatedTicketData = response.data.data || response.data;
 
       // ✅ Real formatting logic
       const formattedTicket = {
-        id: ticketData._id,
-        ticketNumber: `TKT-${ticketData._id.slice(-6).toUpperCase()}`,
-        subject: ticketData.subject,
-        description: ticketData.description,
-        status: ticketData.status,
-        // priority: ticketData.priority,
-        category: ticketData.category,
+        id: updatedTicketData._id,
+        ticketNumber: `TKT-${updatedTicketData._id.slice(-6).toUpperCase()}`,
+        subject: updatedTicketData.subject,
+        description: updatedTicketData.description,
+        status: updatedTicketData.status,
+        // priority: updatedTicketData.priority,
+        category: updatedTicketData.category,
         submittedBy: {
-          name: ticketData.createdBy?.name || "Unknown",
-          email: ticketData.createdBy?.email || ticketData.contactEmail,
-          phone: ticketData.createdBy?.phone || "N/A",
+          name: updatedTicketData.createdBy?.name || "Unknown",
+          email: updatedTicketData.createdBy?.email || updatedTicketData.contactEmail,
+          phone: updatedTicketData.createdBy?.phone || "N/A",
         },
         assignedTo: {
-          name: ticketData.assignedTo?.name || "Unassigned",
-          email: ticketData.assignedTo?.email || "N/A",
+          name: updatedTicketData.assignedTo?.name || "Unassigned",
+          email: updatedTicketData.assignedTo?.email || "N/A",
         },
-        createdAt: new Date(ticketData.createdAt).toLocaleString(),
-        updatedAt: new Date(ticketData.updatedAt).toLocaleString(),
-        responseTime: ticketData.daysSinceCreation ? `${ticketData.daysSinceCreation}d` : "New",
-        attachments: ticketData.attachments?.map(att => ({
+        createdAt: formatLocalDateTime(updatedTicketData.createdAt),
+        updatedAt: formatLocalDateTime(updatedTicketData.updatedAt),
+        responseTime: updatedTicketData.daysSinceCreation ? `${updatedTicketData.daysSinceCreation}d` : "New",
+        attachments: updatedTicketData.attachments?.map(att => ({
           name: att.fileName,
           size: att.fileSize ? `${(att.fileSize / 1024).toFixed(2)} KB` : "Unknown",
           url: att.fileUrl,
           type: att.fileType
         })) || [],
-        comments: ticketData.internalNotes?.map(note => ({
+        comments: updatedTicketData.internalNotes?.map(note => ({
           id: note._id,
           author: note.createdBy?.name || "System",
           role: "support",
-          timestamp: new Date(note.createdAt).toLocaleString(),
+          timestamp: formatLocalDateTime(note.createdAt),
           message: note.note,
         })) || [],
-        canEdit: ticketData.canEdit || false,
-        canDelete: ticketData.canDelete || false,
-        isOwner: ticketData.isOwner || false,
-        ...formatTicketForDisplay(ticketData) // ✅ use helper if you’ve defined it
+        canEdit: updatedTicketData.canEdit || false,
+        canDelete: updatedTicketData.canDelete || false,
+        isOwner: updatedTicketData.isOwner || false,
+        ...formatTicketForDisplay(updatedTicketData), // ✅ use helper if you’ve defined it
       };
 
       setTicket(formattedTicket);
@@ -115,6 +114,15 @@ const TicketDetail = () => {
     }
   };
 
+  useEffect(() => {
+    if (ticket && user) {
+      const isCreator =
+        user._id === ticket.createdBy?._id ||
+        user.id === ticket.createdBy?._id; // handles both cases
+
+      setIsTicketCreator(isCreator);
+    }
+  }, [ticket, user]);
 
   useEffect(() => {
     fetchTicketDetails();
@@ -138,7 +146,6 @@ const TicketDetail = () => {
     };
 
     const mappedStatus = statusMap[newStatus] || newStatus.toLowerCase().trim();
-
     setIsUpdatingStatus(true);
     try {
       await updateTicketStatus(ticket.id, mappedStatus);
@@ -168,22 +175,44 @@ const TicketDetail = () => {
     }
   };
 
+  // Handle adding a new comment
   const handleAddComment = async (e) => {
-    e.preventDefault()
-    if (!newComment.trim() || !id) return
+    e.preventDefault();
+    if (!newComment.trim() || !id) return;
 
-    setIsSubmittingComment(true)
+    setIsSubmittingComment(true);
     try {
-      console.log("Sending comment payload:", {
-        message: newComment,
-      });
       const response = await axiosInstance.post(`/tickets/${id}/comments`, {
         message: newComment,
       });
-      console.log("Response received");
 
-      setTicket(response.data)
-      setNewComment("")
+      // try common locations where backend might put the comment object
+      const resp = response.data || {};
+      const raw = resp.data || resp.comment || resp || {};
+
+      // build a normalized comment object that matches your render expectations
+      const normalized = {
+        id: raw._id || raw.id || `tmp-${Date.now()}`, // unique key in case backend doesn't return id
+        author: {
+          // if backend returned createdBy as populated object use it, otherwise fallback to current user
+          _id: (raw.createdBy && (raw.createdBy._id || raw.createdBy.id)) || user._id || user.id,
+          name: (raw.createdBy && (raw.createdBy.name)) || user.name || "You",
+          avatar: (raw.createdBy && raw.createdBy.avatar) || (user.avatar ? { url: user.avatar } : null),
+          // you can add other author fields if needed
+        },
+        role: raw.role || (raw.createdBy ? (raw.createdBy.role || "user") : "user"),
+        timestamp: raw.createdAt ? formatLocalDateTime(raw.createdAt) : formatLocalDateTime(new Date()),
+        message: raw.message || raw.note || raw.text || newComment,
+        // keep original raw for debugging if needed
+        _raw: raw,
+      };
+
+      setTicket((prevTicket) => ({
+        ...prevTicket,
+        comments: [...(prevTicket.comments || []), normalized],
+      }));
+
+      setNewComment("");
 
       Swal.fire({
         icon: "success",
@@ -191,20 +220,20 @@ const TicketDetail = () => {
         text: "Your comment has been added.",
         timer: 1500,
         showConfirmButton: false,
-      })
+      });
     } catch (error) {
-      console.error("Add comment error:", error)
+      console.error("Add comment error:", error);
       Swal.fire({
         icon: "error",
         title: "Failed",
         text: "Could not add comment",
-      })
+      });
     } finally {
-      setIsSubmittingComment(false)
+      setIsSubmittingComment(false);
     }
-  }
+  };
 
-
+  // Render status badge
   const getStatusBadge = (status) => {
     const statusMap = {
       Open: "danger",
@@ -214,21 +243,6 @@ const TicketDetail = () => {
       Pending: "info",
     }
     return <Badge bg={statusMap[status] || "secondary"}>{status}</Badge>
-  }
-
-  const getPriorityBadge = (priority) => {
-    const priorityMap = {
-      Low: "success",
-      Medium: "warning",
-      High: "danger",
-      Critical: "dark",
-    }
-    return (
-      <Badge bg={priorityMap[priority] || "secondary"} className="d-flex align-items-center gap-1">
-        {priority === "High" || priority === "Critical" ? <MdPriorityHigh /> : null}
-        {priority}
-      </Badge>
-    )
   }
 
   if (loading) {
@@ -279,7 +293,6 @@ const TicketDetail = () => {
                   </h1>
                   <div className="d-flex gap-2">
                     {getStatusBadge(ticket.status)}
-                    {getPriorityBadge(ticket.priority)}
                   </div>
                 </div>
                 <p className="mb-0 text-muted">{ticket.subject}</p>
@@ -397,43 +410,91 @@ const TicketDetail = () => {
               <div className="card-body p-3 p-md-4">
                 <div className="mb-4">
                   {ticket?.comments?.map((comment, index) => (
-                    <div key={comment.id} className={`mb-4 ${index === ticket.comments.length - 1 ? 'mb-0' : ''}`}>
-                      <div className="d-flex gap-3">
-                        <div className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                    <div
+                      // key={comment.id}
+                      key={comment.id || comment._id || index}
+                      className={`mb-4 ${index === ticket.comments.length - 1 ? 'mb-0' : ''} d-flex ${comment.author?._id === user._id ? 'justify-content-end' : 'justify-content-start'
+                        }`}
+                    >
+                      <div
+                        className="d-flex gap-3"
+                        style={{
+                          flexDirection: comment.author?._id === user._id ? 'row-reverse' : 'row',
+                          maxWidth: '80%',
+                        }}
+                      >
+                        {/* Avatar or Icon */}
+                        <div
+                          className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 overflow-hidden"
                           style={{
                             width: '40px',
                             height: '40px',
                             backgroundColor: comment.role === 'support' ? '#1fdae4' : 'var(--light-border)',
-                            color: comment.role === 'support' ? 'white' : 'var(--light-text)'
-                          }}>
-                          <MdPerson size={20} />
+                            color: comment.role === 'support' ? 'white' : 'var(--light-text)',
+                          }}
+                        >
+                          {comment.author?.avatar?.url ? (
+                            <img
+                              src={comment.author.avatar.url}
+                              alt={comment.author.name || 'User'}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
+                            />
+                          ) : (
+                            <MdPerson size={20} />
+                          )}
                         </div>
 
                         <div className="flex-grow-1">
-                          <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between mb-2">
-                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                          <div
+                            className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between mb-2"
+                            style={{
+                              textAlign: comment.author?._id === user._id ? 'right' : 'left',
+                            }}
+                          >
+                            <div
+                              className="d-flex align-items-center gap-2 flex-wrap"
+                              style={{
+                                flexDirection: comment.author?._id === user._id ? 'row-reverse' : 'row',
+                              }}
+                            >
                               <span className="fw-medium">
-                                {comment.author?._id === user._id
-                                  ? "You"
-                                  : comment.author?.name || "Unknown User"}
+                                {comment.author?._id === user._id ? 'You' : comment.author?.name || 'Unknown User'}
                               </span>
-                              {comment.role === "support" && (
-                                <Badge bg="primary" className="small">Support</Badge>
+                              {comment.role === 'support' && (
+                                <Badge bg="primary" className="small">
+                                  Support
+                                </Badge>
                               )}
                             </div>
                             <div className="d-flex align-items-center gap-1 text-muted small">
                               <MdAccessTime size={16} />
-                              {comment.timestamp}
+                              {formatLocalDateTime(comment.timestamp)}
                             </div>
                           </div>
 
-                          <div className="p-3 rounded"
+                          <div
+                            className="p-3 rounded"
                             style={{
                               backgroundColor: 'var(--light-bg)',
-                              borderLeft: `3px solid ${comment.role === 'support' ? '#1fdae4' : 'var(--light-border)'}`,
+                              borderLeft:
+                                comment.author?._id === user._id
+                                  ? 'none'
+                                  : `3px solid ${comment.role === 'support' ? '#1fdae4' : 'var(--light-border)'
+                                  }`,
+                              borderRight:
+                                comment.author?._id === user._id
+                                  ? `3px solid ${comment.role === 'support' ? '#1fdae4' : 'var(--light-border)'
+                                  }`
+                                  : 'none',
                               color: 'var(--light-text)',
-                              lineHeight: '1.5'
-                            }}>
+                              lineHeight: '1.5',
+                              textAlign: comment.author?._id === user._id ? 'right' : 'left',
+                            }}
+                          >
                             {comment.message}
                           </div>
                         </div>
@@ -525,38 +586,6 @@ const TicketDetail = () => {
                   </div>
                 </div>
               </div>
-
-              {/* <div className="card-body p-3">
-                <div className="d-grid gap-2">
-                  <Button
-                    variant="outline-warning"
-                    className="d-flex align-items-center justify-content-center button"
-                    onClick={() => handleStatusChange("In Progress")}
-                    disabled={isUpdatingStatus || ticket.status === "In Progress"}
-                  >
-                    <MdSchedule className="me-2" size={18} />
-                    In Progress
-                  </Button>
-                  <Button
-                    variant="outline-success"
-                    className="d-flex align-items-center justify-content-center button resolved"
-                    onClick={() => handleStatusChange("Resolved")}
-                    disabled={isUpdatingStatus || ticket.status === "Resolved"}
-                  >
-                    <MdCheckCircle className="me-2" size={18} />
-                    Mark as Resolved
-                  </Button>
-                  <Button
-                    variant="outline-secondary"
-                    className="d-flex align-items-center justify-content-center button closed"
-                    onClick={() => handleStatusChange("Closed")}
-                    disabled={isUpdatingStatus || ticket.status === "Closed"}
-                  >
-                    <MdClose className="me-2" size={18} />
-                    Close Ticket
-                  </Button>
-                </div>
-              </div> */}
               <div className="card-body p-3">
                 <div className="d-grid gap-2">
                   {/* In Progress Button */}
@@ -566,7 +595,7 @@ const TicketDetail = () => {
                       className={`d-flex align-items-center justify-content-center button ${ticket.status === "in-progress" ? "active" : ""
                         }`}
                       onClick={() => handleStatusChange("In Progress")}
-                      disabled={isUpdatingStatus || ticket.status === "in-progress"}
+                      disabled={isUpdatingStatus || ticket.status === "in-progress" || isTicketCreator}
                     >
                       <MdSchedule className="me-2" size={18} />
                       In Progress
@@ -580,8 +609,7 @@ const TicketDetail = () => {
                       className={`d-flex align-items-center justify-content-center button resolved ${ticket.status === "resolved" ? "active" : ""
                         }`}
                       onClick={() => handleStatusChange("Resolved")}
-                      disabled={isUpdatingStatus || ticket.status === "resolved"}
-                    >
+                      disabled={isUpdatingStatus || ticket.status === "resolved" || isTicketCreator}>
                       <MdCheckCircle className="me-2" size={18} />
                       Mark as Resolved
                     </Button>
@@ -590,11 +618,10 @@ const TicketDetail = () => {
                   {/* Closed Button */}
                   <Button
                     variant={ticket.status === "closed" ? "secondary" : "outline-secondary"}
-                    className={`d-flex align-items-center justify-content-center button closed ${ticket.status === "closed" ? "active" : ""
+                    className={`d-f lex align-items-center justify-content-center button closed ${ticket.status === "closed" ? "active" : ""
                       }`}
                     onClick={() => handleStatusChange("Closed")}
-                    disabled={isUpdatingStatus || ticket.status === "closed"}
-                  >
+                    disabled={isUpdatingStatus || ticket.status === "closed" || isTicketCreator}>
                     <MdClose className="me-2" size={18} />
                     Close Ticket
                   </Button>
@@ -648,11 +675,6 @@ const TicketDetail = () => {
                   <div className="col-12">
                     <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                       style={{ borderColor: 'var(--light-border)' }}>
-                      <div className="d-flex align-items-center gap-2 text-muted">
-                        <MdPriorityHigh size={16} />
-                        <span className="small">Priority</span>
-                      </div>
-                      <div>{getPriorityBadge(ticket.priority)}</div>
                     </div>
                   </div>
 
@@ -664,7 +686,7 @@ const TicketDetail = () => {
                         <span className="small">Created</span>
                       </div>
                       <span className="small fw-medium">
-                        {ticket.createdAt}
+                        {formatLocalDateTime(ticket.createdAt)}
                       </span>
                     </div>
                   </div>
@@ -677,7 +699,7 @@ const TicketDetail = () => {
                         <span className="small">Last Updated</span>
                       </div>
                       <span className="small fw-medium">
-                        {ticket.updatedAt}
+                        {formatLocalDateTime(ticket.updatedAt)}
                       </span>
                     </div>
                   </div>
@@ -762,10 +784,10 @@ const TicketDetail = () => {
                 </div>
 
                 <div>
-                  <h6 className="mb-3 fw-medium">
+                  {/* <h6 className="mb-3 fw-medium">
                     Assigned To
-                  </h6>
-                  <div className="row g-2">
+                  </h6> */}
+                  {/* <div className="row g-2">
                     <div className="col-12">
                       <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
                         style={{ borderColor: 'var(--light-border)' }}>
@@ -793,7 +815,7 @@ const TicketDetail = () => {
                         </a>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
