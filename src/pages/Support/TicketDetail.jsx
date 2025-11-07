@@ -197,7 +197,8 @@ const TicketDetail = () => {
           // if backend returned createdBy as populated object use it, otherwise fallback to current user
           _id: (raw.createdBy && (raw.createdBy._id || raw.createdBy.id)) || user._id || user.id,
           name: (raw.createdBy && (raw.createdBy.name)) || user.name || "You",
-          avatar: (raw.createdBy && raw.createdBy.avatar) || (user.avatar ? { url: user.avatar } : null),
+          avatar: (raw.createdBy && raw.createdBy.avatar)
+            || (user.avatar ? { url: user.avatar.url || user.avatar } : null),
           // you can add other author fields if needed
         },
         role: raw.role || (raw.createdBy ? (raw.createdBy.role || "user") : "user"),

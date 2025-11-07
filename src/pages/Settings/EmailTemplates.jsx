@@ -1,6 +1,5 @@
 // src/pages/Settings/EmailTemplates.jsx
 "use client";
-
 import { useState, useEffect } from "react";
 import {
   MdEdit,
@@ -45,6 +44,7 @@ const EmailTemplates = () => {
     { value: "password_reset", label: "Password Reset" },
     { value: "survey_reminder", label: "Survey Reminder" },
     { value: "admin_notification", label: "Admin Notification" },
+    { value: "low_rating_followup", label: "low rating followup" }
   ];
 
   // Common variables for templates
@@ -866,10 +866,10 @@ const EmailTemplates = () => {
                           borderBottom: "1px solid #eee",
                           transition: "background-color 0.2s",
                         }}
-                        // onMouseOver={(e) =>
-                        //   (e.target.parentElement.style.backgroundColor =
-                        //     "#f8f9fa")
-                        // }
+                        onMouseOver={(e) =>
+                        (e.target.parentElement.style.backgroundColor =
+                          "#f8f9fa")
+                        }
                         onMouseOut={(e) =>
                         (e.target.parentElement.style.backgroundColor =
                           "transparent")
@@ -926,8 +926,8 @@ const EmailTemplates = () => {
                         <td style={{ padding: "12px", verticalAlign: "top" }}>
                           <span
                             className={`badge ${template.isActive
-                                ? "badge-success"
-                                : "badge-secondary"
+                              ? "badge-success"
+                              : "badge-secondary"
                               }`}
                             style={{
                               padding: "6px 12px",
@@ -967,7 +967,7 @@ const EmailTemplates = () => {
                                 transition: "all 0.2s",
                               }}
                               onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#007bff")
+                                (e.target.style.backgroundColor = "#007bff1a")
                               }
                               onMouseOut={(e) =>
                                 (e.target.style.backgroundColor = "transparent")
@@ -992,7 +992,7 @@ const EmailTemplates = () => {
                                 transition: "all 0.2s",
                               }}
                               onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#22c9e21a")
+                                (e.target.style.backgroundColor = "#17a2b81a")
                               }
                               onMouseOut={(e) =>
                                 (e.target.style.backgroundColor = "transparent")
@@ -1107,7 +1107,7 @@ const EmailTemplates = () => {
           className="modal-backdrop"
           style={{
             position: "fixed",
-            top: "5%",
+            top: 0,
             left: 0,
             right: 0,
             bottom: 0,
@@ -1152,7 +1152,7 @@ const EmailTemplates = () => {
                     style={{
                       display: "block",
                       fontSize: "1rem",
-                      // color: "#6c757d",
+                      color: "#6c757d",
                       marginTop: "4px",
                       fontWeight: "normal",
                     }}
@@ -1213,7 +1213,7 @@ const EmailTemplates = () => {
                       className="form-group"
                       style={{ marginBottom: "1rem" }}
                     >
-                      <label className="text-muted"
+                      <label
                         style={{
                           display: "block",
                           marginBottom: "0.5rem",
@@ -1260,14 +1260,14 @@ const EmailTemplates = () => {
                       className="form-group"
                       style={{ marginBottom: "1rem" }}
                     >
-                      <label className="text-muted"
+                      <label
                         style={{
                           display: "block",
                           marginBottom: "0.5rem",
                           fontWeight: "bold",
                         }}
                       >
-                        Template Type
+                        Template Type *
                       </label>
                       <select
                         className="form-control"
@@ -1315,7 +1315,7 @@ const EmailTemplates = () => {
 
                 {/* Subject */}
                 <div className="form-group" style={{ marginBottom: "1rem" }}>
-                  <label className="text-muted"
+                  <label
                     style={{
                       display: "block",
                       marginBottom: "0.5rem",
@@ -1350,7 +1350,7 @@ const EmailTemplates = () => {
 
                 {/* Description */}
                 <div className="form-group" style={{ marginBottom: "1rem" }}>
-                  <label className="text-muted"
+                  <label
                     style={{
                       display: "block",
                       marginBottom: "0.5rem",
@@ -1386,15 +1386,7 @@ const EmailTemplates = () => {
 
                 {/* Body */}
                 <div className="form-group" style={{ marginBottom: "1rem" }}>
-                  <label className="text-muted"
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Email Body *
-                  </label>
+                  <label>Email Body (HTML) *</label>
                   <textarea
                     name="body"
                     className="form-control"
@@ -1403,7 +1395,7 @@ const EmailTemplates = () => {
                       padding: "12px",
                       border: "1px solid #ddd",
                       borderRadius: "4px",
-                      minHeight: "200px",
+                      minHeight: "300px",
                       fontFamily: "monospace",
                       fontSize: "14px",
                       resize: "vertical",
@@ -1411,22 +1403,20 @@ const EmailTemplates = () => {
                     }}
                     value={currentTemplate.body}
                     onChange={(e) => {
-                      debugLog("bodyChange", {
-                        valueLength: e.target.value.length,
-                      });
                       setCurrentTemplate({
                         ...currentTemplate,
                         body: e.target.value,
                       });
                     }}
-                    rows={10}
+                    rows={15}
                     required
                     disabled={loading}
-                    placeholder="Enter your email template body here. Use variables like {userName}, {companyName}, etc."
+                    placeholder={`Enter your email template body in HTML format. You can use variables like {userName}, {companyName}, etc.`}
                   />
 
+
                   {/* Variables Section */}
-                  <div className="variables mt-3 text-muted" style={{ marginTop: "1rem" }}>
+                  <div className="variables mt-3" style={{ marginTop: "1rem" }}>
                     <p
                       style={{
                         marginBottom: "0.5rem",
@@ -1489,7 +1479,7 @@ const EmailTemplates = () => {
                 </div>
 
                 {/* Active Status */}
-                {/* <div
+                <div
                   className="form-group form-check"
                   style={{
                     marginBottom: "1.5rem",
@@ -1497,7 +1487,7 @@ const EmailTemplates = () => {
                     alignItems: "center",
                   }}
                 >
-                  <input
+                  {/* <input
                     type="checkbox"
                     className="form-check-input"
                     style={{
@@ -1516,8 +1506,8 @@ const EmailTemplates = () => {
                       });
                     }}
                     disabled={loading}
-                  />
-                  <label
+                  />     */}
+                  {/* <label
                     className="form-check-label"
                     htmlFor="isActive"
                     style={{
@@ -1527,8 +1517,8 @@ const EmailTemplates = () => {
                     }}
                   >
                     ✅ Active Template
-                  </label>
-                </div> */}
+                  </label> */}
+                </div>
 
                 {/* Form Actions */}
                 <div
@@ -1539,7 +1529,7 @@ const EmailTemplates = () => {
                     alignItems: "center",
                     justifyContent: "flex-end",
                     borderTop: "1px solid #eee",
-                    // paddingTop: "1.5rem",
+                    paddingTop: "1.5rem",
                   }}
                 >
                   <button
@@ -1620,7 +1610,7 @@ const EmailTemplates = () => {
           className="modal-backdrop"
           style={{
             position: "fixed",
-            top: '5%',
+            top: 0,
             left: 0,
             right: 0,
             bottom: 0,
@@ -1695,8 +1685,7 @@ const EmailTemplates = () => {
                 <div
                   style={{
                     padding: "12px",
-                    color: "var(--text-muted)",
-                    backgroundColor: "var(--dark-bg)",  
+                    backgroundColor: "#f8f9fa",
                     border: "1px solid #dee2e6",
                     borderRadius: "4px",
                     fontSize: "14px",
@@ -1720,67 +1709,63 @@ const EmailTemplates = () => {
                 <div
                   style={{
                     padding: "1rem",
-                    color: "var(--text-muted)",
-                    backgroundColor: "var(--dark-bg)", 
+                    backgroundColor: "#f8f9fa",
                     border: "1px solid #dee2e6",
                     borderRadius: "4px",
-                    whiteSpace: "pre-wrap",
-                    fontFamily: "monospace",
-                    fontSize: "13px",
-                    lineHeight: "1.5",
                     maxHeight: "400px",
                     overflow: "auto",
                   }}
-                >
-                  {previewTemplate.body}
-                </div>
+                  dangerouslySetInnerHTML={{ __html: previewTemplate.body }}
+                />
               </div>
-
-              {previewTemplate.variables &&
-                previewTemplate.variables.length > 0 && (
-                  <div>
-                    <strong
-                      style={{
-                        display: "block",
-                        marginBottom: "0.5rem",
-                        color: "#495057",
-                      }}
-                    >
-                      🔤 Variables:
-                    </strong>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                        marginTop: "0.5rem",
-                      }}
-                    >
-                      {previewTemplate.variables.map((v) => (
-                        <span
-                          key={v}
-                          style={{
-                            display: "inline-block",
-                            padding: "6px 10px",
-                            backgroundColor: "var(--dark-bg)",
-                            border: "1px solid #ced4da",
-                            borderRadius: "4px",
-                            fontSize: "0.75rem",
-                            fontFamily: "monospace",
-                            color: "#e83e8c",
-                          }}
-                        >
-                          {`{${v}}`}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
             </div>
+
+            {previewTemplate.variables &&
+              previewTemplate.variables.length > 0 && (
+                <div>
+                  <strong
+                    style={{
+                      display: "block",
+                      marginBottom: "0.5rem",
+                      color: "#495057",
+                    }}
+                  >
+                    🔤 Variables:
+                  </strong>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      marginTop: "0.5rem",
+                    }}
+                  >
+                    {previewTemplate.variables.map((v) => (
+                      <span
+                        key={v}
+                        style={{
+                          display: "inline-block",
+                          padding: "6px 10px",
+                          backgroundColor: "#e9ecef",
+                          border: "1px solid #ced4da",
+                          borderRadius: "4px",
+                          fontSize: "0.75rem",
+                          fontFamily: "monospace",
+                          color: "#e83e8c",
+                        }}
+                      >
+                        {`{${v}}`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
-      )}
-    </div>
+
+      )
+      }
+    </div >
   );
 };
 
