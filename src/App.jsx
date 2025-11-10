@@ -32,6 +32,8 @@ import SurveyDetail from "./pages/Surveys/SurveyDetail"
 import SurveyResponses from "./pages/Surveys/SurveyResponses"
 import SurveyAnalytics from "./pages/Surveys/SurveyAnalytics"
 import SurveyScheduling from "./pages/Surveys/SurveyScheduling"
+import SurveySchedule from "./pages/Surveys/SurveySchedule"
+import TargetAudienceSelection from "./pages/Surveys/TargetAudienceSelection"
 import SurveyTemplates from "./pages/Surveys/SurveyTemplates"
 import SurveyCustomization from "./pages/Surveys/SurveyCustomization"
 import SurveySharing from "./pages/Surveys/SurveySharing"
@@ -151,6 +153,8 @@ function App() {
               <Route path="surveys/customize/:id" element={<SurveyCustomization />} />
               <Route path="surveys/share/:id" element={<SurveySharing />} />
               <Route path="surveys/scheduling" element={<SurveyScheduling />} />
+              <Route path="surveys/:surveyId/target-audience" element={<TargetAudienceSelection />} />
+              <Route path="surveys/:surveyId/schedule" element={<SurveySchedule />} />
               <Route path="surveys/templates" element={<SurveyTemplates />} />
               <Route path="surveys/templates/create" element={<SurveyBuilder />} />
               <Route path="surveys/takesurvey/:id" element={<TakeSurvey />} />

@@ -1,3 +1,4 @@
+// src/pages/Surveys/SurveyBuilder.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import {
@@ -18,7 +19,8 @@ import {
   MdAccountBalance, MdShoppingCart, MdLocationCity,
   MdConstruction, MdDirectionsCar, MdComputer,
   MdOutlineAccessTime , MdEvent, MdBarChart, MdAlternateEmail, MdImage,
-  Md123, MdQuestionAnswer,
+  Md123, MdQuestionAnswer, MdPeople, MdGroup, MdPublic, MdHandshake, 
+  MdSchedule, MdArrowForward, MdArrowBack,
 } from 'react-icons/md';
 import {
   FaUsers, FaClock, FaLanguage, FaMagic, FaRocket,
@@ -103,6 +105,18 @@ const SurveyBuilder = ({ darkMode }) => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Multi-step Wizard States
+  const [currentStep, setCurrentStep] = useState(1);
+  const [targetAudience, setTargetAudience] = useState([]);
+  const [publishSettings, setPublishSettings] = useState({
+    publishNow: true,
+    scheduleDate: '',
+    scheduleTime: '',
+    expiryDate: '',
+    maxResponses: '',
+    notificationEmails: []
+  });
 
   // AI Workflow States
   const [surveyMode, setSurveyMode] = useState('user-defined');
@@ -318,6 +332,59 @@ const SurveyBuilder = ({ darkMode }) => {
     { id: 'technology', name: 'Technology & Digital', icon: MdComputer }
   ];
 
+  // Target Audience Types
+  const audienceTypes = [
+    { 
+      id: 'employees', 
+      name: 'Employees', 
+      description: 'Internal staff and team members',
+      icon: MdPeople,
+      color: 'var(--bs-primary)'
+    },
+    { 
+      id: 'customers', 
+      name: 'Customers', 
+      description: 'Existing and potential customers',
+      icon: MdGroup,
+      color: 'var(--bs-success)'
+    },
+    { 
+      id: 'public', 
+      name: 'General Public', 
+      description: 'Open to anyone with the survey link',
+      icon: MdPublic,
+      color: 'var(--bs-info)'
+    },
+    { 
+      id: 'vendors', 
+      name: 'Vendors/Partners', 
+      description: 'Business partners and suppliers',
+      icon: MdHandshake,
+      color: 'var(--bs-warning)'
+    },
+    { 
+      id: 'students', 
+      name: 'Students', 
+      description: 'Educational institution students',
+      icon: MdSchool,
+      color: 'var(--bs-purple)'
+    },
+    { 
+      id: 'guests', 
+      name: 'Guests/Visitors', 
+      description: 'Hotel guests, event attendees, etc.',
+      icon: MdHotel,
+      color: 'var(--bs-cyan)'
+    }
+  ];
+
+  // Step configuration
+  const steps = [
+    { id: 1, title: 'Survey Details', description: 'Basic information and questions' },
+    { id: 2, title: 'Target Audience', description: 'Who will take this survey' },
+    { id: 3, title: 'Publish & Schedule', description: 'When and how to deploy' }
+  ];
+
   // ✅ FIXED: Debug useEffect with correct dependencies
   useEffect(() => {
     console.log("🔍 SurveyBuilder Debug Info:");
@@ -460,6 +527,7 @@ const SurveyBuilder = ({ darkMode }) => {
   };
 
   // ✅ FIXED: Fetch existing survey
+  // This function loads a saved survey (including drafts) and restores all 3 steps' data
   const fetchExistingSurvey = async () => {
     try {
       setLoading(true);
@@ -471,6 +539,7 @@ const SurveyBuilder = ({ darkMode }) => {
       if (response.data) {
         const surveyData = response.data.survey || response.data;
 
+        // STEP 1: Restore Survey Form Data
         // Transform backend data to frontend format
         setSurvey({
           title: surveyData.title || '',
@@ -497,6 +566,7 @@ const SurveyBuilder = ({ darkMode }) => {
           }
         });
 
+        // Restore questions
         const transformedQuestions = surveyData.questions?.map((q, index) => ({
           id: q.id || `q${Date.now() + index}`,
           type: mapQuestionTypeFromBackend(q.type),
@@ -510,6 +580,33 @@ const SurveyBuilder = ({ darkMode }) => {
         })) || [];
 
         setQuestions(transformedQuestions);
+
+        // STEP 2: Restore Target Audience Data
+        // If target audience was previously saved, restore it
+        if (surveyData.targetAudience && Array.isArray(surveyData.targetAudience)) {
+          setTargetAudience(surveyData.targetAudience);
+          console.log('✅ Restored target audience:', surveyData.targetAudience);
+        }
+
+        // STEP 3: Restore Schedule/Publish Settings
+        // If publish settings were previously saved, restore them
+        if (surveyData.publishSettings) {
+          setPublishSettings({
+            publishNow: surveyData.publishSettings.publishNow !== false,
+            scheduleDate: surveyData.publishSettings.scheduleDate || '',
+            scheduleTime: surveyData.publishSettings.scheduleTime || '',
+            expiryDate: surveyData.publishSettings.expiryDate || '',
+            maxResponses: surveyData.publishSettings.maxResponses || '',
+            notificationEmails: surveyData.publishSettings.notificationEmails || []
+          });
+          console.log('✅ Restored publish settings:', surveyData.publishSettings);
+        }
+
+        // Restore the step user was on (if saved)
+        if (surveyData.currentStep && surveyData.status === 'draft') {
+          setCurrentStep(surveyData.currentStep);
+          console.log('✅ Restored to step:', surveyData.currentStep);
+        }
       }
 
     } catch (err) {
@@ -960,7 +1057,7 @@ const SurveyBuilder = ({ darkMode }) => {
           response = await axiosInstance.put(`/surveys/${surveyId}`, surveyData);
           successMessage = `Survey ${publish ? 'published' : 'updated'} successfully!`;
         } else {
-          const endpoint = publish ? '/surveys/create' : '/surveys/save-draft';
+          const endpoint = publish ? '/surveys/create/' : '/surveys/save-draft';
           response = await axiosInstance.post(endpoint, surveyData);
           successMessage = `Survey ${publish ? 'published' : 'saved as draft'} successfully!`;
         }
@@ -1006,6 +1103,8 @@ const SurveyBuilder = ({ darkMode }) => {
   };
 
   // ✅ FIXED: Save as Draft Function
+  // This function saves the current progress of all 3 steps as a draft
+  // Includes: Survey Form + Target Audience + Schedule settings
   const saveAsDraft = async () => {
     const result = await Swal.fire({
       title: 'Save as Draft!',
@@ -1020,10 +1119,12 @@ const SurveyBuilder = ({ darkMode }) => {
     if (result.isConfirmed) {
       setSaving(true);
       try {
+        // Validate minimum requirements for draft save
         if (!survey.title.trim()) {
           throw new Error('Survey title is required');
         }
 
+        // STEP 1: Prepare Survey Form Data
         const surveyData = {
           title: survey.title,
           description: survey.description,
@@ -1044,15 +1145,34 @@ const SurveyBuilder = ({ darkMode }) => {
             isPasswordProtected: false,
             password: ''
           },
-          status: 'draft'
+          
+          // STEP 2: Include Target Audience Data
+          // Save selected audience types so they can be restored when editing
+          targetAudience: targetAudience, // Array of selected audience IDs
+          
+          // STEP 3: Include Schedule/Publish Settings
+          // Save publish preferences so user doesn't have to reconfigure
+          publishSettings: {
+            publishNow: publishSettings.publishNow,
+            scheduleDate: publishSettings.scheduleDate || null,
+            scheduleTime: publishSettings.scheduleTime || null,
+            expiryDate: publishSettings.expiryDate || null,
+            maxResponses: publishSettings.maxResponses || null
+          },
+          
+          // Mark as draft so backend knows this is incomplete
+          status: 'draft',
+          
+          // Save current step for restoration
+          currentStep: currentStep
         };
 
         let response;
         if (isEditMode && surveyId) {
-          // ✅ CORRECTED: Use /api prefix
+          // Updating existing draft
           response = await axiosInstance.put(`/surveys/${surveyId}`, surveyData);
         } else {
-          // ✅ CORRECTED: Use /api prefix  
+          // Creating new draft
           response = await axiosInstance.post('/surveys/save-draft', surveyData);
         }
 
@@ -1119,11 +1239,34 @@ const SurveyBuilder = ({ darkMode }) => {
         {/* 1. CompanyAdmin: Create New Survey */}
         {user?.role === 'companyAdmin' && isCreateMode && !isTemplateMode && (
           <>
-            <Button variant="outline-warning" onClick={() => saveSurvey(false)} disabled={saving} size="sm" className="d-flex align-items-center">
+            <Button 
+              variant="outline-warning" 
+              onClick={() => saveAsDraft()} 
+              disabled={saving || !survey.title.trim()} 
+              size="sm" 
+              className="d-flex align-items-center"
+            >
               <MdSave className="me-2" /> Save Draft
             </Button>
-            <Button variant="success" onClick={() => saveSurvey(true)} disabled={saving} size="sm" className="d-flex align-items-center">
-              <MdPublish className="me-2" /> Publish
+            
+            <Button 
+              variant="success" 
+              onClick={() => {
+                // Navigate to next step instead of direct publish
+                if (currentStep === 1 && canProceedToNextStep()) {
+                  nextStep();
+                } else if (currentStep >= 3) {
+                  handleStepWizardComplete();
+                } else {
+                  nextStep();
+                }
+              }} 
+              disabled={saving || !canProceedToNextStep()} 
+              size="sm" 
+              className="d-flex align-items-center"
+            >
+              <MdPublish className="me-2" /> 
+              {currentStep < 3 ? 'Next Step' : 'Publish Survey'}
             </Button>
           </>
         )}
@@ -1131,15 +1274,33 @@ const SurveyBuilder = ({ darkMode }) => {
         {/* 2. Admin: Create New Template */}
         {isTemplateCreateMode && (
           <>
-            <Button variant="outline-warning"
-              onClick={() => saveSurvey(false)} disabled={saving} size="sm"
-              className="d-flex align-items-center">
+            <Button 
+              variant="outline-warning"
+              onClick={() => saveAsDraft()} 
+              disabled={saving || !survey.title.trim()} 
+              size="sm"
+              className="d-flex align-items-center"
+            >
               <MdSave className="me-2" /> Save Template Draft
             </Button>
-            <Button variant="success"
-              onClick={() => saveSurvey(true)} disabled={saving} size="sm"
-              className="d-flex align-items-center">
-              <MdPublish className="me-2" /> Publish Template
+            <Button 
+              variant="success"
+              onClick={() => {
+                // For template creation, also use step wizard
+                if (currentStep === 1 && canProceedToNextStep()) {
+                  nextStep();
+                } else if (currentStep >= 3) {
+                  handleStepWizardComplete();
+                } else {
+                  nextStep();
+                }
+              }} 
+              disabled={saving || !canProceedToNextStep()} 
+              size="sm"
+              className="d-flex align-items-center"
+            >
+              <MdArrowForward className="me-2" /> 
+              {currentStep < 3 ? 'Next Step' : 'Complete Template'}
             </Button>
           </>
         )}
@@ -1216,17 +1377,45 @@ const SurveyBuilder = ({ darkMode }) => {
   };
 
   // Get completion percentage
+  // This function calculates the overall progress across all 3 steps of survey creation
   const getCompletionPercentage = () => {
-    let completed = 0;
-    let total = 5;
+    let stepCompletions = {
+      step1: 0, // Survey Form (title, description, questions)
+      step2: 0, // Target Audience selection
+      step3: 0  // Schedule/Publish settings
+    };
 
-    if (survey.title.trim()) completed++;
-    if (survey.description.trim()) completed++;
-    if (questions.length > 0) completed++;
-    if (questions.some(q => q.required)) completed++;
-    if (survey.thankYouMessage.trim()) completed++;
+    // STEP 1: Survey Form Completion (33.33% total)
+    // Check if basic survey information is complete
+    let step1Progress = 0;
+    let step1Total = 3;
+    
+    if (survey.title.trim()) step1Progress++; // Title is required
+    if (survey.description.trim()) step1Progress++; // Description is required
+    if (questions.length > 0) step1Progress++; // At least one question required
+    
+    stepCompletions.step1 = (step1Progress / step1Total) * 33.33;
 
-    return Math.round((completed / total) * 100);
+    // STEP 2: Target Audience Completion (33.33% total)
+    // Check if at least one target audience is selected
+    if (targetAudience.length > 0) {
+      stepCompletions.step2 = 33.33;
+    }
+
+    // STEP 3: Schedule/Publish Settings Completion (33.33% total)
+    // Check if publish settings are configured
+    // If publishNow is true, step is complete
+    // If scheduled, check if date and time are set
+    if (publishSettings.publishNow) {
+      stepCompletions.step3 = 33.33;
+    } else if (publishSettings.scheduleDate && publishSettings.scheduleTime) {
+      stepCompletions.step3 = 33.33;
+    }
+
+    // Calculate total completion percentage
+    const totalCompletion = stepCompletions.step1 + stepCompletions.step2 + stepCompletions.step3;
+    
+    return Math.round(totalCompletion);
   };
 
   // Other AI functions
@@ -1240,6 +1429,235 @@ const SurveyBuilder = ({ darkMode }) => {
 
   const translateSurvey = async (targetLanguage) => {
     // Implementation remains same as before
+  };
+
+  // Step Navigation Functions
+  const nextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const previousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Check if user can proceed to next step based on current step requirements
+  const canProceedToNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        // STEP 1: Survey form must have title and at least 1 question
+        return survey.title.trim() && questions.length > 0;
+      case 2:
+        // STEP 2: At least one target audience must be selected
+        return targetAudience.length > 0;
+      case 3:
+        // STEP 3: Publish settings must be configured
+        // Either publish now OR schedule with date/time
+        return publishSettings.publishNow || 
+               (publishSettings.scheduleDate && publishSettings.scheduleTime);
+      default:
+        return false;
+    }
+  };
+
+  // Check if all 3 steps are completed (for showing "Publish" vs "Complete" button)
+  const areAllStepsComplete = () => {
+    return survey.title.trim() && 
+           questions.length > 0 && 
+           targetAudience.length > 0 &&
+           (publishSettings.publishNow || (publishSettings.scheduleDate && publishSettings.scheduleTime));
+  };
+
+  // Target Audience Functions
+  const toggleAudience = (audienceId) => {
+    setTargetAudience(prev => 
+      prev.includes(audienceId)
+        ? prev.filter(id => id !== audienceId)
+        : [...prev, audienceId]
+    );
+  };
+
+  // Handle Step Wizard Completion - Final Publish
+  // This function is called when all 3 steps are complete and user clicks "Publish Survey"
+  // It sends the complete survey data (form + audience + schedule) to the backend
+  const handleStepWizardComplete = async () => {
+    // Validate all steps before publishing
+    if (!survey.title.trim()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing Information',
+        text: 'Survey title is required'
+      });
+      return;
+    }
+
+    if (questions.length === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing Information',
+        text: 'Please add at least one question'
+      });
+      return;
+    }
+
+    if (targetAudience.length === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing Information',
+        text: 'Please select at least one target audience'
+      });
+      return;
+    }
+
+    // Confirm publication
+    const result = await Swal.fire({
+      title: 'Publish Survey?',
+      text: `Your survey "${survey.title}" will be published and made available to selected audiences.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: 'var(--bs-success)',
+      cancelButtonColor: 'var(--bs-secondary)',
+      confirmButtonText: 'Yes, Publish Now!'
+    });
+
+    if (!result.isConfirmed) return;
+
+    setSaving(true);
+    try {
+      // BACKEND API CALL: Create/Publish Survey
+      // This combines all 3 steps into one complete survey object
+      const completeData = {
+        // STEP 1: Survey Form Data
+        title: survey.title,
+        description: survey.description,
+        category: survey.category,
+        language: survey.language,
+        themeColor: survey.branding?.primaryColor || 'var(--bs-primary)',
+        
+        // Questions array
+        questions: questions.map((q, index) => ({
+          id: q.id?.toString() || (index + 1).toString(),
+          questionText: q.title,
+          type: mapQuestionTypeToBackend(q.type),
+          options: q.options || [],
+          required: q.required || false,
+          description: q.description || '',
+          settings: q.settings || {},
+          logicRules: q.logicRules || [],
+          translations: q.translations || {}
+        })),
+
+        // Survey settings
+        settings: {
+          isPublic: survey.isPublic,
+          isAnonymous: survey.allowAnonymous,
+          collectEmail: survey.collectEmail,
+          multipleResponses: survey.multipleResponses,
+          isPasswordProtected: false,
+          password: ''
+        },
+
+        // Thank you page
+        thankYouPage: {
+          message: survey.thankYouMessage,
+          redirectUrl: survey.redirectUrl || null
+        },
+
+        // Branding
+        branding: survey.branding,
+
+        // STEP 2: Target Audience Data
+        // Include selected audience types
+        targetAudience: targetAudience,
+
+        // STEP 3: Schedule/Publish Settings
+        // Include when and how to publish
+        publishSettings: {
+          publishNow: publishSettings.publishNow,
+          scheduleDate: publishSettings.scheduleDate || null,
+          scheduleTime: publishSettings.scheduleTime || null,
+          expiryDate: publishSettings.expiryDate || null,
+          maxResponses: publishSettings.maxResponses ? parseInt(publishSettings.maxResponses) : null
+        },
+
+        // Set status as published (not draft)
+        status: publishSettings.publishNow ? 'active' : 'scheduled',
+
+        // Metadata
+        metadata: {
+          createdAt: new Date().toISOString(),
+          completedSteps: 3,
+          totalQuestions: questions.length,
+          estimatedCompletionTime: `${Math.ceil(questions.length * 1.5)} minutes`
+        }
+      };
+
+      console.log('📤 Publishing survey to backend:', completeData);
+
+      // Call the backend API to create/publish the survey
+      let response;
+      if (isEditMode && surveyId) {
+        // Update existing survey
+        response = await axiosInstance.put(`/surveys/${surveyId}`, completeData);
+      } else {
+        // Create new survey (this is the main publish endpoint)
+        response = await axiosInstance.post('/surveys/create/', completeData);
+      }
+
+      if (response.data) {
+        console.log('✅ Survey published successfully:', response.data);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Survey Published!',
+          html: `
+            <div class="text-start">
+              <p><strong>${survey.title}</strong> has been published successfully!</p>
+              <ul class="text-muted small">
+                <li>📊 ${questions.length} questions</li>
+                <li>👥 ${targetAudience.length} target audience(s)</li>
+                <li>📅 ${publishSettings.publishNow ? 'Published immediately' : 'Scheduled for ' + publishSettings.scheduleDate}</li>
+              </ul>
+            </div>
+          `,
+          timer: 3000,
+          showConfirmButton: true,
+          confirmButtonText: 'View Surveys'
+        }).then(() => {
+          navigate('/app/surveys');
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error publishing survey:', error);
+
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to publish survey';
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Publication Failed',
+        text: errorMessage,
+        confirmButtonColor: '#dc3545'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Render Step Content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return renderSurveyDetailsStep();
+      case 2:
+        return renderTargetAudienceStep();
+      case 3:
+        return renderPublishScheduleStep();
+      default:
+        return renderSurveyDetailsStep();
+    }
   };
 
   if (loading) {
@@ -1260,6 +1678,551 @@ const SurveyBuilder = ({ darkMode }) => {
       </Container>
     );
   }
+
+  // Step Component Renderers
+  const renderSurveyDetailsStep = () => (
+    <div>      
+      <Row>
+        {/* Question Types Sidebar */}
+        <Col lg={3}>
+          <Card className="sticky-top" style={{ top: '1rem' }}>
+            <Card.Header className="d-flex align-items-center">
+              <MdAdd className="me-2" />
+              <strong>Add Questions</strong>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <Accordion defaultActiveKey={['0']} alwaysOpen>
+                {['choice', 'rating', 'text', 'input', 'advanced'].map((category, idx) => (
+                  <Accordion.Item eventKey={idx.toString()} key={category}>
+                    <Accordion.Header>
+                      <span className="text-capitalize fw-semibold">{category} Questions</span>
+                    </Accordion.Header>
+                    <Accordion.Body className="p-2">
+                      {questionTypes
+                        .filter(qt => qt.category === category)
+                        .map(questionType => (
+                          <Card
+                            key={questionType.id}
+                            className="question-type-card mb-2 border-0 cursor-pointer"
+                            onClick={() => addQuestion(questionType.id)}
+                          >
+                            <Card.Body className="p-3">
+                              <div className="d-flex align-items-center mb-2">
+                                <questionType.icon
+                                  size={20}
+                                  style={{ color: questionType.color }}
+                                  className="me-2"
+                                />
+                                <strong className="small">{questionType.name}</strong>
+                              </div>
+                              <p className="text-muted small mb-1">{questionType.description}</p>
+                              <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                {questionType.example}
+                              </div>
+                            </Card.Body>
+                          </Card>
+                        ))}
+                    </Accordion.Body>
+                  </Accordion.Item>
+                ))}
+              </Accordion>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* Main Content */}
+        <Col lg={9}>
+          {/* Survey Information */}
+          <Card className="mb-4">
+            <Card.Header className="d-flex align-items-center">
+              <MdSettings className="me-2" />
+              <strong>Survey Information</strong>
+            </Card.Header>
+            <Card.Body>
+              <Row>
+                <Col md={8}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Survey Title *</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={survey.title}
+                      onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
+                      placeholder="Enter survey title..."
+                      className="form-control-lg"
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Description</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      value={survey.description}
+                      onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
+                      placeholder="Describe the purpose of this survey..."
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={4}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Category</Form.Label>
+                    <Form.Select
+                      value={survey.category}
+                      onChange={(e) => setSurvey({ ...survey, category: e.target.value })}
+                    >
+                      <option value="">Select Category</option>
+                      {industries.map(industry => (
+                        <option key={industry.id} value={industry.id}>
+                          {industry.name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Languages</Form.Label>
+                    <div className="d-flex gap-2 flex-wrap">
+                      {['English', 'Arabic'].map(lang => (
+                        <Form.Check
+                          key={lang}
+                          type="checkbox"
+                          id={`lang-${lang}`}
+                          label={lang}
+                          checked={survey.language.includes(lang)}
+                          onChange={(e) => {
+                            const newLanguages = e.target.checked
+                              ? [...survey.language, lang]
+                              : survey.language.filter(l => l !== lang);
+                            setSurvey({ ...survey, language: newLanguages });
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </Form.Group>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+
+          {/* Questions Section */}
+          <Card>
+            <Card.Header className="d-flex align-items-center justify-content-between">
+              <div className="d-flex align-items-center">
+                <MdViewList className="me-2" />
+                <strong>Questions ({questions.length})</strong>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                {questions.length > 0 && (
+                  <>
+                    <Button
+                      variant="outline-info"
+                      size="sm"
+                      onClick={suggestNextQuestion}
+                      disabled={isGeneratingAI}
+                      className="d-flex align-items-center"
+                    >
+                      <MdAutoAwesome className="me-1" />
+                      {isGeneratingAI ? <Spinner size="sm" /> : 'Suggest'}
+                    </Button>
+
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      onClick={optimizeSurvey}
+                      disabled={isGeneratingAI}
+                      className="d-flex align-items-center"
+                    >
+                      <MdTune className="me-1" />
+                      {isGeneratingAI ? <Spinner size="sm" /> : 'Optimize'}
+                    </Button>
+                  </>
+                )}
+                {questions.length > 0 && (
+                  <small className="text-muted">Drag to reorder</small>
+                )}
+              </div>
+            </Card.Header>
+            <Card.Body className="p-0">
+              {questions.length === 0 ? (
+                <div className="text-center py-5">
+                  <MdAdd size={48} className="text-muted mb-3" />
+                  <h5>No Questions Yet</h5>
+                  <p className="text-muted mb-4">
+                    Add questions from the sidebar or use AI to generate a complete survey
+                  </p>
+                  <Button
+                    variant="outline-primary"
+                    onClick={() => setShowAIModal(true)}
+                    className="d-flex align-items-center mx-auto"
+                  >
+                    <MdAutoAwesome className="me-2" />
+                    Generate with AI
+                  </Button>
+                </div>
+              ) : (
+                <DragDropContext onDragEnd={handleOnDragEnd}>
+                  <Droppable droppableId="questions">
+                    {(provided) => (
+                      <div {...provided.droppableProps} ref={provided.innerRef}>
+                        {questions.map((question, index) => (
+                          <Draggable
+                            key={question.id}
+                            draggableId={question.id.toString()}
+                            index={index}
+                          >
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`question-item p-3 border-bottom ${
+                                  snapshot.isDragging ? 'dragging' : ''
+                                }`}
+                              >
+                                <div className="d-flex align-items-start">
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="drag-handle me-3 mt-1"
+                                  >
+                                    <MdDragHandle className="text-muted" />
+                                  </div>
+
+                                  <div className="flex-grow-1">
+                                    <div className="d-flex align-items-center mb-2">
+                                      <Badge bg="light" text="dark" className="me-2">
+                                        Q{index + 1}
+                                      </Badge>
+                                      {questionTypes.find(qt => qt.id === question.type) && (
+                                        <>
+                                          {React.createElement(
+                                            questionTypes.find(qt => qt.id === question.type).icon,
+                                            {
+                                              size: 16,
+                                              className: 'me-2',
+                                              style: {
+                                                color: questionTypes.find(qt => qt.id === question.type).color
+                                              }
+                                            }
+                                          )}
+                                          <small className="text-muted me-3">
+                                            {questionTypes.find(qt => qt.id === question.type).name}
+                                          </small>
+                                        </>
+                                      )}
+                                      {question.required && (
+                                        <Badge bg="danger" className="me-2">Required</Badge>
+                                      )}
+                                    </div>
+
+                                    <h6 className="mb-1">{question.title}</h6>
+                                    {question.description && (
+                                      <p className="text-muted small mb-2">{question.description}</p>
+                                    )}
+
+                                    {question.options.length > 0 && (
+                                      <div className="mt-2">
+                                        {question.type === 'single_choice' || question.type === 'multiple_choice' ? (
+                                          <div className="d-flex gap-2 flex-wrap">
+                                            {question.options.slice(0, 3).map((option, idx) => (
+                                              <Badge key={idx} bg="light" text="dark" className="border">
+                                                {option}
+                                              </Badge>
+                                            ))}
+                                            {question.options.length > 3 && (
+                                              <Badge bg="light" text="muted">
+                                                +{question.options.length - 3} more
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="d-flex gap-1 ms-3">
+                                    <Button
+                                      variant="outline-primary"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedQuestion(question);
+                                        setQuestionModalMode('edit');
+                                        setShowQuestionModal(true);
+                                      }}
+                                    >
+                                      <MdEdit size={14} />
+                                    </Button>
+
+                                    <Button
+                                      variant="outline-secondary"
+                                      size="sm"
+                                      onClick={() => duplicateQuestion(question)}
+                                    >
+                                      <MdContentCopy size={14} />
+                                    </Button>
+
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => deleteQuestion(question.id)}
+                                    >
+                                      <MdDelete size={14} />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+
+  const renderTargetAudienceStep = () => (
+    <div>
+      <Card>
+        <Card.Header>
+          <div className="d-flex align-items-center">
+            <MdGroup className="me-2" />
+            <strong>Select Target Audience</strong>
+          </div>
+          <p className="text-muted small mb-0 mt-2">
+            Choose who will be able to access and respond to this survey. You can select multiple audience types.
+          </p>
+        </Card.Header>
+        <Card.Body>
+          <Row>
+            {audienceTypes.map((audience) => (
+              <Col md={6} lg={4} key={audience.id} className="mb-4">
+                <Card 
+                  className={`h-100 cursor-pointer border-2 ${
+                    targetAudience.includes(audience.id) 
+                      ? 'border-primary bg-primary bg-opacity-10' 
+                      : 'border-light'
+                  }`}
+                  onClick={() => toggleAudience(audience.id)}
+                >
+                  <Card.Body className="text-center">
+                    <div className="mb-3">
+                      <audience.icon 
+                        size={48} 
+                        style={{ color: audience.color }}
+                      />
+                    </div>
+                    <h6 className="fw-bold mb-2">{audience.name}</h6>
+                    <p className="text-muted small mb-3">{audience.description}</p>
+                    <Form.Check
+                      type="checkbox"
+                      checked={targetAudience.includes(audience.id)}
+                      onChange={() => toggleAudience(audience.id)}
+                      label={`Select ${audience.name}`}
+                      className="d-flex justify-content-center"
+                    />
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+          
+          {targetAudience.length > 0 && (
+            <Alert variant="info" className="mt-4">
+              <strong>Selected Audiences:</strong>
+              <div className="mt-2">
+                {targetAudience.map(audienceId => {
+                  const audience = audienceTypes.find(a => a.id === audienceId);
+                  return (
+                    <Badge key={audienceId} bg="primary" className="me-2">
+                      {audience?.name}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </Alert>
+          )}
+        </Card.Body>
+      </Card>
+    </div>
+  );
+
+  const renderPublishScheduleStep = () => (
+    <div>
+      <Row>
+        <Col md={8}>
+          <Card className="mb-4">
+            <Card.Header>
+              <div className="d-flex align-items-center">
+                <MdSchedule className="me-2" />
+                <strong>Publishing Options</strong>
+              </div>
+            </Card.Header>
+            <Card.Body>
+              <Form.Group className="mb-4">
+                <Form.Label className="fw-semibold">When to publish this survey?</Form.Label>
+                <div className="mt-3">
+                  <Form.Check
+                    type="radio"
+                    id="publish-now"
+                    name="publishTiming"
+                    label="Publish immediately"
+                    checked={publishSettings.publishNow}
+                    onChange={() => setPublishSettings({ ...publishSettings, publishNow: true })}
+                    className="mb-2"
+                  />
+                  <Form.Check
+                    type="radio"
+                    id="schedule-later"
+                    name="publishTiming"
+                    label="Schedule for later"
+                    checked={!publishSettings.publishNow}
+                    onChange={() => setPublishSettings({ ...publishSettings, publishNow: false })}
+                  />
+                </div>
+              </Form.Group>
+
+              {!publishSettings.publishNow && (
+                <Row className="mb-4">
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Schedule Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={publishSettings.scheduleDate}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setPublishSettings({ 
+                          ...publishSettings, 
+                          scheduleDate: e.target.value 
+                        })}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Schedule Time</Form.Label>
+                      <Form.Control
+                        type="time"
+                        value={publishSettings.scheduleTime}
+                        onChange={(e) => setPublishSettings({ 
+                          ...publishSettings, 
+                          scheduleTime: e.target.value 
+                        })}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+              )}
+
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Survey Expiry Date (Optional)</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={publishSettings.expiryDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setPublishSettings({ 
+                        ...publishSettings, 
+                        expiryDate: e.target.value 
+                      })}
+                    />
+                    <Form.Text className="text-muted">
+                      Leave blank for no expiry
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Maximum Responses (Optional)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      min="1"
+                      value={publishSettings.maxResponses}
+                      onChange={(e) => setPublishSettings({ 
+                        ...publishSettings, 
+                        maxResponses: e.target.value 
+                      })}
+                      placeholder="Unlimited"
+                    />
+                    <Form.Text className="text-muted">
+                      Survey will close after reaching this number
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={4}>
+          <Card>
+            <Card.Header>
+              <strong>Survey Summary</strong>
+            </Card.Header>
+            <Card.Body>
+              <div className="mb-3">
+                <strong>Title:</strong>
+                <p className="text-muted mb-2">{survey.title || 'Untitled Survey'}</p>
+              </div>
+              
+              <div className="mb-3">
+                <strong>Questions:</strong>
+                <p className="text-muted mb-2">{questions.length} questions</p>
+              </div>
+
+              <div className="mb-3">
+                <strong>Target Audience:</strong>
+                <div className="mt-1">
+                  {targetAudience.length === 0 ? (
+                    <p className="text-muted small">No audience selected</p>
+                  ) : (
+                    targetAudience.map(audienceId => {
+                      const audience = audienceTypes.find(a => a.id === audienceId);
+                      return (
+                        <Badge key={audienceId} bg="light" text="dark" className="me-1 mb-1">
+                          {audience?.name}
+                        </Badge>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <strong>Category:</strong>
+                <p className="text-muted mb-2">
+                  {survey.category 
+                    ? industries.find(i => i.id === survey.category)?.name 
+                    : 'Not specified'
+                  }
+                </p>
+              </div>
+
+              <div className="mb-3">
+                <strong>Languages:</strong>
+                <p className="text-muted mb-2">{survey.language.join(', ')}</p>
+              </div>
+
+              <div className="mb-3">
+                <strong>Publish:</strong>
+                <p className="text-muted mb-2">
+                  {publishSettings.publishNow 
+                    ? 'Immediately' 
+                    : `${publishSettings.scheduleDate} at ${publishSettings.scheduleTime}`
+                  }
+                </p>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
 
   return (
     <Container fluid className="survey-builder">
@@ -1307,6 +2270,9 @@ const SurveyBuilder = ({ darkMode }) => {
         {showModeSelector && isCreateMode && !isTemplateMode && (
           <div className="bg-light rounded p-3 mb-3">
             <h6 className="fw-bold mb-3">Choose Creation Method</h6>
+            <p className="text-muted small mb-3">
+              Select how you'd like to create your survey. You'll be guided through a 3-step process: Survey Details → Target Audience → Publish Settings.
+            </p>
             <Row>
               <Col md={6}>
                 <Card
@@ -1375,8 +2341,109 @@ const SurveyBuilder = ({ darkMode }) => {
         </div>
       </div>
 
-      {/* Main Content with Tabs */}
-      <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-4">
+      {/* Step Wizard - Only for Create Modes */}
+      {(isCreateMode || isTemplateCreateMode) && (
+        <>
+          {/* Step Progress Indicator */}
+          <Card className="mb-4">
+            <Card.Body className="py-3">
+              <div className="d-flex align-items-center justify-content-between">
+                {steps.map((step, index) => (
+                  <div key={step.id} className="d-flex align-items-center flex-grow-1">
+                    <div className={`step-indicator ${currentStep >= step.id ? 'active' : ''}`}>
+                      <div className={`step-number ${currentStep >= step.id ? 'bg-primary text-white' : 'bg-light text-muted'}`}>
+                        {step.id}
+                      </div>
+                      <div className="step-content ms-3">
+                        <h6 className={`mb-0 ${currentStep >= step.id ? 'text-primary' : 'text-muted'}`}>
+                          {step.title}
+                        </h6>
+                        <small className="text-muted">{step.description}</small>
+                      </div>
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div className={`step-connector flex-grow-1 mx-4 ${currentStep > step.id ? 'active' : ''}`}>
+                        <div className="connector-line"></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Step Content */}
+          <div className="step-content-container">
+            {renderStepContent()}
+          </div>
+
+          {/* Step Navigation */}
+          <Card className="mt-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  {currentStep > 1 && (
+                    <Button 
+                      variant="outline-secondary" 
+                      onClick={previousStep}
+                      className="d-flex align-items-center"
+                    >
+                      <MdArrowBack className="me-2" />
+                      Back
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="text-center">
+                  <small className="text-muted">
+                    Step {currentStep} of {steps.length}
+                  </small>
+                </div>
+
+                <div>
+                  {currentStep < steps.length ? (
+                    <Button 
+                      variant="primary" 
+                      onClick={nextStep}
+                      disabled={!canProceedToNextStep()}
+                      className="d-flex align-items-center"
+                    >
+                      Next
+                      <MdArrowForward className="ms-2" />
+                    </Button>
+                  ) : (
+                    // FINAL STEP: Show "Publish Survey" button when all 3 steps are complete
+                    // This triggers the backend API call to create/publish the survey
+                    <Button 
+                      variant="success" 
+                      onClick={handleStepWizardComplete}
+                      disabled={saving || !canProceedToNextStep()}
+                      className="d-flex align-items-center"
+                    >
+                      {saving ? (
+                        <>
+                          <Spinner size="sm" className="me-2" />
+                          Publishing...
+                        </>
+                      ) : (
+                        <>
+                          <MdPublish className="me-2" />
+                          Publish Survey
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </>
+      )}
+
+      {/* Original Tabs for Edit Mode Only */}
+      {(isEditing || (!isCreateMode && !isTemplateCreateMode)) && (
+        <div className="mt-4">
+          <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-4">
         <Tab eventKey="builder" title={
           <span className="d-flex align-items-center">
             <MdEdit className="me-2" />
@@ -1847,6 +2914,8 @@ const SurveyBuilder = ({ darkMode }) => {
           </Row>
         </Tab>
       </Tabs>
+        </div>
+      )}
 
       {/* AI Assistant Modal */}
       <Modal
@@ -2337,7 +3406,7 @@ const SurveyBuilder = ({ darkMode }) => {
         </Modal.Header>
         <Modal.Body>
           <div className="survey-preview" style={{
-            backgroundColor: survey.branding.backgroundColor,
+            // backgroundColor: survey.branding.backgroundColor,
             color: survey.branding.textColor,
             padding: '2rem',
             borderRadius: '8px'
@@ -2346,12 +3415,12 @@ const SurveyBuilder = ({ darkMode }) => {
               {survey.title || 'Untitled Survey'}
             </h3>
             {survey.description && (
-              <p className="mb-4">{survey.description}</p>
+              <p className="mb-4 text">{survey.description}</p>
             )}
 
             {questions.map((question, index) => (
               <div key={question.id} className="mb-4">
-                <div className="d-flex align-items-center mb-2">
+                <div className="d-flex align-items-center mb-2 text">
                   <Badge bg="primary" className="me-2">Q{index + 1}</Badge>
                   <strong>{question.title}</strong>
                   {question.required && <span className="text-danger ms-1">*</span>}

@@ -142,7 +142,7 @@ const RealTimeResults = ({ darkMode }) => {
       </Row>
 
       <Row className="mb-4">
-        <Col lg={6}>
+        <Col lg={12}>
           <Card>
             <Card.Body>
               <Form.Group>

@@ -207,31 +207,11 @@ const SurveyList = ({ darkMode }) => {
     return () => clearTimeout(debounceTimer);
   }, [currentPage, itemsPerPage, searchTerm, filterStatus, sortField]);
 
-  // const totalPages = Math.ceil(filteredSurveys.length / itemsPerPage)
-  // const startIndex = (currentPage - 1) * itemsPerPage
-  // const currentSurveys = filteredSurveys.slice(startIndex, startIndex + itemsPerPage)
-
-  // const getStatusColor = (status) => {
-  //   switch (status.toLowerCase()) {
-  //     case 'active':
-  //       return 'var(--bs-success)';
-  //     case 'draft':
-  //       return 'var(--bs-secondary)';
-  //     case 'completed':
-  //       return 'var(--bs-primary)';
-  //     case 'paused':
-  //       return 'var(--bs-warning)';
-  //     default:
-  //       return 'var(--bs-gray)';
-  //   }
-  // };
-
   const getSortIcon = (field) => {
     if (sortField === field) return MdArrowDropUp;
     if (sortField === `-${field}`) return MdArrowDropDown;
     return MdSort;
   };
-
 
   return (
     <Container fluid className="survey-list-container">
@@ -433,18 +413,6 @@ const SurveyList = ({ darkMode }) => {
                           })}
                         </td>
                         <td className="text-end">
-                          {/* Toggle Button */}
-                          {/* <Button
-                            variant="link"
-                            className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
-                              }`}
-                            onClick={() => toggleStatus(survey._id, survey.status)}
-                            title={`${survey.status === "active" ? "Deactivate" : "Activate"
-                              } Survey`}
-                          >
-                            <MdToggleOn size={20} />
-                          </Button> */}
-
                           <Button
                             variant="link"
                             className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
@@ -473,6 +441,7 @@ const SurveyList = ({ darkMode }) => {
                           )}
 
                           {/* Analytics */}
+                          {survey.status !== "draft" && (
                           <Button
                             variant="link"
                             className="action-btn analytics me-2"
@@ -481,8 +450,9 @@ const SurveyList = ({ darkMode }) => {
                           >
                             <MdBarChart size={20} />
                           </Button>
-
+                          )}
                           {/* Distribution */}
+                          {survey.status !== "inactive" && survey.status !== "draft" && (
                           <Button
                             variant="link"
                             className="action-btn distribution me-2"
@@ -491,7 +461,7 @@ const SurveyList = ({ darkMode }) => {
                           >
                             <MdShare size={20} />
                           </Button>
-
+                          )}
                           {/* Delete Button — show only if NOT admin */}
                           {user?.role !== "admin" && (
                             <Button
@@ -515,6 +485,7 @@ const SurveyList = ({ darkMode }) => {
                           </Button>
 
                           {/* Feedback */}
+                          {survey.status !== "draft" && (
                           <Button
                             variant="link"
                             className="action-btn feedback"
@@ -523,8 +494,8 @@ const SurveyList = ({ darkMode }) => {
                           >
                             <MdFeedback size={20} />
                           </Button>
+                          )}
                         </td>
-
                       </tr>
                     ))
                   ) : (

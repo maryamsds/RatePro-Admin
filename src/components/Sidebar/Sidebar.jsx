@@ -549,9 +549,9 @@ const Sidebar = ({
         { path: "/app/surveys", name: "All Surveys", icon: <MdViewList />, roles: ["companyAdmin", "admin"], permissions: ["survey:read"] },
         { path: "/app/surveys/create", name: "Create Survey", icon: <MdAddCircleOutline />, roles: ["companyAdmin"], permissions: ["survey:create"] },
         { path: "/app/surveys/templates", name: "Survey Templates", icon: <MdDescription />, roles: ["admin", "companyAdmin"], permissions: ["survey:templates"] },
-        { path: "/app/surveys/scheduling", name: "Survey Scheduling", icon: <MdSchedule />, roles: ["companyAdmin"], permissions: ["survey:schedule"] },
-        { path: "/app/surveys/responses/", name: "Survey Responses", icon: <MdQuestionAnswer />, roles: ["companyAdmin"], permissions: ["survey:responses:view"] },
-        { path: "/app/surveys/analytics/:id", name: "Survey Analytics", icon: <MdAnalytics />, roles: ["companyAdmin"], permissions: ["survey:analytics:view"] },
+        // { path: "/app/surveys/scheduling", name: "Survey Scheduling", icon: <MdSchedule />, roles: ["companyAdmin"], permissions: ["survey:schedule"] },
+        // { path: "/app/surveys/responses/", name: "Survey Responses", icon: <MdQuestionAnswer />, roles: ["companyAdmin"], permissions: ["survey:responses:view"] },
+        // { path: "/app/surveys/analytics/:id", name: "Survey Analytics", icon: <MdAnalytics />, roles: ["companyAdmin"], permissions: ["survey:analytics:view"] },
         // { path: "/app/surveys/:id/customize", name: "Customization", icon: <MdOutlineSettingsApplications />, roles: ["companyAdmin"], permissions: ["survey:customize"] },
         // { path: "/app/surveys/:id/share", name: "Survey Sharing", icon: <MdShare />, roles: ["companyAdmin"], permissions: ["survey:share"] },
         {

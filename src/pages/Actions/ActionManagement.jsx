@@ -27,18 +27,18 @@ import Swal from 'sweetalert2';
 
 const ActionManagement = () => {
   const navigate = useNavigate();
-  
+
   // State Management
   const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  
+
   // Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
-  
+
   // Filters
   const [filters, setFilters] = useState({
     priority: 'all',
@@ -47,7 +47,7 @@ const ActionManagement = () => {
     department: 'all',
     dateRange: 'all'
   });
-  
+
   // Stats
   const [stats, setStats] = useState({
     total: 0,
@@ -57,7 +57,7 @@ const ActionManagement = () => {
     overdue: 0,
     highPriority: 0
   });
-  
+
   // Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -72,10 +72,10 @@ const ActionManagement = () => {
   const fetchActions = async () => {
     try {
       setLoading(true);
-      
+
       // Build query parameters
       const queryParams = new URLSearchParams();
-      
+
       // Add filters
       if (filters.priority && filters.priority !== 'all') {
         queryParams.append('priority', filters.priority);
@@ -89,19 +89,19 @@ const ActionManagement = () => {
       if (filters.department && filters.department !== 'all') {
         queryParams.append('team', filters.department);
       }
-      
+
       // Add tab-based filtering
       if (activeTab !== 'all') {
         queryParams.append('status', activeTab);
       }
-      
+
       queryParams.append('page', 1);
       queryParams.append('limit', 20);
       queryParams.append('sortBy', 'createdAt');
       queryParams.append('sortOrder', 'desc');
-      
+
       const response = await axiosInstance.get(`/actions?${queryParams}`);
-      
+
       if (response.data.success) {
         setActions(response.data.data.actions || []);
         setStats(response.data.data.analytics || {
@@ -111,7 +111,7 @@ const ActionManagement = () => {
       } else {
         throw new Error(response.data.message || 'Failed to fetch actions');
       }
-      
+
       setError('');
     } catch (err) {
       console.error('Error fetching actions:', err);
@@ -125,34 +125,65 @@ const ActionManagement = () => {
   const fetchStats = async () => {
     try {
       const response = await axiosInstance.get('/actions/analytics/summary?period=30');
-      
+
       if (response.data.success) {
         const analytics = response.data.data;
         setStats({
           total: analytics.byPriority?.reduce((sum, item) => sum + item.count, 0) || 0,
-          pending: analytics.byStatus?.find(item => item._id === 'open')?.count || 0,
-          inProgress: analytics.byStatus?.find(item => item._id === 'in-progress')?.count || 0,
-          completed: analytics.byStatus?.find(item => item._id === 'resolved')?.count || 0,
+          pending: analytics.byStatus?.find(i => i._id === 'open')?.count || 0,
+          inProgress: analytics.byStatus?.find(i => i._id === 'in-progress')?.count || 0,
+          completed: analytics.byStatus?.find(i => i._id === 'resolved')?.count || 0,
           overdue: analytics.overdue || 0,
-          highPriority: analytics.byPriority?.find(item => item._id === 'high')?.count || 0
+          highPriority: analytics.byPriority?.find(i => i._id === 'high')?.count || 0
         });
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
-      // Keep existing stats or set defaults
-      setStats(prev => prev.total ? prev : {
+      if (error.response?.status === 403) {
+        showErrorToast("You don’t have permission to view analytics");
+      } else {
+        showErrorToast("Failed to load analytics data");
+      }
+
+      // Prevent crash by keeping stats safe
+      setStats(prev => prev?.total ? prev : {
         total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0, highPriority: 0
       });
     }
   };
 
+
+  // const fetchStats = async () => {
+  //   try {
+  //     const response = await axiosInstance.get('/actions/analytics/summary?period=30');
+
+  //     if (response.data.success) {
+  //       const analytics = response.data.data;
+  //       setStats({
+  //         total: analytics.byPriority?.reduce((sum, item) => sum + item.count, 0) || 0,
+  //         pending: analytics.byStatus?.find(item => item._id === 'open')?.count || 0,
+  //         inProgress: analytics.byStatus?.find(item => item._id === 'in-progress')?.count || 0,
+  //         completed: analytics.byStatus?.find(item => item._id === 'resolved')?.count || 0,
+  //         overdue: analytics.overdue || 0,
+  //         highPriority: analytics.byPriority?.find(item => item._id === 'high')?.count || 0
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching stats:', error);
+  //     // Keep existing stats or set defaults
+  //     setStats(prev => prev.total ? prev : {
+  //       total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0, highPriority: 0
+  //     });
+  //   }
+  // };
+
   // Action Handlers
   const handleStatusChange = async (actionId, newStatus) => {
     try {
-      const response = await axiosInstance.put(`/actions/${actionId}`, { 
-        status: newStatus 
+      const response = await axiosInstance.put(`/actions/${actionId}`, {
+        status: newStatus
       });
-      
+
       if (response.data.success) {
         showSuccessToast(`Action ${newStatus} successfully!`);
         fetchActions();
@@ -170,11 +201,11 @@ const ActionManagement = () => {
 
   const handleAssignAction = async (actionId, assigneeId, team = null) => {
     try {
-      const response = await axiosInstance.put(`/actions/${actionId}/assign`, { 
+      const response = await axiosInstance.put(`/actions/${actionId}/assign`, {
         assignedTo: assigneeId,
-        team 
+        team
       });
-      
+
       if (response.data.success) {
         showSuccessToast('Action assigned successfully!');
         fetchActions();
@@ -186,52 +217,6 @@ const ActionManagement = () => {
       showErrorToast(
         error.response?.data?.message || 'Failed to assign action'
       );
-    }
-  };
-
-  const handleGenerateActions = async (feedbackIds = null) => {
-    try {
-      setLoading(true);
-      
-      // If no specific feedback IDs provided, we need to get recent negative feedback
-      let requestData = {};
-      
-      if (feedbackIds) {
-        requestData.feedbackIds = feedbackIds;
-      } else {
-        // Get recent negative feedback first
-        try {
-          const feedbackResponse = await axiosInstance.get('/feedback?sentiment=negative&limit=10');
-          if (feedbackResponse.data.success && feedbackResponse.data.data.length > 0) {
-            requestData.feedbackIds = feedbackResponse.data.data.map(f => f._id);
-          } else {
-            showErrorToast('No recent negative feedback found to generate actions from');
-            return;
-          }
-        } catch (feedbackError) {
-          console.error('Error fetching feedback:', feedbackError);
-          showErrorToast('Failed to fetch feedback for action generation');
-          return;
-        }
-      }
-      
-      const response = await axiosInstance.post('/actions/generate/feedback', requestData);
-      
-      if (response.data.success) {
-        const actionsCount = response.data.data.actions.length;
-        showSuccessToast(`${actionsCount} new actions generated from feedback analysis!`);
-        fetchActions();
-        fetchStats();
-      } else {
-        throw new Error(response.data.message);
-      }
-    } catch (error) {
-      console.error('Error generating actions:', error);
-      showErrorToast(
-        error.response?.data?.message || 'Failed to generate actions from AI analysis'
-      );
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -252,7 +237,7 @@ const ActionManagement = () => {
   const getPriorityBadge = (priority) => {
     const variants = {
       high: 'danger',
-      medium: 'warning', 
+      medium: 'warning',
       low: 'info'
     };
     const icons = {
@@ -331,7 +316,7 @@ const ActionManagement = () => {
       title: "Install EV Charging Stations",
       description: "Multiple requests for electric vehicle charging stations",
       priority: "low",
-      status: "pending", 
+      status: "pending",
       assignee: "Infrastructure Team",
       department: "Infrastructure",
       location: "All Locations",
@@ -383,7 +368,7 @@ const ActionManagement = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="d-flex gap-2">
                   <Button
                     variant="outline-primary"
@@ -392,7 +377,7 @@ const ActionManagement = () => {
                     <MdRefresh className="me-2" />
                     Refresh
                   </Button>
-                  <Button
+                  {/* <Button
                     variant="success"
                     onClick={handleGenerateActions}
                   >
@@ -405,7 +390,7 @@ const ActionManagement = () => {
                   >
                     <MdAdd className="me-2" />
                     Create Action
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </Card.Body>
@@ -426,7 +411,7 @@ const ActionManagement = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="stats-card h-100">
             <Card.Body className="p-3 text-center">
@@ -438,7 +423,7 @@ const ActionManagement = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="stats-card h-100">
             <Card.Body className="p-3 text-center">
@@ -450,7 +435,7 @@ const ActionManagement = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="stats-card h-100">
             <Card.Body className="p-3 text-center">
@@ -462,7 +447,7 @@ const ActionManagement = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="stats-card h-100">
             <Card.Body className="p-3 text-center">
@@ -474,7 +459,7 @@ const ActionManagement = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="stats-card h-100">
             <Card.Body className="p-3 text-center">
@@ -498,7 +483,7 @@ const ActionManagement = () => {
                   <Form.Select
                     size="sm"
                     value={filters.priority}
-                    onChange={(e) => setFilters(prev => ({...prev, priority: e.target.value}))}
+                    onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
                   >
                     <option value="all">All Priorities</option>
                     <option value="high">High Priority</option>
@@ -506,12 +491,12 @@ const ActionManagement = () => {
                     <option value="low">Low Priority</option>
                   </Form.Select>
                 </Col>
-                
+
                 <Col lg={2} md={6} className="mb-2">
                   <Form.Select
                     size="sm"
                     value={filters.status}
-                    onChange={(e) => setFilters(prev => ({...prev, status: e.target.value}))}
+                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -520,12 +505,12 @@ const ActionManagement = () => {
                     <option value="overdue">Overdue</option>
                   </Form.Select>
                 </Col>
-                
+
                 <Col lg={2} md={6} className="mb-2">
                   <Form.Select
                     size="sm"
                     value={filters.department}
-                    onChange={(e) => setFilters(prev => ({...prev, department: e.target.value}))}
+                    onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
                   >
                     <option value="all">All Departments</option>
                     <option value="Facilities">Facilities</option>
@@ -535,12 +520,12 @@ const ActionManagement = () => {
                     <option value="HR">Human Resources</option>
                   </Form.Select>
                 </Col>
-                
+
                 <Col lg={2} md={6} className="mb-2">
                   <Form.Select
                     size="sm"
                     value={filters.dateRange}
-                    onChange={(e) => setFilters(prev => ({...prev, dateRange: e.target.value}))}
+                    onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
                   >
                     <option value="all">All Time</option>
                     <option value="today">Today</option>
@@ -548,15 +533,15 @@ const ActionManagement = () => {
                     <option value="month">This Month</option>
                   </Form.Select>
                 </Col>
-                
+
                 <Col lg={4} className="mb-2">
                   <div className="d-flex gap-2">
-                    <Button 
-                      variant="outline-primary" 
+                    <Button
+                      variant="outline-primary"
                       size="sm"
                       onClick={() => setFilters({
                         priority: 'all',
-                        status: 'all', 
+                        status: 'all',
                         assignee: 'all',
                         department: 'all',
                         dateRange: 'all'
@@ -605,7 +590,7 @@ const ActionManagement = () => {
                                     <div className="flex-grow-1">
                                       <h6 className="mb-1 fw-bold">{action.title}</h6>
                                       <p className="text-muted small mb-2">{action.description}</p>
-                                      
+
                                       <div className="d-flex flex-wrap gap-2 mb-2">
                                         <Badge bg="light" text="dark" className="d-flex align-items-center">
                                           <MdLocationOn className="me-1" />
@@ -623,7 +608,7 @@ const ActionManagement = () => {
                                     </div>
                                   </div>
                                 </Col>
-                                
+
                                 <Col lg={3}>
                                   <div className="mb-2">
                                     {getStatusBadge(action.status)}
@@ -635,15 +620,15 @@ const ActionManagement = () => {
                                     </div>
                                     <div className="mb-1">
                                       <MdComment className="me-1" />
-                                      {action.feedback.count} feedback items
+                                      {action.feedback?.count} feedback items
                                     </div>
                                     <div className="d-flex align-items-center">
                                       <FaStar className="me-1 text-warning" />
-                                      {action.feedback.avgRating.toFixed(1)} avg rating
+                                      {action.feedback?.avgRating.toFixed(1)} avg rating
                                     </div>
                                   </div>
                                 </Col>
-                                
+
                                 <Col lg={3} className="text-end">
                                   <div className="d-flex flex-column gap-1">
                                     {action.status === 'pending' && (
@@ -656,7 +641,7 @@ const ActionManagement = () => {
                                         Start
                                       </Button>
                                     )}
-                                    
+
                                     {action.status === 'in-progress' && (
                                       <Button
                                         variant="outline-success"
@@ -667,7 +652,7 @@ const ActionManagement = () => {
                                         Complete
                                       </Button>
                                     )}
-                                    
+
                                     <Button
                                       variant="outline-secondary"
                                       size="sm"
@@ -701,7 +686,7 @@ const ActionManagement = () => {
                     )}
                   </div>
                 </Tab>
-                
+
                 <Tab eventKey="high-priority" title={
                   <span><MdPriorityHigh className="me-2" />High Priority ({stats.highPriority})</span>
                 }>
@@ -709,7 +694,7 @@ const ActionManagement = () => {
                     {/* Similar content filtered by high priority */}
                   </div>
                 </Tab>
-                
+
                 <Tab eventKey="overdue" title={
                   <span><MdAssignmentLate className="me-2" />Overdue ({stats.overdue})</span>
                 }>

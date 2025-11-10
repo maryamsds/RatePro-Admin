@@ -376,7 +376,7 @@ const SurveyAnalytics = () => {
           <MdFlag className="me-2" size={24} />
           {error}
           <div className="mt-3">
-            <Button variant="outline-danger" onClick={() => navigate(`/surveys/${id}`)}>
+            <Button variant="outline-danger" onClick={() => navigate(`/app/surveys`)}>
               Back to Survey Details
             </Button>
           </div>

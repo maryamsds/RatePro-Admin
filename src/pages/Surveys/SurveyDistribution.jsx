@@ -167,40 +167,6 @@ const SurveyDistribution = () => {
     }
   }, [id]);
 
-  // QR Code Generation and Download
-  // const downloadQR = async (format = "png") => {
-  //   const svgElement = document
-  //     .getElementById("qr-preview")
-  //     .getElementsByTagName("svg")[0];
-
-  //   if (!svgElement) {
-  //     console.error("SVG not found inside #qr-preview");
-  //     return;
-  //   }
-
-  //   const canvas = document.createElement("canvas");
-  //   const ctx = canvas.getContext("2d");
-
-  //   // Make sure the size matches your QR settings
-  //   canvas.width = qrSettings.size;
-  //   canvas.height = qrSettings.size;
-
-  //   // Convert SVG to PNG using Canvg
-  //   const svgString = new XMLSerializer().serializeToString(svgElement);
-  //   const v = await Canvg.fromString(ctx, svgString);
-
-  //   // White background
-  //   ctx.fillStyle = "#fff";
-  //   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  //   await v.render();
-
-  //   // Download
-  //   const link = document.createElement("a");
-  //   link.download = `survey-qr-${survey?._id || "code"}.${format}`;
-  //   link.href = canvas.toDataURL(`image/${format}`);
-  //   link.click();
-  // };
   const downloadQR = async (format = "png") => {
     const svgElement = document
       .getElementById("qr-preview")
@@ -244,34 +210,7 @@ const SurveyDistribution = () => {
     link.href = canvas.toDataURL(`image/${format}`);
     link.click();
   };
-  // Print QR Code
-  // const printQR = () => {
-  //   const printWindow = window.open('', '', 'width=600,height=400');
-  //   const qrElement = document.getElementById('qr-preview').innerHTML;
-
-  //   printWindow.document.write(`
-  //     <html>
-  //       <head>
-  //         <title>Survey QR Code - ${survey.title}</title>
-  //         <style>
-  //           body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-  //           .qr-container { margin: 20px auto; }
-  //           h2 { color: #333; margin-bottom: 10px; }
-  //           p { color: #666; margin: 5px 0; }
-  //         </style>
-  //       </head>
-  //       <body>
-  //         <h2>${survey.title}</h2>
-  //         <p>${qrSettings.customText}</p>
-  //         <div class="qr-container">${qrElement}</div>
-  //         <p>Scan with your phone camera to participate</p>
-  //       </body>
-  //     </html>
-  //   `);
-
-  //   printWindow.document.close();
-  //   printWindow.print();
-  // };
+ 
  const printQR = () => {
   const qrContainer = document.getElementById("qr-preview");
   if (!qrContainer) return console.error("QR preview not found!");
@@ -490,7 +429,7 @@ const SurveyDistribution = () => {
             <div className="d-flex gap-2">
               <Button
                 variant="outline-secondary"
-                onClick={() => navigate(`/surveys/detail/${id}`)}
+                onClick={() => navigate(`/app/surveys/detail/${id}`)}
                 className="d-flex align-items-center"
               >
                 <MdVisibility className="me-2" />
@@ -498,7 +437,7 @@ const SurveyDistribution = () => {
               </Button>
               <Button
                 variant="outline-info"
-                onClick={() => navigate(`/surveys/analytics/${id}`)}
+                onClick={() => navigate(`/app/surveys/${id}/analytics`)}
                 className="d-flex align-items-center"
               >
                 <MdAnalytics className="me-2" />

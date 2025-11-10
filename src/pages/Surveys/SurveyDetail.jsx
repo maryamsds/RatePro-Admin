@@ -31,6 +31,7 @@ const SurveyDetail = () => {
     settings: {},
     thankYouPage: {},
   });
+  console.log("Survey State", survey);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
@@ -232,7 +233,7 @@ const SurveyDetail = () => {
           <Card className="survey-detail-header shadow-sm">
             <Card.Body className="p-4">
               <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
-                <div className="flex-grow-1">
+                <div className="flex-grow-1 w-50">
                   <div className="d-flex align-items-center mb-2">
                     <Button
                       variant="link"
@@ -255,7 +256,7 @@ const SurveyDetail = () => {
                     )}
                     <div>
                       <h1 className="h3 mb-1 fw-bold">{survey?.title}</h1>
-                      <p className="text-muted mb-0">{survey?.description}</p>
+                      <p className="text-muted mb-0 w-70">{survey?.description}</p>
                     </div>
                   </div>
 
@@ -278,70 +279,30 @@ const SurveyDetail = () => {
 
                 {/* Action Buttons */}
                 <div className="d-flex flex-wrap gap-2">
-                  <OverlayTrigger overlay={<Tooltip>Preview Survey</Tooltip>}>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => window.open(`/survey/${survey.shareableLink || id}`, '_blank')}
-                    >
-                      <MdVisibility />
-                    </Button>
-                  </OverlayTrigger>
-
                   <OverlayTrigger overlay={<Tooltip>Edit Survey</Tooltip>}>
                     <Button
                       variant="outline-primary"
                       size="sm"
-                      onClick={() => navigate(`/surveys/builder/${id}`)}
+                      onClick={() => navigate(`/app/surveys/builder/edit/${id}`)}
                     >
                       <MdEdit />
                     </Button>
                   </OverlayTrigger>
 
-                  <OverlayTrigger overlay={<Tooltip>Generate QR Code</Tooltip>}>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={handleGenerateQR}
-                    >
-                      <MdQrCode />
-                    </Button>
-                  </OverlayTrigger>
-
                   <OverlayTrigger overlay={<Tooltip>Share Survey</Tooltip>}>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => setShowShareModal(true)}
-                    >
-                      <MdShare />
-                    </Button>
+                    {survey.status !== "inactive" && survey.status !== "draft" ? (
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => navigate(`/app/surveys/${id}/distribution`)}
+                      >
+                        <MdShare />
+                      </Button>
+                    ) : (
+                      <span />
+                    )}
                   </OverlayTrigger>
 
-                  <Dropdown>
-                    <Dropdown.Toggle variant="outline-secondary" size="sm">
-                      <i className="fas fa-ellipsis-v"></i>
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                      <Dropdown.Item onClick={handleToggleStatus}>
-                        <MdNotifications className="me-2" />
-                        {survey?.status === 'active' ? 'Deactivate' : 'Activate'} Survey
-                      </Dropdown.Item>
-                      <Dropdown.Item onClick={() => setShowSettingsModal(true)}>
-                        <MdSettings className="me-2" />
-                        Survey Settings
-                      </Dropdown.Item>
-                      <Dropdown.Item onClick={handleExportPDF}>
-                        <MdDownload className="me-2" />
-                        Export PDF Report
-                      </Dropdown.Item>
-                      <Dropdown.Divider />
-                      <Dropdown.Item className="text-danger" onClick={() => setShowDeleteModal(true)}>
-                        <MdDelete className="me-2" />
-                        Delete Survey
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
                 </div>
               </div>
             </Card.Body>
@@ -355,7 +316,7 @@ const SurveyDetail = () => {
           <Card className="stats-card h-100">
             <Card.Body className="p-3">
               <div className="d-flex align-items-center">
-                <div className="stats-icon bg-primary bg-opacity-10 text-primary rounded-circle p-3 me-3">
+                <div className="stats-icon bg-info bg-opacity-10 text-primary rounded-circle p-3 me-3">
                   <FaEye size={24} />
                 </div>
                 <div>
@@ -515,7 +476,7 @@ const SurveyDetail = () => {
                             </div>
                             {survey?.settings && (
                               <>
-                                <div className="detail-item mb-3">
+                                <div className="detail-item mb-3 d-flex align-items-center justify-content-between">
                                   <strong>Access:</strong>
                                   <div className="ms-2">
                                     {survey?.settings.requireLogin && (
@@ -524,7 +485,7 @@ const SurveyDetail = () => {
                                     {survey?.settings.isPasswordProtected && (
                                       <Badge bg="danger" className="me-1">Password Protected</Badge>
                                     )}
-                                    {survey?.settings.allowAnonymous && (
+                                    {survey?.settings.isAnonymous && (
                                       <Badge bg="success" className="me-1">Anonymous Allowed</Badge>
                                     )}
                                   </div>
@@ -542,21 +503,21 @@ const SurveyDetail = () => {
                             <div className="d-grid gap-2">
                               <Button
                                 variant="outline-primary"
-                                onClick={() => navigate(`/surveys/${id}/responses`)}
+                                onClick={() => navigate(`/app/surveys/${id}/responses`)}
                               >
                                 <MdAnalytics className="me-2" />
                                 View Responses
                               </Button>
                               <Button
                                 variant="outline-success"
-                                onClick={() => navigate(`/surveys/analytics/${id}`)}
+                                onClick={() => navigate(`/app/surveys/${id}/analytics`)}
                               >
                                 <MdTrendingUp className="me-2" />
                                 View Analytics
                               </Button>
                               <Button
                                 variant="outline-warning"
-                                onClick={() => navigate(`/surveys/distribution/${id}`)}
+                                onClick={() => navigate(`/app/surveys/${id}/distribution`)}
                               >
                                 <MdShare className="me-2" />
                                 Distribution & QR
@@ -775,7 +736,7 @@ const SurveyDetail = () => {
                             </p>
                             <Button
                               variant="primary"
-                              onClick={() => navigate(`/surveys/${id}/analytics`)}
+                              onClick={() => navigate(`/app/surveys/${id}/analytics`)}
                             >
                               <MdTrendingUp className="me-2" />
                               View Full Analytics

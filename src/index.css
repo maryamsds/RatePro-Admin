@@ -9171,7 +9171,7 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 .survey-header-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--text-primary);
+  /* color: var(--text-primary); */
   margin-bottom: 0.5rem;
   font-family: var(--font-family);
   display: flex;
@@ -9901,7 +9901,6 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 .survey-header-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: white;
   margin-bottom: 0.25rem;
   font-family: var(--font-family);
 }
@@ -12970,7 +12969,7 @@ canvas {
   /* margin: 0 auto; */
   padding: 0 1rem;
   display: grid;
-  grid-template-columns: 1fr 300px;
+  /* grid-template-columns: 1fr 300px; */
   gap: 2rem;
 }
 
@@ -30972,5 +30971,82 @@ canvas {
   
   .loading-overlay {
     background-color: rgba(0, 0, 0, 0.85);
+  }
+}
+
+/* Step Wizard Styles */
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border: 2px solid var(--bs-border-color);
+  transition: all 0.3s ease;
+}
+
+.step-indicator.active .step-number {
+  border-color: var(--bs-primary);
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.step-connector {
+  position: relative;
+  height: 2px;
+  margin: 0 1rem;
+  min-width: 50px;
+}
+
+.connector-line {
+  height: 2px;
+  background-color: var(--bs-border-color);
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.step-connector.active .connector-line {
+  background-color: var(--bs-primary);
+}
+
+.step-content-container {
+  min-height: 400px;
+}
+
+.question-type-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.question-type-card:hover {
+  background-color: var(--bs-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Responsive step wizard */
+@media (max-width: 768px) {
+  .step-indicator {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .step-connector {
+    display: none;
+  }
+  
+  .step-content {
+    margin-top: 0.5rem;
   }
 }
