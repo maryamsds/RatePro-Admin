@@ -57,8 +57,9 @@ import {
   MdSms,
   MdFeedback,
   MdMonetizationOn,
-  MdOutlineCardGiftcard
-
+  MdOutlineCardGiftcard,
+  MdCreditCard, // Add this
+  MdReceipt // Add this
 } from "react-icons/md";
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { useAuth } from "../../context/AuthContext";
@@ -73,6 +74,9 @@ const Sidebar = ({
   onClose,
   onToggle,
 }) => {
+  // Add this state
+  const [subscriptionSubmenuOpen, setSubscriptionSubmenuOpen] = useState(false);
+
   const { user, hasPermission } = useAuth();
   const location = useLocation();
   const [authSubmenuOpen, setAuthSubmenuOpen] = useState(false);
@@ -108,6 +112,7 @@ const Sidebar = ({
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
       setSupportTickets(false);
+      setSubscriptionSubmenuOpen(false);
       setCollapsedDropdownOpen(null);
     }
   }, [collapsed]);
@@ -137,6 +142,7 @@ const Sidebar = ({
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
       setSupportTickets(false);
+      setSubscriptionSubmenuOpen(false);
     } else if (currentPath.startsWith("/surveys")) {
       setSurveySubmenuOpen(true);
       setAuthSubmenuOpen(false);
@@ -252,6 +258,7 @@ const Sidebar = ({
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
       setSupportTickets(false);
+      setSubscriptionSubmenuOpen(false);
     }
   }, [location.pathname]);
 
@@ -338,96 +345,44 @@ const Sidebar = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isMobile, isOpen, onClose]);
 
-  const toggleSubmenu = (submenuName) => {
-    // Check if the clicked submenu is already open
-    let isCurrentlyOpen = false;
-
-    switch (submenuName) {
+  const toggleSubmenu = (submenu) => {
+    switch (submenu) {
       case "auth":
-        isCurrentlyOpen = authSubmenuOpen;
+        setAuthSubmenuOpen(!authSubmenuOpen);
         break;
       case "survey":
-        isCurrentlyOpen = surveySubmenuOpen;
+        setSurveySubmenuOpen(!surveySubmenuOpen);
         break;
       case "user":
-        isCurrentlyOpen = userSubmenuOpen;
+        setUserSubmenuOpen(!userSubmenuOpen);
         break;
       case "access":
-        isCurrentlyOpen = accessSubmenuOpen;
+        setAccessSubmenuOpen(!accessSubmenuOpen);
         break;
       case "analytics":
-        isCurrentlyOpen = analyticsSubmenuOpen;
+        setAnalyticsSubmenuOpen(!analyticsSubmenuOpen);
         break;
       case "audience":
-        isCurrentlyOpen = audienceSubmenuOpen;
+        setAudienceSubmenuOpen(!audienceSubmenuOpen);
         break;
       case "communication":
-        isCurrentlyOpen = communicationSubmenuOpen;
+        setCommunicationSubmenuOpen(!communicationSubmenuOpen);
         break;
       case "incentives":
-        isCurrentlyOpen = incentivesSubmenuOpen;
+        setIncentivesSubmenuOpen(!incentivesSubmenuOpen);
         break;
       case "settings":
-        isCurrentlyOpen = settingsSubmenuOpen;
+        setSettingsSubmenuOpen(!settingsSubmenuOpen);
         break;
       case "content":
-        isCurrentlyOpen = contentmanagement;
+        setcontentmanagement(!contentmanagement);
         break;
       case "support":
-        isCurrentlyOpen = supportTickets;
+        setSupportTickets(!supportTickets);
         break;
-    }
-
-    // Close all submenus first
-    setAuthSubmenuOpen(false);
-    setSurveySubmenuOpen(false);
-    setUserSubmenuOpen(false);
-    setAccessSubmenuOpen(false);
-    setAnalyticsSubmenuOpen(false);
-    setAudienceSubmenuOpen(false);
-    setCommunicationSubmenuOpen(false);
-    setSettingsSubmenuOpen(false);
-    setIncentivesSubmenuOpen(false);
-    setcontentmanagement(false);
-    setSupportTickets(false);
-
-    // If the clicked submenu was not open, open it
-    if (!isCurrentlyOpen) {
-      switch (submenuName) {
-        case "auth":
-          setAuthSubmenuOpen(true);
-          break;
-        case "survey":
-          setSurveySubmenuOpen(true);
-          break;
-        case "user":
-          setUserSubmenuOpen(true);
-          break;
-        case "access":
-          setAccessSubmenuOpen(true);
-          break;
-        case "analytics":
-          setAnalyticsSubmenuOpen(true);
-          break;
-        case "audience":
-          setAudienceSubmenuOpen(true);
-          break;
-        case "communication":
-          setCommunicationSubmenuOpen(true);
-          break;
-        case "incentives":
-          setIncentivesSubmenuOpen(true);
-          break;
-        case "settings":
-          setSettingsSubmenuOpen(true);
-          break;
-        case "content":
-          setcontentmanagement(true);
-          break;
-        case "support":
-          setSupportTickets(true);
-          break;
-      }
+      case "subscription":
+        setSubscriptionSubmenuOpen(!subscriptionSubmenuOpen);
+        break;
     }
   };
 
@@ -756,6 +711,28 @@ const Sidebar = ({
           roles: ["companyAdmin", "admin"],
         },
       ],
+    },
+    {
+      name: "Subscription",
+      icon: <MdCreditCard />,
+      submenu: true,
+      isOpen: subscriptionSubmenuOpen,
+      roles: ["admin", "companyAdmin"],
+      toggle: () => toggleSubmenu("subscription"),
+      submenuItems: [
+        { 
+          path: "/app/subscription/manage-plans", 
+          name: "Manage Plans",
+          icon: <MdCreditCard />, 
+          roles: ["admin"]
+        },
+        { 
+          path: "/app/subscription/my-subscription", 
+          name: "My Subscription",
+          icon: <MdReceipt />, 
+          roles: ["companyAdmin"]
+        }
+      ]
     },
     {
       name: "Content Management",

@@ -64,6 +64,8 @@ import Testimonials from "./pages/ContentManagement/Testimonials"
 import Widgets from "./pages/ContentManagement/Widgets"
 import Features from "./pages/ContentManagement/Features"
 import Pricing from "./pages/ContentManagement/Pricing"
+import SubscriptionPlans from './pages/Subscription/SubscriptionPlans';
+import MyPlans from './pages/Subscription/MyPlans';
 import ContactManagement from "./pages/Audiences/ContactManagement"
 import Support from "./pages/Support/CreateTicket"
 import VerifyEmail from "./pages/Auth/VerifyEmail"
@@ -187,6 +189,9 @@ function App() {
               <Route path="incentives/incentives-management" element={<IncentiveManagement />} />
               <Route path="incentives/reward-system" element={<RewardSystem />} />
               
+              {/* Subscription  */}
+               <Route path="subscription/manage-plans" element={<SubscriptionPlans/>} />
+              <Route path="subscription/my-subscription" element={<MyPlans/>} />
               {/* Support */}
               <Route path="support" element={<SupportTickets />} />
               <Route path="support/create" element={<CreateTicket />} />

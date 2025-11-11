@@ -3012,18 +3012,6 @@ const SurveyBuilder = ({ darkMode }) => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Question Count</Form.Label>
-                      {/* <Form.Select
-                        value={companyProfile.questionCount}
-                        onChange={(e) => setCompanyProfile({
-                          ...companyProfile,
-                          questionCount: parseInt(e.target.value)
-                        })}
-                      >
-                        <option value={5}>5 Questions (Quick)</option>
-                        <option value={8}>8 Questions (Standard)</option>
-                        <option value={12}>12 Questions (Comprehensive)</option>
-                        <option value={15}>15 Questions (Detailed)</option>
-                      </Form.Select> */}
                       <Form.Control
                         type="number"
                         min={1}

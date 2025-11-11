@@ -1,7 +1,6 @@
 // src\pages\Incentives\RewardSystem.jsx
 
 "use client"
-
 import { useState, useEffect } from "react"
 import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Modal } from "react-bootstrap"
 import {
@@ -189,11 +188,12 @@ const RewardSystem = ({ darkMode }) => {
           >
             <Card.Body>
               <div className="d-flex align-items-center">
+              <MdCardGiftcard size={24} style={{ color: "var(--primary-color)" , marginRight: "8px" }} />
+              <>&nbsp;</>
                 <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Rewards</div>
+                  <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Total Rewards</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>{rewards.length}</div>
                 </div>
-                <MdCardGiftcard size={24} style={{ color: "var(--primary-color)" }} />
               </div>
             </Card.Body>
           </Card>
@@ -205,13 +205,14 @@ const RewardSystem = ({ darkMode }) => {
           >
             <Card.Body>
               <div className="d-flex align-items-center">
+                <MdStar size={24} style={{ color: "var(--success-color)" , marginRight: "8px"  }} />
                 <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Active Rewards</div>
+                  <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Active Rewards</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
                     {rewards.filter((r) => r.status === "Active").length}
                   </div>
                 </div>
-                <MdStar size={24} style={{ color: "var(--success-color)" }} />
+                
               </div>
             </Card.Body>
           </Card>
@@ -223,13 +224,15 @@ const RewardSystem = ({ darkMode }) => {
           >
             <Card.Body>
               <div className="d-flex align-items-center">
+                <MdPeople size={24} style={{ color: "var(--info-color)" , marginRight: "8px" }} />
+                <>&nbsp;</>
                 <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Claims</div>
+                  <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Total Claims</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
                     {rewards.reduce((sum, r) => sum + r.totalClaimed, 0)}
                   </div>
                 </div>
-                <MdPeople size={24} style={{ color: "var(--info-color)" }} />
+                
               </div>
             </Card.Body>
           </Card>
@@ -241,13 +244,14 @@ const RewardSystem = ({ darkMode }) => {
           >
             <Card.Body>
               <div className="d-flex align-items-center">
+                <MdAttachMoney size={24} style={{ color: "var(--warning-color)", marginRight: "8px" }} />
                 <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Value</div>
+                  <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Total Value</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
                     ${rewards.reduce((sum, r) => sum + r.totalValue, 0).toLocaleString()}
                   </div>
                 </div>
-                <MdAttachMoney size={24} style={{ color: "var(--warning-color)" }} />
+                
               </div>
             </Card.Body>
           </Card>
