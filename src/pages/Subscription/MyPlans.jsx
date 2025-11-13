@@ -360,3 +360,163 @@ const MyPlans = ({ darkMode }) => {
 };
 
 export default MyPlans;
+
+// import React, { useState, useEffect } from 'react';
+// import { Container, Row, Col, Button, Badge, Modal, ProgressBar, Spinner } from 'react-bootstrap';
+// import { MdReceipt, MdCheck, MdStar, MdRocketLaunch, MdBusiness, MdWorkspacePremium, MdTrendingUp, MdDateRange } from 'react-icons/md';
+// import axios, { axiosInstance } from '../../api/axiosInstance';
+// import Swal from 'sweetalert2';
+
+// const MyPlans = ({ darkMode }) => {
+//   const [currentPlan, setCurrentPlan] = useState(null);
+//   const [availablePlans, setAvailablePlans] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+//   const [selectedPlan, setSelectedPlan] = useState(null);
+
+//   useEffect(() => {
+//     loadData();
+//   }, []);
+
+//   const loadData = async () => {
+//     setLoading(true);
+//     setCurrentPlan(null);
+//     setAvailablePlans([]);
+
+//     // Fetch current subscription
+//     try {
+//       const res = await axiosInstance.get('/subscriptions/user');
+//       if (res.data.success) {
+//         const sub = res.data.data;
+//         const plan = sub.planTemplate || {};
+
+//         setCurrentPlan({
+//           id: plan._id,
+//           planName: plan.name || 'Custom',
+//           price: plan.price || 0,
+//           billingCycle: plan.billingCycle || 'monthly',
+//           surveyLimit: sub.credits,
+//           surveysUsed: sub.usedCredits || 0, // add this field later or calculate
+//           status: sub.status,
+//           startDate: sub.startDate ? sub.startDate.split('T')[0] : '',
+//           endDate: sub.endDate ? sub.endDate.split('T')[0] : '',
+//           features: plan.features || []
+//         });
+//       }
+//     } catch (err) {
+//       if (err.response?.status === 404) {
+//         console.log('No active subscription (normal if you have none)');
+//       } else {
+//         console.error('Current subscription error:', err.response?.data || err);
+//         Swal.fire('Error', err.response?.data?.message || 'Failed to load current subscription', 'error');
+//       }
+//     }
+
+//     // Fetch available plans (always try)
+//     try {
+//       const res = await axiosInstance.get('/subscriptions/user/plans/available');
+//       if (res.data.success) {
+//         const plans = res.data.data.map(plan => ({
+//           id: plan._id,
+//           planName: plan.name,
+//           price: plan.price,
+//           billingCycle: plan.billingCycle || 'monthly',
+//           surveyLimit: plan.credits,
+//           description: plan.description || '',
+//           features: plan.features || [],
+//           icon: getPlanIcon(plan.name),
+//           recommended: plan.name.toLowerCase().includes('pro')
+//         }));
+//         setAvailablePlans(plans);
+//       }
+//     } catch (err) {
+//       console.error('Available plans error:', err.response?.data || err);
+//       Swal.fire('Error', err.response?.data?.message || 'Failed to load available plans', 'error');
+//     }
+
+//     setLoading(false);
+//   };
+
+//   const getPlanIcon = (name) => {
+//     const n = name.toLowerCase();
+//     if (n.includes('beginner') || n.includes('starter')) return <MdStar />;
+//     if (n.includes('pro')) return <MdRocketLaunch />;
+//     if (n.includes('enterprise') || n.includes('business')) return <MdBusiness />;
+//     return <MdWorkspacePremium />;
+//   };
+
+//   const handlePlanSelect = (plan) => {
+//     if (currentPlan && plan.id === currentPlan.id) {
+//       Swal.fire('Already on this plan', 'You are already on this plan', 'info');
+//       return;
+//     }
+//     setSelectedPlan(plan);
+//     setShowUpgradeModal(true);
+//   };
+
+//   const confirmPlanChange = async () => {
+//     try {
+//       const res = await axiosInstance.post('/subscriptions/user/activate', {
+//         planId: selectedPlan.id,
+//       });
+
+//       if (res.data.success) {
+//         const sub = res.data.data;
+//         const plan = sub.planTemplate || {};
+
+//         setCurrentPlan({
+//           id: plan._id,
+//           planName: plan.name,
+//           price: plan.price,
+//           billingCycle: plan.billingCycle || 'monthly',
+//           surveyLimit: sub.credits,
+//           surveysUsed: 0,
+//           startDate: sub.startDate.split('T')[0],
+//           endDate: sub.endDate.split('T')[0],
+//           features: plan.features || []
+//         });
+
+//         Swal.fire('Success!', currentPlan ? 'Plan upgraded!' : 'Subscription activated!', 'success').then(() => window.location.reload());
+//         setShowUpgradeModal(false);
+//       }
+//     } catch (err) {
+//       Swal.fire('Failed', err.response?.data?.message || 'Upgrade failed', 'error');
+//     }
+//   };
+
+//   if (loading) return <div className="text-center py-5"><Spinner animation="border" /></div>;
+
+//   return (
+//     <Container fluid>
+//       {/* ... rest of JSX same as before ... */}
+//       {/* Only change in pricing card period: */}
+//       {availablePlans.map(plan => (
+//         <Col key={plan.id}>
+//           <div className="pricing-amount">
+//             <span className="currency">$</span>
+//             <span className="price">{plan.price}</span>
+//             <span className="period">/{plan.billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
+//           </div>
+//         </Col>
+//       ))}
+
+//       {/* And in hero section for current plan: */}
+//       <span className="period">/{currentPlan?.billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
+
+//       {/* For unlimited surveys */}
+//       <span className="total">
+//         {currentPlan?.surveyLimit === -1 ? 'Unlimited' : currentPlan?.surveyLimit}
+//       </span>
+//       {currentPlan?.surveyLimit !== -1 && (
+//         <ProgressBar
+//           now={(currentPlan?.surveysUsed / currentPlan?.surveyLimit) * 100}
+//           label={`${currentPlan?.surveysUsed || 0}/${currentPlan?.surveyLimit}`}
+//         />
+//       )}
+
+//       {/* Modal same */}
+//     </Container>
+//   );
+// };
+
+// export default MyPlans;

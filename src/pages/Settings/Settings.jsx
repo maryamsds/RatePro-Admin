@@ -1,16 +1,18 @@
+// src/pages/Settings/Settings.jsx
 "use client"
-
-import { useState } from "react"
-import { 
-  MdSettings, 
-  MdSecurity, 
-  MdNotifications, 
-  MdPalette, 
-  MdSave, 
+import {
+  MdSettings,
+  MdSecurity,
+  MdNotifications,
+  MdPalette,
+  MdSave,
   MdRefresh,
   MdCheck,
   MdClose
 } from "react-icons/md"
+import { useEffect, useState } from "react"
+import axiosInstance, { getSettings, updateSettings, resetSettings, createSettings } from "../../api/axiosInstance"
+
 
 const Settings = ({ darkMode, toggleTheme }) => {
   const [activeTab, setActiveTab] = useState("general")
@@ -32,6 +34,19 @@ const Settings = ({ darkMode, toggleTheme }) => {
     sessionTimeout: "30",
   })
 
+ useEffect(() => {
+  const fetchSettings = async () => {
+    try {
+      const data = await getSettings()
+      console.log("Fetched Settings:", data)
+      setSettings(prev => ({ ...prev, ...data })) // merge defaults with fetched data
+    } catch (err) {
+      console.error("Failed to fetch settings:", err)
+    }
+  }
+  fetchSettings()
+}, [])
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
     setSettings((prev) => ({
@@ -40,13 +55,26 @@ const Settings = ({ darkMode, toggleTheme }) => {
     }))
   }
 
-  const handleSave = () => {
-    if (settings.darkMode !== darkMode) {
-      toggleTheme()
-    }
+const handleSave = async () => {
+  try {
+    const data = await createSettings(settings) // ← use create API
+    setSettings(data)
+    if (settings.darkMode !== darkMode) toggleTheme()
     setShowAlert(true)
     setTimeout(() => setShowAlert(false), 3000)
+  } catch (err) {
+    console.error("Failed to create settings:", err)
   }
+}
+
+  const handleReset = async () => {
+  try {
+    const data = await resetSettings()
+    setSettings(data)
+  } catch (err) {
+    console.error("Failed to reset settings:", err)
+  }
+}
 
   return (
     <div className="settings-container">
@@ -63,7 +91,7 @@ const Settings = ({ darkMode, toggleTheme }) => {
             </div>
           </div>
           <div className="page-header-actions">
-            <button className="secondary-action">
+            <button className="secondary-action" onClick={handleReset}>
               <MdRefresh />
               Reset
             </button>
@@ -98,31 +126,21 @@ const Settings = ({ darkMode, toggleTheme }) => {
         {/* Tab Navigation */}
         <div className="tab-navigation">
           <div className="tab-nav">
-            <button 
+            <button
               className={`tab-button ${activeTab === 'general' ? 'active' : ''}`}
-              onClick={() => setActiveTab('general')}
-            >
+              onClick={() => setActiveTab('general')}>
               <MdSettings />
               General
             </button>
-            <button 
-              className={`tab-button ${activeTab === 'appearance' ? 'active' : ''}`}
-              onClick={() => setActiveTab('appearance')}
-            >
-              <MdPalette />
-              Appearance
-            </button>
-            <button 
+            <button
               className={`tab-button ${activeTab === 'notifications' ? 'active' : ''}`}
-              onClick={() => setActiveTab('notifications')}
-            >
+              onClick={() => setActiveTab('notifications')}>
               <MdNotifications />
               Notifications
             </button>
-            <button 
+            <button
               className={`tab-button ${activeTab === 'security' ? 'active' : ''}`}
-              onClick={() => setActiveTab('security')}
-            >
+              onClick={() => setActiveTab('security')}>
               <MdSecurity />
               Security
             </button>
@@ -146,18 +164,16 @@ const Settings = ({ darkMode, toggleTheme }) => {
                       <input
                         type="text"
                         name="siteName"
-                        value={settings.siteName}
+                        value={settings?.siteName || ""}
                         onChange={handleInputChange}
-                        placeholder="Enter site name"
-                      />
+                        placeholder="Enter site name" />
                     </div>
                     <div className="form-group">
                       <label>Timezone</label>
                       <select
                         name="timezone"
-                        value={settings.timezone}
-                        onChange={handleInputChange}
-                      >
+                        value={settings?.timezone || "UTC+0"}
+                        onChange={handleInputChange}>
                         <option value="UTC-12">UTC-12 (Baker Island)</option>
                         <option value="UTC-8">UTC-8 (Pacific Time)</option>
                         <option value="UTC-5">UTC-5 (Eastern Time)</option>
@@ -172,19 +188,17 @@ const Settings = ({ darkMode, toggleTheme }) => {
                     <textarea
                       rows={3}
                       name="siteDescription"
-                      value={settings.siteDescription}
+                      value={settings?.siteDescription || ""}
                       onChange={handleInputChange}
-                      placeholder="Enter site description"
-                    />
+                      placeholder="Enter site description" />
                   </div>
                   <div className="form-grid three-columns">
                     <div className="form-group">
                       <label>Language</label>
                       <select
                         name="language"
-                        value={settings.language}
-                        onChange={handleInputChange}
-                      >
+                        value={settings?.language || "en"}
+                        onChange={handleInputChange}>
                         <option value="en">English</option>
                         <option value="es">Español</option>
                         <option value="fr">Français</option>
@@ -195,9 +209,8 @@ const Settings = ({ darkMode, toggleTheme }) => {
                       <label>Date Format</label>
                       <select
                         name="dateFormat"
-                        value={settings.dateFormat}
-                        onChange={handleInputChange}
-                      >
+                        value={settings?.dateFormat || "MM/DD/YYYY"}
+                        onChange={handleInputChange}>
                         <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                         <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                         <option value="YYYY-MM-DD">YYYY-MM-DD</option>
@@ -207,67 +220,13 @@ const Settings = ({ darkMode, toggleTheme }) => {
                       <label>Currency</label>
                       <select
                         name="currency"
-                        value={settings.currency}
-                        onChange={handleInputChange}
-                      >
+                        value={settings.currency || "USD"}
+                        onChange={handleInputChange}>
                         <option value="USD">USD ($)</option>
                         <option value="EUR">EUR (€)</option>
                         <option value="GBP">GBP (£)</option>
                         <option value="JPY">JPY (¥)</option>
                       </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Appearance Settings Tab */}
-          {activeTab === 'appearance' && (
-            <div className="tab-panel active">
-              <div className="section-card">
-                <div className="section-header">
-                  <h2>Appearance Settings</h2>
-                  <p>Customize the look and feel of your application</p>
-                </div>
-                <div className="form-section">
-                  <div className="form-group">
-                    <label>Theme Mode</label>
-                    <div className="switch-container">
-                      <label className="switch">
-                        <input
-                          type="checkbox"
-                          name="darkMode"
-                          checked={settings.darkMode}
-                          onChange={handleInputChange}
-                        />
-                        <span className="switch-slider">
-                          <span className="switch-label">
-                            {settings.darkMode ? 'Dark Mode' : 'Light Mode'}
-                            {settings.darkMode && <span className="switch-badge">Active</span>}
-                          </span>
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Primary Color</label>
-                    <div className="color-picker-container">
-                      <input
-                        type="color"
-                        name="primaryColor"
-                        value={settings.primaryColor}
-                        onChange={handleInputChange}
-                        className="color-picker"
-                      />
-                      <input
-                        type="text"
-                        name="primaryColor"
-                        value={settings.primaryColor}
-                        onChange={handleInputChange}
-                        className="color-input"
-                        placeholder="#1fdae4"
-                      />
                     </div>
                   </div>
                 </div>
@@ -292,9 +251,8 @@ const Settings = ({ darkMode, toggleTheme }) => {
                           <input
                             type="checkbox"
                             name="emailNotifications"
-                            checked={settings.emailNotifications}
-                            onChange={handleInputChange}
-                          />
+                            checked={settings?.emailNotifications || false }
+                            onChange={handleInputChange} />
                           <span className="switch-slider">
                             <span className="switch-label">Enable Email Notifications</span>
                           </span>
@@ -305,9 +263,8 @@ const Settings = ({ darkMode, toggleTheme }) => {
                           <input
                             type="checkbox"
                             name="weeklyReports"
-                            checked={settings.weeklyReports}
-                            onChange={handleInputChange}
-                          />
+                            checked={settings?.weeklyReports || false }
+                            onChange={handleInputChange} />
                           <span className="switch-slider">
                             <span className="switch-label">Weekly Reports</span>
                           </span>
@@ -318,9 +275,8 @@ const Settings = ({ darkMode, toggleTheme }) => {
                           <input
                             type="checkbox"
                             name="systemAlerts"
-                            checked={settings.systemAlerts}
-                            onChange={handleInputChange}
-                          />
+                            checked={settings?.systemAlerts || false }
+                            onChange={handleInputChange} />
                           <span className="switch-slider">
                             <span className="switch-label">System Alerts</span>
                           </span>
@@ -328,7 +284,7 @@ const Settings = ({ darkMode, toggleTheme }) => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="settings-group">
                     <h3>Push Notifications</h3>
                     <div className="switch-group">
@@ -337,9 +293,8 @@ const Settings = ({ darkMode, toggleTheme }) => {
                           <input
                             type="checkbox"
                             name="pushNotifications"
-                            checked={settings.pushNotifications}
-                            onChange={handleInputChange}
-                          />
+                            checked={settings?.pushNotifications || false }
+                            onChange={handleInputChange} />
                           <span className="switch-slider">
                             <span className="switch-label">Enable Push Notifications</span>
                           </span>
@@ -365,9 +320,8 @@ const Settings = ({ darkMode, toggleTheme }) => {
                     <label>Session Timeout</label>
                     <select
                       name="sessionTimeout"
-                      value={settings.sessionTimeout}
-                      onChange={handleInputChange}
-                    >
+                      value={settings?.sessionTimeout || "30"}
+                      onChange={handleInputChange} >
                       <option value="15">15 minutes</option>
                       <option value="30">30 minutes</option>
                       <option value="60">1 hour</option>
@@ -381,9 +335,8 @@ const Settings = ({ darkMode, toggleTheme }) => {
                         <input
                           type="checkbox"
                           name="autoSave"
-                          checked={settings.autoSave}
-                          onChange={handleInputChange}
-                        />
+                          checked={settings?.autoSave || false}
+                          onChange={handleInputChange} />
                         <span className="switch-slider">
                           <span className="switch-label">Auto-save changes</span>
                         </span>

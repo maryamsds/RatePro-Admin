@@ -36,6 +36,34 @@ const EmailTemplates = () => {
     description: "",
     isActive: true,
   });
+  const [availableTemplateTypes, setAvailableTemplateTypes] = useState([]); // DB se aayenge
+  const [isCustomType, setIsCustomType] = useState(false);
+
+  const fetchUniqueTypes = async () => {
+    try {
+      const response = await emailTemplateAPI.getAll();
+      if (response.data.success) {
+        const uniqueTypes = [...new Set(response.data.data.map(t => t.type))];
+        const typeOptions = uniqueTypes.map(type => ({
+          value: type,
+          label: type
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ')
+        }));
+        setAvailableTemplateTypes(typeOptions.sort((a, b) => a.label.localeCompare(b.label)));
+        setTemplates(response.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch types", err);
+      // Fallback to hardcoded
+      setAvailableTemplateTypes(templateTypes);
+    }
+  };
+
+  useEffect(() => {
+    fetchUniqueTypes();
+  }, []);
 
   // Available template types from your backend enum
   const templateTypes = [
@@ -53,50 +81,28 @@ const EmailTemplates = () => {
     { key: "customerName", description: "Customer's name" },
     { key: "companyName", description: "Your company name" },
     { key: "surveyLink", description: "Link to the survey" },
-    { key: "loginDetails", description: "User login credentials" },
+    { key: "userEmail", description: "User email address" },
+    { key: "userPassword", description: "User password" },
+    { key: "verificationLink", description: "User verification link" },
+    { key: "otpExpireMinutes", description: "OTP expiration time in minutes" },
     { key: "rating", description: "Customer's rating" },
     { key: "resetLink", description: "Password reset link" },
     { key: "expiryDate", description: "Expiry date" },
   ];
-
-  // Debug logger
-  const debugLog = (action, data = {}) => {
-    console.log(`🔍 DEBUG [${action}]:`, {
-      timestamp: new Date().toISOString(),
-      ...data,
-    });
-  };
-
   // Fetch templates from backend using axios
   const fetchTemplates = async () => {
     try {
-      debugLog("fetchTemplates_start", {
-        loading,
-        templatesCount: templates.length,
-      });
       setLoading(true);
       setError("");
 
       const response = await emailTemplateAPI.getAll();
 
-      debugLog("fetchTemplates_response", {
-        status: response.status,
-        data: response.data,
-      });
-
       if (response.data.success) {
         setTemplates(response.data.data || []);
-        debugLog("fetchTemplates_success", {
-          count: response.data.data?.length,
-        });
       } else {
         throw new Error(response.data.message || "Failed to fetch templates");
       }
     } catch (err) {
-      debugLog("fetchTemplates_error", {
-        error: err.response?.data?.message || err.message,
-        status: err.response?.status,
-      });
       setError(
         err.response?.data?.message ||
         err.message ||
@@ -104,28 +110,21 @@ const EmailTemplates = () => {
       );
     } finally {
       setLoading(false);
-      debugLog("fetchTemplates_finally", { loading: false });
     }
   };
 
   useEffect(() => {
-    debugLog("component_mount");
     fetchTemplates();
   }, []);
 
   // Open modal for new template
   const handleNewTemplate = () => {
-    debugLog("handleNewTemplate");
     resetForm();
     setShowTemplateModal(true);
   };
 
   // Reset form and close modal
   const resetForm = () => {
-    debugLog("resetForm", {
-      previousEditingId: editingId,
-      previousTemplate: currentTemplate,
-    });
     setCurrentTemplate({
       name: "",
       type: "",
@@ -142,18 +141,21 @@ const EmailTemplates = () => {
 
   // Close modal
   const closeModal = () => {
-    debugLog("closeModal");
     setShowTemplateModal(false);
     resetForm();
   };
 
   // Handle edit template
   const handleEdit = (template) => {
-    debugLog("handleEdit", {
-      templateId: template._id,
-      templateName: template.name,
-      templateType: template.type,
+    const isCustom = !availableTemplateTypes.some(t => t.value === template.type);
+    setIsCustomType(isCustom);
+
+    setEditingId(template._id);
+    setCurrentTemplate({
+      ...template,
+      type: template.type
     });
+    setShowTemplateModal(true);
     setEditingId(template._id);
     setCurrentTemplate({
       name: template.name || "",
@@ -171,10 +173,6 @@ const EmailTemplates = () => {
 
   // Handle duplicate template
   const handleDuplicate = (template) => {
-    debugLog("handleDuplicate", {
-      templateId: template._id,
-      templateName: template.name,
-    });
     setCurrentTemplate({
       name: `${template.name} (Copy)`,
       type: "", // Type must be unique, so we clear it
@@ -192,10 +190,6 @@ const EmailTemplates = () => {
 
   // Handle preview template
   const handlePreview = (template) => {
-    debugLog("handlePreview", {
-      templateId: template._id,
-      templateName: template.name,
-    });
     setPreviewTemplate(template);
   };
 
@@ -203,17 +197,6 @@ const EmailTemplates = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      debugLog("handleSave_start", {
-        editingId,
-        currentTemplate: {
-          name: currentTemplate.name,
-          type: currentTemplate.type,
-          subject: currentTemplate.subject,
-          bodyLength: currentTemplate.body.length,
-          variables: currentTemplate.variables,
-        },
-      });
-
       setLoading(true);
       setError("");
       setSuccess("");
@@ -232,134 +215,81 @@ const EmailTemplates = () => {
       let response;
 
       if (editingId) {
-        debugLog("handleSave_update", { templateId: editingId, apiData });
         response = await emailTemplateAPI.update(editingId, apiData);
       } else {
-        debugLog("handleSave_create", { apiData });
         response = await emailTemplateAPI.create(apiData);
       }
-
-      debugLog("handleSave_response", {
-        status: response.status,
-        data: response.data,
-      });
 
       if (response.data.success) {
         const message = editingId
           ? "Template updated successfully"
           : "Template created successfully";
         setSuccess(message);
-        debugLog("handleSave_success", { message });
         closeModal();
         await fetchTemplates();
       } else {
         throw new Error(response.data.message || "Operation failed");
       }
     } catch (err) {
-      debugLog("handleSave_error", {
-        error: err.response?.data?.message || err.message,
-        status: err.response?.status,
-      });
       setError(
         err.response?.data?.message || err.message || "Something went wrong"
       );
     } finally {
       setLoading(false);
-      debugLog("handleSave_finally", { loading: false });
     }
   };
 
   // Handle delete template
   const handleDelete = async (id) => {
-    debugLog("handleDelete_confirm", { templateId: id });
     if (
       !confirm(
         "Are you sure you want to delete this template? This action cannot be undone."
       )
     ) {
-      debugLog("handleDelete_cancelled", { templateId: id });
       return;
     }
 
     try {
       setLoading(true);
-      debugLog("handleDelete_start", { templateId: id });
-
       const response = await emailTemplateAPI.delete(id);
-
-      debugLog("handleDelete_response", {
-        status: response.status,
-        data: response.data,
-      });
 
       if (response.data.success) {
         setSuccess("Template deleted successfully");
-        debugLog("handleDelete_success", { templateId: id });
         await fetchTemplates();
       } else {
         throw new Error(response.data.message || "Delete failed");
       }
     } catch (err) {
-      debugLog("handleDelete_error", {
-        error: err.response?.data?.message || err.message,
-        templateId: id,
-      });
       setError(err.response?.data?.message || err.message || "Delete failed");
     } finally {
       setLoading(false);
-      debugLog("handleDelete_finally", { loading: false });
     }
   };
 
   // Toggle template status
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      debugLog("handleToggleStatus_start", {
-        templateId: id,
-        currentStatus,
-        newStatus: !currentStatus,
-      });
-
       setLoading(true);
       const response = await emailTemplateAPI.toggleStatus(id);
-
-      debugLog("handleToggleStatus_response", {
-        status: response.status,
-        data: response.data,
-      });
 
       if (response.data.success) {
         setSuccess(
           `Template ${!currentStatus ? "activated" : "deactivated"
           } successfully`
         );
-        debugLog("handleToggleStatus_success", {
-          templateId: id,
-          newStatus: !currentStatus,
-        });
         await fetchTemplates();
       } else {
         throw new Error(response.data.message || "Toggle failed");
       }
     } catch (err) {
-      debugLog("handleToggleStatus_error", {
-        error: err.response?.data?.message || err.message,
-        templateId: id,
-      });
       setError(err.response?.data?.message || err.message || "Toggle failed");
     } finally {
       setLoading(false);
-      debugLog("handleToggleStatus_finally", { loading: false });
     }
   };
 
   // Add variable to template body at cursor position
   const handleAddVariableToBody = (variableKey) => {
-    debugLog("handleAddVariableToBody", {
-      variableKey,
-      currentBodyLength: currentTemplate.body.length,
-    });
-
     const textarea = document.querySelector('textarea[name="body"]');
     if (textarea) {
       const start = textarea.selectionStart;
@@ -377,10 +307,6 @@ const EmailTemplates = () => {
         variables: [...new Set([...currentTemplate.variables, variableKey])],
       });
 
-      debugLog("handleAddVariableToBody_success", {
-        newBodyLength: newBody.length,
-      });
-
       // Set cursor position after inserted variable
       setTimeout(() => {
         textarea.focus();
@@ -392,30 +318,49 @@ const EmailTemplates = () => {
     }
   };
 
+  // Add this object — tum define karo kon sa type konsa variable use kar sakta hai
+  const variablesByType = {
+    user_welcome: ["userName", "companyName", "userEmail", "userPassword", "verificationLink", "otpExpireMinutes"],
+    password_reset: ["userName", "resetLink", "expiryDate"],
+    survey_published: ["userName", "customerName", "surveyLink", "companyName"],
+    survey_reminder: ["userName", "customerName", "surveyLink"],
+    low_rating_followup: ["userName", "customerName", "rating", "surveyLink"],
+    admin_notification: ["userName", "companyName"],
+    // Add more as needed
+  };
+
+  // Function to get variables for current type
+  const getRelevantVariables = () => {
+    const type = currentTemplate.type;
+    if (!type) return [];
+
+    const keys = variablesByType[type];
+    if (!keys) return availableVariables; // custom type = allow all
+    return availableVariables.filter(v => keys.includes(v.key));
+  };
+
+  const relevantVars = getRelevantVariables();
+
   // Close preview
   const handleClosePreview = () => {
-    debugLog("handleClosePreview");
     setPreviewTemplate(null);
   };
 
   // Handle search
   const handleSearch = (e) => {
     const value = e.target.value;
-    debugLog("handleSearch", { searchTerm: value });
     setSearchTerm(value);
   };
 
   // Handle status filter
   const handleStatusFilter = (e) => {
     const value = e.target.value;
-    debugLog("handleStatusFilter", { statusFilter: value });
     setStatusFilter(value);
   };
 
   // Handle type filter
   const handleTypeFilter = (e) => {
     const value = e.target.value;
-    debugLog("handleTypeFilter", { typeFilter: value });
     setTypeFilter(value);
   };
 
@@ -434,14 +379,6 @@ const EmailTemplates = () => {
     const matchesType = typeFilter === "all" || template.type === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
-  });
-
-  debugLog("filteredTemplates", {
-    originalCount: templates.length,
-    filteredCount: filteredTemplates.length,
-    searchTerm,
-    statusFilter,
-    typeFilter,
   });
 
   return (
@@ -686,7 +623,6 @@ const EmailTemplates = () => {
               <button
                 className="btn btn-sm btn-outline-secondary"
                 onClick={() => {
-                  debugLog("clearFilters");
                   setSearchTerm("");
                   setStatusFilter("all");
                   setTypeFilter("all");
@@ -696,7 +632,6 @@ const EmailTemplates = () => {
                   fontSize: "0.875rem",
                   border: "1px solid #6c757d",
                   borderRadius: "4px",
-                  backgroundColor: "transparent",
                   color: "#6c757d",
                   cursor: "pointer",
                 }}
@@ -866,10 +801,10 @@ const EmailTemplates = () => {
                           borderBottom: "1px solid #eee",
                           transition: "background-color 0.2s",
                         }}
-                        onMouseOver={(e) =>
-                        (e.target.parentElement.style.backgroundColor =
-                          "#f8f9fa")
-                        }
+                        // onMouseOver={(e) =>
+                        // (e.target.parentElement.style.backgroundColor =
+                        //   "#f8f9fa")
+                        // }
                         onMouseOut={(e) =>
                         (e.target.parentElement.style.backgroundColor =
                           "transparent")
@@ -959,7 +894,7 @@ const EmailTemplates = () => {
                                 padding: "6px 8px",
                                 border: "1px solid #007bff",
                                 borderRadius: "4px",
-                                backgroundColor: "transparent",
+                                // backgroundColor: "transparent",
                                 color: "#007bff",
                                 cursor: "pointer",
                                 display: "flex",
@@ -984,7 +919,7 @@ const EmailTemplates = () => {
                                 padding: "6px 8px",
                                 border: "1px solid #17a2b8",
                                 borderRadius: "4px",
-                                backgroundColor: "transparent",
+                                // backgroundColor: "transparent",
                                 color: "#17a2b8",
                                 cursor: "pointer",
                                 display: "flex",
@@ -992,7 +927,7 @@ const EmailTemplates = () => {
                                 transition: "all 0.2s",
                               }}
                               onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#17a2b81a")
+                                (e.target.style.backgroundColor = "#0c72811a")
                               }
                               onMouseOut={(e) =>
                                 (e.target.style.backgroundColor = "transparent")
@@ -1009,7 +944,7 @@ const EmailTemplates = () => {
                                 padding: "6px 8px",
                                 border: "1px solid #6c757d",
                                 borderRadius: "4px",
-                                backgroundColor: "transparent",
+                                // backgroundColor: "transparent",
                                 color: "#6c757d",
                                 cursor: "pointer",
                                 display: "flex",
@@ -1034,7 +969,7 @@ const EmailTemplates = () => {
                                 padding: "6px 8px",
                                 border: "1px solid #ffc107",
                                 borderRadius: "4px",
-                                backgroundColor: "transparent",
+                                // backgroundColor: "transparent",
                                 color: "#ffc107",
                                 cursor: "pointer",
                                 display: "flex",
@@ -1070,7 +1005,7 @@ const EmailTemplates = () => {
                                 padding: "6px 8px",
                                 border: "1px solid #dc3545",
                                 borderRadius: "4px",
-                                backgroundColor: "transparent",
+                                // backgroundColor: "transparent",
                                 color: "#dc3545",
                                 cursor: "pointer",
                                 display: "flex",
@@ -1128,9 +1063,11 @@ const EmailTemplates = () => {
               overflow: "auto",
               width: "800px",
               boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+              top: "50px",
+              transform: "translateY(0)",
             }}
           >
-            <div
+            {/* <div
               className="modal-header"
               style={{
                 display: "flex",
@@ -1178,9 +1115,9 @@ const EmailTemplates = () => {
                   alignItems: "center",
                   justifyContent: "center",
                 }}
-                onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#f8f9fa")
-                }
+                // onMouseOver={(e) =>
+                //   (e.target.style.backgroundColor = "#f8f9fa")
+                // }
                 onMouseOut={(e) =>
                   (e.target.style.backgroundColor = "transparent")
                 }
@@ -1188,9 +1125,35 @@ const EmailTemplates = () => {
               >
                 <MdClose size={20} />
               </button>
-            </div>
+            </div> */}
 
             <div className="modal-body" style={{ padding: "1.5rem" }}>
+              <div className="d-flex justify-content-end w-100">
+              <button
+                onClick={closeModal}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "1.5rem",
+                  cursor: "pointer",
+                  color: "#fff",
+                  padding: "4px",
+                  borderRadius: "4px",
+                  transition: "all 0.2s",
+                  width: "32px",
+                  height: "32px",
+                }}
+                onMouseOver={(e) =>
+                  (e.target.style.color = "#da1616ff")
+                }
+                // onMouseOut={(e) =>
+                //   (e.target.style.color = "transparent")
+                // }
+                title="Close Modal"
+              >
+                <MdClose size={20} />
+              </button>
+              </div>
               <form onSubmit={handleSave}>
                 <div
                   className="row"
@@ -1202,7 +1165,7 @@ const EmailTemplates = () => {
                 >
                   {/* Template Name */}
                   <div
-                    className="col-md-6"
+                    className="col-md-6 text"
                     style={{
                       flex: "0 0 50%",
                       padding: "0 10px",
@@ -1234,7 +1197,6 @@ const EmailTemplates = () => {
                         }}
                         value={currentTemplate.name}
                         onChange={(e) => {
-                          debugLog("nameChange", { value: e.target.value });
                           setCurrentTemplate({
                             ...currentTemplate,
                             name: e.target.value,
@@ -1249,7 +1211,7 @@ const EmailTemplates = () => {
 
                   {/* Template Type */}
                   <div
-                    className="col-md-6"
+                    className="col-md-6 text"
                     style={{
                       flex: "0 0 50%",
                       padding: "0 10px",
@@ -1269,44 +1231,46 @@ const EmailTemplates = () => {
                       >
                         Template Type *
                       </label>
-                      <select
-                        className="form-control"
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #ddd",
-                          borderRadius: "4px",
-                          fontSize: "14px",
-                        }}
-                        value={currentTemplate.type}
-                        onChange={(e) => {
-                          debugLog("typeChange", { value: e.target.value });
-                          setCurrentTemplate({
-                            ...currentTemplate,
-                            type: e.target.value,
-                          });
-                        }}
-                        required
-                        disabled={loading || editingId}
-                      >
-                        <option value="">Select Template Type</option>
-                        {templateTypes.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                      {editingId && (
-                        <small
-                          className="text-muted"
-                          style={{
-                            color: "#6c757d",
-                            fontSize: "0.75rem",
-                            display: "block",
-                            marginTop: "4px",
+                      {!editingId && (
+                        <select
+                          className="form-control"
+                          value={isCustomType ? '' : currentTemplate.type}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === 'custom') {
+                              setIsCustomType(true);
+                              setCurrentTemplate({ ...currentTemplate, type: '' });
+                            } else {
+                              setIsCustomType(false);
+                              setCurrentTemplate({ ...currentTemplate, type: val });
+                            }
                           }}
+                          disabled={loading || editingId}
                         >
-                          🔒 Template type cannot be changed after creation
+                          <option value="">Select Type</option>
+                          {availableTemplateTypes.map(t => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                          <option value="custom">+ Add Custom Type</option>
+                        </select>
+                      )}
+
+                      {(isCustomType || editingId) && (
+                        <input
+                          type="text"
+                          className="form-control"
+                          style={{ marginTop: editingId ? 0 : '8px' }}
+                          value={currentTemplate.type}
+                          onChange={(e) => setCurrentTemplate({ ...currentTemplate, type: e.target.value })}
+                          placeholder="e.g., birthday_wish, invoice_reminder"
+                          required
+                          disabled={loading}
+                        />
+                      )}
+
+                      {editingId && (
+                        <small className="text-muted">
+                          Type cannot be changed after creation
                         </small>
                       )}
                     </div>
@@ -1314,7 +1278,7 @@ const EmailTemplates = () => {
                 </div>
 
                 {/* Subject */}
-                <div className="form-group" style={{ marginBottom: "1rem" }}>
+                <div className="form-group text" style={{ marginBottom: "1rem" }}>
                   <label
                     style={{
                       display: "block",
@@ -1336,7 +1300,6 @@ const EmailTemplates = () => {
                     }}
                     value={currentTemplate.subject}
                     onChange={(e) => {
-                      debugLog("subjectChange", { value: e.target.value });
                       setCurrentTemplate({
                         ...currentTemplate,
                         subject: e.target.value,
@@ -1349,7 +1312,7 @@ const EmailTemplates = () => {
                 </div>
 
                 {/* Description */}
-                <div className="form-group" style={{ marginBottom: "1rem" }}>
+                <div className="form-group text" style={{ marginBottom: "1rem" }}>
                   <label
                     style={{
                       display: "block",
@@ -1357,7 +1320,7 @@ const EmailTemplates = () => {
                       fontWeight: "bold",
                     }}
                   >
-                    Description
+                    Description (Optional)
                   </label>
                   <textarea
                     className="form-control"
@@ -1372,7 +1335,6 @@ const EmailTemplates = () => {
                     }}
                     value={currentTemplate.description}
                     onChange={(e) => {
-                      debugLog("descriptionChange", { value: e.target.value });
                       setCurrentTemplate({
                         ...currentTemplate,
                         description: e.target.value,
@@ -1385,7 +1347,7 @@ const EmailTemplates = () => {
                 </div>
 
                 {/* Body */}
-                <div className="form-group" style={{ marginBottom: "1rem" }}>
+                <div className="form-group text" style={{ marginBottom: "1rem" }}>
                   <label>Email Body (HTML) *</label>
                   <textarea
                     name="body"
@@ -1395,7 +1357,7 @@ const EmailTemplates = () => {
                       padding: "12px",
                       border: "1px solid #ddd",
                       borderRadius: "4px",
-                      minHeight: "300px",
+                      minHeight: "100px",
                       fontFamily: "monospace",
                       fontSize: "14px",
                       resize: "vertical",
@@ -1408,116 +1370,39 @@ const EmailTemplates = () => {
                         body: e.target.value,
                       });
                     }}
-                    rows={15}
+                    rows={8}
                     required
                     disabled={loading}
                     placeholder={`Enter your email template body in HTML format. You can use variables like {userName}, {companyName}, etc.`}
                   />
-
-
-                  {/* Variables Section */}
-                  <div className="variables mt-3" style={{ marginTop: "1rem" }}>
-                    <p
-                      style={{
-                        marginBottom: "0.5rem",
-                        fontWeight: "bold",
-                        fontSize: "14px",
-                      }}
-                    >
-                      📝 Available Variables:
+                  <div className="variables mt-3">
+                    <p style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>
+                      Available Variables {currentTemplate.type ? `for "${currentTemplate.type}"` : ''}
                     </p>
-                    <div
-                      className="variable-buttons"
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      {availableVariables.map((variable) => (
-                        <button
-                          key={variable.key}
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          style={{
-                            padding: "6px 12px",
-                            fontSize: "0.75rem",
-                            border: "1px solid #007bff",
-                            borderRadius: "4px",
-                            backgroundColor: "transparent",
-                            color: "#007bff",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                          onMouseOver={(e) =>
-                            (e.target.style.backgroundColor = "#007bff1a")
-                          }
-                          onMouseOut={(e) =>
-                            (e.target.style.backgroundColor = "transparent")
-                          }
-                          onClick={() => handleAddVariableToBody(variable.key)}
-                          disabled={loading}
-                          title={variable.description}
-                        >
-                          {`{${variable.key}}`}
-                        </button>
-                      ))}
-                    </div>
-                    <small
-                      className="text-muted"
-                      style={{
-                        color: "#6c757d",
-                        fontSize: "0.75rem",
-                        display: "block",
-                      }}
-                    >
-                      💡 Click on variables to insert them at cursor position in
-                      the body
-                    </small>
-                  </div>
-                </div>
 
-                {/* Active Status */}
-                <div
-                  className="form-group form-check"
-                  style={{
-                    marginBottom: "1.5rem",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  {/* <input
-                    type="checkbox"
-                    className="form-check-input"
-                    style={{
-                      marginRight: "8px",
-                      width: "18px",
-                      height: "18px",
-                      cursor: loading ? "not-allowed" : "pointer",
-                    }}
-                    id="isActive"
-                    checked={currentTemplate.isActive}
-                    onChange={(e) => {
-                      debugLog("isActiveChange", { checked: e.target.checked });
-                      setCurrentTemplate({
-                        ...currentTemplate,
-                        isActive: e.target.checked,
-                      });
-                    }}
-                    disabled={loading}
-                  />     */}
-                  {/* <label
-                    className="form-check-label"
-                    htmlFor="isActive"
-                    style={{
-                      margin: 0,
-                      fontSize: "14px",
-                      cursor: loading ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    ✅ Active Template
-                  </label> */}
+                    {getRelevantVariables().length > 0 ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                        {relevantVars.map(variable => (
+                          <button
+                            key={variable.key}
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleAddVariableToBody(variable.key)}
+                            title={variable.description}
+                          >
+                            {`{${variable.key}}`}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ color: "#aaa", fontStyle: "italic", fontSize: "14px" }}>
+                        {currentTemplate.type
+                          ? `No specific variables defined for "${currentTemplate.type}". You can use any variable.`
+                          : "Select a template type to see relevant variables."
+                        }
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Form Actions */}
@@ -1529,7 +1414,7 @@ const EmailTemplates = () => {
                     alignItems: "center",
                     justifyContent: "flex-end",
                     borderTop: "1px solid #eee",
-                    paddingTop: "1.5rem",
+                    // paddingTop: "1.5rem",
                   }}
                 >
                   <button
@@ -1541,7 +1426,7 @@ const EmailTemplates = () => {
                       padding: "10px 20px",
                       border: "1px solid #6c757d",
                       borderRadius: "4px",
-                      backgroundColor: "transparent",
+                      // backgroundColor: "transparent",
                       color: "#6c757d",
                       cursor: loading ? "not-allowed" : "pointer",
                       display: "flex",
@@ -1632,6 +1517,8 @@ const EmailTemplates = () => {
               overflow: "auto",
               width: "700px",
               boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+              top: "50px",
+              transform: "translateY(0)"
             }}
           >
             <div
@@ -1696,7 +1583,7 @@ const EmailTemplates = () => {
                 </div>
               </div>
 
-              <div style={{ marginBottom: "1.5rem" }}>
+              <div >
                 <strong
                   style={{
                     display: "block",

@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
-import { Container, Row, Col, Card, Form, Button, Table, Badge, Modal, InputGroup } from 'react-bootstrap';
-import { MdCreditCard, MdAdd, MdEdit, MdDelete, MdCheck, MdClose, MdSave, MdRefresh, MdSearch, MdFilterList, MdTrendingUp, MdAttachMoney } from 'react-icons/md';
+import {
+  Container, Row, Col, Form, Button,
+  Table, Badge, Modal, InputGroup
+} from 'react-bootstrap';
+import {
+  MdCreditCard, MdAdd, MdEdit, MdDelete, MdCheck,
+  MdClose, MdSave, MdRefresh, MdSearch, MdFilterList,
+  MdTrendingUp, MdAttachMoney
+} from 'react-icons/md';
 import Swal from 'sweetalert2';
-import axios from '../../api/axiosInstance';
+import axios, { axiosInstance } from '../../api/axiosInstance';
 
 const SubscriptionPlans = () => {
   // State for form inputs
@@ -17,44 +24,7 @@ const SubscriptionPlans = () => {
   });
 
   // State for existing plans
-  const [plans, setPlans] = useState([
-    {
-      id: 1,
-      planName: 'Beginner Plan',
-      price: 9.99,
-      duration: 1,
-      surveyLimit: 10,
-      description: 'Perfect for individuals and small teams getting started',
-      status: 'active',
-      features: ['10 Surveys/month', 'Basic Analytics', 'Email Support'],
-      subscribers: 145,
-      revenue: 1448.55
-    },
-    {
-      id: 2,
-      planName: 'Pro Plan',
-      price: 29.99,
-      duration: 1,
-      surveyLimit: 50,
-      description: 'Ideal for growing businesses with advanced needs',
-      status: 'active',
-      features: ['50 Surveys/month', 'Advanced Analytics', 'Priority Support', 'Custom Branding'],
-      subscribers: 89,
-      revenue: 2669.11
-    },
-    {
-      id: 3,
-      planName: 'Enterprise',
-      price: 99.99,
-      duration: 1,
-      surveyLimit: -1,
-      description: 'Complete solution for large organizations',
-      status: 'active',
-      features: ['Unlimited Surveys', 'White-label Solution', 'Dedicated Support', 'API Access', 'Custom Integrations'],
-      subscribers: 23,
-      revenue: 2299.77
-    }
-  ]);
+  const [plans, setPlans] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -66,6 +36,38 @@ const SubscriptionPlans = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingPlanId, setDeletingPlanId] = useState(null);
 
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      const res = await axiosInstance.get('/subscriptions/admin/plans?limit=100');
+      console.log("Fetched Plans:", res.data);
+
+      // backend se plans key check
+      const plansArray = res.data?.data?.plans || res.data?.plans || [];
+
+      const mappedPlans = plansArray.map(plan => ({
+        id: plan._id,
+        planName: plan.name,
+        price: plan.price,
+        duration: plan.billingCycle === 'yearly' ? 12 : 1,
+        surveyLimit: plan.credits,
+        description: plan.description,
+        status: plan.isActive ? 'active' : 'inactive',
+        features: plan.features || [],
+        subscribers: 0,
+        revenue: 0
+      }));
+
+      setPlans(mappedPlans);
+    } catch (err) {
+      console.error("Fetch Plans Error:", err);
+    }
+  };
+
+
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -76,41 +78,66 @@ const SubscriptionPlans = () => {
   };
 
   // Handle create plan
-  const handleCreatePlan = (e) => {
+  const handleCreatePlan = async (e) => {
     e.preventDefault();
-    
-    const newPlan = {
-      id: plans.length + 1,
-      ...formData,
+
+    const billingCycle = parseInt(formData.duration) === 12 ? 'yearly' : 'monthly';
+
+    const data = {
+      name: formData.planName,
       price: parseFloat(formData.price),
-      duration: parseInt(formData.duration),
-      surveyLimit: parseInt(formData.surveyLimit),
-      features: [],
-      subscribers: 0,
-      revenue: 0
+      billingCycle,
+      credits: parseInt(formData.surveyLimit),
+      description: formData.description,
+      isActive: formData.status === 'active',
+      features: []
     };
 
-    setPlans([...plans, newPlan]);
-    
-    setFormData({
-      planName: '',
-      price: '',
-      duration: '1',
-      surveyLimit: '',
-      description: '',
-      status: 'active'
-    });
+    try {
+      const response = await axiosInstance.post('/subscriptions/admin/plans', data);
+      console.log("Created Plan:", response.data);
 
-    setShowCreateModal(false);
-    
-    Swal.fire({
-      icon: 'success',
-      title: 'Success!',
-      text: 'Plan created successfully!',
-      confirmButtonColor: '#0d6efd',
-      timer: 2000,
-      showConfirmButton: false
-    });
+      // naya plan append
+      const newPlan = response.data.data;
+      setPlans(prev => [
+        ...prev,
+        {
+          id: newPlan._id,
+          planName: newPlan.name,
+          price: newPlan.price,
+          duration: newPlan.billingCycle === 'yearly' ? 12 : 1,
+          surveyLimit: newPlan.credits,
+          description: newPlan.description,
+          status: newPlan.isActive ? 'active' : 'inactive',
+          features: newPlan.features || [],
+          subscribers: 0,
+          revenue: 0
+        }
+      ]);
+
+      setFormData({
+        planName: '',
+        price: '',
+        duration: '1',
+        surveyLimit: '',
+        description: '',
+        status: 'active'
+      });
+
+      setShowCreateModal(false);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Plan created successfully!',
+        confirmButtonColor: '#0d6efd',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+    } catch (err) {
+      console.error("Create Plan Error:", err);
+    }
   };
 
   // Handle edit plan
@@ -120,19 +147,37 @@ const SubscriptionPlans = () => {
   };
 
   // Handle update plan
-  const handleUpdatePlan = () => {
-    setPlans(plans.map(p => p.id === editingPlan.id ? editingPlan : p));
-    setShowEditModal(false);
-    setEditingPlan(null);
-    
-    Swal.fire({
-      icon: 'success',
-      title: 'Updated!',
-      text: 'Plan updated successfully!',
-      confirmButtonColor: '#0d6efd',
-      timer: 2000,
-      showConfirmButton: false
-    });
+  const handleUpdatePlan = async () => {
+    const billingCycle = parseInt(editingPlan.duration) === 12 ? 'yearly' : 'monthly';
+
+    const data = {
+      name: editingPlan.planName,
+      price: parseFloat(editingPlan.price),
+      billingCycle,
+      credits: parseInt(editingPlan.surveyLimit),
+      description: editingPlan.description,
+      isActive: editingPlan.status === 'active',
+      features: editingPlan.features || []
+    };
+
+    try {
+      await axiosInstance.put(`/subscriptions/admin/plans/${editingPlan.id}`, data);
+      setShowEditModal(false);
+      setEditingPlan(null);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Updated!',
+        text: 'Plan updated successfully!',
+        confirmButtonColor: '#0d6efd',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      fetchPlans();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Handle delete plan
@@ -141,20 +186,31 @@ const SubscriptionPlans = () => {
     setShowDeleteModal(true);
   };
 
+
   // Confirm delete
-  const confirmDelete = () => {
-    setPlans(plans.filter(p => p.id !== deletingPlanId));
-    setShowDeleteModal(false);
-    setDeletingPlanId(null);
-    
-    Swal.fire({
-      icon: 'success',
-      title: 'Deleted!',
-      text: 'Plan deleted successfully!',
-      confirmButtonColor: '#0d6efd',
-      timer: 2000,
-      showConfirmButton: false
-    });
+  const confirmDelete = async () => {
+    const planId = deletingPlanId;
+    if (!planId) return console.error("No plan ID to delete");
+
+    console.log("Deleting Plan ID:", planId);
+
+    try {
+      await axiosInstance.delete(`/subscriptions/admin/plans/${planId}`);
+      setShowDeleteModal(false);
+      setDeletingPlanId(null);
+      fetchPlans();
+
+      Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "Plan deleted successfully!",
+        confirmButtonColor: "#0d6efd",
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      console.error("Delete Plan Error:", err.response?.data || err.message);
+    }
   };
 
   // Handle edit modal input changes
@@ -298,7 +354,7 @@ const SubscriptionPlans = () => {
                     <InputGroup.Text>
                       <MdFilterList />
                     </InputGroup.Text>
-                    <Form.Select 
+                    <Form.Select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
                     >
@@ -372,7 +428,7 @@ const SubscriptionPlans = () => {
                           </div>
                         </td>
                         <td>
-                          <Badge 
+                          <Badge
                             bg={plan.status === 'active' ? 'success' : 'secondary'}
                             className="status-badge"
                           >
@@ -382,16 +438,16 @@ const SubscriptionPlans = () => {
                         </td>
                         <td>
                           <div className="d-flex gap-2 justify-content-center">
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline-primary"
                               className="action-btn"
                               onClick={() => handleEditPlan(plan)}
                             >
                               <MdEdit />
                             </Button>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline-danger"
                               className="action-btn"
                               onClick={() => handleDeletePlan(plan.id)}
@@ -410,9 +466,9 @@ const SubscriptionPlans = () => {
         </div>
 
         {/* Create Plan Modal */}
-        <Modal 
-          show={showCreateModal} 
-          onHide={() => setShowCreateModal(false)} 
+        <Modal
+          show={showCreateModal}
+          onHide={() => setShowCreateModal(false)}
           size="lg"
           centered
           className="modern-modal"
@@ -534,9 +590,9 @@ const SubscriptionPlans = () => {
         </Modal>
 
         {/* Edit Modal */}
-        <Modal 
-          show={showEditModal} 
-          onHide={() => setShowEditModal(false)} 
+        <Modal
+          show={showEditModal}
+          onHide={() => setShowEditModal(false)}
           size="lg"
           centered
           className="modern-modal"
@@ -648,8 +704,8 @@ const SubscriptionPlans = () => {
         </Modal>
 
         {/* Delete Modal */}
-        <Modal 
-          show={showDeleteModal} 
+        <Modal
+          show={showDeleteModal}
           onHide={() => setShowDeleteModal(false)}
           centered
           className="modern-modal delete-modal"

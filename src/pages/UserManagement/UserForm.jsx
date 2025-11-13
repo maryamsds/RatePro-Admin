@@ -120,7 +120,11 @@ const UserForm = () => {
     const hasInternal = selectedLabels.includes('internal');
 
     if (!hasInternal) {
-      setUser(prev => ({ ...prev, department: '' }));
+      setUser(prev => ({
+        ...prev,
+        userCategories: selected,
+        department: hasInternal ? prev.department : '', // clear department if not internal
+      }));
     }
 
     setShowDepartment(hasInternal); // state to toggle UI
@@ -280,8 +284,15 @@ const UserForm = () => {
       if (currentUserRole === "admin" && user.role === "companyAdmin") {
         payload.tenantName = user.tenantName;
       } else if (user.role === "member") {
-        payload.department = user.departmentId;
-        payload.userCategories = user.userCategoryIds; // <-- SEND IDS
+        // Only add department if userCategories includes 'internal'
+        const selectedCategories = user.userCategories || [];
+        const isInternal = selectedCategories.some(cat => cat.toLowerCase() === "internal");
+
+        if (isInternal) {
+          payload.department = user.departmentId; // required
+        }
+
+        payload.userCategories = user.userCategoryIds; // always send IDs
       }
 
       if (isEditMode) {

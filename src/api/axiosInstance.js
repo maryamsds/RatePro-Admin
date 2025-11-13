@@ -195,6 +195,39 @@ export const exportUserPDF = async (userId) => {
   });
 };
 
+// ------------------- Subscription APIs -------------------
+
+// Usage
+axiosInstance.get("/subscriptions/user") // NOT /api/subscriptions/user
+axiosInstance.get("/subscriptions/user/plans/available")
+
+// ------------------- Settings APIs -------------------
+
+// Create new settings
+export const createSettings = async (data) => {
+  const response = await axiosInstance.post("/settings", data)
+  return response.data
+}
+
+// Get current super-admin settings
+export const getSettings = async () => {
+  const response = await axiosInstance.get("/settings")
+  console.log("Fetched Settings:", response.data)
+  return response.data
+}
+
+// Update settings
+export const updateSettings = async (data) => {
+  const response = await axiosInstance.put("/settings", data)
+  return response.data
+}
+
+// Reset settings to default
+export const resetSettings = async () => {
+  const response = await axiosInstance.post("/settings/reset")
+  return response.data
+}
+
 export const sendUserNotification = (userId, subject, message) =>
   axiosInstance.post(`/users/notify/${userId}`, {
     subject,

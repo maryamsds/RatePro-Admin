@@ -529,35 +529,6 @@ const UserList = ({ darkMode }) => {
               />
             </div>
           </div>
-          
-          <div className="filter-actions">
-            <Button 
-              variant="outline-secondary"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`filter-toggle d-md-none ${showFilters ? 'active' : ''}`}
-            >
-              <MdFilterList className="me-2" /> Filters
-            </Button>
-            
-            <div className="view-toggle d-none d-md-flex">
-              <Button
-                variant={viewMode === 'cards' ? 'primary' : 'outline-secondary'}
-                size="sm"
-                onClick={() => setViewMode('cards')}
-                title="Card View"
-              >
-                <MdViewModule />
-              </Button>
-              <Button
-                variant={viewMode === 'table' ? 'primary' : 'outline-secondary'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-                title="Table View"
-              >
-                <MdViewList />
-              </Button>
-            </div>
-          </div>
         </div>
         
         <div className={`filters-row ${showFilters ? 'show' : ''} d-md-grid`}>
@@ -580,6 +551,7 @@ const UserList = ({ darkMode }) => {
           </div>
         </div>
       </div>
+      <br/>
 
       {/* Users Content */}
       <div className="users-content">

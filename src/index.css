@@ -243,9 +243,9 @@ body {
   color: var(--dark-text);
 }
 
-.dark .table-striped>tbody>tr:nth-of-type(odd)>td {
+/* .dark .table-striped>tbody>tr:nth-of-type(odd)>td {
   background-color: rgba(255, 255, 255, 0.05) !important;
-}
+} */
 
 .dark .table-hover>tbody>tr:hover>td {
   background-color: #2a2e35e8 !important;
@@ -8070,7 +8070,7 @@ button.btn-outline-danger:disabled {
   font-size: 1rem;
   font-weight: 600;
   /* color: var(--text-primary); */
-  margin-bottom: 1rem;
+  /* margin-bottom: 1rem; */
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
 }
@@ -13346,7 +13346,7 @@ canvas {
 
 /* Section Headers */
 .section-header {
-  padding: 1.5rem;
+  /* padding: 1.5rem;   */
   border-bottom: 1px solid var(--light-border);
   display: flex;
   align-items: center;
