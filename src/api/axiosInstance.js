@@ -195,12 +195,6 @@ export const exportUserPDF = async (userId) => {
   });
 };
 
-// ------------------- Subscription APIs -------------------
-
-// Usage
-axiosInstance.get("/subscriptions/user") // NOT /api/subscriptions/user
-axiosInstance.get("/subscriptions/user/plans/available")
-
 // ------------------- Settings APIs -------------------
 
 // Create new settings

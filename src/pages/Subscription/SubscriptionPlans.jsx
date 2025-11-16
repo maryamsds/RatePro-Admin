@@ -82,6 +82,13 @@ const SubscriptionPlans = () => {
     e.preventDefault();
 
     const billingCycle = parseInt(formData.duration) === 12 ? 'yearly' : 'monthly';
+    const now = new Date();
+    const startDate = now.toISOString();
+    const endDate = new Date(
+      now.getFullYear(),
+      now.getMonth() + parseInt(formData.duration),
+      now.getDate()
+    ).toISOString();
 
     const data = {
       name: formData.planName,
@@ -90,14 +97,16 @@ const SubscriptionPlans = () => {
       credits: parseInt(formData.surveyLimit),
       description: formData.description,
       isActive: formData.status === 'active',
-      features: []
+      features: [],
+      tenant: formData.tenantId || null, // Optional: if you want to assign
+      startDate,
+      endDate
     };
 
     try {
       const response = await axiosInstance.post('/subscriptions/admin/plans', data);
       console.log("Created Plan:", response.data);
 
-      // naya plan append
       const newPlan = response.data.data;
       setPlans(prev => [
         ...prev,
@@ -111,7 +120,10 @@ const SubscriptionPlans = () => {
           status: newPlan.isActive ? 'active' : 'inactive',
           features: newPlan.features || [],
           subscribers: 0,
-          revenue: 0
+          revenue: 0,
+          tenant: newPlan.tenant || null,
+          startDate: newPlan.startDate || null,
+          endDate: newPlan.endDate || null
         }
       ]);
 
@@ -123,7 +135,6 @@ const SubscriptionPlans = () => {
         description: '',
         status: 'active'
       });
-
       setShowCreateModal(false);
 
       Swal.fire({
@@ -134,7 +145,6 @@ const SubscriptionPlans = () => {
         timer: 2000,
         showConfirmButton: false
       });
-
     } catch (err) {
       console.error("Create Plan Error:", err);
     }
@@ -396,9 +406,18 @@ const SubscriptionPlans = () => {
                         <td>
                           <div className="plan-info">
                             <div className="plan-name">{plan.planName}</div>
-                            <div className="plan-description text-muted small">
+                            {/* <div className="plan-description text-muted small">
                               {plan.description}
+                            </div> */}
+                            <div className="plan-description-list">
+                              {(Array.isArray(plan.description) ? plan.description : [plan.description]).map((desc, i) => (
+                                <div key={i} className="desc-item">
+                                  <MdCheck className="me-1 text-success" />
+                                  <span>{desc}</span>
+                                </div>
+                              ))}
                             </div>
+                            
                           </div>
                         </td>
                         <td>

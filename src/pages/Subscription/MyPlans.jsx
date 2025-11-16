@@ -1,69 +1,114 @@
-import React, { useState } from 'react';
+// RatePro-Admin/src/pages/Subscription/MyPlans.jsx
+"use client";
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Row, Col, Button, Badge, Modal, ProgressBar } from 'react-bootstrap';
+import { Container, Row, Col, Button, Badge, Modal, ProgressBar, ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import { MdReceipt, MdCheck, MdStar, MdWorkspacePremium, MdRocketLaunch, MdBusiness, MdAutorenew, MdHistory, MdCancel, MdTrendingUp, MdDateRange, MdPeople } from 'react-icons/md';
-import axios from '../../api/axiosInstance';
+import axios, { axiosInstance } from '../../api/axiosInstance';
 import Swal from 'sweetalert2';
 
 const MyPlans = ({ darkMode }) => {
-  // Current active subscription (dummy data)
-  const [currentPlan, setCurrentPlan] = useState({
-    id: 1,
-    planName: 'Beginner Plan',
-    price: 9.99,
-    duration: 1,
-    surveyLimit: 10,
-    surveysUsed: 7,
-    status: 'active',
-    startDate: '2024-01-01',
-    endDate: '2024-02-01',
-    features: ['10 Surveys/month', 'Basic Analytics', 'Email Support']
-  });
-
-  // Available plans for upgrade (dummy data)
-  const [availablePlans, setAvailablePlans] = useState([
-    {
-      id: 1,
-      planName: 'Beginner Plan',
-      price: 9.99,
-      duration: 1,
-      surveyLimit: 10,
-      description: 'Perfect for individuals and small teams getting started',
-      features: ['10 Surveys/month', 'Basic Analytics', 'Email Support'],
-      icon: <MdStar />,
-      recommended: false
-    },
-    {
-      id: 2,
-      planName: 'Pro Plan',
-      price: 29.99,
-      duration: 1,
-      surveyLimit: 50,
-      description: 'Ideal for growing businesses with advanced needs',
-      features: ['50 Surveys/month', 'Advanced Analytics', 'Priority Support', 'Custom Branding'],
-      icon: <MdRocketLaunch />,
-      recommended: true
-    },
-    {
-      id: 3,
-      planName: 'Enterprise',
-      price: 99.99,
-      duration: 1,
-      surveyLimit: -1,
-      description: 'Complete solution for large organizations',
-      features: ['Unlimited Surveys', 'White-label Solution', 'Dedicated Support', 'API Access', 'Custom Integrations'],
-      icon: <MdBusiness />,
-      recommended: false
-    }
-  ]);
-
+  // State for current subscription
+  const [currentPlan, setCurrentPlan] = useState(null);
+  // State for available plans
+  const [availablePlans, setAvailablePlans] = useState([]);
+  // Loading states
+  const [loadingCurrent, setLoadingCurrent] = useState(true);
+  const [loadingAvailable, setLoadingAvailable] = useState(true);
+  // Error states
+  const [error, setError] = useState(null);
   // State for upgrade modal
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  // Billing cycle toggle
+  const [billingCycle, setBillingCycle] = useState('monthly');
 
-  // Handle upgrade/buy click
-  const handlePlanSelect = (plan) => {
-    if (plan.id === currentPlan.id) {
+  // Fetch current subscription
+  useEffect(() => {
+    const fetchCurrentSubscription = async () => {
+      try {
+        setLoadingCurrent(true);
+        console.log('Fetching current subscription...');
+        const response = await axiosInstance.get('/subscriptions/user');
+        if (response.data.success) {
+          const planData = response.data.data;
+          // Update currentPlan correctly
+          setCurrentPlan({
+            id: planData._id || plan.id,
+            planName: planData.name || plan.planName || plan.planName,
+            price: planData.price || plan.price,
+            billingCycle: planData.billingCycle || plan.billingCycle,
+            duration: planData.billingCycle === 'monthly' ? 1 : 12,
+            surveyLimit: planData.credits === 0 ? -1 : planData.credits,
+            surveysUsed: 0,
+            status: planData.status || 'active',
+            startDate: startDate,
+            endDate: endDate,
+            features: planData.features || plan.features || []
+          });
+
+        } else {
+          setError(response.data.message || 'No active subscription found');
+          setCurrentPlan(null);
+        }
+      } catch (err) {
+        const status = err.response?.status;
+
+        if (status === 404) {
+          // No active subscription → Not an actual error
+          setCurrentPlan(null);
+          setError(null);
+        } else {
+          setError(err.response?.data?.message || 'Error fetching current subscription');
+          setCurrentPlan(null);
+        }
+      } finally {
+        setLoadingCurrent(false);
+      }
+    };
+
+    fetchCurrentSubscription();
+  }, []);
+
+  // Fetch available plans based on billing cycle
+  useEffect(() => {
+    const fetchAvailablePlans = async () => {
+      try {
+        setLoadingAvailable(true);
+        const response = await axiosInstance.get(`/subscriptions/user/plans/available?billingCycle=${billingCycle}`);
+        if (response.data.success) {
+          const plans = response.data.data;
+          setAvailablePlans(plans.map((plan, index) => ({
+            id: plan._id,
+            planName: plan.name,
+            price: plan.price,
+            billingCycle: plan.billingCycle,
+            duration: plan.billingCycle === 'monthly' ? 1 : 12,
+            surveyLimit: plan.credits === 0 ? -1 : plan.credits,
+            description: Array.isArray(plan.description)
+              ? plan.description
+              : (plan.description ? plan.description.split('  ') : ['No description available']),
+
+            features: plan.features || [],
+            icon: [<MdStar />, <MdRocketLaunch />, <MdBusiness />][index % 3],
+            recommended: plan.name.toLowerCase().includes('pro') // Example: Recommend 'pro' plans
+          })));
+          console.log('Available plans fetched:', plans);
+        } else {
+          setError(response.data.message || 'Error fetching available plans');
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || 'Error fetching available plans');
+      } finally {
+        setLoadingAvailable(false);
+      }
+    };
+
+    fetchAvailablePlans();
+  }, [billingCycle]);
+
+  const handlePlanSelect = async (plan) => {
+    if (currentPlan && plan.id === currentPlan.id) {
       Swal.fire({
         icon: 'info',
         title: 'Already Subscribed',
@@ -72,36 +117,88 @@ const MyPlans = ({ darkMode }) => {
       });
       return;
     }
-    setSelectedPlan(plan);
-    setShowUpgradeModal(true);
+
+    if (!currentPlan) {
+      try {
+        const now = new Date();
+        const startDate = now.toISOString();
+        const endDate = new Date(
+          now.getFullYear(),
+          now.getMonth() + (plan.duration || 1),
+          now.getDate()
+        ).toISOString();
+
+        const response = await axiosInstance.post('/subscriptions/user/activate', {
+          planId: plan.id,
+          startDate,
+          endDate
+        });
+
+        if (response.data.success) {
+          setCurrentPlan({
+            ...response.data.data,
+            startDate,
+            endDate
+          });
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Subscription Activated!',
+            text: 'Your subscription has been activated.',
+            confirmButtonColor: '#0d6efd'
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Activation Failed',
+          text: err.response?.data?.message || 'Error activating subscription',
+          confirmButtonColor: '#0d6efd'
+        });
+      }
+    } else {
+      setSelectedPlan(plan);
+      setShowUpgradeModal(true);
+    }
   };
 
-  // Confirm upgrade
-  const confirmUpgrade = () => {
-    setCurrentPlan({
-      ...currentPlan,
-      ...selectedPlan,
-      surveysUsed: 0,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(new Date().setMonth(new Date().getMonth() + selectedPlan.duration)).toISOString().split('T')[0]
-    });
-    
-    setShowUpgradeModal(false);
-    setSelectedPlan(null);
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Plan Updated!',
-      text: 'Your subscription plan has been successfully updated.',
-      confirmButtonColor: '#0d6efd',
-      timer: 2000,
-      showConfirmButton: false
-    });
+  // Confirm upgrade request
+  const confirmUpgrade = async () => {
+    try {
+      const response = await axiosInstance.post('/subscriptions/user/upgrade', {
+        planId: selectedPlan.id,
+        planName: selectedPlan.planName,
+        reason: 'User requested upgrade via dashboard'
+      });
+      if (response.data.success) {
+        setShowUpgradeModal(false);
+        setSelectedPlan(null);
+        Swal.fire({
+          icon: 'success',
+          title: 'Upgrade Requested!',
+          text: 'Your upgrade request has been submitted. Our team will contact you soon.',
+          confirmButtonColor: '#0d6efd',
+          timer: 3000,
+          showConfirmButton: false
+        });
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Request Failed',
+        text: err.response?.data?.message || 'Error requesting upgrade',
+        confirmButtonColor: '#0d6efd'
+      });
+    }
   };
+
+  // Get display period
+  const getPeriod = (cycle) => cycle === 'yearly' ? '/year' : '/month';
 
   // Calculate days remaining
-  const getDaysRemaining = () => {
-    const end = new Date(currentPlan.endDate);
+  const getDaysRemaining = (endDate) => {
+    const end = new Date(endDate);
     const today = new Date();
     const diffTime = end - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -109,10 +206,14 @@ const MyPlans = ({ darkMode }) => {
   };
 
   // Calculate usage percentage
-  const getUsagePercentage = () => {
-    if (currentPlan.surveyLimit === -1) return 0;
-    return (currentPlan.surveysUsed / currentPlan.surveyLimit) * 100;
+  const getUsagePercentage = (used, limit) => {
+    if (limit === -1) return 0;
+    return (used / limit) * 100;
   };
+
+  if (loadingCurrent || loadingAvailable) {
+    return <div>Loading subscription details...</div>;
+  }
 
   return (
     <div className="my-plans-page">
@@ -131,97 +232,97 @@ const MyPlans = ({ darkMode }) => {
           <div className="d-flex align-items-center justify-content-end mb-3">
             <Badge className="status-badge-large">
               <MdCheck className="me-1" />
-              Active Subscription
+              {currentPlan ? 'Active Subscription' : 'No Active Subscription'}
             </Badge>
           </div>
         </div>
 
         {/* Current Plan Hero Section */}
-        <div className="current-plan-hero">
-          <div className="plan-hero-content">
-            <Row className="align-items-center">
-              <Col lg={4}>
-                <div className="plan-info-section">
-                  <div className="plan-icon-large text">
-                    <MdStar />
-                  </div>
-                  <h2 className="plan-title text">{currentPlan.planName}</h2>
-                  <div className="plan-price-large">
-                    <span className="currency">$</span>
-                    <span className="amount">{currentPlan.price}</span>
-                    <span className="period">/month</span>
-                  </div>
-                  <div className="plan-features-list text">
-                    {currentPlan.features.map((feature, index) => (
-                      <div key={index} className="feature-item">
-                        <MdCheck className="feature-check" />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Col>
-
-              <Col lg={8}>
-                <Row className="g-4">
-                  {/* Usage Card */}
-                  <Col md={6}>
-                    <div className="info-card">
-                      <div className="info-card-header">
-                        <h5>Survey Usage</h5>
-                        <MdTrendingUp className="info-icon" />
-                      </div>
-                      <div className="usage-stats">
-                        <div className="usage-numbers">
-                          <span className="used">{currentPlan.surveysUsed}</span>
-                          <span className="separator">/</span>
-                          <span className="total">
-                            {currentPlan.surveyLimit === -1 ? '∞' : currentPlan.surveyLimit}
-                          </span>
+        {currentPlan && (
+          <div className="current-plan-hero">
+            <div className="plan-hero-content">
+              <Row className="align-items-center">
+                <Col lg={4}>
+                  <div className="plan-info-section">
+                    <div className="plan-icon-large text">
+                      <MdStar />
+                    </div>
+                    <h2 className="plan-title text">{currentPlan.planName}</h2>
+                    <div className="plan-price-large">
+                      <span className="currency">$</span>
+                      <span className="amount">{currentPlan.price}</span>
+                      <span className="period">{getPeriod(currentPlan.billingCycle)}</span>
+                    </div>
+                    <div className="plan-features-list text">
+                      {currentPlan.features.map((feature, index) => (
+                        <div key={index} className="feature-item">
+                          <MdCheck className="feature-check" />
+                          <span>{feature}</span>
                         </div>
-                        {currentPlan.surveyLimit !== -1 && (
-                          <div className="usage-bar">
-                            <ProgressBar 
-                              now={getUsagePercentage()} 
-                              variant={getUsagePercentage() > 80 ? 'danger' : 'primary'}
-                            />
-                            <span className="usage-percentage">{getUsagePercentage().toFixed(0)}% Used</span>
+                      ))}
+                    </div>
+                  </div>
+                </Col>
+
+                <Col lg={8}>
+                  <Row className="g-4">
+                    <Col md={6}>
+                      <div className="info-card">
+                        <div className="info-card-header">
+                          <h5>Survey Usage</h5>
+                          <MdTrendingUp className="info-icon" />
+                        </div>
+                        <div className="usage-stats">
+                          <div className="usage-numbers">
+                            <span className="used">{currentPlan.surveysUsed}</span>
+                            <span className="separator">/</span>
+                            <span className="total">
+                              {currentPlan.surveyLimit === -1 ? '∞' : currentPlan.surveyLimit}
+                            </span>
                           </div>
-                        )}
+                          {currentPlan.surveyLimit !== -1 && (
+                            <div className="usage-bar">
+                              <ProgressBar
+                                now={getUsagePercentage(currentPlan.surveysUsed, currentPlan.surveyLimit)}
+                                variant={getUsagePercentage(currentPlan.surveysUsed, currentPlan.surveyLimit) > 80 ? 'danger' : 'primary'}
+                              />
+                              <span className="usage-percentage">{getUsagePercentage(currentPlan.surveysUsed, currentPlan.surveyLimit).toFixed(0)}% Used</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Col>
+                    </Col>
 
-                  {/* Billing Period Card */}
-                  <Col md={6}>
-                    <div className="info-card">
-                      <div className="info-card-header">
-                        <h5>Billing Period</h5>
-                        <MdDateRange className="info-icon" />
+                    <Col md={6}>
+                      <div className="info-card">
+                        <div className="info-card-header">
+                          <h5>Billing Period</h5>
+                          <MdDateRange className="info-icon" />
+                        </div>
+                        <div className="billing-info">
+                          <div className="billing-row">
+                            <span className="label">Start Date</span>
+                            <span className="value">{new Date(currentPlan.startDate).toLocaleDateString()}</span>
+                          </div>
+                          <div className="billing-row">
+                            <span className="label">End Date</span>
+                            <span className="value">{new Date(currentPlan.endDate).toLocaleDateString()}</span>
+                          </div>
+                          <div className="billing-row highlight">
+                            <span className="label">Days Remaining</span>
+                            <Badge bg={getDaysRemaining(currentPlan.endDate) < 7 ? 'danger' : 'info'} className="days-badge">
+                              {getDaysRemaining(currentPlan.endDate)} days
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                      <div className="billing-info">
-                        <div className="billing-row">
-                          <span className="label">Start Date</span>
-                          <span className="value">{new Date(currentPlan.startDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="billing-row">
-                          <span className="label">End Date</span>
-                          <span className="value">{new Date(currentPlan.endDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="billing-row highlight">
-                          <span className="label">Days Remaining</span>
-                          <Badge bg={getDaysRemaining() < 7 ? 'danger' : 'info'} className="days-badge">
-                            {getDaysRemaining()} days
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Col>
-            </Row>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Available Plans Section */}
         <div className="available-plans-section">
@@ -230,37 +331,64 @@ const MyPlans = ({ darkMode }) => {
               <h2>Available Plans</h2>
               <p>Choose a plan that fits your needs and upgrade anytime</p>
             </div>
+            <ToggleButtonGroup type="radio" name="billingCycle" defaultValue={billingCycle}>
+              <ToggleButton
+                id="monthly"
+                value="monthly"
+                checked={billingCycle === 'monthly'}
+                onChange={() => setBillingCycle('monthly')}
+              >
+                Monthly
+              </ToggleButton>
+
+              <ToggleButton
+                id="yearly"
+                value="yearly"
+                checked={billingCycle === 'yearly'}
+                onChange={() => setBillingCycle('yearly')}
+              >
+                Yearly
+              </ToggleButton>
+            </ToggleButtonGroup>
           </div>
 
           <Row className="g-4">
             {availablePlans.map(plan => (
               <Col key={plan.id} lg={4} md={6}>
-                <div className={`pricing-card ${plan.recommended ? 'recommended' : ''} ${plan.id === currentPlan.id ? 'current' : ''}`}>
+                <div className={`pricing-card ${plan.recommended ? 'recommended' : ''} ${currentPlan && plan.id === currentPlan.id ? 'current' : ''}`}>
                   {plan.recommended && (
                     <div className="recommended-badge">
                       <MdWorkspacePremium />
                       <span>Recommended</span>
                     </div>
                   )}
-                  {plan.id === currentPlan.id && (
+                  {currentPlan && plan.id === currentPlan.id && (
                     <div className="current-badge">
                       <MdCheck />
                       <span>Current Plan</span>
                     </div>
                   )}
-                  
+
                   <div className="pricing-header">
                     <div className="plan-icon-wrapper">
                       {plan.icon}
                     </div>
                     <h3 className="plan-name">{plan.planName}</h3>
-                    <p className="plan-desc">{plan.description}</p>
+                    {/* <p className="plan-desc">{plan.description}</p> */}
+                    <div className="plan-desc-list">
+                      {plan.description.map((desc, i) => (
+                        <div key={i} className="desc-item">
+                          <MdCheck className="check-icon" />
+                          <span>{desc}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="pricing-amount">
                     <span className="currency">$</span>
                     <span className="price">{plan.price}</span>
-                    <span className="period">/month</span>
+                    <span className="period">{getPeriod(plan.billingCycle)}</span>
                   </div>
 
                   <div className="features-list">
@@ -273,17 +401,19 @@ const MyPlans = ({ darkMode }) => {
                   </div>
 
                   <div className="pricing-footer">
-                    {plan.id === currentPlan.id ? (
+                    {currentPlan && plan.id === currentPlan.id ? (
                       <Button variant="outline-secondary" disabled className="w-100">
                         Current Plan
                       </Button>
                     ) : (
-                      <Button 
+                      <Button
                         variant={plan.recommended ? 'primary' : 'outline-primary'}
                         className="w-100"
                         onClick={() => handlePlanSelect(plan)}
                       >
-                        {plan.id > currentPlan.id ? 'Upgrade Plan' : 'Switch Plan'}
+                        {currentPlan && plan.price > currentPlan.price
+                          ? 'Upgrade Plan'
+                          : 'Select Plan'}
                       </Button>
                     )}
                   </div>
@@ -294,8 +424,8 @@ const MyPlans = ({ darkMode }) => {
         </div>
 
         {/* Upgrade Modal */}
-        <Modal 
-          show={showUpgradeModal} 
+        <Modal
+          show={showUpgradeModal}
           onHide={() => setShowUpgradeModal(false)}
           centered
           className="modern-modal"
@@ -311,15 +441,15 @@ const MyPlans = ({ darkMode }) => {
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            {selectedPlan && (
+            {selectedPlan && currentPlan && (
               <div className="plan-comparison">
-                <p className="mb-4">You are about to change your subscription:</p>
+                <p className="mb-4">You are about to request an upgrade:</p>
                 <div className="comparison-card">
                   <div className="comparison-row from">
                     <span className="label">Current Plan</span>
                     <div className="plan-details">
                       <span className="name">{currentPlan.planName}</span>
-                      <span className="price">${currentPlan.price}/mo</span>
+                      <span className="price">${currentPlan.price}{getPeriod(currentPlan.billingCycle)}</span>
                     </div>
                   </div>
                   <div className="comparison-arrow">
@@ -329,7 +459,7 @@ const MyPlans = ({ darkMode }) => {
                     <span className="label">New Plan</span>
                     <div className="plan-details">
                       <span className="name">{selectedPlan.planName}</span>
-                      <span className="price">${selectedPlan.price}/mo</span>
+                      <span className="price">${selectedPlan.price}{getPeriod(selectedPlan.billingCycle)}</span>
                     </div>
                   </div>
                 </div>
@@ -337,7 +467,7 @@ const MyPlans = ({ darkMode }) => {
                   <div className="difference-card">
                     <span>Price Difference:</span>
                     <span className="amount">
-                      ${Math.abs(selectedPlan.price - currentPlan.price).toFixed(2)}/month
+                      ${Math.abs(selectedPlan.price - currentPlan.price).toFixed(2)}{getPeriod(selectedPlan.billingCycle)}
                     </span>
                   </div>
                 </div>
@@ -350,7 +480,7 @@ const MyPlans = ({ darkMode }) => {
             </Button>
             <Button variant="primary" onClick={confirmUpgrade}>
               <MdCheck className="me-2" />
-              Confirm Change
+              Request Upgrade
             </Button>
           </Modal.Footer>
         </Modal>
@@ -360,163 +490,3 @@ const MyPlans = ({ darkMode }) => {
 };
 
 export default MyPlans;
-
-// import React, { useState, useEffect } from 'react';
-// import { Container, Row, Col, Button, Badge, Modal, ProgressBar, Spinner } from 'react-bootstrap';
-// import { MdReceipt, MdCheck, MdStar, MdRocketLaunch, MdBusiness, MdWorkspacePremium, MdTrendingUp, MdDateRange } from 'react-icons/md';
-// import axios, { axiosInstance } from '../../api/axiosInstance';
-// import Swal from 'sweetalert2';
-
-// const MyPlans = ({ darkMode }) => {
-//   const [currentPlan, setCurrentPlan] = useState(null);
-//   const [availablePlans, setAvailablePlans] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-//   const [selectedPlan, setSelectedPlan] = useState(null);
-
-//   useEffect(() => {
-//     loadData();
-//   }, []);
-
-//   const loadData = async () => {
-//     setLoading(true);
-//     setCurrentPlan(null);
-//     setAvailablePlans([]);
-
-//     // Fetch current subscription
-//     try {
-//       const res = await axiosInstance.get('/subscriptions/user');
-//       if (res.data.success) {
-//         const sub = res.data.data;
-//         const plan = sub.planTemplate || {};
-
-//         setCurrentPlan({
-//           id: plan._id,
-//           planName: plan.name || 'Custom',
-//           price: plan.price || 0,
-//           billingCycle: plan.billingCycle || 'monthly',
-//           surveyLimit: sub.credits,
-//           surveysUsed: sub.usedCredits || 0, // add this field later or calculate
-//           status: sub.status,
-//           startDate: sub.startDate ? sub.startDate.split('T')[0] : '',
-//           endDate: sub.endDate ? sub.endDate.split('T')[0] : '',
-//           features: plan.features || []
-//         });
-//       }
-//     } catch (err) {
-//       if (err.response?.status === 404) {
-//         console.log('No active subscription (normal if you have none)');
-//       } else {
-//         console.error('Current subscription error:', err.response?.data || err);
-//         Swal.fire('Error', err.response?.data?.message || 'Failed to load current subscription', 'error');
-//       }
-//     }
-
-//     // Fetch available plans (always try)
-//     try {
-//       const res = await axiosInstance.get('/subscriptions/user/plans/available');
-//       if (res.data.success) {
-//         const plans = res.data.data.map(plan => ({
-//           id: plan._id,
-//           planName: plan.name,
-//           price: plan.price,
-//           billingCycle: plan.billingCycle || 'monthly',
-//           surveyLimit: plan.credits,
-//           description: plan.description || '',
-//           features: plan.features || [],
-//           icon: getPlanIcon(plan.name),
-//           recommended: plan.name.toLowerCase().includes('pro')
-//         }));
-//         setAvailablePlans(plans);
-//       }
-//     } catch (err) {
-//       console.error('Available plans error:', err.response?.data || err);
-//       Swal.fire('Error', err.response?.data?.message || 'Failed to load available plans', 'error');
-//     }
-
-//     setLoading(false);
-//   };
-
-//   const getPlanIcon = (name) => {
-//     const n = name.toLowerCase();
-//     if (n.includes('beginner') || n.includes('starter')) return <MdStar />;
-//     if (n.includes('pro')) return <MdRocketLaunch />;
-//     if (n.includes('enterprise') || n.includes('business')) return <MdBusiness />;
-//     return <MdWorkspacePremium />;
-//   };
-
-//   const handlePlanSelect = (plan) => {
-//     if (currentPlan && plan.id === currentPlan.id) {
-//       Swal.fire('Already on this plan', 'You are already on this plan', 'info');
-//       return;
-//     }
-//     setSelectedPlan(plan);
-//     setShowUpgradeModal(true);
-//   };
-
-//   const confirmPlanChange = async () => {
-//     try {
-//       const res = await axiosInstance.post('/subscriptions/user/activate', {
-//         planId: selectedPlan.id,
-//       });
-
-//       if (res.data.success) {
-//         const sub = res.data.data;
-//         const plan = sub.planTemplate || {};
-
-//         setCurrentPlan({
-//           id: plan._id,
-//           planName: plan.name,
-//           price: plan.price,
-//           billingCycle: plan.billingCycle || 'monthly',
-//           surveyLimit: sub.credits,
-//           surveysUsed: 0,
-//           startDate: sub.startDate.split('T')[0],
-//           endDate: sub.endDate.split('T')[0],
-//           features: plan.features || []
-//         });
-
-//         Swal.fire('Success!', currentPlan ? 'Plan upgraded!' : 'Subscription activated!', 'success').then(() => window.location.reload());
-//         setShowUpgradeModal(false);
-//       }
-//     } catch (err) {
-//       Swal.fire('Failed', err.response?.data?.message || 'Upgrade failed', 'error');
-//     }
-//   };
-
-//   if (loading) return <div className="text-center py-5"><Spinner animation="border" /></div>;
-
-//   return (
-//     <Container fluid>
-//       {/* ... rest of JSX same as before ... */}
-//       {/* Only change in pricing card period: */}
-//       {availablePlans.map(plan => (
-//         <Col key={plan.id}>
-//           <div className="pricing-amount">
-//             <span className="currency">$</span>
-//             <span className="price">{plan.price}</span>
-//             <span className="period">/{plan.billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
-//           </div>
-//         </Col>
-//       ))}
-
-//       {/* And in hero section for current plan: */}
-//       <span className="period">/{currentPlan?.billingCycle === 'yearly' ? 'yr' : 'mo'}</span>
-
-//       {/* For unlimited surveys */}
-//       <span className="total">
-//         {currentPlan?.surveyLimit === -1 ? 'Unlimited' : currentPlan?.surveyLimit}
-//       </span>
-//       {currentPlan?.surveyLimit !== -1 && (
-//         <ProgressBar
-//           now={(currentPlan?.surveysUsed / currentPlan?.surveyLimit) * 100}
-//           label={`${currentPlan?.surveysUsed || 0}/${currentPlan?.surveyLimit}`}
-//         />
-//       )}
-
-//       {/* Modal same */}
-//     </Container>
-//   );
-// };
-
-// export default MyPlans;
