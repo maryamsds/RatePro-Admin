@@ -62,7 +62,7 @@ const ContactManagement = ({ darkMode }) => {
       if (filterSegment !== "all") params.segment = filterSegment
       if (filterStatus !== "all") params.status = filterStatus
       const res = await axiosInstance.get('/contacts', { params })
-      // console.log(res.data.contacts);
+      console.log(res.data.contacts);
       setContacts(res.data.contacts)
       setPagination(p => ({ ...p, total: res.data.total }))
     } catch (err) {
@@ -95,15 +95,28 @@ const ContactManagement = ({ darkMode }) => {
     setShowModal(true)
   }
 
+  // const handleEdit = (contact) => {
+  //   setCurrentContact({
+  //     ...contact,
+  //     segment: contact.segment?.name || "",
+  //     tags: contact.tags || ""
+  //   })
+  //   setModalMode('edit')
+  //   setShowModal(true)
+  // }
+
   const handleEdit = (contact) => {
     setCurrentContact({
       ...contact,
-      segment: contact.segment?.name || "",
+      segment: segments.find(
+        (s) => s._id === (contact.segment?._id || contact.segment)
+      ) || null,
       tags: contact.tags || ""
-    })
-    setModalMode('edit')
-    setShowModal(true)
-  }
+    });
+
+    setModalMode("edit");
+    setShowModal(true);
+  };
 
   const handleView = (contact) => {
     setViewContact(contact)
@@ -322,7 +335,7 @@ const ContactManagement = ({ darkMode }) => {
               <option value="">Select Segment</option>
               {segments?.map((segment) => (
                 <option key={segment._id} value={segment.name}>
-                  {segment.name} 
+                  {segment.name}
                 </option>
               ))}
             </select>
@@ -544,17 +557,17 @@ const ContactManagement = ({ darkMode }) => {
                   <label className="form-label">Segment</label>
                   <select
                     className="filter-select"
-                    value={currentContact.segment?.name || ""}
+                    value={currentContact.segment?._id}
                     onChange={(e) =>
                       setCurrentContact({
                         ...currentContact,
-                        segment: segments.find(s => s.name === e.target.value) // poora object store
+                        segment: segments.find(s => s._id === e.target.value) // poora object store
                       })
                     }
                   >
-                    <option value="">Select Segment</option>
+                    <option value="" disabled>Select Segment</option>
                     {segments?.map((segment) => (
-                      <option key={segment._id} value={segment.name}>
+                      <option key={segment._id} value={segment._id}>
                         {segment.name}
                       </option>
                     ))}
