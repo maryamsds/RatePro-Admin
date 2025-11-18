@@ -1,51 +1,27 @@
-// src\pages\Audiences\AudienceSegmentation.jsx
-
 "use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { MdSegment, MdAdd, MdRefresh, MdSearch, MdSave, MdVisibility, MdEdit, MdDownload, MdDelete, MdSettings, MdPeople, MdTrendingUp, MdCheckCircle, MdFilterAlt } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
+import axiosInstance from '../../api/axiosInstance';
+import Swal from "sweetalert2";
 
 const AudienceSegmentation = ({ darkMode }) => {
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
   const [loading, setLoading] = useState(false)
-  const [segments, setSegments] = useState([
-    {
-      id: 1,
-      name: "High-Value Customers",
-      description: "Customers with high engagement and purchase history",
-      criteria: "Purchase > $1000 AND Engagement > 80%",
-      size: 1247,
-      status: "Active",
-      created: "2024-01-10",
-    },
-    {
-      id: 2,
-      name: "New Users",
-      description: "Users who joined in the last 30 days",
-      criteria: "Registration Date > 30 days ago",
-      size: 456,
-      status: "Active",
-      created: "2024-01-08",
-    },
-    {
-      id: 3,
-      name: "Inactive Users",
-      description: "Users with no activity in the last 90 days",
-      criteria: "Last Activity > 90 days ago",
-      size: 789,
-      status: "Draft",
-      created: "2024-01-05",
-    },
-  ])
-
+  const [segments, setSegments] = useState([])
+  const [totalContacts, setTotalContacts] = useState(0)
+  const [activeSegments, setActiveSegments] = useState(0)
+  const [draftSegments, setDraftSegments] = useState(0)
   const [showModal, setShowModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [modalMode, setModalMode] = useState('create')
   const [currentSegment, setCurrentSegment] = useState({
     name: "",
     description: "",
     criteria: "",
+    size: 0,
   })
-
+  const [viewSegment, setViewSegment] = useState(null)
   const [filters, setFilters] = useState({
     demographic: "",
     behavior: "",
@@ -53,36 +29,164 @@ const AudienceSegmentation = ({ darkMode }) => {
     purchase: "",
   })
 
+  useEffect(() => {
+    fetchStats()
+    fetchSegments()
+  }, [pagination.page])
+
+  const fetchSegments = async () => {
+    setLoading(true)
+    try {
+      const res = await axiosInstance.get(`/segments?page=${pagination.page}&limit=${pagination.limit}`)
+      setSegments(res.data.segments)
+      setPagination(p => ({ ...p, total: res.data.total }))
+    } catch (err) {
+      console.error(err)
+    }
+    setLoading(false)
+  }
+
+  const fetchStats = async () => {
+    try {
+      const res = await axiosInstance.get('/segments?limit=9999&page=1')
+      const allSegments = res.data.segments
+      const totalContactsCalc = allSegments.reduce((sum, seg) => sum + (seg.size || 0), 0)
+      const activeCalc = allSegments.filter(s => s.status === 'Active').length
+      const draftCalc = allSegments.filter(s => s.status === 'Draft').length
+      setTotalContacts(totalContactsCalc)
+      setActiveSegments(activeCalc)
+      setDraftSegments(draftCalc)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const handleCreateSegment = () => {
-    setCurrentSegment({ name: "", description: "", criteria: "" })
+    setCurrentSegment({ name: "", description: "", criteria: "", size: 0 })
+    setModalMode('create')
     setShowModal(true)
   }
 
-  const handleSaveSegment = () => {
+  const handleEdit = (seg) => {
+    setCurrentSegment(seg)
+    setModalMode('edit')
+    setShowModal(true)
+  }
+
+  const handleView = (seg) => {
+    setViewSegment(seg)
+    setShowViewModal(true)
+  }
+
+  const handleSaveSegment = async () => {
     if (currentSegment.name.trim()) {
-      const newSegment = {
-        ...currentSegment,
-        id: Date.now(),
-        size: Math.floor(Math.random() * 1000) + 100,
-        status: "Draft",
-        created: new Date().toISOString().split("T")[0],
+      try {
+        let res
+        if (modalMode === 'edit') {
+          res = await axiosInstance.put(`/segments/${currentSegment._id}`, currentSegment)
+        } else {
+          res = await axiosInstance.post('/segments', currentSegment)
+        }
+        fetchSegments()
+        fetchStats()
+        setShowModal(false)
+      } catch (err) {
+        console.error(err)
       }
-      setSegments([...segments, newSegment])
-      setShowModal(false)
     }
   }
 
   const deleteSegment = (id) => {
-    setSegments(segments.filter((s) => s.id !== id))
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axiosInstance.delete(`/segments/${id}`).then(() => {
+          fetchSegments()
+          fetchStats()
+          Swal.fire(
+            'Deleted!',
+            'Your segment has been deleted.',
+            'success'
+          )
+        }).catch(err => console.error(err))
+      }
+    })
   }
+
+  const handlePreview = async () => {
+    try {
+      const res = await axiosInstance.post('/segments/preview', filters)
+      Swal.fire({
+        title: 'Preview',
+        text: `Estimated size: ${res.data.preview.estimatedSize}`,
+        icon: 'info'
+      })
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const generateCriteria = () => {
+    return Object.entries(filters)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)} = '${v}'`)
+      .join(' AND ')
+  }
+
+  const handleSaveFromBuilder = () => {
+    const criteria = generateCriteria()
+    setCurrentSegment({
+      name: '',
+      description: '',
+      criteria,
+      status: 'Draft'
+    })
+    setModalMode('create')
+    setShowModal(true)
+  }
+
+  const handleExport = (seg) => {
+    Swal.fire({
+      title: 'Export Segment',
+      showCancelButton: true,
+      confirmButtonText: 'Excel',
+      denyButtonText: 'PDF',
+      showDenyButton: true,
+      cancelButtonText: 'Cancel',
+    }).then(async (result) => {
+
+      const downloadFile = async (type) => {
+        const res = await axiosInstance.get(
+          `/segments/${ seg._id }/export/${type}`,
+        { responseType: "blob" }
+        );
+
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `segment_${ seg._id }.${ type === 'excel' ? 'xlsx' : 'pdf' }`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      };
+
+      if (result.isConfirmed) {
+        await downloadFile("excel");
+      } else if (result.isDenied) {
+        await downloadFile("pdf");
+      }
+    });
+  };
 
   const indexOfLastItem = pagination.page * pagination.limit
   const indexOfFirstItem = indexOfLastItem - pagination.limit
   const currentSegments = segments.slice(indexOfFirstItem, indexOfLastItem)
-
-  const totalContacts = segments.reduce((sum, seg) => sum + seg.size, 0)
-  const activeSegments = segments.filter(s => s.status === 'Active').length
-  const draftSegments = segments.filter(s => s.status === 'Draft').length
 
   if (loading) {
     return (
@@ -92,7 +196,6 @@ const AudienceSegmentation = ({ darkMode }) => {
       </div>
     )
   }
-
   return (
     <div className="audience-segmentation-container">
       {/* Page Header */}
@@ -108,7 +211,7 @@ const AudienceSegmentation = ({ darkMode }) => {
             </div>
           </div>
           <div className="page-actions">
-            <button className="action-button secondary-action" onClick={() => setLoading(true)}>
+            <button className="action-button secondary-action" onClick={() => { fetchSegments(); fetchStats(); }}>
               <MdRefresh /> Refresh
             </button>
             <button className="action-button primary-action" onClick={handleCreateSegment}>
@@ -117,7 +220,6 @@ const AudienceSegmentation = ({ darkMode }) => {
           </div>
         </div>
       </div>
-
       {/* Stats Section */}
       <div className="stats-section">
         <div className="stat-card primary-card">
@@ -125,7 +227,7 @@ const AudienceSegmentation = ({ darkMode }) => {
             <MdSegment />
           </div>
           <div className="stat-content">
-            <div className="stat-value">{segments.length}</div>
+            <div className="stat-value">{pagination.total}</div>
             <div className="stat-label">Total Segments</div>
           </div>
         </div>
@@ -157,9 +259,8 @@ const AudienceSegmentation = ({ darkMode }) => {
           </div>
         </div>
       </div>
-
       {/* Segment Builder Section */}
-      <div className="section-card segment-builder-section">
+      {/* <div className="section-card segment-builder-section">
         <div className="section-header">
           <div className="section-title-wrapper">
             <h2 className="section-title">
@@ -168,7 +269,6 @@ const AudienceSegmentation = ({ darkMode }) => {
             <p className="section-subtitle">Build segments using demographic and behavioral filters</p>
           </div>
         </div>
-
         <div className="filter-grid">
           <div className="filter-group">
             <label className="filter-label">Demographics</label>
@@ -225,17 +325,15 @@ const AudienceSegmentation = ({ darkMode }) => {
             </select>
           </div>
         </div>
-
         <div className="builder-actions">
-          <button className="preview-btn">
+          <button className="preview-btn" onClick={handlePreview}>
             <MdSearch /> Preview Segment
           </button>
-          <button className="save-segment-btn">
+          <button className="save-segment-btn" onClick={handleSaveFromBuilder}>
             <MdSave /> Save as Segment
           </button>
         </div>
-      </div>
-
+      </div> */}
       {/* Segments List Section */}
       <div className="section-card segments-list-section">
         <div className="section-header">
@@ -243,11 +341,10 @@ const AudienceSegmentation = ({ darkMode }) => {
             <h2 className="section-title">Existing Segments</h2>
             <p className="section-subtitle">View and manage all audience segments</p>
           </div>
-          <button className="section-action">
+          {/* <button className="section-action">
             <MdSettings /> Settings
-          </button>
+          </button> */}
         </div>
-
         <div className="table-container">
           <table className="data-table">
             <thead>
@@ -261,8 +358,8 @@ const AudienceSegmentation = ({ darkMode }) => {
               </tr>
             </thead>
             <tbody>
-              {currentSegments.map((segment) => (
-                <tr key={segment.id}>
+              {segments.map((segment) => (
+                <tr key={segment._id}>
                   <td>
                     <div className="segment-name">{segment.name}</div>
                     <div className="segment-date">
@@ -288,19 +385,19 @@ const AudienceSegmentation = ({ darkMode }) => {
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button className="action-btn view-btn" title="View Details">
+                      <button className="action-btn view-btn" title="View Details" onClick={() => handleView(segment)}>
                         <MdVisibility />
                       </button>
-                      <button className="action-btn edit-btn" title="Edit">
+                      <button className="action-btn edit-btn" title="Edit" onClick={() => handleEdit(segment)}>
                         <MdEdit />
                       </button>
-                      <button className="action-btn download-btn" title="Export">
+                      <button className="action-btn download-btn" title="Export" onClick={() => handleExport(segment)}>
                         <MdDownload />
                       </button>
                       <button
                         className="action-btn delete-btn"
                         title="Delete"
-                        onClick={() => deleteSegment(segment.id)}
+                        onClick={() => deleteSegment(segment._id)}
                       >
                         <MdDelete />
                       </button>
@@ -311,25 +408,23 @@ const AudienceSegmentation = ({ darkMode }) => {
             </tbody>
           </table>
         </div>
-
         <div className="table-footer">
           <Pagination
             current={pagination.page}
-            total={segments.length}
+            total={pagination.total}
             limit={pagination.limit}
             onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
             darkMode={darkMode}
           />
         </div>
       </div>
-
-      {/* Create Segment Modal */}
+      {/* Create/Edit Segment Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">
-                <MdAdd /> Create New Segment
+                {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Edit'} Segment
               </h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
@@ -347,7 +442,6 @@ const AudienceSegmentation = ({ darkMode }) => {
                     onChange={(e) => setCurrentSegment({ ...currentSegment, name: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Description</label>
                   <textarea
@@ -358,7 +452,6 @@ const AudienceSegmentation = ({ darkMode }) => {
                     onChange={(e) => setCurrentSegment({ ...currentSegment, description: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Criteria</label>
                   <textarea
@@ -372,6 +465,17 @@ const AudienceSegmentation = ({ darkMode }) => {
                     Use logical operators like AND, OR to combine multiple conditions
                   </p>
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <select
+                    className="form-select"
+                    value={currentSegment.status || 'Draft'}
+                    onChange={(e) => setCurrentSegment({ ...currentSegment, status: e.target.value })}
+                  >
+                    <option value="Draft">Draft</option>
+                    <option value="Active">Active</option>
+                  </select>
+                </div>
               </form>
             </div>
             <div className="modal-footer">
@@ -379,7 +483,53 @@ const AudienceSegmentation = ({ darkMode }) => {
                 Cancel
               </button>
               <button className="modal-submit-btn" onClick={handleSaveSegment}>
-                <MdAdd /> Create Segment
+                {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Update'} Segment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* View Segment Modal */}
+      {showViewModal && (
+        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                <MdVisibility /> View Segment
+              </h2>
+              <button className="modal-close" onClick={() => setShowViewModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Segment Name</label>
+                <div className="form-text">{viewSegment.name}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <div className="form-text">{viewSegment.description}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Criteria</label>
+                <div className="form-text">{viewSegment.criteria}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <div className="form-text">{viewSegment.status}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Size</label>
+                <div className="form-text">{viewSegment.size.toLocaleString()}</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Created</label>
+                <div className="form-text">{new Date(viewSegment.created).toLocaleDateString()}</div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => setShowViewModal(false)}>
+                Close
               </button>
             </div>
           </div>
@@ -388,5 +538,4 @@ const AudienceSegmentation = ({ darkMode }) => {
     </div>
   )
 }
-
 export default AudienceSegmentation

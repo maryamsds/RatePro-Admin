@@ -21123,7 +21123,7 @@ canvas {
 .audience-segmentation-container .segment-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  /* gap: 1.25rem; */
 }
 
 .audience-segmentation-container .form-group {
@@ -22264,7 +22264,7 @@ canvas {
 .contact-management-container .contact-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  /* gap: 1.25rem; */
 }
 
 .contact-management-container .form-group {
