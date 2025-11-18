@@ -11389,9 +11389,9 @@ canvas {
   font-size: 0.875rem;
 }
 
-.table tbody tr:hover {
-  /* background-color: #f8f9ff; */
-}
+/* .table tbody tr:hover {
+  background-color: #f8f9ff;
+} */
 
 /* Badge styling */
 .badge {
@@ -11999,9 +11999,9 @@ canvas {
   color: #495057;
 }
 
-.table tbody tr:hover {
-  /* background: rgba(31, 218, 228, 0.08); */
-}
+/* .table tbody tr:hover {
+  background: rgba(31, 218, 228, 0.08);
+} */
 
 /* Alert Enhancements */
 .alert {
@@ -13241,7 +13241,7 @@ canvas {
 .stats-section {
   /* max-width: 1200px; */
   margin: 0 auto 2rem auto;
-  padding: 0 1rem;
+  /* padding: 0 1rem; */
 }
 
 .stats-grid {

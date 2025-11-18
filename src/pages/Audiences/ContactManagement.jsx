@@ -9,7 +9,6 @@ const ContactManagement = ({ darkMode }) => {
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
   const [loading, setLoading] = useState(false)
   const [contacts, setContacts] = useState([])
-  const [allContacts, setAllContacts] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
@@ -31,7 +30,6 @@ const ContactManagement = ({ darkMode }) => {
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [importFile, setImportFile] = useState(null);
   const [segments, setSegments] = useState([]);
-  // const segments = [...new Set(allContacts.map(c => c.segment?.name).filter(Boolean))]
 
   const fetchSegments = async () => {
     try {
@@ -42,15 +40,7 @@ const ContactManagement = ({ darkMode }) => {
     }
   };
 
-  useEffect(() => {
-    fetchSegments();
-    // fetchAllContacts()
-  }, [])
-
-  useEffect(() => {
-    fetchContacts()
-  }, [pagination.page, searchTerm, filterSegment, filterStatus])
-
+ 
   const fetchContacts = async () => {
     setLoading(true)
     try {
@@ -71,15 +61,13 @@ const ContactManagement = ({ darkMode }) => {
     setLoading(false)
   }
 
-  const fetchAllContacts = async () => {
-    try {
-      const res = await axiosInstance.get('/contacts?limit=9999&page=1')
-      // console.log(res.data.contacts);
-      setAllContacts(res.data.contacts)
-    } catch (err) {
-      console.error(err)
-    }
-  }
+   useEffect(() => {
+    fetchSegments();
+  }, [])
+
+  useEffect(() => {
+    fetchContacts()
+  }, [pagination.page, searchTerm, filterSegment, filterStatus])
 
   const handleCreateContact = () => {
     setCurrentContact({
@@ -133,7 +121,6 @@ const ContactManagement = ({ darkMode }) => {
           res = await axiosInstance.post('/contacts', currentContact)
         }
         fetchContacts()
-        fetchAllContacts()
         setShowModal(false)
       } catch (err) {
         console.error(err)
@@ -154,7 +141,6 @@ const ContactManagement = ({ darkMode }) => {
       if (result.isConfirmed) {
         axiosInstance.delete(`/contacts/${id}`).then(() => {
           fetchContacts()
-          fetchAllContacts()
           Swal.fire(
             'Deleted!',
             'Your contact has been deleted.',
@@ -190,7 +176,6 @@ const ContactManagement = ({ darkMode }) => {
       if (result.isConfirmed) {
         Promise.all(selectedContacts.map(id => axiosInstance.delete(`/contacts/${id}`))).then(() => {
           fetchContacts()
-          fetchAllContacts()
           setSelectedContacts([])
           Swal.fire(
             'Deleted!',
@@ -214,8 +199,7 @@ const ContactManagement = ({ darkMode }) => {
       });
 
       setShowImportModal(false);
-      fetchContacts();      // refresh current page
-      fetchAllContacts();   // refresh all contacts for stats, filters
+      fetchContacts(); 
       Swal.fire('Success', 'Contacts imported successfully', 'success');
     } catch (err) {
       console.error(err);
@@ -223,9 +207,9 @@ const ContactManagement = ({ darkMode }) => {
     }
   };
 
-  const activeContacts = allContacts.filter(c => c.status === 'Active').length
-  const totalSegments = [...new Set(allContacts.map(c => c.segment?.name))].length
-  const recentContacts = allContacts.filter(c => {
+  const activeContacts = contacts.filter(c => c.status === 'Active').length
+  const totalSegments = [...new Set(contacts.map(c => c.segment?.name))].length
+  const recentContacts = contacts.filter(c => {
     const activityDate = new Date(c.lastActivity)
     const daysDiff = Math.floor((new Date() - activityDate) / (1000 * 60 * 60 * 24))
     return daysDiff <= 7
@@ -255,7 +239,7 @@ const ContactManagement = ({ darkMode }) => {
             </div>
           </div>
           <div className="page-actions">
-            <button className="action-button secondary-action" onClick={() => { fetchContacts(); fetchAllContacts(); }}>
+            <button className="action-button secondary-action" onClick={() => { fetchContacts(); }}>
               <MdRefresh /> Refresh
             </button>
             <button className="action-button secondary-action" onClick={() => setShowImportModal(true)}>
@@ -275,7 +259,7 @@ const ContactManagement = ({ darkMode }) => {
             <MdPeople />
           </div>
           <div className="stat-content">
-            <div className="stat-value">{allContacts.length}</div>
+            <div className="stat-value">{contacts.length}</div>
             <div className="stat-label">Total Contacts</div>
           </div>
         </div>
