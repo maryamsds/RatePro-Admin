@@ -885,8 +885,8 @@ const UserList = ({ darkMode }) => {
           {(currentUser?.role === "companyAdmin" || memberCanDownload) && (
             <div className="mt-3">
               <a
-                href="/downloads/import-sample.xlsx"
-                download="import-sample.xlsx"
+                href="/downloads/user-sample.xlsx"
+                download="user-sample.xlsx"
                 className="btn btn-outline-secondary"
               >
                 📥 Download Template

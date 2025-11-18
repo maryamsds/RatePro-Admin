@@ -1,16 +1,18 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { MdContacts, MdAdd, MdRefresh, MdSearch, MdFilterAlt, MdUpload, MdDownload, MdVisibility, MdEdit, MdEmail, MdDelete, MdSettings, MdPeople, MdCheckCircle, MdTrendingUp, MdLabel, MdMoreVert } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
+import { Modal, Button } from 'react-bootstrap';
+import { useAuth } from "../../context/AuthContext.jsx"
 import axiosInstance from '../../api/axiosInstance';
 import Swal from "sweetalert2";
 
 const ContactManagement = ({ darkMode }) => {
+  const { user: currentUser, hasPermission, globalLoading, setGlobalLoading } = useAuth();
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
   const [loading, setLoading] = useState(false)
   const [contacts, setContacts] = useState([])
   const [showModal, setShowModal] = useState(false)
-  const [showImportModal, setShowImportModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [modalMode, setModalMode] = useState('create')
   const [currentContact, setCurrentContact] = useState({
@@ -28,19 +30,41 @@ const ContactManagement = ({ darkMode }) => {
   const [filterStatus, setFilterStatus] = useState("all")
   const [selectedContacts, setSelectedContacts] = useState([])
   const [showBulkActions, setShowBulkActions] = useState(false)
-  const [importFile, setImportFile] = useState(null);
   const [segments, setSegments] = useState([]);
+  const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const handleShow = () => setShowImportModal(true);
+  const handleClose = () => { setFile(null); setShowImportModal(false); }
+
+  const isMember = currentUser?.role === "member";
+
+  const memberCanCreate = !isMember || hasPermission("user:create");
+  const memberCanUpdate = !isMember || hasPermission("user:update");
+  const memberCanDelete = !isMember || hasPermission("user:delete");
+  const memberCanAssign = !isMember || hasPermission("user:assign");
+  const memberCanRead = !isMember || hasPermission("user:read");
+  const memberCanToggle = !isMember || hasPermission("user:toggle");
+  const memberCanExport = !isMember || hasPermission("user:export");
+  const memberCanNotify = !isMember || hasPermission("user:notify");
+  const memberCanUpload = !isMember || hasPermission("user:mass-upload");
+  const memberCanDownload = !isMember || hasPermission("user:file-template");
 
   const fetchSegments = async () => {
     try {
       const res = await axiosInstance.get('/segments/all'); // backend route
-      if (res.data.success) setSegments(res.data.segments);
+      if (res.data.success) {
+        // Only active segments
+        const activeSegments = res.data.segments.filter(
+          (segment) => segment.status === "Active"
+        );
+        setSegments(activeSegments);
+      }
     } catch (err) {
       console.error(err);
     }
   };
 
- 
   const fetchContacts = async () => {
     setLoading(true)
     try {
@@ -52,7 +76,7 @@ const ContactManagement = ({ darkMode }) => {
       if (filterSegment !== "all") params.segment = filterSegment
       if (filterStatus !== "all") params.status = filterStatus
       const res = await axiosInstance.get('/contacts', { params })
-      console.log(res.data.contacts);
+      // console.log(res.data.contacts);
       setContacts(res.data.contacts)
       setPagination(p => ({ ...p, total: res.data.total }))
     } catch (err) {
@@ -61,7 +85,7 @@ const ContactManagement = ({ darkMode }) => {
     setLoading(false)
   }
 
-   useEffect(() => {
+  useEffect(() => {
     fetchSegments();
   }, [])
 
@@ -85,21 +109,34 @@ const ContactManagement = ({ darkMode }) => {
 
   // const handleEdit = (contact) => {
   //   setCurrentContact({
-  //     ...contact,
-  //     segment: contact.segment?.name || "",
-  //     tags: contact.tags || ""
-  //   })
-  //   setModalMode('edit')
-  //   setShowModal(true)
-  // }
+  //     _id: contact._id,
+  //     name: contact.name || "",
+  //     email: contact.email || "",
+  //     phone: contact.phone || "",
+  //     company: contact.company || "",
+  //     // ← YEH LINE CHANGE KARO
+  //     segment: contact.segment?._id || contact.segment || "", // sirf ID string rakho
+  //     tags: typeof contact.tags === 'string' ? contact.tags : (contact.tags?.join(", ") || ""),
+  //     status: contact.status || "Active",
+  //     _id: contact._id // important for update
+  //   });
+
+  //   setModalMode("edit");
+  //   setShowModal(true);
+  // };
 
   const handleEdit = (contact) => {
     setCurrentContact({
-      ...contact,
-      segment: segments.find(
-        (s) => s._id === (contact.segment?._id || contact.segment)
-      ) || null,
-      tags: contact.tags || ""
+      _id: contact._id,
+      name: contact.name || "",
+      email: contact.email || "",
+      phone: contact.phone || "",
+      company: contact.company || "",
+      segment: contact.segment?._id || "",  // ← sirf ID ya null
+      tags: Array.isArray(contact.tags)
+        ? contact.tags.join(", ")
+        : (contact.tags || ""),
+      status: contact.status || "Active"
     });
 
     setModalMode("edit");
@@ -114,19 +151,58 @@ const ContactManagement = ({ darkMode }) => {
   const handleSaveContact = async () => {
     if (currentContact.name.trim() && currentContact.email.trim()) {
       try {
-        let res
-        if (modalMode === 'edit') {
-          res = await axiosInstance.put(`/contacts/${currentContact._id}`, currentContact)
+        let res;
+
+        if (modalMode === "edit") {
+          // UPDATE
+          res = await axiosInstance.put(
+            `/contacts/${currentContact._id}`,
+            currentContact
+          );
+
+          Swal.fire({
+            icon: "success",
+            title: "Contact Updated",
+            text: "Contact successfully updated!",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+
         } else {
-          res = await axiosInstance.post('/contacts', currentContact)
+          // CREATE
+          res = await axiosInstance.post("/contacts", currentContact);
+
+          console.log("FINAL PAYLOAD BEING SENT:", {
+            _id: currentContact._id,
+            name: currentContact.name,
+            email: currentContact.email,
+            segment: currentContact.segment,  // ← yeh dekho!
+            tags: currentContact.tags
+          });
+
+          Swal.fire({
+            icon: "success",
+            title: "Contact Created",
+            text: "New contact added successfully!",
+            timer: 1500,
+            showConfirmButton: false,
+          });
         }
-        fetchContacts()
-        setShowModal(false)
+
+        fetchContacts();
+        setShowModal(false);
+
       } catch (err) {
-        console.error(err)
+        console.error(err);
+
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Something went wrong!",
+        });
       }
     }
-  }
+  };
 
   const deleteContact = (id) => {
     Swal.fire({
@@ -187,23 +263,56 @@ const ContactManagement = ({ darkMode }) => {
     })
   }
 
-  const handleImport = async () => {
-    if (!importFile) return;
+  const handleFileChange = (e) => setFile(e.target.files[0]);
+
+
+  const handleBulkUploadContacts = async (file) => {
+    if (!file) return alert("Please select a file first!");
 
     const formData = new FormData();
-    formData.append('file', importFile);
+    formData.append("excel", file);
 
     try {
-      await axiosInstance.post('/contacts/import', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      setGlobalLoading(true); // loader start
+
+      const res = await axiosInstance.post("/contacts/bulk-upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
       });
 
-      setShowImportModal(false);
-      fetchContacts(); 
-      Swal.fire('Success', 'Contacts imported successfully', 'success');
+      const { createdContacts = [], errors: rawErrors, message } = res.data;
+      const errors = rawErrors || []; // null protection
+
+      const successCount = createdContacts.length;
+      const errorCount = errors.length;
+
+      // 🟢 summary HTML
+      const summaryHtml = `
+      <p><b>${successCount}</b> contact(s) imported successfully.</p>
+      ${successCount > 0 ? "<ul>" + createdContacts.map(c => `<li>${c.email || c.name}</li>`).join("") + "</ul>" : ""}
+
+      <p><b>${errorCount}</b> contact(s) failed to import.</p>
+      ${errorCount > 0 ? "<ul>" + errors.map(e => `<li>${e.email || e.name} - ${e.message}</li>`).join("") + "</ul>" : ""}
+    `;
+
+      Swal.fire({
+        icon: errorCount > 0 ? "warning" : "success",
+        title: message || "Bulk contacts import processed",
+        html: summaryHtml,
+        width: 600,
+      });
+
+      await fetchContacts(); // refresh contacts list
+      setShowImportModal(false); // close modal
     } catch (err) {
-      console.error(err);
-      Swal.fire('Error', 'Failed to import contacts', 'error');
+      Swal.fire({
+        icon: "error",
+        title: "Import Failed",
+        text: err.response?.data?.message || "Something went wrong while importing contacts.",
+      });
+      console.error("❌ Import error:", err.response?.data || err.message);
+    } finally {
+      setGlobalLoading(false); // loader stop
     }
   };
 
@@ -242,9 +351,17 @@ const ContactManagement = ({ darkMode }) => {
             <button className="action-button secondary-action" onClick={() => { fetchContacts(); }}>
               <MdRefresh /> Refresh
             </button>
-            <button className="action-button secondary-action" onClick={() => setShowImportModal(true)}>
-              <MdUpload /> Import
-            </button>
+            {(currentUser?.role === "companyAdmin" || memberCanUpload) && (
+              <Button
+                variant="outline-primary"
+                onClick={handleShow} // open modal first
+                disabled={!memberCanUpdate}
+                className="import-btn"
+              >
+                <MdUpload className="me-2" /> Import Contacts
+              </Button>
+            )}
+
             <button className="action-button primary-action" onClick={handleCreateContact}>
               <MdAdd /> Add Contact
             </button>
@@ -308,18 +425,19 @@ const ContactManagement = ({ darkMode }) => {
           <div className="filter-group">
             <select
               className="filter-select"
-              value={currentContact.segment?.name || ""}   // modal ke liye
-              onChange={(e) =>
+              value={currentContact.segment || ""}   // ← yeh change karo (pehle galat tha)
+              onChange={(e) => {
+                const value = e.target.value;
                 setCurrentContact({
                   ...currentContact,
-                  segment: segments.find(s => s.name === e.target.value)  // poora object set
-                })
-              }
+                  segment: value || null   // ← empty string ko null bana do, undefined nahi!
+                });
+              }}
             >
-              <option value="">Select Segment</option>
+              <option value="">No Segment (Unassigned)</option>
               {segments?.map((segment) => (
-                <option key={segment._id} value={segment.name}>
-                  {segment.name}
+                <option key={segment._id} value={segment._id}>
+                  {segment.name} ({segment.size} contacts)
                 </option>
               ))}
             </select>
@@ -546,15 +664,15 @@ const ContactManagement = ({ darkMode }) => {
                   <label className="form-label">Segment</label>
                   <select
                     className="filter-select"
-                    value={currentContact.segment?._id}
+                    value={currentContact.segment}
                     onChange={(e) =>
                       setCurrentContact({
                         ...currentContact,
-                        segment: segments.find(s => s._id === e.target.value) // poora object store
+                        segment:  e.target.value // poora object store
                       })
                     }
                   >
-                    <option value="" disabled>Select Segment</option>
+                    <option value="">Select Segment</option>
                     {segments?.map((segment) => (
                       <option key={segment._id} value={segment._id}>
                         {segment.name}
@@ -620,7 +738,7 @@ const ContactManagement = ({ darkMode }) => {
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">Name</label>
-                <div className="form-text">{viewContact.name}</div>
+                <div className="form-text">{viewContact?.name || "-"}</div>
               </div>
               <div className="form-group">
                 <label className="form-label">Email</label>
@@ -665,63 +783,53 @@ const ContactManagement = ({ darkMode }) => {
       )}
 
       {/* Import Modal */}
-      {showImportModal && (
-        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            {/* <div className="modal-header">
-              <h2 className="modal-title">
-                <MdUpload /> Import Contacts
-              </h2>
-              <button className="modal-close" onClick={() => setShowImportModal(false)}>
-                ×
-              </button>
-            </div> */}
-            <div className="d-flex justify-content-end mt-2 me-2">
-              <button className="modal-close" onClick={() => setShowModal(false)}>
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="import-upload-area">
-                <MdUpload className="upload-icon" />
-                <p className="upload-text">Upload an Excel (.xlsx) file with your contacts</p>
-              </div>
+      <Modal show={showImportModal} onHide={handleClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Import Contacts</Modal.Title>
+        </Modal.Header>
 
-              <form className="import-form">
-                <div className="form-group">
-                  <label className="form-label">Excel File</label>
-                  <input
-                    type="file"
-                    className="file-input"
-                    accept=".xlsx"
-                    onChange={(e) => setImportFile(e.target.files[0])}
-                  />
-                  <p className="help-text">
-                    File should include columns: Name, Email, Phone, Company, Segment, Tags
-                  </p>
-                </div>
+        <Modal.Body>
+          <p className="text-center">
+            Upload a .xlsx or .xls file with your contacts
+          </p>
+          <input
+            className="w-100 border"
+            type="file"
+            accept=".xlsx,.xls"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+          />
+          <small className="text-muted">
+            File should include columns: Name, Email, Phone, Company, Segment
+          </small>
 
-                <button
-                  type="button"
-                  className="download-template-btn"
-                  onClick={() => window.open('/api/contacts/template', '_blank')}
-                >
-                  <MdDownload /> Download Template
-                </button>
-              </form>
+          {(currentUser?.role === "companyAdmin" || memberCanDownload) && (
+            <div className="mt-3">
+              <a
+                href="/downloads/contact-sample.xlsx"
+                download="contact-sample.xlsx"
+                className="btn btn-outline-secondary"
+              >
+                📥 Download Template
+              </a>
             </div>
+          )}
+        </Modal.Body>
 
-            <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={() => setShowImportModal(false)}>
-                Cancel
-              </button>
-              <button className="modal-submit-btn" onClick={handleImport}>
-                <MdUpload /> Import Contacts
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            variant="success"
+            onClick={() => handleBulkUploadContacts(file)}
+            disabled={!file || loading}
+          >
+            {loading ? "Importing..." : "Import Contacts"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
     </div>
   )
 }

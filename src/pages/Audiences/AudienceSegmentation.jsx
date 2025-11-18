@@ -81,20 +81,52 @@ const AudienceSegmentation = ({ darkMode }) => {
   const handleSaveSegment = async () => {
     if (currentSegment.name.trim()) {
       try {
-        let res
-        if (modalMode === 'edit') {
-          res = await axiosInstance.put(`/segments/${currentSegment._id}`, currentSegment)
+        let res;
+
+        if (modalMode === "edit") {
+          // Update segment
+          res = await axiosInstance.put(
+            `/segments/${currentSegment._id}`,
+            currentSegment
+          );
+
+          Swal.fire({
+            icon: "success",
+            title: "Segment Updated",
+            text: "Segment successfully updated!",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+
         } else {
-          res = await axiosInstance.post('/segments', currentSegment)
+          // Create segment
+          res = await axiosInstance.post("/segments", currentSegment);
+
+          Swal.fire({
+            icon: "success",
+            title: "Segment Created",
+            text: "New segment added successfully!",
+            timer: 1500,
+            showConfirmButton: false,
+          });
         }
-        fetchSegments()
-        fetchStats()
-        setShowModal(false)
+
+        fetchSegments();
+        fetchStats();
+        setShowModal(false);
+
       } catch (err) {
-        console.error(err)
+        console.error(err);
+
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Something went wrong!",
+        });
       }
     }
-  }
+  };
+
 
   const deleteSegment = (id) => {
     Swal.fire({
@@ -164,14 +196,14 @@ const AudienceSegmentation = ({ darkMode }) => {
 
       const downloadFile = async (type) => {
         const res = await axiosInstance.get(
-          `/segments/${ seg._id }/export/${type}`,
-        { responseType: "blob" }
+          `/segments/${seg._id}/export/${type}`,
+          { responseType: "blob" }
         );
 
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const a = document.createElement("a");
         a.href = url;
-        a.download = `segment_${ seg._id }.${ type === 'excel' ? 'xlsx' : 'pdf' }`;
+        a.download = `segment_${seg._id}.${type === 'excel' ? 'xlsx' : 'pdf'}`;
         a.click();
         window.URL.revokeObjectURL(url);
       };
