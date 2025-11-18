@@ -4767,14 +4767,14 @@ button.btn-outline-danger:disabled {
 }
 
 /* Form Groups */
-.form-group {
+/* .form-group {
   margin-bottom: 1.5rem;
-}
+} */
 
 .form-label {
   display: block;
   font-weight: 600;
-  margin: 0.5rem;
+  margin: 0.5rem 0 0.2rem;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -7955,9 +7955,9 @@ button.btn-outline-danger:disabled {
 }
 
 /* Form Elements */
-.form-group {
-  margin-bottom: 1.5rem;
-}
+  /* .form-group {
+    margin-bottom: 1.5rem;
+  } */
 
 .form-label.required::after {
   content: ' *';
@@ -21988,7 +21988,7 @@ canvas {
 }
 
 .contact-management-container .data-table td {
-  padding: 1rem;
+  padding: 1rem 0;
   color: var(--light-text);
   font-size: 0.95rem;
   border-bottom: 1px solid var(--light-border);
@@ -23406,7 +23406,7 @@ canvas {
 .features-container .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  /* gap: 0.5rem; */
 }
 
 .features-container .form-row {

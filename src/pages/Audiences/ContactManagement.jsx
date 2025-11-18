@@ -499,10 +499,15 @@ const ContactManagement = ({ darkMode }) => {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            {/* <div className="modal-header">
               <h2 className="modal-title">
                 {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Add' : 'Edit'} Contact
               </h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                ×
+              </button>
+            </div> */}
+            <div className="d-flex justify-content-end mt-2 me-2">
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
               </button>
@@ -615,11 +620,16 @@ const ContactManagement = ({ darkMode }) => {
       {showViewModal && (
         <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            {/* <div className="modal-header">
               <h2 className="modal-title">
                 <MdVisibility /> View Contact
               </h2>
               <button className="modal-close" onClick={() => setShowViewModal(false)}>
+                ×
+              </button>
+            </div> */}
+            <div className="d-flex justify-content-end mt-2 me-2">
+              <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
               </button>
             </div>
@@ -674,11 +684,16 @@ const ContactManagement = ({ darkMode }) => {
       {showImportModal && (
         <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            {/* <div className="modal-header">
               <h2 className="modal-title">
                 <MdUpload /> Import Contacts
               </h2>
               <button className="modal-close" onClick={() => setShowImportModal(false)}>
+                ×
+              </button>
+            </div> */}
+            <div className="d-flex justify-content-end mt-2 me-2">
+              <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
               </button>
             </div>
