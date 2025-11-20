@@ -40,8 +40,8 @@ const UserForm = () => {
     tenantId: "",
     departments: [],
     departmentId: "",
-    userCategories: [], // <-- NEW
-    userCategoryIds: [] // <-- NEW: for API
+    contactCategories: [], // <-- NEW
+    contactCategoryIds: [] // <-- NEW: for API
   });
 
   const [errors, setErrors] = useState({});
@@ -58,15 +58,16 @@ const UserForm = () => {
   const memberCanUpdate = hasPermission("user:update");
 
 
-  // === FETCH USER CATEGORIES ===
-  const fetchUserCategories = async (tenantId) => {
+  // === FETCH CONTACT CATEGORIES ===
+  const fetchContactCategories = async (tenantId) => {
     if (!tenantId) {
       setCategoryOptions([]);
       return;
     }
 
     try {
-      const res = await axiosInstance.get(`/user-categories?tenantId=${tenantId}`);
+      const res = await axiosInstance.get(`/contact-categories?tenantId=${tenantId}`);
+      console.log("Contact Categories Response:", res);
       let categoriesData = [];
       if (Array.isArray(res?.data?.data?.categories)) {
         categoriesData = res.data.data.categories;
@@ -76,6 +77,7 @@ const UserForm = () => {
         categoriesData = res.data;
       }
 
+      
       const options = categoriesData.map((cat) => ({
         value: cat._id,
         label: cat.name,
@@ -83,8 +85,8 @@ const UserForm = () => {
       }));
       setCategoryOptions(options);
     } catch (err) {
-      console.error("Failed to load user categories:", err);
-      Swal.fire("Error", "Could not load user categories", "error");
+      console.error("Failed to load contact categories:", err);
+      Swal.fire("Error", "Could not load contact categories", "error");
     }
   };
 
@@ -112,7 +114,7 @@ const UserForm = () => {
   const handleCategoryChange = (selected) => {
     setUser(prev => ({
       ...prev,
-      userCategories: selected,
+      contactCategories: selected,
     }));
 
     // Agar selected category internal nahi hai, department clear kar do
@@ -122,7 +124,7 @@ const UserForm = () => {
     if (!hasInternal) {
       setUser(prev => ({
         ...prev,
-        userCategories: selected,
+        contactCategories: selected,
         department: hasInternal ? prev.department : '', // clear department if not internal
       }));
     }
@@ -146,8 +148,8 @@ const UserForm = () => {
       newErrors.departmentId = "Department is required for internal user";
 
     // NEW: Category validation for member
-    if (user.role === "member" && user.userCategoryIds.length === 0) {
-      newErrors.userCategories = "At least one category is required";
+    if (user.role === "member" && user.contactCategoryIds.length === 0) {
+      newErrors.contactCategories = "At least one category is required";
     }
 
     setErrors(newErrors);
@@ -167,7 +169,7 @@ const UserForm = () => {
         tenantName: tenant.name || "",
         departments: tenant.departments || [],
       }));
-      await fetchUserCategories(tenant._id);
+      await fetchContactCategories(tenant._id);
     } catch (err) {
       console.error("fetchTenantData error:", err);
       Swal.fire("Error", "Failed to load tenant data", "error");
@@ -195,14 +197,14 @@ const UserForm = () => {
         }
 
         // 🧠 Step 1: Pehle categories load karo
-        if (tenantId) await fetchUserCategories(tenantId);
+        if (tenantId) await fetchContactCategories(tenantId);
 
         // 🧠 Step 2: Ab category IDs extract karo
-        if (userData.userCategories && Array.isArray(userData.userCategories)) {
-          if (typeof userData.userCategories[0] === "string") {
-            categoryIds = userData.userCategories;
+        if (userData.contactCategories && Array.isArray(userData.contactCategories)) {
+          if (typeof userData.contactCategories[0] === "string") {
+            categoryIds = userData.contactCategories;
           } else {
-            categoryIds = userData.userCategories.map(c => c._id?.toString()).filter(Boolean);
+            categoryIds = userData.contactCategories.map(c => c._id?.toString()).filter(Boolean);
           }
         }
 
@@ -224,9 +226,9 @@ const UserForm = () => {
           tenantName,
           departments,
           departmentId,
-          userCategoryIds: categoryIds,
+          contactCategoryIds: categoryIds,
           originalCategoryIds: categoryIds,
-          userCategories: categoryIds.length ? categoryOptions
+          contactCategories: categoryIds.length ? categoryOptions
             .filter(opt => categoryIds.includes(opt.value))
             .map(opt => opt.label)
             : []
@@ -284,15 +286,15 @@ const UserForm = () => {
       if (currentUserRole === "admin" && user.role === "companyAdmin") {
         payload.tenantName = user.tenantName;
       } else if (user.role === "member") {
-        // Only add department if userCategories includes 'internal'
-        const selectedCategories = user.userCategories || [];
+        // Only add department if contactCategories includes 'internal'
+        const selectedCategories = user.contactCategories || [];
         const isInternal = selectedCategories.some(cat => cat.toLowerCase() === "internal");
 
         if (isInternal) {
           payload.department = user.departmentId; // required
         }
 
-        payload.userCategories = user.userCategoryIds; // always send IDs
+        payload.contactCategories = user.contactCategoryIds; // always send IDs
       }
 
       if (isEditMode) {
@@ -300,8 +302,8 @@ const UserForm = () => {
         if (user.name !== user.originalName) updates.name = user.name;
         if (user.departmentId !== user.originalDepartmentId) updates.department = user.departmentId;
         if (user.isActive !== user.originalIsActive) updates.isActive = user.isActive === "true";
-        if (JSON.stringify(user.userCategoryIds) !== JSON.stringify(user.originalCategoryIds || [])) {
-          updates.userCategories = user.userCategoryIds;
+        if (JSON.stringify(user.contactCategoryIds) !== JSON.stringify(user.originalCategoryIds || [])) {
+          updates.contactCategories = user.contactCategoryIds;
         }
         if (Object.keys(updates).length === 0) {
           Swal.fire({ icon: "info", title: "No changes" });
@@ -676,16 +678,16 @@ const UserForm = () => {
                         <div className="input-wrapper">
                           <MdGroup className="input-icon" />
                           <Form.Select
-                            name="userCategory"
-                            value={user.userCategoryIds?.[0] || ""} // ✅ single value only
+                            name="ContactCategory"
+                            value={user.contactCategoryIds?.[0] || ""} // ✅ single value only
                             // onChange={(e) => {
                             //   const selectedId = e.target.value;
                             //   const selectedLabel = e.target.options[e.target.selectedIndex].text;
 
                             //   setUser((prev) => ({
                             //     ...prev,
-                            //     userCategoryIds: [selectedId],    // store single id inside array
-                            //     userCategories: [selectedLabel],  // store single label inside array
+                            //     contactCategoryIds: [selectedId],    // store single id inside array
+                            //     contactCategories: [selectedLabel],  // store single label inside array
                             //   }));
 
                             //   if (selectedLabel?.toLowerCase() === "employee" || selectedOption?.userType === "internal") {
@@ -706,8 +708,8 @@ const UserForm = () => {
 
                               setUser(prev => ({
                                 ...prev,
-                                userCategoryIds: [selectedId],
-                                userCategories: [selectedOption?.label || ""],
+                                contactCategoryIds: [selectedId],
+                                contactCategories: [selectedOption?.label || ""],
                                 departmentId: showDept ? prev.departmentId : "" // clear department if not internal
                               }));
 
@@ -724,7 +726,7 @@ const UserForm = () => {
                             ))}
                           </Form.Select>
                         </div>
-                        {errors.userCategories && <div className="field-error">{errors.userCategories}</div>}
+                        {errors.contactCategories && <div className="field-error">{errors.contactCategories}</div>}
                       </div>
                     </Col>
 

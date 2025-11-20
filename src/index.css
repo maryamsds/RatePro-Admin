@@ -22178,13 +22178,13 @@ canvas {
 /* Modals */
 .contact-management-container .modal-overlay {
   position: fixed;
-  top: 0;
+  top: 70px;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  /* align-items: center; */
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
@@ -22198,6 +22198,7 @@ canvas {
   max-width: 500px;
   box-shadow: var(--shadow-md);
   animation: slideInUp 0.3s ease-out;
+  max-height: fit-content;
 }
 
 .dark .contact-management-container .modal-container {

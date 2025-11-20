@@ -61,9 +61,12 @@ axiosInstance.interceptors.response.use(
     console.log("Status:", status);
     console.log("Message:", message);
     console.groupEnd();
+    // Don't refresh token on login or register calls
+    const skipRefresh = originalRequest.url.includes("/auth/login") ||
+      originalRequest.url.includes("/auth/register");
 
     // ✅ Handle Access Token Expiry (401)
-    if (status === 401 && !originalRequest._retry) {
+    if (status === 401 && !originalRequest._retry && !skipRefresh) {
       // Agar refresh chal raha hai → queue me daal do
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

@@ -20,6 +20,7 @@ const ContactManagement = ({ darkMode }) => {
     email: "",
     phone: "",
     company: "",
+    tenantId: "",
     segment: "",
     tags: "",
     status: "Active"
@@ -34,6 +35,8 @@ const ContactManagement = ({ darkMode }) => {
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+
   const handleShow = () => setShowImportModal(true);
   const handleClose = () => { setFile(null); setShowImportModal(false); }
 
@@ -49,6 +52,61 @@ const ContactManagement = ({ darkMode }) => {
   const memberCanNotify = !isMember || hasPermission("user:notify");
   const memberCanUpload = !isMember || hasPermission("user:mass-upload");
   const memberCanDownload = !isMember || hasPermission("user:file-template");
+
+
+  // === FETCH CONTACT CATEGORIES ===
+  // const fetchContactCategories = async (tenantId) => {
+  //   if (!tenantId) {
+  //     setCategoryOptions([]);
+  //     return;
+  //   }
+
+  //   try {
+  //     const res = await axiosInstance.get(`/contact-categories?tenantId=${tenantId}`);
+  //     console.log("Contact Categories Response:", res);
+  //     let categoriesData = [];
+  //     if (Array.isArray(res?.data?.data?.categories)) {
+  //       categoriesData = res.data.data.categories;
+  //     } else if (Array.isArray(res?.data?.categories)) {
+  //       categoriesData = res.data.categories;
+  //     } else if (Array.isArray(res?.data)) {
+  //       categoriesData = res.data;
+  //     }
+
+
+  //     const options = categoriesData.map((cat) => ({
+  //       value: cat._id,
+  //       label: cat.name,
+  //       type: cat.type,
+  //     }));
+  //     setCategoryOptions(options);
+  //   } catch (err) {
+  //     console.error("Failed to load contact categories:", err);
+  //     Swal.fire("Error", "Could not load contact categories", "error");
+  //   }
+  // };
+
+  useEffect(() => {
+    const fetchCategories = async (tenantId) => {
+      try {
+        const res = await axiosInstance.get(`/contact-categories?tenantId=${tenantId}`); // <-- your API route
+        const data = res?.data?.data?.categories ?? []; // Adjust based on your API response structure
+        console.log("Fetched Categories:", data);
+
+        // Convert to dropdown format
+        const formatted = data.map((item) => ({
+          label: item.name,   // Adjust according to your DB field
+          value: item._id
+        }));
+
+        setCategoryOptions(formatted);
+      } catch (error) {
+        console.log("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const fetchSegments = async () => {
     try {
@@ -76,7 +134,6 @@ const ContactManagement = ({ darkMode }) => {
       if (filterSegment !== "all") params.segment = filterSegment
       if (filterStatus !== "all") params.status = filterStatus
       const res = await axiosInstance.get('/contacts', { params })
-      // console.log(res.data.contacts);
       setContacts(res.data.contacts)
       setPagination(p => ({ ...p, total: res.data.total }))
     } catch (err) {
@@ -87,6 +144,8 @@ const ContactManagement = ({ darkMode }) => {
 
   useEffect(() => {
     fetchSegments();
+    setCategoryOptions([]);
+    // fetchContactCategories(currentUser?.tenantId);
   }, [])
 
   useEffect(() => {
@@ -99,6 +158,8 @@ const ContactManagement = ({ darkMode }) => {
       email: "",
       phone: "",
       company: "",
+      contactCategories: "",
+      tenantId: "",
       segment: "",
       tags: "",
       status: "Active"
@@ -176,7 +237,11 @@ const ContactManagement = ({ darkMode }) => {
             _id: currentContact._id,
             name: currentContact.name,
             email: currentContact.email,
-            segment: currentContact.segment,  // ← yeh dekho!
+            phone: currentContact.phone,
+            contactCategories: currentContact.contactCategories,
+            tenantId: currentContact.tenantId,
+            company: currentContact.company,
+            segment: currentContact.segment,
             tags: currentContact.tags
           });
 
@@ -601,14 +666,6 @@ const ContactManagement = ({ darkMode }) => {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            {/* <div className="modal-header">
-              <h2 className="modal-title">
-                {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Add' : 'Edit'} Contact
-              </h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
-                ×
-              </button>
-            </div> */}
             <div className="d-flex justify-content-end mt-2 me-2">
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
@@ -659,6 +716,25 @@ const ContactManagement = ({ darkMode }) => {
                     onChange={(e) => setCurrentContact({ ...currentContact, company: e.target.value })}
                   />
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Contact Categories</label>
+                  <select
+                    className="filter-select"
+                    value={currentContact.contactCategories?.[0] || ""}
+                    onChange={(e) =>
+                      setCurrentContact({
+                        ...currentContact,
+                        contactCategories: [e.target.value]   // array me store
+                      })
+                    }>
+                    <option value="">Select Category</option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div className="form-group">
                   <label className="form-label">Segment</label>
@@ -668,7 +744,7 @@ const ContactManagement = ({ darkMode }) => {
                     onChange={(e) =>
                       setCurrentContact({
                         ...currentContact,
-                        segment:  e.target.value // poora object store
+                        segment: e.target.value // poora object store
                       })
                     }
                   >

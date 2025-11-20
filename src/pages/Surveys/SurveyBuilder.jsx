@@ -18,8 +18,8 @@ import {
   MdSchool, MdLocalHospital, MdHotel, MdSports,
   MdAccountBalance, MdShoppingCart, MdLocationCity,
   MdConstruction, MdDirectionsCar, MdComputer,
-  MdOutlineAccessTime , MdEvent, MdBarChart, MdAlternateEmail, MdImage,
-  Md123, MdQuestionAnswer, MdPeople, MdGroup, MdPublic, MdHandshake, 
+  MdOutlineAccessTime, MdEvent, MdBarChart, MdAlternateEmail, MdImage,
+  Md123, MdQuestionAnswer, MdPeople, MdGroup, MdPublic, MdHandshake,
   MdSchedule, MdArrowForward, MdArrowBack,
 } from 'react-icons/md';
 import {
@@ -117,6 +117,22 @@ const SurveyBuilder = ({ darkMode }) => {
     maxResponses: '',
     notificationEmails: []
   });
+
+  // ✅ NEW: Target Audience Enhancement States
+  const [audienceSegments, setAudienceSegments] = useState([]);
+  const [contactCategories, setContactCategories] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [selectedContacts, setSelectedContacts] = useState([]);
+  const [showCustomContactModal, setShowCustomContactModal] = useState(false);
+  const [loadingSegments, setLoadingSegments] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+
+  // Contact Modal States
+  const [contactSearch, setContactSearch] = useState('');
+  const [contactPage, setContactPage] = useState(1);
+  const [contactTotal, setContactTotal] = useState(0);
+  const [contactLimit] = useState(10);
 
   // AI Workflow States
   const [surveyMode, setSurveyMode] = useState('user-defined');
@@ -333,50 +349,50 @@ const SurveyBuilder = ({ darkMode }) => {
   ];
 
   // Target Audience Types
-  const audienceTypes = [
-    { 
-      id: 'employees', 
-      name: 'Employees', 
-      description: 'Internal staff and team members',
-      icon: MdPeople,
-      color: 'var(--bs-primary)'
-    },
-    { 
-      id: 'customers', 
-      name: 'Customers', 
-      description: 'Existing and potential customers',
-      icon: MdGroup,
-      color: 'var(--bs-success)'
-    },
-    { 
-      id: 'public', 
-      name: 'General Public', 
-      description: 'Open to anyone with the survey link',
-      icon: MdPublic,
-      color: 'var(--bs-info)'
-    },
-    { 
-      id: 'vendors', 
-      name: 'Vendors/Partners', 
-      description: 'Business partners and suppliers',
-      icon: MdHandshake,
-      color: 'var(--bs-warning)'
-    },
-    { 
-      id: 'students', 
-      name: 'Students', 
-      description: 'Educational institution students',
-      icon: MdSchool,
-      color: 'var(--bs-purple)'
-    },
-    { 
-      id: 'guests', 
-      name: 'Guests/Visitors', 
-      description: 'Hotel guests, event attendees, etc.',
-      icon: MdHotel,
-      color: 'var(--bs-cyan)'
-    }
-  ];
+  // const audienceTypes = [
+  //   { 
+  //     id: 'employees', 
+  //     name: 'Employees', 
+  //     description: 'Internal staff and team members',
+  //     icon: MdPeople,
+  //     color: 'var(--bs-primary)'
+  //   },
+  //   { 
+  //     id: 'customers', 
+  //     name: 'Customers', 
+  //     description: 'Existing and potential customers',
+  //     icon: MdGroup,
+  //     color: 'var(--bs-success)'
+  //   },
+  //   { 
+  //     id: 'public', 
+  //     name: 'General Public', 
+  //     description: 'Open to anyone with the survey link',
+  //     icon: MdPublic,
+  //     color: 'var(--bs-info)'
+  //   },
+  //   { 
+  //     id: 'vendors', 
+  //     name: 'Vendors/Partners', 
+  //     description: 'Business partners and suppliers',
+  //     icon: MdHandshake,
+  //     color: 'var(--bs-warning)'
+  //   },
+  //   { 
+  //     id: 'students', 
+  //     name: 'Students', 
+  //     description: 'Educational institution students',
+  //     icon: MdSchool,
+  //     color: 'var(--bs-purple)'
+  //   },
+  //   { 
+  //     id: 'guests', 
+  //     name: 'Guests/Visitors', 
+  //     description: 'Hotel guests, event attendees, etc.',
+  //     icon: MdHotel,
+  //     color: 'var(--bs-cyan)'
+  //   }
+  // ];
 
   // Step configuration
   const steps = [
@@ -1145,11 +1161,11 @@ const SurveyBuilder = ({ darkMode }) => {
             isPasswordProtected: false,
             password: ''
           },
-          
+
           // STEP 2: Include Target Audience Data
           // Save selected audience types so they can be restored when editing
           targetAudience: targetAudience, // Array of selected audience IDs
-          
+
           // STEP 3: Include Schedule/Publish Settings
           // Save publish preferences so user doesn't have to reconfigure
           publishSettings: {
@@ -1159,10 +1175,10 @@ const SurveyBuilder = ({ darkMode }) => {
             expiryDate: publishSettings.expiryDate || null,
             maxResponses: publishSettings.maxResponses || null
           },
-          
+
           // Mark as draft so backend knows this is incomplete
           status: 'draft',
-          
+
           // Save current step for restoration
           currentStep: currentStep
         };
@@ -1239,18 +1255,18 @@ const SurveyBuilder = ({ darkMode }) => {
         {/* 1. CompanyAdmin: Create New Survey */}
         {user?.role === 'companyAdmin' && isCreateMode && !isTemplateMode && (
           <>
-            <Button 
-              variant="outline-warning" 
-              onClick={() => saveAsDraft()} 
-              disabled={saving || !survey.title.trim()} 
-              size="sm" 
+            <Button
+              variant="outline-warning"
+              onClick={() => saveAsDraft()}
+              disabled={saving || !survey.title.trim()}
+              size="sm"
               className="d-flex align-items-center"
             >
               <MdSave className="me-2" /> Save Draft
             </Button>
-            
-            <Button 
-              variant="success" 
+
+            <Button
+              variant="success"
               onClick={() => {
                 // Navigate to next step instead of direct publish
                 if (currentStep === 1 && canProceedToNextStep()) {
@@ -1260,12 +1276,12 @@ const SurveyBuilder = ({ darkMode }) => {
                 } else {
                   nextStep();
                 }
-              }} 
-              disabled={saving || !canProceedToNextStep()} 
-              size="sm" 
+              }}
+              disabled={saving || !canProceedToNextStep()}
+              size="sm"
               className="d-flex align-items-center"
             >
-              <MdPublish className="me-2" /> 
+              <MdPublish className="me-2" />
               {currentStep < 3 ? 'Next Step' : 'Publish Survey'}
             </Button>
           </>
@@ -1274,16 +1290,16 @@ const SurveyBuilder = ({ darkMode }) => {
         {/* 2. Admin: Create New Template */}
         {isTemplateCreateMode && (
           <>
-            <Button 
+            <Button
               variant="outline-warning"
-              onClick={() => saveAsDraft()} 
-              disabled={saving || !survey.title.trim()} 
+              onClick={() => saveAsDraft()}
+              disabled={saving || !survey.title.trim()}
               size="sm"
               className="d-flex align-items-center"
             >
               <MdSave className="me-2" /> Save Template Draft
             </Button>
-            <Button 
+            <Button
               variant="success"
               onClick={() => {
                 // For template creation, also use step wizard
@@ -1294,12 +1310,12 @@ const SurveyBuilder = ({ darkMode }) => {
                 } else {
                   nextStep();
                 }
-              }} 
-              disabled={saving || !canProceedToNextStep()} 
+              }}
+              disabled={saving || !canProceedToNextStep()}
               size="sm"
               className="d-flex align-items-center"
             >
-              <MdArrowForward className="me-2" /> 
+              <MdArrowForward className="me-2" />
               {currentStep < 3 ? 'Next Step' : 'Complete Template'}
             </Button>
           </>
@@ -1389,11 +1405,11 @@ const SurveyBuilder = ({ darkMode }) => {
     // Check if basic survey information is complete
     let step1Progress = 0;
     let step1Total = 3;
-    
+
     if (survey.title.trim()) step1Progress++; // Title is required
     if (survey.description.trim()) step1Progress++; // Description is required
     if (questions.length > 0) step1Progress++; // At least one question required
-    
+
     stepCompletions.step1 = (step1Progress / step1Total) * 33.33;
 
     // STEP 2: Target Audience Completion (33.33% total)
@@ -1414,7 +1430,7 @@ const SurveyBuilder = ({ darkMode }) => {
 
     // Calculate total completion percentage
     const totalCompletion = stepCompletions.step1 + stepCompletions.step2 + stepCompletions.step3;
-    
+
     return Math.round(totalCompletion);
   };
 
@@ -1456,8 +1472,8 @@ const SurveyBuilder = ({ darkMode }) => {
       case 3:
         // STEP 3: Publish settings must be configured
         // Either publish now OR schedule with date/time
-        return publishSettings.publishNow || 
-               (publishSettings.scheduleDate && publishSettings.scheduleTime);
+        return publishSettings.publishNow ||
+          (publishSettings.scheduleDate && publishSettings.scheduleTime);
       default:
         return false;
     }
@@ -1465,19 +1481,196 @@ const SurveyBuilder = ({ darkMode }) => {
 
   // Check if all 3 steps are completed (for showing "Publish" vs "Complete" button)
   const areAllStepsComplete = () => {
-    return survey.title.trim() && 
-           questions.length > 0 && 
-           targetAudience.length > 0 &&
-           (publishSettings.publishNow || (publishSettings.scheduleDate && publishSettings.scheduleTime));
+    return survey.title.trim() &&
+      questions.length > 0 &&
+      targetAudience.length > 0 &&
+      (publishSettings.publishNow || (publishSettings.scheduleDate && publishSettings.scheduleTime));
   };
+
+  // const fetchSegments = async () => {
+  //     try {
+  //       const res = await axiosInstance.get('/segments/all'); // backend route
+  //       if (res.data.success) {
+  //         // Only active segments
+  //         const activeSegments = res.data.segments.filter(
+  //           (segment) => segment.status === "Active"
+  //         );
+  //         setSegments(activeSegments);
+  //       }
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   };
+
+
+  // ✅ NEW: Fetch Active Audience Segments
+  // const fetchAudienceSegments = async () => {
+  //   try {
+  //     setLoadingSegments(true);
+  //     const response = await axiosInstance.get('/segments/all');
+  //     if (response.data.success && response.data.segments) {
+  //       // Filter only active segments
+  //       const activeSegments = response.data.segments.filter(seg => seg.status === 'active');
+  //       setAudienceSegments(activeSegments);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching audience segments:', error);
+  //   } finally {
+  //     setLoadingSegments(false);
+  //   }
+  // };
+
+
+  // ✅ NEW: Fetch Active Audience Segments (ROBUST VERSION)
+  const fetchAudienceSegments = async () => {
+    try {
+      setLoadingSegments(true);
+      console.log("Fetching segments from /segments/all ..."); // ← DEBUG
+
+      const response = await axiosInstance.get('/segments/all');
+      console.log("Raw segments response:", response.data); // ← YE DEKHO CONSOLE MEIN
+
+      let segmentsArray = [];
+
+      // Multiple possible response structures handle karo
+      if (response.data.success && Array.isArray(response.data.segments)) {
+        segmentsArray = response.data.segments;
+      } else if (response.data.data && Array.isArray(response.data.data.segments)) {
+        segmentsArray = response.data.data.segments;
+      } else if (Array.isArray(response.data)) {
+        segmentsArray = response.data;
+      } else if (Array.isArray(response.data.data)) {
+        segmentsArray = response.data.data;
+      } else {
+        console.warn("Unexpected segments response format:", response.data);
+        setAudienceSegments([]);
+        return;
+      }
+
+      // ACTIVE segments filter karo (multiple possible field names)
+      const activeSegments = segmentsArray.filter(seg => {
+        const status = seg.status || seg.segmentStatus || seg.isActive;
+
+        // String ho to case-insensitive, boolean ho to direct
+        if (typeof status === 'string') {
+          return status.toLowerCase() === 'active' || status.toLowerCase() === 'published';
+        }
+        if (typeof status === 'boolean') {
+          return status === true;
+        }
+        return false;
+      });
+
+      console.log("Filtered Active Segments:", activeSegments); // ← YE DEKHO
+      setAudienceSegments(activeSegments);
+
+    } catch (error) {
+      console.error('Error fetching audience segments:', error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Status:", error.response.status);
+      }
+      Swal.fire('Error', 'Failed to load audience segments', 'error');
+    } finally {
+      setLoadingSegments(false);
+    }
+  };
+
+  // ✅ NEW: Fetch Contact Categories
+  const fetchContactCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await axiosInstance.get('/contact-categories');
+      if (response.data) {
+        // Handle different response formats
+        const categories = response.data.data?.categories || response.data.categories || response.data;
+        setContactCategories(Array.isArray(categories) ? categories : []);
+      }
+    } catch (error) {
+      console.error('Error fetching contact categories:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // ✅ NEW: Fetch Contacts with Pagination and Search
+  const fetchContacts = async (page = 1, search = '') => {
+    try {
+      setLoadingContacts(true);
+      const response = await axiosInstance.get('/contacts', {
+        params: {
+          page,
+          limit: contactLimit,
+          search
+        }
+      });
+      if (response.data) {
+        setContacts(response.data.contacts || []);
+        setContactTotal(response.data.total || 0);
+        setContactPage(page);
+      }
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
+  // ✅ NEW: Load segments and categories when component mounts
+  useEffect(() => {
+    if (user) {
+      fetchAudienceSegments();
+      fetchContactCategories();
+    }
+  }, [user]);
 
   // Target Audience Functions
   const toggleAudience = (audienceId) => {
-    setTargetAudience(prev => 
+    // Handle "custom" selection differently
+    if (audienceId === 'custom') {
+      setShowCustomContactModal(true);
+      // Fetch contacts when opening modal
+      fetchContacts(1, '');
+      return;
+    }
+
+    setTargetAudience(prev =>
       prev.includes(audienceId)
         ? prev.filter(id => id !== audienceId)
         : [...prev, audienceId]
     );
+  };
+
+  // ✅ NEW: Handle Contact Selection in Modal
+  const toggleContactSelection = (contactId) => {
+    setSelectedContacts(prev =>
+      prev.includes(contactId)
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    );
+  };
+
+  // ✅ NEW: Save Selected Contacts and Close Modal
+  const saveSelectedContacts = () => {
+    if (selectedContacts.length > 0) {
+      // Add "custom" to target audience if not already added
+      if (!targetAudience.includes('custom')) {
+        setTargetAudience(prev => [...prev, 'custom']);
+      }
+    }
+    setShowCustomContactModal(false);
+  };
+
+  // ✅ NEW: Handle Contact Search
+  const handleContactSearch = (searchTerm) => {
+    setContactSearch(searchTerm);
+    setContactPage(1);
+    fetchContacts(1, searchTerm);
+  };
+
+  // ✅ NEW: Handle Contact Page Change
+  const handleContactPageChange = (newPage) => {
+    fetchContacts(newPage, contactSearch);
   };
 
   // Handle Step Wizard Completion - Final Publish
@@ -1536,7 +1729,7 @@ const SurveyBuilder = ({ darkMode }) => {
         category: survey.category,
         language: survey.language,
         themeColor: survey.branding?.primaryColor || 'var(--bs-primary)',
-        
+
         // Questions array
         questions: questions.map((q, index) => ({
           id: q.id?.toString() || (index + 1).toString(),
@@ -1681,7 +1874,7 @@ const SurveyBuilder = ({ darkMode }) => {
 
   // Step Component Renderers
   const renderSurveyDetailsStep = () => (
-    <div>      
+    <div>
       <Row>
         {/* Question Types Sidebar */}
         <Col lg={3}>
@@ -1874,9 +2067,8 @@ const SurveyBuilder = ({ darkMode }) => {
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`question-item p-3 border-bottom ${
-                                  snapshot.isDragging ? 'dragging' : ''
-                                }`}
+                                className={`question-item p-3 border-bottom ${snapshot.isDragging ? 'dragging' : ''
+                                  }`}
                               >
                                 <div className="d-flex align-items-start">
                                   <div
@@ -1998,48 +2190,187 @@ const SurveyBuilder = ({ darkMode }) => {
           </p>
         </Card.Header>
         <Card.Body>
-          <Row>
-            {audienceTypes.map((audience) => (
-              <Col md={6} lg={4} key={audience.id} className="mb-4">
-                <Card 
-                  className={`h-100 cursor-pointer border-2 ${
-                    targetAudience.includes(audience.id) 
-                      ? 'border-primary bg-primary bg-opacity-10' 
-                      : 'border-light'
-                  }`}
-                  onClick={() => toggleAudience(audience.id)}
-                >
-                  <Card.Body className="text-center">
-                    <div className="mb-3">
-                      <audience.icon 
-                        size={48} 
-                        style={{ color: audience.color }}
-                      />
+          {/* ✅ Active Audience Segments Section */}
+          <div className="mb-4">
+            <h6 className="fw-bold mb-3">
+              <MdPeople className="me-2" />
+              Active Audience Segments
+            </h6>
+            {loadingSegments ? (
+              <div className="text-center py-3">
+                <Spinner animation="border" size="sm" />
+                <p className="text-muted small mt-2">Loading segments...</p>
+              </div>
+            ) : audienceSegments.length > 0 ? (
+              <Row>
+                {audienceSegments.map((segment) => (
+                  <Col md={6} lg={4} key={segment._id} className="mb-3">
+                    <Card
+                      className={`h-100 cursor-pointer border-2 ${targetAudience.includes(`segment_${segment._id}`)
+                        ? 'border-primary bg-primary bg-opacity-10'
+                        : 'border-light'
+                        }`}
+                      onClick={() => toggleAudience(`segment_${segment._id}`)}
+                    >
+                      <Card.Body>
+                        <div className="d-flex align-items-start">
+                          <MdGroup size={24} className="text-primary me-2 mt-1" />
+                          <div className="flex-grow-1">
+                            <h6 className="fw-bold mb-1">{segment.name}</h6>
+                            <p className="text-muted small mb-2">
+                              {segment.description || 'Audience segment'}
+                            </p>
+                            <div className="d-flex align-items-center justify-content-between">
+                              <Badge bg="light" text="dark" className="small">
+                                {segment.size || 0} contacts
+                              </Badge>
+                              <Form.Check
+                                type="checkbox"
+                                checked={targetAudience.includes(`segment_${segment._id}`)}
+                                onChange={() => toggleAudience(`segment_${segment._id}`)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              <Alert variant="info" className="small">
+                No active audience segments available. Create segments in Audience Management.
+              </Alert>
+            )}
+          </div>
+
+          <hr />
+
+          {/* ✅ Contact Categories Section */}
+          <div className="mb-4">
+            <h6 className="fw-bold mb-3">
+              <MdHandshake className="me-2" />
+              Contact Categories
+            </h6>
+            {loadingCategories ? (
+              <div className="text-center py-3">
+                <Spinner animation="border" size="sm" />
+                <p className="text-muted small mt-2">Loading categories...</p>
+              </div>
+            ) : contactCategories.length > 0 ? (
+              <Row>
+                {contactCategories.map((category) => (
+                  <Col md={6} lg={4} key={category._id} className="mb-3">
+                    <Card
+                      className={`h-100 cursor-pointer border-2 ${targetAudience.includes(`category_${category._id}`)
+                        ? 'border-success bg-success bg-opacity-10'
+                        : 'border-light'
+                        }`}
+                      onClick={() => toggleAudience(`category_${category._id}`)}
+                    >
+                      <Card.Body>
+                        <div className="d-flex align-items-start">
+                          <MdHandshake size={24} className="text-success me-2 mt-1" />
+                          <div className="flex-grow-1">
+                            <h6 className="fw-bold mb-1">{category.name}</h6>
+                            <p className="text-muted small mb-2">
+                              {category.description || 'Contact category'}
+                            </p>
+                            <div className="d-flex align-items-center justify-content-between">
+                              <Badge bg="light" text="dark" className="small">
+                                Category
+                              </Badge>
+                              <Form.Check
+                                type="checkbox"
+                                checked={targetAudience.includes(`category_${category._id}`)}
+                                onChange={() => toggleAudience(`category_${category._id}`)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              <Alert variant="info" className="small">
+                No contact categories available. Create categories in Contact Management.
+              </Alert>
+            )}
+          </div>
+
+          <hr />
+
+          {/* ✅ Custom Contact Selection */}
+          <div className="mb-4">
+            <h6 className="fw-bold mb-3">
+              <FaUsers className="me-2" />
+              Custom Contact Selection
+            </h6>
+            <Card
+              className={`cursor-pointer border-2 ${targetAudience.includes('custom')
+                ? 'border-warning bg-warning bg-opacity-10'
+                : 'border-light'
+                }`}
+              onClick={() => toggleAudience('custom')}
+            >
+              <Card.Body>
+                <div className="d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center">
+                    <FaUsers size={32} className="text-warning me-3" />
+                    <div>
+                      <h6 className="fw-bold mb-1">Select Specific Contacts</h6>
+                      <p className="text-muted small mb-0">
+                        Choose individual contacts from your contact list
+                      </p>
                     </div>
-                    <h6 className="fw-bold mb-2">{audience.name}</h6>
-                    <p className="text-muted small mb-3">{audience.description}</p>
-                    <Form.Check
-                      type="checkbox"
-                      checked={targetAudience.includes(audience.id)}
-                      onChange={() => toggleAudience(audience.id)}
-                      label={`Select ${audience.name}`}
-                      className="d-flex justify-content-center"
-                    />
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-          
+                  </div>
+                  <div className="text-end">
+                    {selectedContacts.length > 0 && (
+                      <Badge bg="warning" className="mb-2">
+                        {selectedContacts.length} selected
+                      </Badge>
+                    )}
+                    <div>
+                      <Button variant="warning" size="sm">
+                        <MdEdit className="me-1" />
+                        Select Contacts
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </div>
+
+          {/* Selected Audiences Summary */}
           {targetAudience.length > 0 && (
-            <Alert variant="info" className="mt-4">
-              <strong>Selected Audiences:</strong>
-              <div className="mt-2">
+            <Alert variant="success" className="mt-4">
+              <strong>Selected Audiences ({targetAudience.length}):</strong>
+              <div className="mt-2 d-flex flex-wrap gap-2">
                 {targetAudience.map(audienceId => {
-                  const audience = audienceTypes.find(a => a.id === audienceId);
+                  let label = audienceId;
+                  let bgColor = 'primary';
+
+                  if (audienceId.startsWith('segment_')) {
+                    const segment = audienceSegments.find(s => `segment_${s._id}` === audienceId);
+                    label = segment ? `📊 ${segment.name}` : 'Segment';
+                    bgColor = 'primary';
+                  } else if (audienceId.startsWith('category_')) {
+                    const category = contactCategories.find(c => `category_${c._id}` === audienceId);
+                    label = category ? `🏷️ ${category.name}` : 'Category';
+                    bgColor = 'success';
+                  } else if (audienceId === 'custom') {
+                    label = `👥 Custom (${selectedContacts.length} contacts)`;
+                    bgColor = 'warning';
+                  }
+
                   return (
-                    <Badge key={audienceId} bg="primary" className="me-2">
-                      {audience?.name}
+                    <Badge key={audienceId} bg={bgColor} className="p-2">
+                      {label}
                     </Badge>
                   );
                 })}
@@ -2095,9 +2426,9 @@ const SurveyBuilder = ({ darkMode }) => {
                         type="date"
                         value={publishSettings.scheduleDate}
                         min={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setPublishSettings({ 
-                          ...publishSettings, 
-                          scheduleDate: e.target.value 
+                        onChange={(e) => setPublishSettings({
+                          ...publishSettings,
+                          scheduleDate: e.target.value
                         })}
                       />
                     </Form.Group>
@@ -2108,9 +2439,9 @@ const SurveyBuilder = ({ darkMode }) => {
                       <Form.Control
                         type="time"
                         value={publishSettings.scheduleTime}
-                        onChange={(e) => setPublishSettings({ 
-                          ...publishSettings, 
-                          scheduleTime: e.target.value 
+                        onChange={(e) => setPublishSettings({
+                          ...publishSettings,
+                          scheduleTime: e.target.value
                         })}
                       />
                     </Form.Group>
@@ -2126,9 +2457,9 @@ const SurveyBuilder = ({ darkMode }) => {
                       type="date"
                       value={publishSettings.expiryDate}
                       min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setPublishSettings({ 
-                        ...publishSettings, 
-                        expiryDate: e.target.value 
+                      onChange={(e) => setPublishSettings({
+                        ...publishSettings,
+                        expiryDate: e.target.value
                       })}
                     />
                     <Form.Text className="text-muted">
@@ -2143,9 +2474,9 @@ const SurveyBuilder = ({ darkMode }) => {
                       type="number"
                       min="1"
                       value={publishSettings.maxResponses}
-                      onChange={(e) => setPublishSettings({ 
-                        ...publishSettings, 
-                        maxResponses: e.target.value 
+                      onChange={(e) => setPublishSettings({
+                        ...publishSettings,
+                        maxResponses: e.target.value
                       })}
                       placeholder="Unlimited"
                     />
@@ -2169,13 +2500,13 @@ const SurveyBuilder = ({ darkMode }) => {
                 <strong>Title:</strong>
                 <p className="text-muted mb-2">{survey.title || 'Untitled Survey'}</p>
               </div>
-              
+
               <div className="mb-3">
                 <strong>Questions:</strong>
                 <p className="text-muted mb-2">{questions.length} questions</p>
               </div>
 
-              <div className="mb-3">
+              {/* <div className="mb-3">
                 <strong>Target Audience:</strong>
                 <div className="mt-1">
                   {targetAudience.length === 0 ? (
@@ -2191,13 +2522,49 @@ const SurveyBuilder = ({ darkMode }) => {
                     })
                   )}
                 </div>
+              </div> */}
+
+
+              <div className="mb-3">
+                <strong>Target Audience:</strong>
+                <div className="mt-1">
+                  {targetAudience.length === 0 ? (
+                    <p className="text-muted small">No audience selected</p>
+                  ) : (
+                    <div className="d-flex flex-wrap gap-1">
+                      {targetAudience.map(audienceId => {
+                        let label = audienceId;
+                        let icon = null;
+
+                        if (audienceId.startsWith('segment_')) {
+                          const segment = audienceSegments.find(s => `segment_${s._id}` === audienceId);
+                          label = segment ? segment.name : 'Unknown Segment';
+                          icon = <MdPeople className="me-1" />;
+                        } else if (audienceId.startsWith('category_')) {
+                          const category = contactCategories.find(c => `category_${c._id}` === audienceId);
+                          label = category ? category.name : 'Unknown Category';
+                          icon = <MdHandshake className="me-1" />;
+                        } else if (audienceId === 'custom') {
+                          label = `Custom Contacts (${selectedContacts.length})`;
+                          icon = <FaUsers className="me-1" />;
+                        }
+
+                        return (
+                          <Badge key={audienceId} bg="light" text="dark" className="p-2">
+                            {icon}{label}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mb-3">
                 <strong>Category:</strong>
                 <p className="text-muted mb-2">
-                  {survey.category 
-                    ? industries.find(i => i.id === survey.category)?.name 
+                  {survey.category
+                    ? industries.find(i => i.id === survey.category)?.name
                     : 'Not specified'
                   }
                 </p>
@@ -2211,8 +2578,8 @@ const SurveyBuilder = ({ darkMode }) => {
               <div className="mb-3">
                 <strong>Publish:</strong>
                 <p className="text-muted mb-2">
-                  {publishSettings.publishNow 
-                    ? 'Immediately' 
+                  {publishSettings.publishNow
+                    ? 'Immediately'
                     : `${publishSettings.scheduleDate} at ${publishSettings.scheduleTime}`
                   }
                 </p>
@@ -2383,8 +2750,8 @@ const SurveyBuilder = ({ darkMode }) => {
               <div className="d-flex justify-content-between align-items-center">
                 <div>
                   {currentStep > 1 && (
-                    <Button 
-                      variant="outline-secondary" 
+                    <Button
+                      variant="outline-secondary"
                       onClick={previousStep}
                       className="d-flex align-items-center"
                     >
@@ -2393,7 +2760,7 @@ const SurveyBuilder = ({ darkMode }) => {
                     </Button>
                   )}
                 </div>
-                
+
                 <div className="text-center">
                   <small className="text-muted">
                     Step {currentStep} of {steps.length}
@@ -2402,8 +2769,8 @@ const SurveyBuilder = ({ darkMode }) => {
 
                 <div>
                   {currentStep < steps.length ? (
-                    <Button 
-                      variant="primary" 
+                    <Button
+                      variant="primary"
                       onClick={nextStep}
                       disabled={!canProceedToNextStep()}
                       className="d-flex align-items-center"
@@ -2414,8 +2781,8 @@ const SurveyBuilder = ({ darkMode }) => {
                   ) : (
                     // FINAL STEP: Show "Publish Survey" button when all 3 steps are complete
                     // This triggers the backend API call to create/publish the survey
-                    <Button 
-                      variant="success" 
+                    <Button
+                      variant="success"
                       onClick={handleStepWizardComplete}
                       disabled={saving || !canProceedToNextStep()}
                       className="d-flex align-items-center"
@@ -2444,476 +2811,476 @@ const SurveyBuilder = ({ darkMode }) => {
       {(isEditing || (!isCreateMode && !isTemplateCreateMode)) && (
         <div className="mt-4">
           <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-4">
-        <Tab eventKey="builder" title={
-          <span className="d-flex align-items-center">
-            <MdEdit className="me-2" />
-            Builder
-          </span>
-        }>
-          <Row>
-            {/* Question Types Sidebar */}
-            <Col lg={3}>
-              <Card className="sticky-top" style={{ top: '1rem' }}>
-                <Card.Header className="d-flex align-items-center">
-                  <MdAdd className="me-2" />
-                  <strong>Add Questions</strong>
-                </Card.Header>
-                <Card.Body className="p-0">
-                  <Accordion defaultActiveKey={['0']} alwaysOpen>
-                    {['choice', 'rating', 'text', 'input', 'advanced'].map((category, idx) => (
-                      <Accordion.Item eventKey={idx.toString()} key={category}>
-                        <Accordion.Header>
-                          <span className="text-capitalize fw-semibold">{category} Questions</span>
-                        </Accordion.Header>
-                        <Accordion.Body className="p-2">
-                          {questionTypes
-                            .filter(qt => qt.category === category)
-                            .map(questionType => (
-                              <Card
-                                key={questionType.id}
-                                className="question-type-card mb-2 border-0 cursor-pointer"
-                                onClick={() => addQuestion(questionType.id)}
-                              >
-                                <Card.Body className="p-3">
-                                  <div className="d-flex align-items-center mb-2">
-                                    <questionType.icon
-                                      size={20}
-                                      style={{ color: questionType.color }}
-                                      className="me-2"
-                                    />
-                                    <strong className="small">{questionType.name}</strong>
-                                  </div>
-                                  <p className="text-muted small mb-1">{questionType.description}</p>
-                                  <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                    {questionType.example}
-                                  </div>
-                                </Card.Body>
-                              </Card>
-                            ))}
-                        </Accordion.Body>
-                      </Accordion.Item>
-                    ))}
-                  </Accordion>
-                </Card.Body>
-              </Card>
-            </Col>
+            <Tab eventKey="builder" title={
+              <span className="d-flex align-items-center">
+                <MdEdit className="me-2" />
+                Builder
+              </span>
+            }>
+              <Row>
+                {/* Question Types Sidebar */}
+                <Col lg={3}>
+                  <Card className="sticky-top" style={{ top: '1rem' }}>
+                    <Card.Header className="d-flex align-items-center">
+                      <MdAdd className="me-2" />
+                      <strong>Add Questions</strong>
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                      <Accordion defaultActiveKey={['0']} alwaysOpen>
+                        {['choice', 'rating', 'text', 'input', 'advanced'].map((category, idx) => (
+                          <Accordion.Item eventKey={idx.toString()} key={category}>
+                            <Accordion.Header>
+                              <span className="text-capitalize fw-semibold">{category} Questions</span>
+                            </Accordion.Header>
+                            <Accordion.Body className="p-2">
+                              {questionTypes
+                                .filter(qt => qt.category === category)
+                                .map(questionType => (
+                                  <Card
+                                    key={questionType.id}
+                                    className="question-type-card mb-2 border-0 cursor-pointer"
+                                    onClick={() => addQuestion(questionType.id)}
+                                  >
+                                    <Card.Body className="p-3">
+                                      <div className="d-flex align-items-center mb-2">
+                                        <questionType.icon
+                                          size={20}
+                                          style={{ color: questionType.color }}
+                                          className="me-2"
+                                        />
+                                        <strong className="small">{questionType.name}</strong>
+                                      </div>
+                                      <p className="text-muted small mb-1">{questionType.description}</p>
+                                      <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                        {questionType.example}
+                                      </div>
+                                    </Card.Body>
+                                  </Card>
+                                ))}
+                            </Accordion.Body>
+                          </Accordion.Item>
+                        ))}
+                      </Accordion>
+                    </Card.Body>
+                  </Card>
+                </Col>
 
-            {/* Survey Content */}
-            <Col lg={9}>
-              {/* Survey Header */}
-              <Card className="mb-4">
-                <Card.Header className="d-flex align-items-center">
-                  <MdSettings className="me-2" />
-                  <strong>Survey Information</strong>
+                {/* Survey Content */}
+                <Col lg={9}>
+                  {/* Survey Header */}
+                  <Card className="mb-4">
+                    <Card.Header className="d-flex align-items-center">
+                      <MdSettings className="me-2" />
+                      <strong>Survey Information</strong>
+                    </Card.Header>
+                    <Card.Body>
+                      <Row>
+                        <Col md={8}>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-semibold">Survey Title *</Form.Label>
+                            <Form.Control
+                              type="text"
+                              value={survey.title}
+                              onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
+                              placeholder="Enter survey title..."
+                              className="form-control-lg"
+                            />
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-semibold">Description</Form.Label>
+                            <Form.Control
+                              as="textarea"
+                              rows={3}
+                              value={survey.description}
+                              onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
+                              placeholder="Describe the purpose of this survey..."
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-semibold">Category</Form.Label>
+                            <Form.Select
+                              value={survey.category}
+                              onChange={(e) => setSurvey({ ...survey, category: e.target.value })}
+                            >
+                              <option value="">Select Category</option>
+                              {industries.map(industry => (
+                                <option key={industry.id} value={industry.id}>
+                                  {industry.name}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-semibold">Languages</Form.Label>
+                            <div className="d-flex gap-2 flex-wrap">
+                              {['English', 'Arabic'].map(lang => (
+                                <Form.Check
+                                  key={lang}
+                                  type="checkbox"
+                                  id={`lang-${lang}`}
+                                  label={lang}
+                                  checked={survey.language.includes(lang)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSurvey({ ...survey, language: [...survey.language, lang] });
+                                    } else {
+                                      setSurvey({ ...survey, language: survey.language.filter(l => l !== lang) });
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
+
+                  {/* Questions List */}
+                  <Card>
+                    <Card.Header className="d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center">
+                        <MdViewList className="me-2" />
+                        <strong>Questions ({questions.length})</strong>
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        {questions.length > 0 && (
+                          <>
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={<Tooltip>Get AI suggestions for next question</Tooltip>}
+                            >
+                              <Button
+                                variant="outline-info"
+                                size="sm"
+                                onClick={suggestNextQuestion}
+                                disabled={isGeneratingAI}
+                                className="d-flex align-items-center"
+                              >
+                                <MdAutoAwesome className="me-1" />
+                                {isGeneratingAI ? <Spinner size="sm" /> : 'Suggest'}
+                              </Button>
+                            </OverlayTrigger>
+
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={<Tooltip>Analyze and optimize survey structure</Tooltip>}
+                            >
+                              <Button
+                                variant="outline-warning"
+                                size="sm"
+                                onClick={optimizeSurvey}
+                                disabled={isGeneratingAI}
+                                className="d-flex align-items-center"
+                              >
+                                <MdTune className="me-1" />
+                                {isGeneratingAI ? <Spinner size="sm" /> : 'Optimize'}
+                              </Button>
+                            </OverlayTrigger>
+                          </>
+                        )}
+                        {questions.length > 0 && (
+                          <small className="text-muted">Drag to reorder</small>
+                        )}
+                      </div>
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                      {questions.length === 0 ? (
+                        <div className="text-center py-5">
+                          <MdAdd size={48} className="text-muted mb-3" />
+                          <h5>No Questions Yet</h5>
+                          <p className="text-muted mb-4">
+                            Add questions from the sidebar or use AI to generate a complete survey
+                          </p>
+                          <Button
+                            variant="outline-primary"
+                            onClick={() => setShowAIModal(true)}
+                            className="d-flex align-items-center mx-auto"
+                          >
+                            <MdAutoAwesome className="me-2" />
+                            Generate with AI
+                          </Button>
+                        </div>
+                      ) : (
+                        <DragDropContext onDragEnd={handleOnDragEnd}>
+                          <Droppable droppableId="questions">
+                            {(provided) => (
+                              <div {...provided.droppableProps} ref={provided.innerRef}>
+                                {questions.map((question, index) => (
+                                  <Draggable
+                                    key={question.id}
+                                    draggableId={question.id.toString()}
+                                    index={index}
+                                  >
+                                    {(provided, snapshot) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        className={`question-item p-3 border-bottom ${snapshot.isDragging ? 'dragging' : ''
+                                          }`}
+                                      >
+                                        <div className="d-flex align-items-start">
+                                          <div
+                                            {...provided.dragHandleProps}
+                                            className="drag-handle me-3 mt-1"
+                                          >
+                                            <MdDragHandle className="text-muted" />
+                                          </div>
+
+                                          <div className="flex-grow-1">
+                                            <div className="d-flex align-items-center mb-2">
+                                              <Badge bg="light" text="dark" className="me-2">
+                                                Q{index + 1}
+                                              </Badge>
+                                              {questionTypes.find(qt => qt.id === question.type) && (
+                                                <>
+                                                  {React.createElement(
+                                                    questionTypes.find(qt => qt.id === question.type).icon,
+                                                    {
+                                                      size: 16,
+                                                      className: 'me-2',
+                                                      style: {
+                                                        color: questionTypes.find(qt => qt.id === question.type).color
+                                                      }
+                                                    }
+                                                  )}
+                                                  <small className="text-muted me-3">
+                                                    {questionTypes.find(qt => qt.id === question.type).name}
+                                                  </small>
+                                                </>
+                                              )}
+                                              {question.required && (
+                                                <Badge bg="danger" className="me-2">Required</Badge>
+                                              )}
+                                            </div>
+
+                                            <h6 className="mb-1">{question.title}</h6>
+                                            {question.description && (
+                                              <p className="text-muted small mb-2">{question.description}</p>
+                                            )}
+
+                                            {/* Question Preview */}
+                                            {question.options.length > 0 && (
+                                              <div className="mt-2">
+                                                {question.type === 'single_choice' || question.type === 'multiple_choice' ? (
+                                                  <div className="d-flex gap-2 flex-wrap">
+                                                    {question.options.slice(0, 3).map((option, idx) => (
+                                                      <Badge key={idx} bg="light" text="dark" className="border">
+                                                        {option}
+                                                      </Badge>
+                                                    ))}
+                                                    {question.options.length > 3 && (
+                                                      <Badge bg="light" text="muted">
+                                                        +{question.options.length - 3} more
+                                                      </Badge>
+                                                    )}
+                                                  </div>
+                                                ) : null}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <div className="d-flex gap-1 ms-3">
+                                            <OverlayTrigger
+                                              placement="top"
+                                              overlay={<Tooltip>Edit Question</Tooltip>}
+                                            >
+                                              <Button
+                                                variant="outline-primary"
+                                                size="sm"
+                                                onClick={() => {
+                                                  setSelectedQuestion(question);
+                                                  setQuestionModalMode('edit');
+                                                  setShowQuestionModal(true);
+                                                }}
+                                              >
+                                                <MdEdit size={14} />
+                                              </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger
+                                              placement="top"
+                                              overlay={<Tooltip>Duplicate</Tooltip>}
+                                            >
+                                              <Button
+                                                variant="outline-secondary"
+                                                size="sm"
+                                                onClick={() => duplicateQuestion(question)}
+                                              >
+                                                <MdContentCopy size={14} />
+                                              </Button>
+                                            </OverlayTrigger>
+
+                                            <OverlayTrigger
+                                              placement="top"
+                                              overlay={<Tooltip>Delete Question</Tooltip>}
+                                            >
+                                              <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                onClick={() => deleteQuestion(question.id)}
+                                              >
+                                                <MdDelete size={14} />
+                                              </Button>
+                                            </OverlayTrigger>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </Tab>
+
+            {/* Design Tab */}
+            <Tab eventKey="design" title={
+              <span className="d-flex align-items-center">
+                <FaPalette className="me-2" />
+                Design
+              </span>
+            }>
+              <Card>
+                <Card.Header>
+                  <strong>Survey Appearance</strong>
                 </Card.Header>
                 <Card.Body>
                   <Row>
-                    <Col md={8}>
+                    <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Survey Title *</Form.Label>
+                        <Form.Label>Primary Color</Form.Label>
                         <Form.Control
-                          type="text"
-                          value={survey.title}
-                          onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
-                          placeholder="Enter survey title..."
-                          className="form-control-lg"
+                          type="color"
+                          value={survey.branding.primaryColor}
+                          onChange={(e) => setSurvey({
+                            ...survey,
+                            branding: { ...survey.branding, primaryColor: e.target.value }
+                          })}
                         />
                       </Form.Group>
 
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Description</Form.Label>
+                        <Form.Label>Background Color</Form.Label>
                         <Form.Control
-                          as="textarea"
-                          rows={3}
-                          value={survey.description}
-                          onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
-                          placeholder="Describe the purpose of this survey..."
+                          type="color"
+                          value={survey.branding.backgroundColor}
+                          onChange={(e) => setSurvey({
+                            ...survey,
+                            branding: { ...survey.branding, backgroundColor: e.target.value }
+                          })}
                         />
                       </Form.Group>
                     </Col>
-                    <Col md={4}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Category</Form.Label>
-                        <Form.Select
-                          value={survey.category}
-                          onChange={(e) => setSurvey({ ...survey, category: e.target.value })}
-                        >
-                          <option value="">Select Category</option>
-                          {industries.map(industry => (
-                            <option key={industry.id} value={industry.id}>
-                              {industry.name}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </Form.Group>
-
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Languages</Form.Label>
-                        <div className="d-flex gap-2 flex-wrap">
-                          {['English', 'Arabic'].map(lang => (
-                            <Form.Check
-                              key={lang}
-                              type="checkbox"
-                              id={`lang-${lang}`}
-                              label={lang}
-                              checked={survey.language.includes(lang)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSurvey({ ...survey, language: [...survey.language, lang] });
-                                } else {
-                                  setSurvey({ ...survey, language: survey.language.filter(l => l !== lang) });
-                                }
-                              }}
-                            />
-                          ))}
+                    <Col md={6}>
+                      <div className="survey-preview-mini border rounded p-3" style={{
+                        // backgroundColor: survey.branding.backgroundColor,
+                        // color: survey.branding.textColor
+                      }}>
+                        <h5 style={{ color: survey.branding.primaryColor }}>
+                          {survey.title || 'Survey Title'}
+                        </h5>
+                        <p className="small">{survey.description || 'Survey description...'}</p>
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                          <div
+                            className="rounded-circle"
+                            style={{
+                              width: '12px',
+                              height: '12px',
+                              backgroundColor: survey.branding.primaryColor
+                            }}
+                          ></div>
+                          <small>Sample question</small>
                         </div>
-                      </Form.Group>
+                      </div>
                     </Col>
                   </Row>
                 </Card.Body>
               </Card>
+            </Tab>
 
-              {/* Questions List */}
-              <Card>
-                <Card.Header className="d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center">
-                    <MdViewList className="me-2" />
-                    <strong>Questions ({questions.length})</strong>
-                  </div>
-                  <div className="d-flex align-items-center gap-2">
-                    {questions.length > 0 && (
-                      <>
-                        <OverlayTrigger
-                          placement="top"
-                          overlay={<Tooltip>Get AI suggestions for next question</Tooltip>}
-                        >
-                          <Button
-                            variant="outline-info"
-                            size="sm"
-                            onClick={suggestNextQuestion}
-                            disabled={isGeneratingAI}
-                            className="d-flex align-items-center"
-                          >
-                            <MdAutoAwesome className="me-1" />
-                            {isGeneratingAI ? <Spinner size="sm" /> : 'Suggest'}
-                          </Button>
-                        </OverlayTrigger>
-
-                        <OverlayTrigger
-                          placement="top"
-                          overlay={<Tooltip>Analyze and optimize survey structure</Tooltip>}
-                        >
-                          <Button
-                            variant="outline-warning"
-                            size="sm"
-                            onClick={optimizeSurvey}
-                            disabled={isGeneratingAI}
-                            className="d-flex align-items-center"
-                          >
-                            <MdTune className="me-1" />
-                            {isGeneratingAI ? <Spinner size="sm" /> : 'Optimize'}
-                          </Button>
-                        </OverlayTrigger>
-                      </>
-                    )}
-                    {questions.length > 0 && (
-                      <small className="text-muted">Drag to reorder</small>
-                    )}
-                  </div>
-                </Card.Header>
-                <Card.Body className="p-0">
-                  {questions.length === 0 ? (
-                    <div className="text-center py-5">
-                      <MdAdd size={48} className="text-muted mb-3" />
-                      <h5>No Questions Yet</h5>
-                      <p className="text-muted mb-4">
-                        Add questions from the sidebar or use AI to generate a complete survey
-                      </p>
-                      <Button
-                        variant="outline-primary"
-                        onClick={() => setShowAIModal(true)}
-                        className="d-flex align-items-center mx-auto"
-                      >
-                        <MdAutoAwesome className="me-2" />
-                        Generate with AI
-                      </Button>
-                    </div>
-                  ) : (
-                    <DragDropContext onDragEnd={handleOnDragEnd}>
-                      <Droppable droppableId="questions">
-                        {(provided) => (
-                          <div {...provided.droppableProps} ref={provided.innerRef}>
-                            {questions.map((question, index) => (
-                              <Draggable
-                                key={question.id}
-                                draggableId={question.id.toString()}
-                                index={index}
-                              >
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`question-item p-3 border-bottom ${snapshot.isDragging ? 'dragging' : ''
-                                      }`}
-                                  >
-                                    <div className="d-flex align-items-start">
-                                      <div
-                                        {...provided.dragHandleProps}
-                                        className="drag-handle me-3 mt-1"
-                                      >
-                                        <MdDragHandle className="text-muted" />
-                                      </div>
-
-                                      <div className="flex-grow-1">
-                                        <div className="d-flex align-items-center mb-2">
-                                          <Badge bg="light" text="dark" className="me-2">
-                                            Q{index + 1}
-                                          </Badge>
-                                          {questionTypes.find(qt => qt.id === question.type) && (
-                                            <>
-                                              {React.createElement(
-                                                questionTypes.find(qt => qt.id === question.type).icon,
-                                                {
-                                                  size: 16,
-                                                  className: 'me-2',
-                                                  style: {
-                                                    color: questionTypes.find(qt => qt.id === question.type).color
-                                                  }
-                                                }
-                                              )}
-                                              <small className="text-muted me-3">
-                                                {questionTypes.find(qt => qt.id === question.type).name}
-                                              </small>
-                                            </>
-                                          )}
-                                          {question.required && (
-                                            <Badge bg="danger" className="me-2">Required</Badge>
-                                          )}
-                                        </div>
-
-                                        <h6 className="mb-1">{question.title}</h6>
-                                        {question.description && (
-                                          <p className="text-muted small mb-2">{question.description}</p>
-                                        )}
-
-                                        {/* Question Preview */}
-                                        {question.options.length > 0 && (
-                                          <div className="mt-2">
-                                            {question.type === 'single_choice' || question.type === 'multiple_choice' ? (
-                                              <div className="d-flex gap-2 flex-wrap">
-                                                {question.options.slice(0, 3).map((option, idx) => (
-                                                  <Badge key={idx} bg="light" text="dark" className="border">
-                                                    {option}
-                                                  </Badge>
-                                                ))}
-                                                {question.options.length > 3 && (
-                                                  <Badge bg="light" text="muted">
-                                                    +{question.options.length - 3} more
-                                                  </Badge>
-                                                )}
-                                              </div>
-                                            ) : null}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="d-flex gap-1 ms-3">
-                                        <OverlayTrigger
-                                          placement="top"
-                                          overlay={<Tooltip>Edit Question</Tooltip>}
-                                        >
-                                          <Button
-                                            variant="outline-primary"
-                                            size="sm"
-                                            onClick={() => {
-                                              setSelectedQuestion(question);
-                                              setQuestionModalMode('edit');
-                                              setShowQuestionModal(true);
-                                            }}
-                                          >
-                                            <MdEdit size={14} />
-                                          </Button>
-                                        </OverlayTrigger>
-
-                                        <OverlayTrigger
-                                          placement="top"
-                                          overlay={<Tooltip>Duplicate</Tooltip>}
-                                        >
-                                          <Button
-                                            variant="outline-secondary"
-                                            size="sm"
-                                            onClick={() => duplicateQuestion(question)}
-                                          >
-                                            <MdContentCopy size={14} />
-                                          </Button>
-                                        </OverlayTrigger>
-
-                                        <OverlayTrigger
-                                          placement="top"
-                                          overlay={<Tooltip>Delete Question</Tooltip>}
-                                        >
-                                          <Button
-                                            variant="outline-danger"
-                                            size="sm"
-                                            onClick={() => deleteQuestion(question.id)}
-                                          >
-                                            <MdDelete size={14} />
-                                          </Button>
-                                        </OverlayTrigger>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Tab>
-
-        {/* Design Tab */}
-        <Tab eventKey="design" title={
-          <span className="d-flex align-items-center">
-            <FaPalette className="me-2" />
-            Design
-          </span>
-        }>
-          <Card>
-            <Card.Header>
-              <strong>Survey Appearance</strong>
-            </Card.Header>
-            <Card.Body>
+            {/* Settings Tab */}
+            <Tab eventKey="settings" title={
+              <span className="d-flex align-items-center">
+                <MdTune className="me-2" />
+                Settings
+              </span>
+            }>
               <Row>
                 <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Primary Color</Form.Label>
-                    <Form.Control
-                      type="color"
-                      value={survey.branding.primaryColor}
-                      onChange={(e) => setSurvey({
-                        ...survey,
-                        branding: { ...survey.branding, primaryColor: e.target.value }
-                      })}
-                    />
-                  </Form.Group>
+                  <Card className="mb-4">
+                    <Card.Header>Response Settings</Card.Header>
+                    <Card.Body>
+                      <Form.Check
+                        type="switch"
+                        id="public-survey"
+                        label="Make survey public"
+                        checked={survey.isPublic}
+                        onChange={(e) => setSurvey({ ...survey, isPublic: e.target.checked })}
+                        className="mb-3"
+                      />
 
-                  <Form.Group className="mb-3">
-                    <Form.Label>Background Color</Form.Label>
-                    <Form.Control
-                      type="color"
-                      value={survey.branding.backgroundColor}
-                      onChange={(e) => setSurvey({
-                        ...survey,
-                        branding: { ...survey.branding, backgroundColor: e.target.value }
-                      })}
-                    />
-                  </Form.Group>
+                      <Form.Check
+                        type="switch"
+                        id="anonymous-responses"
+                        label="Allow anonymous responses"
+                        checked={survey.allowAnonymous}
+                        onChange={(e) => setSurvey({ ...survey, allowAnonymous: e.target.checked })}
+                        className="mb-3"
+                      />
+
+                      <Form.Check
+                        type="switch"
+                        id="multiple-responses"
+                        label="Allow multiple responses from same user"
+                        checked={survey.multipleResponses}
+                        onChange={(e) => setSurvey({ ...survey, multipleResponses: e.target.checked })}
+                        className="mb-3"
+                      />
+                    </Card.Body>
+                  </Card>
                 </Col>
+
                 <Col md={6}>
-                  <div className="survey-preview-mini border rounded p-3" style={{
-                    // backgroundColor: survey.branding.backgroundColor,
-                    // color: survey.branding.textColor
-                  }}>
-                    <h5 style={{ color: survey.branding.primaryColor }}>
-                      {survey.title || 'Survey Title'}
-                    </h5>
-                    <p className="small">{survey.description || 'Survey description...'}</p>
-                    <div className="d-flex align-items-center gap-2 mb-2">
-                      <div
-                        className="rounded-circle"
-                        style={{
-                          width: '12px',
-                          height: '12px',
-                          backgroundColor: survey.branding.primaryColor
-                        }}
-                      ></div>
-                      <small>Sample question</small>
-                    </div>
-                  </div>
+                  <Card className="mb-4">
+                    <Card.Header>Completion Settings</Card.Header>
+                    <Card.Body>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Thank You Message</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows={3}
+                          value={survey.thankYouMessage}
+                          onChange={(e) => setSurvey({ ...survey, thankYouMessage: e.target.value })}
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Redirect URL (Optional)</Form.Label>
+                        <Form.Control
+                          type="url"
+                          value={survey.redirectUrl}
+                          onChange={(e) => setSurvey({ ...survey, redirectUrl: e.target.value })}
+                          placeholder="https://example.com"
+                        />
+                      </Form.Group>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
-            </Card.Body>
-          </Card>
-        </Tab>
-
-        {/* Settings Tab */}
-        <Tab eventKey="settings" title={
-          <span className="d-flex align-items-center">
-            <MdTune className="me-2" />
-            Settings
-          </span>
-        }>
-          <Row>
-            <Col md={6}>
-              <Card className="mb-4">
-                <Card.Header>Response Settings</Card.Header>
-                <Card.Body>
-                  <Form.Check
-                    type="switch"
-                    id="public-survey"
-                    label="Make survey public"
-                    checked={survey.isPublic}
-                    onChange={(e) => setSurvey({ ...survey, isPublic: e.target.checked })}
-                    className="mb-3"
-                  />
-
-                  <Form.Check
-                    type="switch"
-                    id="anonymous-responses"
-                    label="Allow anonymous responses"
-                    checked={survey.allowAnonymous}
-                    onChange={(e) => setSurvey({ ...survey, allowAnonymous: e.target.checked })}
-                    className="mb-3"
-                  />
-
-                  <Form.Check
-                    type="switch"
-                    id="multiple-responses"
-                    label="Allow multiple responses from same user"
-                    checked={survey.multipleResponses}
-                    onChange={(e) => setSurvey({ ...survey, multipleResponses: e.target.checked })}
-                    className="mb-3"
-                  />
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col md={6}>
-              <Card className="mb-4">
-                <Card.Header>Completion Settings</Card.Header>
-                <Card.Body>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Thank You Message</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      value={survey.thankYouMessage}
-                      onChange={(e) => setSurvey({ ...survey, thankYouMessage: e.target.value })}
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label>Redirect URL (Optional)</Form.Label>
-                    <Form.Control
-                      type="url"
-                      value={survey.redirectUrl}
-                      onChange={(e) => setSurvey({ ...survey, redirectUrl: e.target.value })}
-                      placeholder="https://example.com"
-                    />
-                  </Form.Group>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Tab>
-      </Tabs>
+            </Tab>
+          </Tabs>
         </div>
       )}
 
@@ -3578,6 +3945,160 @@ const SurveyBuilder = ({ darkMode }) => {
           </Form>
         </Offcanvas.Body>
       </Offcanvas>
+
+      {/* ✅ NEW: Custom Contact Selector Modal */}
+      <Modal
+        show={showCustomContactModal}
+        onHide={() => setShowCustomContactModal(false)}
+        size="lg"
+        backdrop="static"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <FaUsers className="me-2" />
+            Select Custom Contacts
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {/* Search Bar */}
+          <Form.Group className="mb-3">
+            <InputGroup>
+              <InputGroup.Text>
+                <MdGroup />
+              </InputGroup.Text>
+              <Form.Control
+                type="text"
+                placeholder="Search contacts by name, email, or company..."
+                value={contactSearch}
+                onChange={(e) => handleContactSearch(e.target.value)}
+              />
+            </InputGroup>
+          </Form.Group>
+
+          {/* Contacts List */}
+          {loadingContacts ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="text-muted mt-2">Loading contacts...</p>
+            </div>
+          ) : contacts.length > 0 ? (
+            <>
+              {/* Selected Count */}
+              {selectedContacts.length > 0 && (
+                <Alert variant="info" className="mb-3">
+                  <strong>{selectedContacts.length}</strong> contact(s) selected
+                </Alert>
+              )}
+
+              {/* Contact List */}
+              <div className="border rounded" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <ListGroup variant="flush">
+                  {contacts.map((contact) => (
+                    <ListGroup.Item
+                      key={contact._id}
+                      className="d-flex align-items-center cursor-pointer"
+                      onClick={() => toggleContactSelection(contact._id)}
+                    >
+                      <Form.Check
+                        type="checkbox"
+                        checked={selectedContacts.includes(contact._id)}
+                        onChange={() => toggleContactSelection(contact._id)}
+                        className="me-3"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-grow-1">
+                        <div className="fw-bold">{contact.name}</div>
+                        <div className="text-muted small">
+                          {contact.email && (
+                            <span className="me-3">
+                              <MdAlternateEmail size={12} className="me-1" />
+                              {contact.email}
+                            </span>
+                          )}
+                          {contact.company && (
+                            <span>
+                              <MdBusiness size={12} className="me-1" />
+                              {contact.company}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {contact.segment && (
+                        <Badge bg="light" text="dark" className="small">
+                          {contact.segment.name}
+                        </Badge>
+                      )}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </div>
+
+              {/* Pagination */}
+              {contactTotal > contactLimit && (
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <div className="text-muted small">
+                    Showing {((contactPage - 1) * contactLimit) + 1} to {Math.min(contactPage * contactLimit, contactTotal)} of {contactTotal} contacts
+                  </div>
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={contactPage === 1}
+                      onClick={() => handleContactPageChange(contactPage - 1)}
+                    >
+                      <MdArrowBack /> Previous
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={contactPage * contactLimit >= contactTotal}
+                      onClick={() => handleContactPageChange(contactPage + 1)}
+                    >
+                      Next <MdArrowForward />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <Alert variant="warning" className="text-center">
+              {contactSearch ? (
+                <>
+                  <MdGroup size={48} className="mb-2" />
+                  <p className="mb-0">No contacts found matching "{contactSearch}"</p>
+                </>
+              ) : (
+                <>
+                  <MdGroup size={48} className="mb-2" />
+                  <p className="mb-0">No contacts available. Add contacts in Contact Management.</p>
+                </>
+              )}
+            </Alert>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowCustomContactModal(false);
+              setContactSearch('');
+              setContactPage(1);
+            }}
+          >
+            <MdClose className="me-1" />
+            Cancel
+          </Button>
+          <Button
+            variant="success"
+            onClick={saveSelectedContacts}
+            disabled={selectedContacts.length === 0}
+          >
+            <MdSave className="me-1" />
+            Save Selection ({selectedContacts.length})
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
