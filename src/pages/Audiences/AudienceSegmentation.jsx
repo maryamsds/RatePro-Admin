@@ -368,24 +368,24 @@ const AudienceSegmentation = ({ darkMode }) => {
       </div> */}
       {/* Segments List Section */}
       <div className="section-card segments-list-section">
-        <div className="section-header">
-          <div className="section-title-wrapper">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b">
+          <div>
             <h2 className="section-title">Existing Segments</h2>
             <p className="section-subtitle">View and manage all audience segments</p>
           </div>
-          {/* <button className="section-action">
+          {/* <button className="section-action flex items-center gap-2">
             <MdSettings /> Settings
           </button> */}
         </div>
-        <div className="table-container">
-          <table className="data-table">
+        <div className="overflow-x-auto">
+          <table className="data-table w-full">
             <thead>
               <tr>
                 <th>Segment Name</th>
-                <th>Description</th>
-                <th className="criteria-column">Criteria</th>
+                <th className="hidden sm:table-cell">Description</th>
+                <th className="hidden md:table-cell criteria-column">Criteria</th>
                 <th>Size</th>
-                <th>Status</th>
+                <th className="hidden lg:table-cell">Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -398,25 +398,25 @@ const AudienceSegmentation = ({ darkMode }) => {
                       Created: {new Date(segment.created).toLocaleDateString()}
                     </div>
                   </td>
-                  <td>
+                  <td className="hidden sm:table-cell">
                     <div className="segment-description">
                       {segment.description}
                     </div>
                   </td>
-                  <td className="criteria-column">
-                    <code className="criteria-code">{segment.criteria}</code>
+                  <td className="hidden md:table-cell criteria-column">
+                    <code className="criteria-code text-xs break-all">{segment.criteria}</code>
                   </td>
                   <td>
                     <div className="segment-size">{segment.size.toLocaleString()}</div>
                     <div className="size-label">contacts</div>
                   </td>
-                  <td>
+                  <td className="hidden lg:table-cell">
                     <span className={`status-badge ${segment.status.toLowerCase()}-status`}>
                       {segment.status}
                     </span>
                   </td>
                   <td>
-                    <div className="action-buttons">
+                    <div className="flex items-center gap-1">
                       <button className="action-btn view-btn" title="View Details" onClick={() => handleView(segment)}>
                         <MdVisibility />
                       </button>
@@ -440,7 +440,7 @@ const AudienceSegmentation = ({ darkMode }) => {
             </tbody>
           </table>
         </div>
-        <div className="table-footer">
+        <div className="p-4 border-t">
           <Pagination
             current={pagination.page}
             total={pagination.total}
@@ -452,18 +452,18 @@ const AudienceSegmentation = ({ darkMode }) => {
       </div>
       {/* Create/Edit Segment Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">
+        <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+          <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="modal-title flex items-center gap-2">
                 {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Edit'} Segment
               </h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <form className="segment-form">
+            <div className="p-4">
+              <form className="segment-form flex flex-col gap-4">
                 <div className="form-group">
                   <label className="form-label">Segment Name</label>
                   <input
@@ -510,11 +510,11 @@ const AudienceSegmentation = ({ darkMode }) => {
                 </div>
               </form>
             </div>
-            <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={() => setShowModal(false)}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-4 border-t">
+              <button className="modal-cancel-btn flex items-center justify-center gap-2" onClick={() => setShowModal(false)}>
                 Cancel
               </button>
-              <button className="modal-submit-btn" onClick={handleSaveSegment}>
+              <button className="modal-submit-btn flex items-center justify-center gap-2" onClick={handleSaveSegment}>
                 {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Update'} Segment
               </button>
             </div>
@@ -523,10 +523,10 @@ const AudienceSegmentation = ({ darkMode }) => {
       )}
       {/* View Segment Modal */}
       {showViewModal && (
-        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">
+        <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowViewModal(false)}>
+          <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="modal-title flex items-center gap-2">
                 <MdVisibility /> View Segment
               </h2>
               <button className="modal-close" onClick={() => setShowViewModal(false)}>

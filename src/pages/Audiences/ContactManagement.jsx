@@ -509,7 +509,7 @@ const ContactManagement = ({ darkMode }) => {
           </div>
           <div className="filter-group">
             <select
-              className="filter-select"
+              className="filter-select w-full"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -522,24 +522,24 @@ const ContactManagement = ({ darkMode }) => {
           {selectedContacts.length > 0 && (
             <div className="bulk-actions-dropdown">
               <button
-                className="bulk-actions-toggle"
+                className="bulk-actions-toggle w-full flex items-center justify-center gap-2"
                 onClick={() => setShowBulkActions(!showBulkActions)}
               >
                 <MdMoreVert /> Actions ({selectedContacts.length})
               </button>
               {showBulkActions && (
-                <div className="bulk-actions-menu">
-                  <button className="bulk-action-item">
+                <div className="bulk-actions-menu absolute top-full left-0 right-0 mt-1 z-10">
+                  <button className="bulk-action-item flex items-center gap-2">
                     <MdEmail /> Send Survey
                   </button>
-                  <button className="bulk-action-item">
+                  <button className="bulk-action-item flex items-center gap-2">
                     <MdLabel /> Add Tags
                   </button>
-                  <button className="bulk-action-item">
+                  <button className="bulk-action-item flex items-center gap-2">
                     <MdFilterAlt /> Add to Segment
                   </button>
                   <div className="bulk-actions-divider"></div>
-                  <button className="bulk-action-item danger" onClick={handleBulkDelete}>
+                  <button className="bulk-action-item danger flex items-center gap-2" onClick={handleBulkDelete}>
                     <MdDelete /> Delete Selected
                   </button>
                 </div>
@@ -551,8 +551,8 @@ const ContactManagement = ({ darkMode }) => {
 
       {/* Contacts Table Section */}
       <div className="section-card contacts-table-section">
-        <div className="section-header">
-          <div className="section-title-wrapper">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b">
+          <div>
             <h2 className="section-title">Contacts List</h2>
             <p className="section-subtitle">
               {pagination.total} {pagination.total === 1 ? 'contact' : 'contacts'} found
@@ -560,8 +560,8 @@ const ContactManagement = ({ darkMode }) => {
           </div>
         </div>
 
-        <div className="table-container">
-          <table className="data-table">
+        <div className="overflow-x-auto">
+          <table className="data-table w-full">
             <thead>
               <tr>
                 <th className="checkbox-column">
@@ -574,10 +574,10 @@ const ContactManagement = ({ darkMode }) => {
                 </th>
                 <th>Name</th>
                 <th>Email</th>
-                <th className="phone-column">Phone</th>
-                <th className="company-column">Company</th>
-                <th>Segment</th>
-                <th>Status</th>
+                <th className="hidden sm:table-cell phone-column">Phone</th>
+                <th className="hidden md:table-cell company-column">Company</th>
+                <th className="hidden lg:table-cell">Segment</th>
+                <th className="hidden xl:table-cell">Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -593,10 +593,10 @@ const ContactManagement = ({ darkMode }) => {
                     />
                   </td>
                   <td>
-                    <div className="contact-name-cell">
+                    <div className="flex flex-col">
                       <div className="contact-name">{contact.name}</div>
                       {contact.tags && (
-                        <div className="contact-tags">
+                        <div className="flex flex-wrap gap-1 mt-1">
                           {contact.tags.split(',').map((tag) => (
                             <span key={tag} className="contact-tag">
                               {tag.trim()}
@@ -609,24 +609,24 @@ const ContactManagement = ({ darkMode }) => {
                   <td>
                     <div className="contact-email">{contact.email}</div>
                   </td>
-                  <td className="phone-column">
+                  <td className="hidden sm:table-cell phone-column">
                     <div className="contact-phone">{contact.phone}</div>
                   </td>
-                  <td className="company-column">
+                  <td className="hidden md:table-cell company-column">
                     <div className="contact-company">{contact.company}</div>
                   </td>
-                  <td>
+                  <td className="hidden lg:table-cell">
                     <span className="segment-badge">
                       {contact.segment?._id ? contact.segment.name : 'Unassigned'}
                     </span>
                   </td>
-                  <td>
+                  <td className="hidden xl:table-cell">
                     <span className={`status-badge ${contact.status.toLowerCase()}-status`}>
                       {contact.status}
                     </span>
                   </td>
                   <td>
-                    <div className="action-buttons">
+                    <div className="flex items-center gap-1">
                       <button className="action-btn view-btn" title="View" onClick={() => handleView(contact)}>
                         <MdVisibility />
                       </button>
@@ -651,7 +651,7 @@ const ContactManagement = ({ darkMode }) => {
           </table>
         </div>
 
-        <div className="table-footer">
+        <div className="p-4 border-t">
           <Pagination
             current={pagination.page}
             total={pagination.total}
@@ -664,15 +664,15 @@ const ContactManagement = ({ darkMode }) => {
 
       {/* Add/Edit Contact Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="d-flex justify-content-end mt-2 me-2">
+        <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+          <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end mt-2 me-2">
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <form className="contact-form">
+            <div className="p-4">
+              <form className="contact-form flex flex-col gap-4">
                 <div className="form-group">
                   <label className="form-label">Name</label>
                   <input
@@ -724,7 +724,7 @@ const ContactManagement = ({ darkMode }) => {
                     onChange={(e) =>
                       setCurrentContact({
                         ...currentContact,
-                        contactCategories: [e.target.value]   // array me store
+                        contactCategories: [e.target.value]
                       })
                     }>
                     <option value="">Select Category</option>
@@ -744,7 +744,7 @@ const ContactManagement = ({ darkMode }) => {
                     onChange={(e) =>
                       setCurrentContact({
                         ...currentContact,
-                        segment: e.target.value // poora object store
+                        segment: e.target.value
                       })
                     }
                   >
@@ -782,11 +782,11 @@ const ContactManagement = ({ darkMode }) => {
                 </div>
               </form>
             </div>
-            <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={() => setShowModal(false)}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-4 border-t">
+              <button className="modal-cancel-btn flex items-center justify-center gap-2" onClick={() => setShowModal(false)}>
                 Cancel
               </button>
-              <button className="modal-submit-btn" onClick={handleSaveContact}>
+              <button className="modal-submit-btn flex items-center justify-center gap-2" onClick={handleSaveContact}>
                 {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Add' : 'Update'} Contact
               </button>
             </div>
@@ -796,61 +796,55 @@ const ContactManagement = ({ darkMode }) => {
 
       {/* View Contact Modal */}
       {showViewModal && (
-        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            {/* <div className="modal-header">
-              <h2 className="modal-title">
-                <MdVisibility /> View Contact
-              </h2>
-              <button className="modal-close" onClick={() => setShowViewModal(false)}>
-                ×
-              </button>
-            </div> */}
-            <div className="d-flex justify-content-end mt-2 me-2">
+        <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowViewModal(false)}>
+          <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end mt-2 me-2">
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Name</label>
-                <div className="form-text">{viewContact?.name || "-"}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Email</label>
-                <div className="form-text">{viewContact.email}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Phone</label>
-                <div className="form-text">{viewContact.phone}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Company</label>
-                <div className="form-text">{viewContact.company}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Segment</label>
-                <div className="form-text">{viewContact.segment?.name}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Tags</label>
-                <div className="form-text">{viewContact.tags}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Status</label>
-                <div className="form-text">{viewContact.status}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Last Activity</label>
-                <div className="form-text">{new Date(viewContact.lastActivity).toLocaleDateString()}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Created At</label>
-                <div className="form-text">{new Date(viewContact.createdAt).toLocaleDateString()}</div>
+            <div className="p-4">
+              <div className="flex flex-col gap-4">
+                <div className="form-group">
+                  <label className="form-label">Name</label>
+                  <div className="form-text">{viewContact?.name || "-"}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <div className="form-text">{viewContact.email}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone</label>
+                  <div className="form-text">{viewContact.phone}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company</label>
+                  <div className="form-text">{viewContact.company}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Segment</label>
+                  <div className="form-text">{viewContact.segment?.name}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tags</label>
+                  <div className="form-text">{viewContact.tags}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <div className="form-text">{viewContact.status}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Last Activity</label>
+                  <div className="form-text">{new Date(viewContact.lastActivity).toLocaleDateString()}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Created At</label>
+                  <div className="form-text">{new Date(viewContact.createdAt).toLocaleDateString()}</div>
+                </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={() => setShowViewModal(false)}>
+            <div className="flex items-center justify-center p-4 border-t">
+              <button className="modal-cancel-btn w-full sm:w-auto" onClick={() => setShowViewModal(false)}>
                 Close
               </button>
             </div>

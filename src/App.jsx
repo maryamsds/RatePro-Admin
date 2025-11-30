@@ -79,6 +79,7 @@ import ActionManagement from "./pages/Actions/ActionManagement"
 import { ToastContainer } from "react-toastify"
 import { useAuth } from "./context/AuthContext"
 import FullScreenLoader from "./components/Loader/FullScreenLoader"
+import PlanBuilder from "./pages/Subscription/PlanBuilder"
 
 function App() {
   // const navigate = useNavigate();
@@ -190,7 +191,8 @@ function App() {
               <Route path="incentives/reward-system" element={<RewardSystem />} />
               
               {/* Subscription  */}
-               <Route path="subscription/manage-plans" element={<SubscriptionPlans/>} />
+               {/* <Route path="subscription/manage-plans" element={<SubscriptionPlans/>} /> */}
+               <Route path="subscription/manage-plans" element={<PlanBuilder />} />
               <Route path="subscription/my-subscription" element={<MyPlans/>} />
               {/* Support */}
               <Route path="support" element={<SupportTickets />} />
