@@ -1,4 +1,4 @@
-// src/pages/admin/plans/PlanBuilder.jsx
+// src/pages/Subscription/PlanBuilder.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Container, Row, Col, Form, Button, Table, Badge, Modal,

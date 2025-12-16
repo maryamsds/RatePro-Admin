@@ -156,18 +156,20 @@ const Login = () => {
 
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3">
-          <Form.Label>Email Address</Form.Label>
+          <Form.Label className="text-sm sm:text-base fw-medium mb-2">Email Address</Form.Label>
           <Form.Control
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="text-base py-2 px-3"
+            style={{ minHeight: "44px", fontSize: "16px" }}
           />
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Form.Label>Password</Form.Label>
+          <Form.Label className="text-sm sm:text-base fw-medium mb-2">Password</Form.Label>
           <div className="position-relative">
             <Form.Control
               type={showPassword ? "text" : "password"}
@@ -175,11 +177,13 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="text-base py-2 px-3 pe-5"
+              style={{ minHeight: "44px", fontSize: "16px" }}
             />
             <span
               onClick={() => setShowPassword(!showPassword)}
-              className="position-absolute top-50 end-0 translate-middle-y pe-3"
-              style={{ cursor: "pointer", color: "#6c757d", fontSize: "1.15rem" }}
+              className="position-absolute top-50 end-0 translate-middle-y pe-3 d-flex align-items-center justify-content-center"
+              style={{ cursor: "pointer", color: "#6c757d", fontSize: "1.15rem", minWidth: "44px", minHeight: "44px" }}
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
@@ -187,10 +191,21 @@ const Login = () => {
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Form.Check type="checkbox" label="Remember me" />
+          <Form.Check 
+            type="checkbox" 
+            label="Remember me" 
+            className="text-sm sm:text-base"
+            style={{ minHeight: "24px" }}
+          />
         </Form.Group>
 
-        <Button type="submit" variant="primary" className="w-100 mb-3" disabled={loading}>
+        <Button 
+          type="submit" 
+          variant="primary" 
+          className="w-100 mb-3 py-2 sm:py-3 text-base sm:text-lg fw-medium" 
+          disabled={loading}
+          style={{ minHeight: "48px" }}
+        >
           {loading ? (
             <>
               <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -202,7 +217,7 @@ const Login = () => {
         </Button>
 
         <div className="text-center">
-          <Link to="/forgot-password" className="text-decoration-none">
+          <Link to="/forgot-password" className="text-decoration-none text-sm sm:text-base">
             Forgot your password?
           </Link>
         </div>
