@@ -30,6 +30,7 @@ import {
 } from "react-icons/md";
 import LanguageSelector from "../LanguageSelector/LanguageSelector.jsx";
 import { capitalize } from "../../utilities/capitalize";
+import axiosInstance from "../../api/axiosInstance.js";
 
 const Header = ({
   isMobile,
@@ -48,6 +49,9 @@ const Header = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -68,6 +72,39 @@ const Header = ({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Add this function inside component
+  const fetchNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+      // const response = await axiosInstance.get('/notifications');
+      const response = "";
+
+      if (response.data.success) {
+        const notifs = response.data.data?.notifications || response.data.notifications || [];
+        setNotifications(notifs);
+        setUnreadCount(notifs.filter(n => !n.read).length);
+      }
+    } catch (err) {
+      console.log('Notifications fetch failed (optional)', err.message);
+      // Fallback to mock
+      setNotifications([
+        { id: 1, title: "New Response", message: "You received a new survey response", time: "5 mins ago", read: false },
+        { id: 2, title: "Survey Completed", message: "Customer survey reached 100 responses", time: "1 hour ago", read: false },
+        { id: 3, title: "Low Response Rate", message: "Product feedback survey needs attention", time: "2 hours ago", read: true }
+      ]);
+      setUnreadCount(2);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    // Optional: Poll every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Handle fullscreen toggle
@@ -130,15 +167,13 @@ const Header = ({
       <Navbar
         expand="lg"
         fixed="top"
-        className={`header-navbar ${scrolled ? "scrolled" : ""} ${
-          darkMode ? "dark" : "light"
-        }`}
+        className={`header-navbar ${scrolled ? "scrolled" : ""} ${darkMode ? "dark" : "light"
+          }`}
         style={{
           height: "var(--header-height)",
           backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
-          borderBottom: `1px solid ${
-            darkMode ? "var(--dark-border)" : "var(--light-border)"
-          }`,
+          borderBottom: `1px solid ${darkMode ? "var(--dark-border)" : "var(--light-border)"
+            }`,
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           backdropFilter: scrolled ? "blur(10px)" : "none",
           zIndex: 1050,
@@ -185,13 +220,12 @@ const Header = ({
 
           {/* Enhanced Search bar */}
           <div
-            className={`search-container ${
-              isMobile || isTablet
-                ? showMobileSearch
-                  ? "search-active d-flex"
-                  : "d-none d-md-flex"
-                : "d-flex"
-            }`}
+            className={`search-container ${isMobile || isTablet
+              ? showMobileSearch
+                ? "search-active d-flex"
+                : "d-none d-md-flex"
+              : "d-flex"
+              }`}
             style={{
               flex:
                 (isMobile || isTablet) && showMobileSearch ? 1 : "0 1 400px",
@@ -204,17 +238,16 @@ const Header = ({
           >
             <Form onSubmit={handleSearch} className="w-100">
               <InputGroup
-                className={`search-input-group ${
-                  searchFocused ? "focused" : ""
-                }`}
+                className={`search-input-group ${searchFocused ? "focused" : ""
+                  }`}
                 style={{
                   borderRadius: "12px",
                   overflow: "hidden",
                   boxShadow: searchFocused
                     ? "0 0 0 2px rgba(31, 218, 228, 0.25)"
                     : scrolled
-                    ? "0 2px 8px rgba(0,0,0,0.1)"
-                    : "none",
+                      ? "0 2px 8px rgba(0,0,0,0.1)"
+                      : "none",
                 }}
               >
                 <InputGroup.Text
@@ -303,9 +336,8 @@ const Header = ({
 
             {/* Header controls */}
             <div
-              className={`header-controls d-flex align-items-center ${
-                showMobileSearch ? "d-none d-md-flex" : ""
-              }`}
+              className={`header-controls d-flex align-items-center ${showMobileSearch ? "d-none d-md-flex" : ""
+                }`}
             >
               {/* Language selector - responsive visibility */}
               <div className="language-selector me-2 d-none d-lg-block">
@@ -361,13 +393,11 @@ const Header = ({
                   <MdDarkMode size={18} />
                 )}
               </Button>
-
-              {/* Notifications dropdown - Enhanced for mobile */}
+              {/* Notifications dropdown */}
               <Dropdown
                 align="end"
-                className="notifications-dropdown me-2"
                 show={showNotifications}
-                onToggle={setShowNotifications}
+                onToggle={(nextShow) => setShowNotifications(nextShow)}
               >
                 <Dropdown.Toggle
                   variant="link"
@@ -382,191 +412,52 @@ const Header = ({
                     alignItems: "center",
                     justifyContent: "center",
                   }}
+                  onClick={() => setShowNotifications(!showNotifications)}
                 >
                   <MdNotifications size={18} />
-                  <Badge
-                    bg="danger"
-                    className="position-absolute top-0 start-100 translate-middle rounded-pill"
-                    style={{ fontSize: "10px", padding: "2px 6px" }}
-                  >
-                    3
-                  </Badge>
-                </Dropdown.Toggle>{" "}
+                  {unreadCount > 0 && (
+                    <Badge
+                      bg="danger"
+                      className="position-absolute top-0 start-100 translate-middle rounded-pill"
+                      style={{ fontSize: "10px", padding: "2px 6px" }}
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Badge>
+                  )}
+                </Dropdown.Toggle>
+
                 <Dropdown.Menu
                   style={{
-                    width: isMobile ? "100vw" : "320px",
-                    backgroundColor: darkMode
-                      ? "var(--dark-card)"
-                      : "var(--light-card)",
-                    borderColor: darkMode
-                      ? "var(--dark-border)"
-                      : "var(--light-border)",
-                    boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.15)",
-                    marginTop: "0.5rem",
-                    ...(isMobile && {
-                      position: "fixed",
-                      top: "var(--header-height)",
-                      left: "0",
-                      right: "0",
-                      margin: "0",
-                      borderRadius: "0",
-                    }),
+                    width: "300px",
+                    maxHeight: "350px",
+                    overflowY: "auto",
+                    backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
+                    borderColor: darkMode ? "var(--dark-border)" : "var(--light-border)"
                   }}
                 >
-                  <Dropdown.Header
-                    className="d-flex justify-content-between"
-                    style={{ color: darkMode ? "#fff" : "#000" }}
-                  >
-                    <span>Notifications</span>
-                    <span className="badge bg-primary">3</span>
-                  </Dropdown.Header>
-
-                  {/* Stats Section */}
-                  <div
-                    className="px-3 py-2"
-                    style={{
-                      backgroundColor: darkMode
-                        ? "var(--dark-bg)"
-                        : "var(--light-bg)",
-                      borderBottom: `1px solid ${
-                        darkMode ? "var(--dark-border)" : "var(--light-border)"
-                      }`,
-                    }}
-                  >
-                    <div className="row text-center small">
-                      <div className="col-6 border-end py-2">
-                        <div className="fw-bold">24</div>
-                        <div className="text-muted">Total Surveys</div>
-                      </div>
-                      <div className="col-6 py-2">
-                        <div className="fw-bold">1,247</div>
-                        <div className="text-muted">Active Responses</div>
-                      </div>
-                      <div className="col-6 border-end py-2">
-                        <div className="fw-bold">78.5%</div>
-                        <div className="text-muted">Completion Rate</div>
-                      </div>
-                      <div className="col-6 py-2">
-                        <div className="fw-bold">3.2 min</div>
-                        <div className="text-muted">Avg Response Time</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Notification Items */}
-                  <div
-                    className="p-2"
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
-                  >
-                    <div className="d-flex align-items-center px-2 py-1">
-                      <h6
-                        className="mb-0 small fw-bold"
-                        style={{ color: darkMode ? "#fff" : "#000" }}
+                  {notifications.length > 0 ? (
+                    notifications.slice(0, 5).map((notif) => (
+                      <Dropdown.Item
+                        key={notif.id}
+                        as={Link}
+                        to="/app/notifications"
+                        className={`py-2 ${!notif.read ? "bg-primary bg-opacity-10" : ""}`}
                       >
-                        Recent Activity
-                      </h6>
-                    </div>
-
-                    <Dropdown.Item
-                      className="py-2"
-                      as={Link}
-                      to="/app/communication/notifications"
-                      style={{ color: darkMode ? "#fff" : "#000" }}
-                    >
-                      <div className="d-flex">
-                        <div
-                          className="rounded-circle bg-success d-flex align-items-center justify-content-center me-3"
-                          style={{ width: "32px", height: "32px" }}
-                        >
-                          <MdNotifications className="text-white" size={16} />
+                        <div>
+                          <h6 className="mb-1 small fw-bold">{notif.title}</h6>
+                          <p className="mb-1 small text-muted">{notif.message}</p>
+                          <small className="text-muted">{notif.time}</small>
                         </div>
-                        <div className="flex-fill">
-                          <h6
-                            className="mb-1 small"
-                            style={{ color: darkMode ? "#fff" : "#000" }}
-                          >
-                            New Response
-                          </h6>
-                          <p className="mb-1 small text-muted">
-                            You received a new survey response
-                          </p>
-                          <small className="text-muted">5 mins ago</small>
-                        </div>
-                      </div>
+                      </Dropdown.Item>
+                    ))
+                  ) : (
+                    <Dropdown.Item className="text-center text-muted">
+                      No new notifications
                     </Dropdown.Item>
-
-                    <Dropdown.Item
-                      className="py-2"
-                      as={Link}
-                      to="/app/communication/notifications"
-                      style={{ color: darkMode ? "#fff" : "#000" }}
-                    >
-                      <div className="d-flex">
-                        <div
-                          className="rounded-circle bg-info d-flex align-items-center justify-content-center me-3"
-                          style={{ width: "32px", height: "32px" }}
-                        >
-                          <MdNotifications className="text-white" size={16} />
-                        </div>
-                        <div className="flex-fill">
-                          <h6
-                            className="mb-1 small"
-                            style={{ color: darkMode ? "#fff" : "#000" }}
-                          >
-                            Survey Completed
-                          </h6>
-                          <p className="mb-1 small text-muted">
-                            Customer survey reached 100 responses
-                          </p>
-                          <small className="text-muted">1 hour ago</small>
-                        </div>
-                      </div>
-                    </Dropdown.Item>
-
-                    <Dropdown.Item
-                      className="py-2"
-                      style={{ color: darkMode ? "#fff" : "#000" }}
-                    >
-                      <div className="d-flex">
-                        <div
-                          className="rounded-circle bg-warning d-flex align-items-center justify-content-center me-3"
-                          style={{ width: "32px", height: "32px" }}
-                        >
-                          <MdNotifications className="text-white" size={16} />
-                        </div>
-                        <div className="flex-fill">
-                          <h6
-                            className="mb-1 small"
-                            style={{ color: darkMode ? "#fff" : "#000" }}
-                          >
-                            Low Response Rate
-                          </h6>
-                          <p className="mb-1 small text-muted">
-                            Product feedback survey needs attention
-                          </p>
-                          <small className="text-muted">2 hours ago</small>
-                        </div>
-                      </div>
-                    </Dropdown.Item>
-                  </div>
-
-                  <Dropdown.Divider
-                    style={{
-                      backgroundColor: darkMode
-                        ? "var(--dark-border)"
-                        : "var(--light-border)",
-                    }}
-                  />
-                  <Dropdown.Item
-                    as={Link}
-                    to="/app/communication/notifications"
-                    className="text-center"
-                    style={{ color: darkMode ? "#fff" : "#000" }}
-                  >
-                    See All Notifications
-                  </Dropdown.Item>
+                  )}
                 </Dropdown.Menu>
               </Dropdown>
+
 
               {/* User profile dropdown */}
               <Dropdown align="end">
@@ -596,9 +487,8 @@ const Header = ({
                       />
                     ) : (
                       <span
-                        className={`fw-bold ${
-                          darkMode ? "text-white" : "text-secondary"
-                        }`}
+                        className={`fw-bold ${darkMode ? "text-white" : "text-secondary"
+                          }`}
                         style={{ fontSize: "1rem" }}
                       >
                         {user?.name?.charAt(0)?.toUpperCase()}

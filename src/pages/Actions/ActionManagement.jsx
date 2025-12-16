@@ -199,6 +199,13 @@ const ActionManagement = () => {
     }
   };
 
+  const isOverdue = (action) => {
+  return action.dueDate && 
+         new Date(action.dueDate) < new Date() && 
+         action.status !== 'completed' && 
+         action.status !== 'resolved';
+};
+
   const handleAssignAction = async (actionId, assigneeId, team = null) => {
     try {
       const response = await axiosInstance.put(`/actions/${actionId}/assign`, {
@@ -220,6 +227,8 @@ const ActionManagement = () => {
     }
   };
 
+  const handleGenerateActions = async () => {}
+
   // Toast Functions
   const showSuccessToast = (message) => {
     setToastMessage(message);
@@ -235,22 +244,20 @@ const ActionManagement = () => {
 
   // Get Priority Badge
   const getPriorityBadge = (priority) => {
-    const variants = {
-      high: 'danger',
-      medium: 'warning',
-      low: 'info'
-    };
-    const icons = {
-      high: <MdPriorityHigh />,
-      medium: <MdWarning />,
-      low: <MdFlag />
-    };
-    return (
-      <Badge bg={variants[priority]} className="d-flex align-items-center">
-        {icons[priority]} <span className="ms-1">{priority.toUpperCase()}</span>
-      </Badge>
-    );
+  const map = {
+    high: { color: 'danger', icon: MdPriorityHigh },
+    medium: { color: 'warning', icon: MdWarning },
+    low: { color: 'info', icon: MdFlag },
+    'long-term': { color: 'secondary', icon: MdSchedule }
   };
+  const item = map[priority] || map.low;
+  return (
+    <Badge bg={item.color} className="d-flex align-items-center">
+      <item.icon className="me-1" />
+      {priority.toUpperCase()}
+    </Badge>
+  );
+};
 
   // Get Status Badge
   const getStatusBadge = (status) => {

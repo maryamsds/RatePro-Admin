@@ -1,72 +1,55 @@
 // src/pages/Surveys/SurveyBuilder.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import {
-  Container, Row, Col, Card, Button, Badge, Form,
+import { Container, Row, Col, Card, Button, Badge, Form,
   InputGroup, Modal, Spinner, Alert, Tabs, Tab,
   OverlayTrigger, Tooltip, Accordion, ListGroup,
-  ProgressBar, Offcanvas
-} from 'react-bootstrap';
+  ProgressBar, Offcanvas } from 'react-bootstrap';
 import {
   MdAdd, MdClose, MdDelete, MdEdit, MdPreview, MdSave, MdPublish,
-  MdDragHandle, MdContentCopy, MdSettings, MdTranslate,
+  MdDragHandle, MdContentCopy, MdSettings,
   MdStar, MdRadioButtonChecked, MdCheckBox, MdTextFields,
-  MdLinearScale, MdDateRange, MdCloudUpload, MdToggleOn,
+  MdLinearScale, MdDateRange, MdToggleOn,
   MdViewList, MdGridOn, MdSmartToy, MdAutoAwesome,
-  MdTune, MdVisibility, MdCode, MdMobileScreenShare,
-  MdQrCode, MdShare, MdAnalytics, MdBusiness, MdBuild,
+  MdTune, MdCode, MdBusiness, MdBuild,
   MdSchool, MdLocalHospital, MdHotel, MdSports,
   MdAccountBalance, MdShoppingCart, MdLocationCity,
   MdConstruction, MdDirectionsCar, MdComputer,
   MdOutlineAccessTime, MdEvent, MdBarChart, MdAlternateEmail, MdImage,
-  Md123, MdQuestionAnswer, MdPeople, MdGroup, MdPublic, MdHandshake,
+  Md123, MdQuestionAnswer, MdPeople, MdGroup, MdHandshake,
   MdSchedule, MdArrowForward, MdArrowBack,
 } from 'react-icons/md';
-import {
-  FaUsers, FaClock, FaLanguage, FaMagic, FaRocket,
-  FaChartBar, FaEye, FaHandPointer, FaLightbulb,
-  FaGlobe, FaPalette
-} from 'react-icons/fa';
+import { FaUsers, FaLightbulb, FaPalette } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
 
-const SurveyBuilder = ({ darkMode }) => {
+const SurveyBuilder = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state || {};
   const { id: surveyId } = useParams();
   const { user, setGlobalLoading } = useAuth();
 
+  // console.log(location.pathname, 'Location State:', locationState,);
+
   // ✅ FIXED: Enhanced mode detection with ALL required variables
   const templateData = locationState.templateData;
   const fromTemplates = locationState.source === 'templates';
 
-  // Mode Detection Logic
-  const isTemplateEditMode = locationState.mode === 'template-edit' && user?.role === 'admin';
+  // Mode Detection Logic (give createTemplate priority over template-edit flag)
   const isTemplateCreateMode = locationState.createTemplate === true && user?.role === 'admin';
+  const isTemplateEditMode = !isTemplateCreateMode && locationState.mode === 'template-edit' && user?.role === 'admin';
   const isTemplateMode = isTemplateEditMode || isTemplateCreateMode;
 
   // Survey Mode Detection
-  const isEditMode = !!surveyId && !isTemplateMode; // Editing existing survey
-  const isCreateMode = !surveyId && !isTemplateMode; // Creating new survey
-  const isTemplateBasedSurvey = fromTemplates && templateData && !isTemplateMode; // Tenant using template
+  const isEditMode = !!surveyId && !isTemplateMode;
+  const isCreateMode = !surveyId && !isTemplateMode;
+  const isTemplateBasedSurvey = fromTemplates && templateData && !isTemplateMode;
 
   // ✅ ADDED: Backward compatibility variable
   const isEditing = isEditMode || isTemplateEditMode;
-
-  console.log("=== SurveyBuilder Mode Detection ===");
-  console.log("User Role:", user?.role);
-  console.log("isTemplateEditMode:", isTemplateEditMode);
-  console.log("isTemplateCreateMode:", isTemplateCreateMode);
-  console.log("isTemplateMode:", isTemplateMode);
-  console.log("isEditMode:", isEditMode);
-  console.log("isCreateMode:", isCreateMode);
-  console.log("isTemplateBasedSurvey:", isTemplateBasedSurvey);
-  console.log("isEditing (compat):", isEditing);
-  console.log("====================================");
-
   // Main Survey State
   const [survey, setSurvey] = useState({
     title: '',
@@ -157,6 +140,15 @@ const SurveyBuilder = ({ darkMode }) => {
     languages: ['English'],
     tone: 'friendly-professional',
     additionalInstructions: ''
+  });
+
+  const [logicRules, setLogicRules] = useState([]);
+  const [showLogicBuilder, setShowLogicBuilder] = useState(false);
+  const [currentLogicRule, setCurrentLogicRule] = useState({
+    name: '',
+    priority: 50,
+    conditions: { logic: 'AND', items: [] },
+    actions: []
   });
 
   // Question Types Configuration
@@ -348,68 +340,92 @@ const SurveyBuilder = ({ darkMode }) => {
     { id: 'technology', name: 'Technology & Digital', icon: MdComputer }
   ];
 
-  // Target Audience Types
-  // const audienceTypes = [
-  //   { 
-  //     id: 'employees', 
-  //     name: 'Employees', 
-  //     description: 'Internal staff and team members',
-  //     icon: MdPeople,
-  //     color: 'var(--bs-primary)'
-  //   },
-  //   { 
-  //     id: 'customers', 
-  //     name: 'Customers', 
-  //     description: 'Existing and potential customers',
-  //     icon: MdGroup,
-  //     color: 'var(--bs-success)'
-  //   },
-  //   { 
-  //     id: 'public', 
-  //     name: 'General Public', 
-  //     description: 'Open to anyone with the survey link',
-  //     icon: MdPublic,
-  //     color: 'var(--bs-info)'
-  //   },
-  //   { 
-  //     id: 'vendors', 
-  //     name: 'Vendors/Partners', 
-  //     description: 'Business partners and suppliers',
-  //     icon: MdHandshake,
-  //     color: 'var(--bs-warning)'
-  //   },
-  //   { 
-  //     id: 'students', 
-  //     name: 'Students', 
-  //     description: 'Educational institution students',
-  //     icon: MdSchool,
-  //     color: 'var(--bs-purple)'
-  //   },
-  //   { 
-  //     id: 'guests', 
-  //     name: 'Guests/Visitors', 
-  //     description: 'Hotel guests, event attendees, etc.',
-  //     icon: MdHotel,
-  //     color: 'var(--bs-cyan)'
-  //   }
-  // ];
-
-  // Step configuration
   const steps = [
     { id: 1, title: 'Survey Details', description: 'Basic information and questions' },
     { id: 2, title: 'Target Audience', description: 'Who will take this survey' },
     { id: 3, title: 'Publish & Schedule', description: 'When and how to deploy' }
   ];
 
+  const addCondition = () => {
+    setCurrentLogicRule({
+      ...currentLogicRule,
+      conditions: {
+        ...currentLogicRule.conditions,
+        items: [...currentLogicRule.conditions.items, { questionId: '', operator: '==', value: '' }]
+      }
+    });
+  };
+
+  const updateCondition = (index, field, value) => {
+    const updated = [...currentLogicRule.conditions.items];
+    updated[index][field] = value;
+    setCurrentLogicRule({
+      ...currentLogicRule,
+      conditions: { ...currentLogicRule.conditions, items: updated }
+    });
+  };
+
+  const removeCondition = (index) => {
+    setCurrentLogicRule({
+      ...currentLogicRule,
+      conditions: {
+        ...currentLogicRule.conditions,
+        items: currentLogicRule.conditions.items.filter((_, i) => i !== index)
+      }
+    });
+  };
+
+  const addAction = () => {
+    setCurrentLogicRule({
+      ...currentLogicRule,
+      actions: [...currentLogicRule.actions, { type: 'SHOW', targetId: '', value: '' }]
+    });
+  };
+
+  const updateAction = (index, field, value) => {
+    const updated = [...currentLogicRule.actions];
+    updated[index][field] = value;
+    setCurrentLogicRule({ ...currentLogicRule, actions: updated });
+  };
+
+  const removeAction = (index) => {
+    setCurrentLogicRule({
+      ...currentLogicRule,
+      actions: currentLogicRule.actions.filter((_, i) => i !== index)
+    });
+  };
+
+  const saveLogicRule = async () => {
+    if (currentLogicRule.conditions.items.length === 0 || currentLogicRule.actions.length === 0) {
+      Swal.fire('Error', 'Add at least one condition and one action', 'error');
+      return;
+    }
+
+    const newRule = {
+      ...currentLogicRule,
+      survey: surveyId || 'temp', // Will be set on backend when survey saves
+    };
+
+    // Save locally first
+    setLogicRules([...logicRules, newRule]);
+    setShowLogicBuilder(false);
+    setCurrentLogicRule({
+      name: '',
+      priority: 50,
+      conditions: { logic: 'AND', items: [] },
+      actions: []
+    });
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Logic Rule Added!',
+      text: `${newRule.actions.length} action(s) will trigger when conditions match`,
+      timer: 2000
+    });
+  };
+
   // ✅ FIXED: Debug useEffect with correct dependencies
   useEffect(() => {
-    console.log("🔍 SurveyBuilder Debug Info:");
-    console.log("Survey ID from params:", surveyId);
-    console.log("Location state:", location.state);
-    console.log("User:", user);
-    console.log("Loading state:", loading);
-    console.log("Is editing:", isEditing);
-    console.log("Template mode:", isTemplateMode);
   }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
 
 
@@ -419,15 +435,7 @@ const SurveyBuilder = ({ darkMode }) => {
       setLoading(true);
 
       try {
-        console.log("🔄 Initializing SurveyBuilder with mode:", {
-          surveyId,
-          isTemplateMode,
-          isEditing,
-          templateData: !!templateData,
-          userRole: user?.role // ✅ User role check
-        });
-
-        // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
+               // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
         if (isTemplateBasedSurvey && user?.role === 'admin') {
           Swal.fire({
             icon: 'warning',
@@ -601,7 +609,6 @@ const SurveyBuilder = ({ darkMode }) => {
         // If target audience was previously saved, restore it
         if (surveyData.targetAudience && Array.isArray(surveyData.targetAudience)) {
           setTargetAudience(surveyData.targetAudience);
-          console.log('✅ Restored target audience:', surveyData.targetAudience);
         }
 
         // STEP 3: Restore Schedule/Publish Settings
@@ -615,13 +622,16 @@ const SurveyBuilder = ({ darkMode }) => {
             maxResponses: surveyData.publishSettings.maxResponses || '',
             notificationEmails: surveyData.publishSettings.notificationEmails || []
           });
-          console.log('✅ Restored publish settings:', surveyData.publishSettings);
         }
 
         // Restore the step user was on (if saved)
         if (surveyData.currentStep && surveyData.status === 'draft') {
           setCurrentStep(surveyData.currentStep);
-          console.log('✅ Restored to step:', surveyData.currentStep);
+        }
+
+        // fetchExistingSurvey ke end mein
+        if (surveyData.logicRules && Array.isArray(surveyData.logicRules)) {
+          setLogicRules(surveyData.logicRules);
         }
       }
 
@@ -900,7 +910,6 @@ const SurveyBuilder = ({ darkMode }) => {
 
     setQuestions(items);
   };
-  const useMockData = false; // Backend ready hone tak true rakhein
 
   // ✅ DEBUG: Check survey details before update
   const checkSurveyAccess = async () => {
@@ -939,16 +948,6 @@ const SurveyBuilder = ({ darkMode }) => {
         throw new Error('At least one question is required');
       }
 
-      console.log("🎯 Save Operation Mode:", {
-        isTemplateMode,
-        isTemplateCreateMode,
-        isTemplateEditMode,
-        isEditing,
-        surveyId,
-        publish,
-        userRole: user?.role // ✅ User role bhi log karo
-      });
-
       let response;
       let successMessage = '';
 
@@ -964,21 +963,12 @@ const SurveyBuilder = ({ darkMode }) => {
           finalStatus = 'active';
         }
       } else {
-        // SURVEY MODE - CompanyAdmin ke liye
         if (user?.role === 'companyAdmin') {
           finalStatus = publish ? 'active' : 'draft';
         } else {
-          // Regular user ke liye
           finalStatus = publish ? 'published' : 'draft';
         }
       }
-
-      console.log("📊 Final Status Determination:", {
-        userRole: user?.role,
-        isTemplateMode,
-        publish,
-        finalStatus
-      });
 
       // ✅ FIXED: Template mode with correct API endpoint
       if (isTemplateMode) {
@@ -1052,6 +1042,7 @@ const SurveyBuilder = ({ darkMode }) => {
             translations: q.translations || {},
             logicRules: q.logicRules || []
           })),
+          logicRules: logicRules,
           settings: {
             isPublic: survey.isPublic,
             isAnonymous: survey.allowAnonymous,
@@ -1222,6 +1213,8 @@ const SurveyBuilder = ({ darkMode }) => {
   };
 
   const renderActionButtons = () => {
+    const isSurveyFlow = !isTemplateMode; // Survey create or edit (3-step wizard)
+
     return (
       <div className="d-flex gap-2 flex-wrap">
 
@@ -1252,8 +1245,8 @@ const SurveyBuilder = ({ darkMode }) => {
           <span className="d-none d-sm-inline">Preview</span>
         </Button>
 
-        {/* 1. CompanyAdmin: Create New Survey */}
-        {user?.role === 'companyAdmin' && isCreateMode && !isTemplateMode && (
+        {/* Survey Flow (Create + Edit) */}
+        {isSurveyFlow && (
           <>
             <Button
               variant="outline-warning"
@@ -1268,13 +1261,10 @@ const SurveyBuilder = ({ darkMode }) => {
             <Button
               variant="success"
               onClick={() => {
-                // Navigate to next step instead of direct publish
-                if (currentStep === 1 && canProceedToNextStep()) {
+                if (currentStep < 3 && canProceedToNextStep()) {
                   nextStep();
                 } else if (currentStep >= 3) {
                   handleStepWizardComplete();
-                } else {
-                  nextStep();
                 }
               }}
               disabled={saving || !canProceedToNextStep()}
@@ -1282,66 +1272,33 @@ const SurveyBuilder = ({ darkMode }) => {
               className="d-flex align-items-center"
             >
               <MdPublish className="me-2" />
-              {currentStep < 3 ? 'Next Step' : 'Publish Survey'}
+              {currentStep < 3 ? 'Next Step' : (isEditMode ? 'Update Survey' : 'Publish Survey')}
             </Button>
           </>
         )}
 
-        {/* 2. Admin: Create New Template */}
-        {isTemplateCreateMode && (
+        {/* Template Flow (Create + Edit) */}
+        {isTemplateMode && (
           <>
             <Button
               variant="outline-warning"
-              onClick={() => saveAsDraft()}
+              onClick={() => saveSurvey(false)}
               disabled={saving || !survey.title.trim()}
               size="sm"
               className="d-flex align-items-center"
             >
-              <MdSave className="me-2" /> Save Template Draft
+              <MdSave className="me-2" /> {isTemplateEditMode ? 'Save Template Draft' : 'Save Template Draft'}
             </Button>
             <Button
               variant="success"
-              onClick={() => {
-                // For template creation, also use step wizard
-                if (currentStep === 1 && canProceedToNextStep()) {
-                  nextStep();
-                } else if (currentStep >= 3) {
-                  handleStepWizardComplete();
-                } else {
-                  nextStep();
-                }
-              }}
-              disabled={saving || !canProceedToNextStep()}
+              onClick={() => saveSurvey(true)}
+              disabled={saving || !survey.title.trim()}
               size="sm"
               className="d-flex align-items-center"
             >
-              <MdArrowForward className="me-2" />
-              {currentStep < 3 ? 'Next Step' : 'Complete Template'}
+              <MdPublish className="me-2" /> {isTemplateEditMode ? 'Update Template' : 'Publish Template'}
             </Button>
           </>
-        )}
-
-        {/* 3. Admin: Edit Existing Template ← YE MISSING THA */}
-        {isTemplateEditMode && (
-          <>
-            <Button variant="outline-warning"
-              onClick={() => saveSurvey(false)} disabled={saving} size="sm"
-              className="d-flex align-items-center">
-              <MdSave className="me-2" /> Save Draft
-            </Button>
-            <Button variant="success"
-              onClick={() => saveSurvey(true)} disabled={saving} size="sm"
-              className="d-flex align-items-center">
-              <MdPublish className="me-2" /> Update Template
-            </Button>
-          </>
-        )}
-
-        {/* 4. Tenant: Edit Survey */}
-        {isEditMode && !isTemplateMode && (
-          <Button variant="success" onClick={saveSurvey} disabled={saving} size="sm" className="d-flex align-items-center">
-            <MdPublish className="me-2" /> Update
-          </Button>
         )}
 
       </div>
@@ -1486,50 +1443,10 @@ const SurveyBuilder = ({ darkMode }) => {
       targetAudience.length > 0 &&
       (publishSettings.publishNow || (publishSettings.scheduleDate && publishSettings.scheduleTime));
   };
-
-  // const fetchSegments = async () => {
-  //     try {
-  //       const res = await axiosInstance.get('/segments/all'); // backend route
-  //       if (res.data.success) {
-  //         // Only active segments
-  //         const activeSegments = res.data.segments.filter(
-  //           (segment) => segment.status === "Active"
-  //         );
-  //         setSegments(activeSegments);
-  //       }
-  //     } catch (err) {
-  //       console.error(err);
-  //     }
-  //   };
-
-
-  // ✅ NEW: Fetch Active Audience Segments
-  // const fetchAudienceSegments = async () => {
-  //   try {
-  //     setLoadingSegments(true);
-  //     const response = await axiosInstance.get('/segments/all');
-  //     if (response.data.success && response.data.segments) {
-  //       // Filter only active segments
-  //       const activeSegments = response.data.segments.filter(seg => seg.status === 'active');
-  //       setAudienceSegments(activeSegments);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching audience segments:', error);
-  //   } finally {
-  //     setLoadingSegments(false);
-  //   }
-  // };
-
-
-  // ✅ NEW: Fetch Active Audience Segments (ROBUST VERSION)
   const fetchAudienceSegments = async () => {
     try {
       setLoadingSegments(true);
-      console.log("Fetching segments from /segments/all ..."); // ← DEBUG
-
-      const response = await axiosInstance.get('/segments/all');
-      console.log("Raw segments response:", response.data); // ← YE DEKHO CONSOLE MEIN
-
+      const response = await axiosInstance.get('/contact-categories/');
       let segmentsArray = [];
 
       // Multiple possible response structures handle karo
@@ -1560,8 +1477,6 @@ const SurveyBuilder = ({ darkMode }) => {
         }
         return false;
       });
-
-      console.log("Filtered Active Segments:", activeSegments); // ← YE DEKHO
       setAudienceSegments(activeSegments);
 
     } catch (error) {
@@ -1616,13 +1531,15 @@ const SurveyBuilder = ({ darkMode }) => {
     }
   };
 
-  // ✅ NEW: Load segments and categories when component mounts
+  // ✅ NEW: Load segments and categories when component mounts (skip audience fetch in template mode)
   useEffect(() => {
     if (user) {
-      fetchAudienceSegments();
+      if (!isTemplateMode) {
+        fetchAudienceSegments();
+      }
       fetchContactCategories();
     }
-  }, [user]);
+  }, [user, isTemplateMode]);
 
   // Target Audience Functions
   const toggleAudience = (audienceId) => {
@@ -1787,9 +1704,6 @@ const SurveyBuilder = ({ darkMode }) => {
           estimatedCompletionTime: `${Math.ceil(questions.length * 1.5)} minutes`
         }
       };
-
-      console.log('📤 Publishing survey to backend:', completeData);
-
       // Call the backend API to create/publish the survey
       let response;
       if (isEditMode && surveyId) {
@@ -1801,8 +1715,6 @@ const SurveyBuilder = ({ darkMode }) => {
       }
 
       if (response.data) {
-        console.log('✅ Survey published successfully:', response.data);
-
         Swal.fire({
           icon: 'success',
           title: 'Survey Published!',
@@ -2173,6 +2085,59 @@ const SurveyBuilder = ({ darkMode }) => {
             </Card.Body>
           </Card>
         </Col>
+
+        {/* LOGIC RULES PANEL - Right Sidebar */}
+        {currentStep === 1 && (
+          <Col lg={3}>
+            <Card className="sticky-top" style={{ top: '1rem' }}>
+              <Card.Header className="d-flex justify-content-between align-items-center bg-primary text-white">
+                <div>
+                  <MdCode size={20} />
+                  <strong className="ms-2">Logic Rules ({logicRules.length})</strong>
+                </div>
+                <Button size="sm" variant="light" onClick={() => setShowLogicBuilder(true)}>
+                  <MdAdd /> Add Rule
+                </Button>
+              </Card.Header>
+              <Card.Body className="p-2">
+                {logicRules.length === 0 ? (
+                  <div className="text-center py-5 text-muted">
+                    <MdCode size={48} className="mb-3 opacity-50" />
+                    <p className="small fw-bold">No Logic Rules Yet</p>
+                    <p className="small">Create conditional branching like Typeform</p>
+                    <Button size="sm" variant="outline-primary" onClick={() => setShowLogicBuilder(true)}>
+                      <MdAdd /> Create First Rule
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    {logicRules.map((rule, idx) => (
+                      <Alert key={idx} variant="light" className="mb-2 p-2 border">
+                        <div className="d-flex justify-content-between">
+                          <div>
+                            <strong>{rule.name || `Rule ${idx + 1}`}</strong>
+                            <Badge bg="info" className="ms-2">Priority {rule.priority}</Badge>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            onClick={() => setLogicRules(logicRules.filter((_, i) => i !== idx))}
+                          >
+                            <MdDelete size={14} />
+                          </Button>
+                        </div>
+                        <small className="text-muted">
+                          IF {rule.conditions.items.length} condition(s) ({rule.conditions.logic})
+                          → {rule.actions.length} action(s)
+                        </small>
+                      </Alert>
+                    ))}
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
       </Row>
     </div>
   );
@@ -2690,16 +2655,18 @@ const SurveyBuilder = ({ darkMode }) => {
 
         <div className="d-flex justify-content-between align-items-center flex-wrap py-3">
           {/* Progress Indicator */}
-          <div className="d-flex align-items-center gap-3 flex-wrap w-50">
-            <small className="text-muted">Completion:</small>
-            <ProgressBar
-              now={getCompletionPercentage()}
-              className="flex-grow-1"
-              style={{ maxWidth: '200px', height: '8px' }}
-              variant={getCompletionPercentage() > 80 ? 'success' : 'primary'}
-            />
-            <small className="fw-semibold">{getCompletionPercentage()}%</small>
-          </div>
+          {!isTemplateMode && (
+            <div className="d-flex align-items-center gap-3 flex-wrap w-50">
+              <small className="text-muted">Completion:</small>
+              <ProgressBar
+                now={getCompletionPercentage()}
+                className="flex-grow-1"
+                style={{ maxWidth: '200px', height: '8px' }}
+                variant={getCompletionPercentage() > 80 ? 'success' : 'primary'}
+              />
+              <small className="fw-semibold">{getCompletionPercentage()}%</small>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="header-actions mb-3">
@@ -2708,8 +2675,8 @@ const SurveyBuilder = ({ darkMode }) => {
         </div>
       </div>
 
-      {/* Step Wizard - Only for Create Modes */}
-      {(isCreateMode || isTemplateCreateMode) && (
+      {/* Step Wizard - Shown for all Survey (non-template) flows: create + edit */}
+      {!isTemplateMode && (
         <>
           {/* Step Progress Indicator */}
           <Card className="mb-4">
@@ -2779,8 +2746,6 @@ const SurveyBuilder = ({ darkMode }) => {
                       <MdArrowForward className="ms-2" />
                     </Button>
                   ) : (
-                    // FINAL STEP: Show "Publish Survey" button when all 3 steps are complete
-                    // This triggers the backend API call to create/publish the survey
                     <Button
                       variant="success"
                       onClick={handleStepWizardComplete}
@@ -2795,7 +2760,7 @@ const SurveyBuilder = ({ darkMode }) => {
                       ) : (
                         <>
                           <MdPublish className="me-2" />
-                          Publish Survey
+                          {isEditMode ? 'Update Survey' : 'Publish Survey'}
                         </>
                       )}
                     </Button>
@@ -2807,8 +2772,8 @@ const SurveyBuilder = ({ darkMode }) => {
         </>
       )}
 
-      {/* Original Tabs for Edit Mode Only */}
-      {(isEditing || (!isCreateMode && !isTemplateCreateMode)) && (
+      {/* Template modes use the tabbed builder (no multi-step wizard) */}
+      {isTemplateMode && (
         <div className="mt-4">
           <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-4">
             <Tab eventKey="builder" title={
