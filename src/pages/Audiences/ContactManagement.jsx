@@ -21,9 +21,10 @@ const ContactManagement = ({ darkMode }) => {
     phone: "",
     company: "",
     tenantId: "",
-    segment: "",
+    // segment: "",
     tags: "",
-    status: "Active"
+    status: "Active",
+    contactCategories: [],
   })
   const [viewContact, setViewContact] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -31,7 +32,7 @@ const ContactManagement = ({ darkMode }) => {
   const [filterStatus, setFilterStatus] = useState("all")
   const [selectedContacts, setSelectedContacts] = useState([])
   const [showBulkActions, setShowBulkActions] = useState(false)
-  const [segments, setSegments] = useState([]);
+  // const [segments, setSegments] = useState([]);
   const [file, setFile] = useState(null);
   const fileInputRef = useRef(null);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -91,7 +92,7 @@ const ContactManagement = ({ darkMode }) => {
       try {
         const res = await axiosInstance.get(`/contact-categories?tenantId=${tenantId}`); // <-- your API route
         const data = res?.data?.data?.categories ?? []; // Adjust based on your API response structure
-        console.log("Fetched Categories:", data);
+        // console.log("Fetched Categories:", data);
 
         // Convert to dropdown format
         const formatted = data.map((item) => ({
@@ -108,20 +109,21 @@ const ContactManagement = ({ darkMode }) => {
     fetchCategories();
   }, []);
 
-  const fetchSegments = async () => {
-    try {
-      const res = await axiosInstance.get('/segments/all'); // backend route
-      if (res.data.success) {
-        // Only active segments
-        const activeSegments = res.data.segments.filter(
-          (segment) => segment.status === "Active"
-        );
-        setSegments(activeSegments);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // const fetchSegments = async () => {
+  //   try {
+  //     const res = await axiosInstance.get('/contact-categories/all'); // backend route
+  //     console.log("Segments Response:", res);
+  //     if (res.data.success) {
+  //       // Only active segments
+  //       const activeSegments = res.data.segments.filter(
+  //         (segment) => segment.status === "Active"
+  //       );
+  //       setSegments(activeSegments);
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // };
 
   const fetchContacts = async () => {
     setLoading(true)
@@ -131,7 +133,7 @@ const ContactManagement = ({ darkMode }) => {
         limit: pagination.limit,
         search: searchTerm,
       }
-      if (filterSegment !== "all") params.segment = filterSegment
+      // if (filterSegment !== "all") params.segment = filterSegment
       if (filterStatus !== "all") params.status = filterStatus
       const res = await axiosInstance.get('/contacts', { params })
       setContacts(res.data.contacts)
@@ -143,7 +145,7 @@ const ContactManagement = ({ darkMode }) => {
   }
 
   useEffect(() => {
-    fetchSegments();
+    // fetchSegments();
     setCategoryOptions([]);
     // fetchContactCategories(currentUser?.tenantId);
   }, [])
@@ -158,7 +160,7 @@ const ContactManagement = ({ darkMode }) => {
       email: "",
       phone: "",
       company: "",
-      contactCategories: "",
+      contactCategories: [],
       tenantId: "",
       segment: "",
       tags: "",
@@ -197,7 +199,8 @@ const ContactManagement = ({ darkMode }) => {
       tags: Array.isArray(contact.tags)
         ? contact.tags.join(", ")
         : (contact.tags || ""),
-      status: contact.status || "Active"
+      status: contact.status || "Active",
+      contactCategories: (contact.contactCategories || []).map((cat) => cat?._id || cat).filter(Boolean),
     });
 
     setModalMode("edit");
@@ -214,11 +217,26 @@ const ContactManagement = ({ darkMode }) => {
       try {
         let res;
 
+        const payload = {
+          name: currentContact.name.trim(),
+          email: currentContact.email.trim(),
+          phone: currentContact.phone || "",
+          company: currentContact.company || "",
+          // segment: currentContact.segment || null,
+          tags: currentContact.tags || "",
+          status: currentContact.status || "Active",
+          contactCategories: Array.isArray(currentContact.contactCategories)
+            ? currentContact.contactCategories.filter(Boolean)
+            : [],
+        };
+
+        console.log("Payload to be sent:", payload);
+
         if (modalMode === "edit") {
           // UPDATE
           res = await axiosInstance.put(
             `/contacts/${currentContact._id}`,
-            currentContact
+            payload
           );
 
           Swal.fire({
@@ -231,19 +249,7 @@ const ContactManagement = ({ darkMode }) => {
 
         } else {
           // CREATE
-          res = await axiosInstance.post("/contacts", currentContact);
-
-          console.log("FINAL PAYLOAD BEING SENT:", {
-            _id: currentContact._id,
-            name: currentContact.name,
-            email: currentContact.email,
-            phone: currentContact.phone,
-            contactCategories: currentContact.contactCategories,
-            tenantId: currentContact.tenantId,
-            company: currentContact.company,
-            segment: currentContact.segment,
-            tags: currentContact.tags
-          });
+          res = await axiosInstance.post("/contacts/", payload);
 
           Swal.fire({
             icon: "success",
@@ -458,10 +464,10 @@ const ContactManagement = ({ darkMode }) => {
           <div className="stat-icon">
             <MdContacts />
           </div>
-          <div className="stat-content">
+          {/* <div className="stat-content">
             <div className="stat-value">{totalSegments}</div>
             <div className="stat-label">Segments</div>
-          </div>
+          </div> */}
         </div>
         <div className="stat-card warning-card">
           <div className="stat-icon">
@@ -487,18 +493,16 @@ const ContactManagement = ({ darkMode }) => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="filter-group">
+          {/* <div className="filter-group">
             <select
               className="filter-select"
-              value={currentContact.segment || ""}   // ← yeh change karo (pehle galat tha)
+              value={filterSegment}
               onChange={(e) => {
                 const value = e.target.value;
-                setCurrentContact({
-                  ...currentContact,
-                  segment: value || null   // ← empty string ko null bana do, undefined nahi!
-                });
+                setFilterSegment(value || "all");
               }}
             >
+              <option value="all">All Segments</option>
               <option value="">No Segment (Unassigned)</option>
               {segments?.map((segment) => (
                 <option key={segment._id} value={segment._id}>
@@ -506,7 +510,7 @@ const ContactManagement = ({ darkMode }) => {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
           <div className="filter-group">
             <select
               className="filter-select w-full"
@@ -535,9 +539,9 @@ const ContactManagement = ({ darkMode }) => {
                   <button className="bulk-action-item flex items-center gap-2">
                     <MdLabel /> Add Tags
                   </button>
-                  <button className="bulk-action-item flex items-center gap-2">
+                  {/* <button className="bulk-action-item flex items-center gap-2">
                     <MdFilterAlt /> Add to Segment
-                  </button>
+                  </button> */}
                   <div className="bulk-actions-divider"></div>
                   <button className="bulk-action-item danger flex items-center gap-2" onClick={handleBulkDelete}>
                     <MdDelete /> Delete Selected
@@ -576,7 +580,7 @@ const ContactManagement = ({ darkMode }) => {
                 <th>Email</th>
                 <th className="hidden sm:table-cell phone-column">Phone</th>
                 <th className="hidden md:table-cell company-column">Company</th>
-                <th className="hidden lg:table-cell">Segment</th>
+                {/* <th className="hidden lg:table-cell">Segment</th> */}
                 <th className="hidden xl:table-cell">Status</th>
                 <th>Actions</th>
               </tr>
@@ -595,19 +599,40 @@ const ContactManagement = ({ darkMode }) => {
                   <td>
                     <div className="flex flex-col">
                       <div className="contact-name">{contact.name}</div>
-                      {contact.tags && (
+                      {(Array.isArray(contact.tags) || typeof contact.tags === "string") && (
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {contact.tags.split(',').map((tag) => (
-                            <span key={tag} className="contact-tag">
-                              {tag.trim()}
+                          {(Array.isArray(contact.tags)
+                            ? contact.tags
+                            : contact.tags.split(",")).map((tag) => {
+                              const cleanTag = (tag || "").trim();
+                              return cleanTag ? (
+                                <span key={cleanTag} className="contact-tag">
+                                  {cleanTag}
+                                </span>
+                              ) : null;
+                            })}
+                        </div>
+                      )}
+                      {contact.autoTags?.length ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {contact.autoTags.map((tag) => (
+                            <span key={tag} className="contact-tag auto-tag">
+                              {tag}
                             </span>
                           ))}
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </td>
                   <td>
                     <div className="contact-email">{contact.email}</div>
+                    {contact.enrichment?.domain || contact.enrichment?.country ? (
+                      <div className="text-xs text-muted mt-1">
+                        {contact.enrichment?.domain ? `Domain: ${contact.enrichment.domain}` : ""}
+                        {contact.enrichment?.domain && contact.enrichment?.country ? " · " : ""}
+                        {contact.enrichment?.country ? `Country: ${contact.enrichment.country}` : ""}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="hidden sm:table-cell phone-column">
                     <div className="contact-phone">{contact.phone}</div>
@@ -615,11 +640,11 @@ const ContactManagement = ({ darkMode }) => {
                   <td className="hidden md:table-cell company-column">
                     <div className="contact-company">{contact.company}</div>
                   </td>
-                  <td className="hidden lg:table-cell">
+                  {/* <td className="hidden lg:table-cell">
                     <span className="segment-badge">
                       {contact.segment?._id ? contact.segment.name : 'Unassigned'}
                     </span>
-                  </td>
+                  </td> */}
                   <td className="hidden xl:table-cell">
                     <span className={`status-badge ${contact.status.toLowerCase()}-status`}>
                       {contact.status}
@@ -724,7 +749,7 @@ const ContactManagement = ({ darkMode }) => {
                     onChange={(e) =>
                       setCurrentContact({
                         ...currentContact,
-                        contactCategories: [e.target.value]
+                        contactCategories: e.target.value ? [e.target.value] : []
                       })
                     }>
                     <option value="">Select Category</option>
@@ -736,7 +761,7 @@ const ContactManagement = ({ darkMode }) => {
                   </select>
                 </div>
 
-                <div className="form-group">
+                {/* <div className="form-group">
                   <label className="form-label">Segment</label>
                   <select
                     className="filter-select"
@@ -755,7 +780,7 @@ const ContactManagement = ({ darkMode }) => {
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
                 <div className="form-group">
                   <label className="form-label">Tags (comma separated)</label>
@@ -766,6 +791,7 @@ const ContactManagement = ({ darkMode }) => {
                     value={currentContact.tags}
                     onChange={(e) => setCurrentContact({ ...currentContact, tags: e.target.value })}
                   />
+                  <p className="help-text">Auto-tags are added by the system; enter only manual tags here.</p>
                 </div>
 
                 <div className="form-group">
@@ -821,14 +847,39 @@ const ContactManagement = ({ darkMode }) => {
                   <label className="form-label">Company</label>
                   <div className="form-text">{viewContact.company}</div>
                 </div>
-                <div className="form-group">
+                {/* <div className="form-group">
                   <label className="form-label">Segment</label>
                   <div className="form-text">{viewContact.segment?.name}</div>
-                </div>
+                </div> */}
                 <div className="form-group">
                   <label className="form-label">Tags</label>
                   <div className="form-text">{viewContact.tags}</div>
                 </div>
+                {viewContact.autoTags?.length ? (
+                  <div className="form-group">
+                    <label className="form-label">Auto Tags</label>
+                    <div className="flex flex-wrap gap-1">
+                      {viewContact.autoTags.map((tag) => (
+                        <span key={tag} className="contact-tag auto-tag">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {viewContact.enrichment ? (
+                  <div className="form-group">
+                    <label className="form-label">Enrichment</label>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {viewContact.enrichment.country && <div>Country: {viewContact.enrichment.country}</div>}
+                      {viewContact.enrichment.region && <div>Region: {viewContact.enrichment.region}</div>}
+                      {viewContact.enrichment.city && <div>City: {viewContact.enrichment.city}</div>}
+                      {viewContact.enrichment.domain && <div>Domain: {viewContact.enrichment.domain}</div>}
+                      {viewContact.enrichment.company && <div>Company: {viewContact.enrichment.company}</div>}
+                      {viewContact.enrichment.gender && <div>Gender: {viewContact.enrichment.gender}</div>}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="form-group">
                   <label className="form-label">Status</label>
                   <div className="form-text">{viewContact.status}</div>
@@ -870,7 +921,7 @@ const ContactManagement = ({ darkMode }) => {
             onChange={handleFileChange}
           />
           <small className="text-muted">
-            File should include columns: Name, Email, Phone, Company, Segment
+            File should include columns: Name, Email, Phone, Company
           </small>
 
           {(currentUser?.role === "companyAdmin" || memberCanDownload) && (

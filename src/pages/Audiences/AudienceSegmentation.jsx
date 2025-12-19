@@ -20,6 +20,8 @@ const AudienceSegmentation = ({ darkMode }) => {
     description: "",
     criteria: "",
     size: 0,
+    type: 'internal',
+    status: 'Draft',
   })
   const [viewSegment, setViewSegment] = useState(null)
   const [filters, setFilters] = useState({
@@ -37,9 +39,20 @@ const AudienceSegmentation = ({ darkMode }) => {
   const fetchSegments = async () => {
     setLoading(true)
     try {
-      const res = await axiosInstance.get(`/segments?page=${pagination.page}&limit=${pagination.limit}`)
-      setSegments(res.data.segments)
-      setPagination(p => ({ ...p, total: res.data.total }))
+      const res = await axiosInstance.get(`/contact-categories?page=${pagination.page}&limit=${pagination.limit}`)
+      const list = res?.data?.data?.categories || res?.data?.categories || res?.data?.data?.segments || res?.data?.segments || []
+      const normalized = Array.isArray(list)
+        ? list.map((item) => ({
+          ...item,
+          status: item.status || (item.active ? 'Active' : 'Draft'),
+          type: item.type || 'internal',
+          size: item.size ?? item.count ?? 0,
+          created: item.created || item.createdAt || item.updatedAt,
+        }))
+        : []
+      setSegments(normalized)
+      const total = res?.data?.count ?? normalized.length ?? 0
+      setPagination(p => ({ ...p, total }))
     } catch (err) {
       console.error(err)
     }
@@ -48,11 +61,18 @@ const AudienceSegmentation = ({ darkMode }) => {
 
   const fetchStats = async () => {
     try {
-      const res = await axiosInstance.get('/segments?limit=9999&page=1')
-      const allSegments = res.data.segments
-      const totalContactsCalc = allSegments.reduce((sum, seg) => sum + (seg.size || 0), 0)
-      const activeCalc = allSegments.filter(s => s.status === 'Active').length
-      const draftCalc = allSegments.filter(s => s.status === 'Draft').length
+      const res = await axiosInstance.get('/contact-categories?limit=9999&page=1')
+      const allSegments = res?.data?.data?.categories || res?.data?.categories || res?.data?.data?.segments || res?.data?.segments || []
+      const safeSegments = Array.isArray(allSegments)
+        ? allSegments.map((item) => ({
+          ...item,
+          status: item.status || (item.active ? 'Active' : 'Draft'),
+          size: item.size ?? item.count ?? 0,
+        }))
+        : []
+      const totalContactsCalc = safeSegments.reduce((sum, seg) => sum + (Number(seg.size) || 0), 0)
+      const activeCalc = safeSegments.filter(s => s.status === 'Active').length
+      const draftCalc = safeSegments.filter(s => s.status === 'Draft').length
       setTotalContacts(totalContactsCalc)
       setActiveSegments(activeCalc)
       setDraftSegments(draftCalc)
@@ -62,13 +82,17 @@ const AudienceSegmentation = ({ darkMode }) => {
   }
 
   const handleCreateSegment = () => {
-    setCurrentSegment({ name: "", description: "", criteria: "", size: 0 })
+    setCurrentSegment({ name: "", description: "", criteria: "", size: 0, type: 'internal', status: 'Draft' })
     setModalMode('create')
     setShowModal(true)
   }
 
   const handleEdit = (seg) => {
-    setCurrentSegment(seg)
+    setCurrentSegment({
+      ...seg,
+      status: seg?.status || (seg?.active ? 'Active' : 'Draft'),
+      type: seg?.type || 'internal',
+    })
     setModalMode('edit')
     setShowModal(true)
   }
@@ -81,13 +105,24 @@ const AudienceSegmentation = ({ darkMode }) => {
   const handleSaveSegment = async () => {
     if (currentSegment.name.trim()) {
       try {
+        // Only send fields allowed by backend validation
+        const payload = {
+          name: currentSegment.name.trim(),
+          description: currentSegment.description || '',
+          type: currentSegment.type || 'internal'
+        };
+
+        if (modalMode === 'edit' && currentSegment.status) {
+          payload.active = currentSegment.status === 'Active';
+        }
+
         let res;
 
         if (modalMode === "edit") {
           // Update segment
           res = await axiosInstance.put(
-            `/segments/${currentSegment._id}`,
-            currentSegment
+            `/contact-categories/${currentSegment._id}`,
+            payload
           );
 
           Swal.fire({
@@ -100,7 +135,7 @@ const AudienceSegmentation = ({ darkMode }) => {
 
         } else {
           // Create segment
-          res = await axiosInstance.post("/segments", currentSegment);
+          res = await axiosInstance.post("/contact-categories", payload);
 
           Swal.fire({
             icon: "success",
@@ -117,11 +152,11 @@ const AudienceSegmentation = ({ darkMode }) => {
 
       } catch (err) {
         console.error(err);
-
+        const message = err?.response?.data?.message || 'Something went wrong!';
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: "Something went wrong!",
+          text: message,
         });
       }
     }
@@ -139,7 +174,7 @@ const AudienceSegmentation = ({ darkMode }) => {
       confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
       if (result.isConfirmed) {
-        axiosInstance.delete(`/segments/${id}`).then(() => {
+        axiosInstance.delete(`/contact-categories/${id}`).then(() => {
           fetchSegments()
           fetchStats()
           Swal.fire(
@@ -154,7 +189,7 @@ const AudienceSegmentation = ({ darkMode }) => {
 
   const handlePreview = async () => {
     try {
-      const res = await axiosInstance.post('/segments/preview', filters)
+      const res = await axiosInstance.post('/contact-categories/preview', filters)
       Swal.fire({
         title: 'Preview',
         text: `Estimated size: ${res.data.preview.estimatedSize}`,
@@ -196,7 +231,7 @@ const AudienceSegmentation = ({ darkMode }) => {
 
       const downloadFile = async (type) => {
         const res = await axiosInstance.get(
-          `/segments/${seg._id}/export/${type}`,
+          `/contact-categories/${seg._id}/export/${type}`,
           { responseType: "blob" }
         );
 
@@ -218,7 +253,9 @@ const AudienceSegmentation = ({ darkMode }) => {
 
   const indexOfLastItem = pagination.page * pagination.limit
   const indexOfFirstItem = indexOfLastItem - pagination.limit
-  const currentSegments = segments.slice(indexOfFirstItem, indexOfLastItem)
+  const currentSegments = Array.isArray(segments)
+    ? segments.slice(indexOfFirstItem, indexOfLastItem)
+    : []
 
   if (loading) {
     return (
@@ -395,7 +432,7 @@ const AudienceSegmentation = ({ darkMode }) => {
                   <td>
                     <div className="segment-name">{segment.name}</div>
                     <div className="segment-date">
-                      Created: {new Date(segment.created).toLocaleDateString()}
+                      Created: {segment?.created ? new Date(segment.created).toLocaleDateString() : 'N/A'}
                     </div>
                   </td>
                   <td className="hidden sm:table-cell">
@@ -407,12 +444,12 @@ const AudienceSegmentation = ({ darkMode }) => {
                     <code className="criteria-code text-xs break-all">{segment.criteria}</code>
                   </td>
                   <td>
-                    <div className="segment-size">{segment.size.toLocaleString()}</div>
+                    <div className="segment-size">{Number(segment.size || 0).toLocaleString()}</div>
                     <div className="size-label">contacts</div>
                   </td>
                   <td className="hidden lg:table-cell">
-                    <span className={`status-badge ${segment.status.toLowerCase()}-status`}>
-                      {segment.status}
+                    <span className={`status-badge ${(segment.status || 'Draft').toLowerCase()}-status`}>
+                      {segment.status || 'Draft'}
                     </span>
                   </td>
                   <td>
@@ -552,11 +589,11 @@ const AudienceSegmentation = ({ darkMode }) => {
               </div>
               <div className="form-group">
                 <label className="form-label">Size</label>
-                <div className="form-text">{viewSegment.size.toLocaleString()}</div>
+                <div className="form-text">{Number(viewSegment?.size ?? 0).toLocaleString()}</div>
               </div>
               <div className="form-group">
                 <label className="form-label">Created</label>
-                <div className="form-text">{new Date(viewSegment.created).toLocaleDateString()}</div>
+                <div className="form-text">{viewSegment?.created || viewSegment?.createdAt || viewSegment?.updatedAt ? new Date(viewSegment?.created || viewSegment?.createdAt || viewSegment?.updatedAt).toLocaleDateString() : 'N/A'}</div>
               </div>
             </div>
             <div className="modal-footer">
