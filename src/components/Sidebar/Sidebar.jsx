@@ -700,7 +700,7 @@ const Sidebar = ({
         },
         {
           path: "/app/audiences/segmentation",
-          name: "Audience Segmentation",
+          name: "Audience Category",
           icon: <MdSegment />,
           roles: ["companyAdmin", "admin"],
         },

@@ -1064,7 +1064,7 @@ const SurveyBuilder = () => {
           response = await axiosInstance.put(`/surveys/${surveyId}`, surveyData);
           successMessage = `Survey ${publish ? 'published' : 'updated'} successfully!`;
         } else {
-          const endpoint = publish ? '/surveys/create/' : '/surveys/save-draft';
+          const endpoint = publish ? '/surveys/publish/' : '/surveys/save-draft';
           response = await axiosInstance.post(endpoint, surveyData);
           successMessage = `Survey ${publish ? 'published' : 'saved as draft'} successfully!`;
         }
@@ -1657,7 +1657,7 @@ const SurveyBuilder = () => {
           description: q.description || '',
           settings: q.settings || {},
           logicRules: q.logicRules || [],
-          translations: q.translations || {}
+          translations: q.translations || {},
         })),
 
         // Survey settings
@@ -1680,8 +1680,8 @@ const SurveyBuilder = () => {
         branding: survey.branding,
 
         // STEP 2: Target Audience Data
-        // Include selected audience types
         targetAudience: targetAudience,
+        selectedContacts: selectedContacts, // ✅ ADD THIS LINE
 
         // STEP 3: Schedule/Publish Settings
         // Include when and how to publish
@@ -1711,7 +1711,7 @@ const SurveyBuilder = () => {
         response = await axiosInstance.put(`/surveys/${surveyId}`, completeData);
       } else {
         // Create new survey (this is the main publish endpoint)
-        response = await axiosInstance.post('/surveys/create/', completeData);
+        response = await axiosInstance.post('/surveys/publish/', completeData);
       }
 
       if (response.data) {

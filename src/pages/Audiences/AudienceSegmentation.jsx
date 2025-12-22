@@ -62,6 +62,7 @@ const AudienceSegmentation = ({ darkMode }) => {
   const fetchStats = async () => {
     try {
       const res = await axiosInstance.get('/contact-categories?limit=9999&page=1')
+      console.log('Stats response:', res?.data?.data?.categories || res?.data?.categories || res?.data?.data?.segments || res?.data?.segments)
       const allSegments = res?.data?.data?.categories || res?.data?.categories || res?.data?.data?.segments || res?.data?.segments || []
       const safeSegments = Array.isArray(allSegments)
         ? allSegments.map((item) => ({
@@ -284,7 +285,7 @@ const AudienceSegmentation = ({ darkMode }) => {
               <MdRefresh /> Refresh
             </button>
             <button className="action-button primary-action" onClick={handleCreateSegment}>
-              <MdAdd /> Create Segment
+              <MdAdd /> Create Category
             </button>
           </div>
         </div>
@@ -297,7 +298,7 @@ const AudienceSegmentation = ({ darkMode }) => {
           </div>
           <div className="stat-content">
             <div className="stat-value">{pagination.total}</div>
-            <div className="stat-label">Total Segments</div>
+            <div className="stat-label">Total Categories</div>
           </div>
         </div>
         <div className="stat-card success-card">
@@ -306,7 +307,7 @@ const AudienceSegmentation = ({ darkMode }) => {
           </div>
           <div className="stat-content">
             <div className="stat-value">{activeSegments}</div>
-            <div className="stat-label">Active Segments</div>
+            <div className="stat-label">Active Categories</div>
           </div>
         </div>
         <div className="stat-card info-card">
@@ -324,7 +325,7 @@ const AudienceSegmentation = ({ darkMode }) => {
           </div>
           <div className="stat-content">
             <div className="stat-value">{draftSegments}</div>
-            <div className="stat-label">Draft Segments</div>
+            <div className="stat-label">Draft Categories</div>
           </div>
         </div>
       </div>
@@ -405,10 +406,10 @@ const AudienceSegmentation = ({ darkMode }) => {
       </div> */}
       {/* Segments List Section */}
       <div className="section-card segments-list-section">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b">
+        <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 p-4 border-bottom">
           <div>
-            <h2 className="section-title">Existing Segments</h2>
-            <p className="section-subtitle">View and manage all audience segments</p>
+            <h2 className="section-title">Existing Categories</h2>
+            <p className="section-subtitle">View and manage all audience categories</p>
           </div>
           {/* <button className="section-action flex items-center gap-2">
             <MdSettings /> Settings
@@ -418,7 +419,7 @@ const AudienceSegmentation = ({ darkMode }) => {
           <table className="data-table w-full">
             <thead>
               <tr>
-                <th>Segment Name</th>
+                <th>Category Name</th>
                 <th className="hidden sm:table-cell">Description</th>
                 <th className="hidden md:table-cell criteria-column">Criteria</th>
                 <th>Size</th>
@@ -491,9 +492,9 @@ const AudienceSegmentation = ({ darkMode }) => {
       {showModal && (
         <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
           <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="modal-title flex items-center gap-2">
-                {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Edit'} Segment
+            <div className="d-flex align-items-center justify-content-between p-4 border-bottom">
+              <h2 className="modal-title d-flex align-items-center gap-2">
+                {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Edit'} Category
               </h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 ×
@@ -502,11 +503,11 @@ const AudienceSegmentation = ({ darkMode }) => {
             <div className="p-4">
               <form className="segment-form flex flex-col gap-4">
                 <div className="form-group">
-                  <label className="form-label">Segment Name</label>
+                  <label className="form-label">Category Name</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Enter segment name"
+                    placeholder="Enter category name"
                     value={currentSegment.name}
                     onChange={(e) => setCurrentSegment({ ...currentSegment, name: e.target.value })}
                   />
@@ -516,7 +517,7 @@ const AudienceSegmentation = ({ darkMode }) => {
                   <textarea
                     className="form-textarea"
                     rows={2}
-                    placeholder="Describe this segment"
+                    placeholder="Describe this category"
                     value={currentSegment.description}
                     onChange={(e) => setCurrentSegment({ ...currentSegment, description: e.target.value })}
                   />
@@ -526,7 +527,7 @@ const AudienceSegmentation = ({ darkMode }) => {
                   <textarea
                     className="form-textarea"
                     rows={3}
-                    placeholder="Define segment criteria (e.g., Age > 25 AND Location = 'US')"
+                    placeholder="Define category criteria (e.g., Age > 25 AND Location = 'US')"
                     value={currentSegment.criteria}
                     onChange={(e) => setCurrentSegment({ ...currentSegment, criteria: e.target.value })}
                   />
@@ -547,12 +548,12 @@ const AudienceSegmentation = ({ darkMode }) => {
                 </div>
               </form>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-4 border-t">
-              <button className="modal-cancel-btn flex items-center justify-center gap-2" onClick={() => setShowModal(false)}>
+            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 p-4 border-top">
+              <button className="modal-cancel-btn d-flex align-items-center justify-content-center gap-2" onClick={() => setShowModal(false)}>
                 Cancel
               </button>
-              <button className="modal-submit-btn flex items-center justify-center gap-2" onClick={handleSaveSegment}>
-                {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Update'} Segment
+              <button className="modal-submit-btn d-flex align-items-center justify-content-center gap-2" onClick={handleSaveSegment}>
+                {modalMode === 'create' ? <MdAdd /> : <MdEdit />} {modalMode === 'create' ? 'Create' : 'Update'} Category
               </button>
             </div>
           </div>
@@ -562,9 +563,9 @@ const AudienceSegmentation = ({ darkMode }) => {
       {showViewModal && (
         <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowViewModal(false)}>
           <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="modal-title flex items-center gap-2">
-                <MdVisibility /> View Segment
+            <div className="d-flex items-center justify-content-between p-4 border-b">
+              <h2 className="modal-title d-flex items-center gap-2">
+                <MdVisibility /> View Category
               </h2>
               <button className="modal-close" onClick={() => setShowViewModal(false)}>
                 ×
