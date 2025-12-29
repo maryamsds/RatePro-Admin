@@ -104,8 +104,8 @@ const Header = ({
       // Fallback to mock
       setNotifications([
         { id: 1, title: "New Response", message: "You received a new survey response", time: "5 mins ago", read: false },
-        { id: 2, title: "Survey Completed", message: "Customer survey reached 100 responses", time: "1 hour ago", read: false },
-        { id: 3, title: "Low Response Rate", message: "Product feedback survey needs attention", time: "2 hours ago", read: true }
+        // { id: 2, title: "Survey Completed", message: "Customer survey reached 100 responses", time: "1 hour ago", read: false },
+        // { id: 3, title: "Low Response Rate", message: "Product feedback survey needs attention", time: "2 hours ago", read: true }
       ]);
       setUnreadCount(2);
     } finally {
