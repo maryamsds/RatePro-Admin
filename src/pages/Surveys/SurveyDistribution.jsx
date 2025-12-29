@@ -144,7 +144,7 @@ const SurveyDistribution = () => {
           id: survey.data._id,
           title: survey.data.title,
           description: survey.data.description,
-          url: `$https://rate-pro-public.vercel.app/survey/${survey.data._id}`,
+          url: `https://rate-pro-public.vercel.app/survey/${survey.data._id}`,
           // shortUrl: `https://ratepro.me/s/${survey.data._id}`,
           isActive: survey.data.isActive,
           responseCount: survey.data.responseCount,
