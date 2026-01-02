@@ -1,10 +1,12 @@
 // src/pages/Surveys/SurveyBuilder.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { Container, Row, Col, Card, Button, Badge, Form,
+import {
+  Container, Row, Col, Card, Button, Badge, Form,
   InputGroup, Modal, Spinner, Alert, Tabs, Tab,
   OverlayTrigger, Tooltip, Accordion, ListGroup,
-  ProgressBar, Offcanvas } from 'react-bootstrap';
+  ProgressBar, Offcanvas
+} from 'react-bootstrap';
 import {
   MdAdd, MdClose, MdDelete, MdEdit, MdPreview, MdSave, MdPublish,
   MdDragHandle, MdContentCopy, MdSettings,
@@ -435,7 +437,7 @@ const SurveyBuilder = () => {
       setLoading(true);
 
       try {
-               // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
+        // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
         if (isTemplateBasedSurvey && user?.role === 'admin') {
           Swal.fire({
             icon: 'warning',
@@ -1443,87 +1445,128 @@ const SurveyBuilder = () => {
       targetAudience.length > 0 &&
       (publishSettings.publishNow || (publishSettings.scheduleDate && publishSettings.scheduleTime));
   };
-  const fetchAudienceSegments = async () => {
-    try {
-      setLoadingSegments(true);
-      const response = await axiosInstance.get('/contact-categories/');
-      let segmentsArray = [];
 
-      // Multiple possible response structures handle karo
-      if (response.data.success && Array.isArray(response.data.segments)) {
-        segmentsArray = response.data.segments;
-      } else if (response.data.data && Array.isArray(response.data.data.segments)) {
-        segmentsArray = response.data.data.segments;
-      } else if (Array.isArray(response.data)) {
-        segmentsArray = response.data;
-      } else if (Array.isArray(response.data.data)) {
-        segmentsArray = response.data.data;
-      } else {
-        console.warn("Unexpected segments response format:", response.data);
-        setAudienceSegments([]);
-        return;
-      }
+  // const fetchAudienceSegments = async () => {
+  //   try {
+  //     setLoadingSegments(true);
+  //     const response = await axiosInstance.get('/contact-categories/');
+  //     let segmentsArray = [];
+  //     console.log("Segments response:", response.data);
 
-      // ACTIVE segments filter karo (multiple possible field names)
-      const activeSegments = segmentsArray.filter(seg => {
-        const status = seg.status || seg.segmentStatus || seg.isActive;
+  //     // Multiple possible response structures handle karo
+  //     if (response.data.success && Array.isArray(response.data.segments)) {
+  //       segmentsArray = response.data.segments;
+  //     } else if (response.data.data && Array.isArray(response.data.data.segments)) {
+  //       segmentsArray = response.data.data.segments;
+  //     } else if (Array.isArray(response.data)) {
+  //       segmentsArray = response.data;
+  //     } else if (Array.isArray(response.data.data)) {
+  //       segmentsArray = response.data.data;
+  //     } else {
+  //       console.warn("Unexpected segments response format:", response.data);
+  //       setAudienceSegments([]);
+  //       return;
+  //     }
 
-        // String ho to case-insensitive, boolean ho to direct
-        if (typeof status === 'string') {
-          return status.toLowerCase() === 'active' || status.toLowerCase() === 'published';
-        }
-        if (typeof status === 'boolean') {
-          return status === true;
-        }
-        return false;
-      });
-      setAudienceSegments(activeSegments);
+  //     // ACTIVE segments filter karo (multiple possible field names)
+  //     const filteredSegments = segmentsArray.filter(seg => {
+  //       // 1️⃣ Active status check
+  //       const status = seg.status || seg.segmentStatus || seg.isActive || seg.active;
 
-    } catch (error) {
-      console.error('Error fetching audience segments:', error);
-      if (error.response) {
-        console.error("Error response:", error.response.data);
-        console.error("Status:", error.response.status);
-      }
-      Swal.fire('Error', 'Failed to load audience segments', 'error');
-    } finally {
-      setLoadingSegments(false);
-    }
-  };
+  //       let isActive = false;
+  //       if (typeof status === 'string') {
+  //         isActive =
+  //           status.toLowerCase() === 'active' ||
+  //           status.toLowerCase() === 'published';
+  //       } else if (typeof status === 'boolean') {
+  //         isActive = status === true;
+  //       }
 
-  // ✅ NEW: Fetch Contact Categories
-  const fetchContactCategories = async () => {
-    try {
-      setLoadingCategories(true);
-      const response = await axiosInstance.get('/contact-categories');
-      if (response.data) {
-        // Handle different response formats
-        const categories = response.data.data?.categories || response.data.categories || response.data;
-        setContactCategories(Array.isArray(categories) ? categories : []);
-      }
-    } catch (error) {
-      console.error('Error fetching contact categories:', error);
-    } finally {
-      setLoadingCategories(false);
-    }
-  };
+  //       // 2️⃣ Size check (safe default)
+  //       const size = Number(seg.size || 0);
+  //       const hasContacts = size > 0;
 
-  // ✅ NEW: Fetch Contacts with Pagination and Search
+  //       return isActive && hasContacts;
+  //     });
+
+  //     setAudienceSegments(filteredSegments);
+
+  //   } catch (error) {
+  //     console.error('Error fetching audience segments:', error);
+  //     if (error.response) {
+  //       console.error("Error response:", error.response.data);
+  //       console.error("Status:", error.response.status);
+  //     }
+  //     Swal.fire('Error', 'Failed to load audience segments', 'error');
+  //   } finally {
+  //     setLoadingSegments(false);
+  //   }
+  // };
+
+  // // ✅ NEW: Fetch Contact Categories
+  // const fetchContactCategories = async () => {
+  //   try {
+  //     setLoadingCategories(true);
+  //     const response = await axiosInstance.get('/contact-categories');
+  //     if (response.data) {
+  //       // Handle different response formats
+  //       const categories = response.data.data?.categories || response.data.categories || response.data;
+  //       setContactCategories(Array.isArray(categories) ? categories : []);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching contact categories:', error);
+  //   } finally {
+  //     setLoadingCategories(false);
+  //   }
+  // };
+
+  // // ✅ NEW: Fetch Contacts with Pagination and Search
+  // const fetchContacts = async (page = 1, search = '') => {
+  //   try {
+  //     setLoadingContacts(true);
+  //     const response = await axiosInstance.get('/contacts', {
+  //       params: {
+  //         page,
+  //         limit: contactLimit,
+  //         search
+  //       }
+  //     });
+  //     if (response.data) {
+  //       setContacts(response.data.contacts || []);
+  //       setContactTotal(response.data.total || 0);
+  //       setContactPage(page);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching contacts:', error);
+  //   } finally {
+  //     setLoadingContacts(false);
+  //   }
+  // };
+
+  // // ✅ NEW: Load segments and categories when component mounts (skip audience fetch in template mode)
+  // useEffect(() => {
+  //   if (user) {
+  //     if (!isTemplateMode) {
+  //       fetchAudienceSegments();
+  //     }
+  //     fetchContactCategories();
+  //   }
+  // }, [user, isTemplateMode]);
+
+  // Target Audience Functions
+
   const fetchContacts = async (page = 1, search = '') => {
     try {
       setLoadingContacts(true);
-      const response = await axiosInstance.get('/contacts', {
-        params: {
-          page,
-          limit: contactLimit,
-          search
-        }
+
+      const { data } = await axiosInstance.get('/contacts', {
+        params: { page, limit: contactLimit, search }
       });
-      if (response.data) {
-        setContacts(response.data.contacts || []);
-        setContactTotal(response.data.total || 0);
-        setContactPage(page);
-      }
+
+      setContacts(Array.isArray(data?.contacts) ? data.contacts : []);
+      setContactTotal(Number(data?.total || 0));
+      setContactPage(page);
+
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
@@ -1531,17 +1574,67 @@ const SurveyBuilder = () => {
     }
   };
 
-  // ✅ NEW: Load segments and categories when component mounts (skip audience fetch in template mode)
-  useEffect(() => {
-    if (user) {
-      if (!isTemplateMode) {
-        fetchAudienceSegments();
-      }
-      fetchContactCategories();
+  const normalizeCategories = (responseData = {}) => {
+    if (responseData.success && Array.isArray(responseData.segments)) {
+      return responseData.segments;
     }
-  }, [user, isTemplateMode]);
+    if (responseData.data?.segments) {
+      return responseData.data.segments;
+    }
+    if (responseData.data?.categories) {
+      return responseData.data.categories;
+    }
+    if (Array.isArray(responseData.data)) {
+      return responseData.data;
+    }
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    return [];
+  };
 
-  // Target Audience Functions
+  const fetchContactCategories = async () => {
+    try {
+      setLoadingCategories(true);
+
+      const { data } = await axiosInstance.get('/contact-categories/');
+      const categories = normalizeCategories(data);
+
+      // ALL categories
+      setContactCategories(categories);
+
+      // ONLY active + size > 0
+      const audienceSegments = categories.filter(seg => {
+        const status = seg.status || seg.segmentStatus || seg.isActive || seg.active;
+        const isActive =
+          typeof status === 'boolean'
+            ? status
+            : typeof status === 'string' &&
+            ['active', 'published'].includes(status.toLowerCase());
+
+        return isActive && Number(seg.size || 0) > 0;
+      });
+
+      setAudienceSegments(audienceSegments);
+
+    } catch (error) {
+      console.error('Error fetching contact categories:', error);
+      Swal.fire('Error', 'Failed to load contact categories', 'error');
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    fetchContactCategories();
+  }, [user]);
+
+
+
+
+
   const toggleAudience = (audienceId) => {
     // Handle "custom" selection differently
     if (audienceId === 'custom') {
@@ -1704,6 +1797,7 @@ const SurveyBuilder = () => {
           estimatedCompletionTime: `${Math.ceil(questions.length * 1.5)} minutes`
         }
       };
+      console.log('🚀 Publishing Survey with data:', completeData);
       // Call the backend API to create/publish the survey
       let response;
       if (isEditMode && surveyId) {
@@ -2213,7 +2307,7 @@ const SurveyBuilder = () => {
           <hr />
 
           {/* ✅ Contact Categories Section */}
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <h6 className="fw-bold mb-3">
               <MdHandshake className="me-2" />
               Contact Categories
@@ -2265,7 +2359,7 @@ const SurveyBuilder = () => {
                 No contact categories available. Create categories in Contact Management.
               </Alert>
             )}
-          </div>
+          </div> */}
 
           <hr />
 
