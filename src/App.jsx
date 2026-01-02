@@ -38,8 +38,8 @@ import SurveyTemplates from "./pages/Surveys/SurveyTemplates"
 import SurveyCustomization from "./pages/Surveys/SurveyCustomization"
 import SurveySharing from "./pages/Surveys/SurveySharing"
 // import Templates from "./pages/Templates/Templates"
-import Audiences from "./pages/Audiences/Audiences"
-import AudienceSegmentation from "./pages/Audiences/AudienceSegmentation"
+import AudiencesSegments from "./pages/Audiences/AudienceSegments"
+import AudienceCategory from "./pages/Audiences/AudienceCategory"
 import Analytics from "./pages/Analytics/Analytics"
 import AnalyticsDashboard from "./pages/Analytics/AnalyticsDashboard"
 import RealTimeResults from "./pages/Analytics/RealTimeResults"
@@ -173,8 +173,8 @@ function App() {
               <Route path="roles" element={<RoleManagement />} />
 
               {/* Audiences */}
-              <Route path="audiences" element={<Audiences />} />
-              <Route path="audiences/segmentation" element={<AudienceSegmentation />} />
+              <Route path="audiences" element={<AudiencesSegments />} />
+              <Route path="audiences/category" element={<AudienceCategory />} />
               <Route path="audiences/contact-management" element={<ContactManagement />} />
 
               {/* Analytics */}

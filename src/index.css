@@ -32236,3 +32236,65 @@ canvas {
     grid-template-columns: 1fr;
   }
 }
+
+/* ...existing code... */
+
+/* Mini Stat Cards for Contact View Modal */
+.stat-card-mini {
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid var(--border-color, #e9ecef);
+}
+
+.stat-value-mini {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary, #212529);
+}
+
+.stat-label-mini {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6c757d);
+  margin-top: 4px;
+}
+
+/* NPS Category Badges */
+.nps-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.nps-badge.promoter {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.nps-badge.passive {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.nps-badge.detractor {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Category Tag */
+.contact-tag.category-tag {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+/* Section Headers */
+.text-primary {
+  color: var(--primary-color, #0d6efd);
+  border-bottom: 2px solid var(--primary-color, #0d6efd);
+  padding-bottom: 8px;
+}
+
+/* ...existing code... */

@@ -699,7 +699,7 @@ const Sidebar = ({
           roles: ["companyAdmin", "admin"],
         },
         {
-          path: "/app/audiences/segmentation",
+          path: "/app/audiences/category",
           name: "Audience Category",
           icon: <MdSegment />,
           roles: ["companyAdmin", "admin"],

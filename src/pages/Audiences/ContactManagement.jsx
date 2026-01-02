@@ -133,13 +133,19 @@ const ContactManagement = ({ darkMode }) => {
         limit: pagination.limit,
         search: searchTerm,
       }
-      // if (filterSegment !== "all") params.segment = filterSegment
       if (filterStatus !== "all") params.status = filterStatus
       const res = await axiosInstance.get('/contacts', { params })
-      setContacts(res.data.contacts)
-      setPagination(p => ({ ...p, total: res.data.total }))
+      
+      // 🔥 FIX: Backend returns { success, data: { contacts, total, page, limit } }
+      const data = res?.data?.data || res?.data || {}
+      const contacts = data.contacts || data.items || []
+      const total = data.total || 0
+      
+      setContacts(contacts)
+      setPagination(p => ({ ...p, total }))
     } catch (err) {
-      console.error(err)
+      console.error("Failed to fetch contacts:", err)
+      Swal.fire("Error", "Failed to load contacts", "error")
     }
     setLoading(false)
   }
@@ -213,65 +219,53 @@ const ContactManagement = ({ darkMode }) => {
   }
 
   const handleSaveContact = async () => {
-    if (currentContact.name.trim() && currentContact.email.trim()) {
-      try {
-        let res;
+    if (!currentContact.name.trim() || !currentContact.email.trim()) {
+      Swal.fire("Error", "Name and Email are required", "error")
+      return
+    }
 
-        const payload = {
-          name: currentContact.name.trim(),
-          email: currentContact.email.trim(),
-          phone: currentContact.phone || "",
-          company: currentContact.company || "",
-          // segment: currentContact.segment || null,
-          tags: currentContact.tags || "",
-          status: currentContact.status || "Active",
-          contactCategories: Array.isArray(currentContact.contactCategories)
-            ? currentContact.contactCategories.filter(Boolean)
-            : [],
-        };
+    // 🔥 FIX: Validate at least one category
+    if (!currentContact.contactCategories?.length) {
+      Swal.fire("Error", "At least one category is required", "error")
+      return
+    }
 
-        console.log("Payload to be sent:", payload);
-
-        if (modalMode === "edit") {
-          // UPDATE
-          res = await axiosInstance.put(
-            `/contacts/${currentContact._id}`,
-            payload
-          );
-
-          Swal.fire({
-            icon: "success",
-            title: "Contact Updated",
-            text: "Contact successfully updated!",
-            timer: 1500,
-            showConfirmButton: false,
-          });
-
-        } else {
-          // CREATE
-          res = await axiosInstance.post("/contacts/", payload);
-
-          Swal.fire({
-            icon: "success",
-            title: "Contact Created",
-            text: "New contact added successfully!",
-            timer: 1500,
-            showConfirmButton: false,
-          });
-        }
-
-        fetchContacts();
-        setShowModal(false);
-
-      } catch (err) {
-        console.error(err);
-
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Something went wrong!",
-        });
+    try {
+      const payload = {
+        name: currentContact.name.trim(),
+        email: currentContact.email.trim(),
+        phone: currentContact.phone || "",
+        company: currentContact.company || "",
+        tags: currentContact.tags || "",
+        status: currentContact.status || "Active",
+        contactCategories: currentContact.contactCategories.filter(Boolean),
       }
+
+      if (modalMode === "edit") {
+        await axiosInstance.put(`/contacts/${currentContact._id}`, payload)
+        Swal.fire({
+          icon: "success",
+          title: "Contact Updated",
+          timer: 1500,
+          showConfirmButton: false,
+        })
+      } else {
+        await axiosInstance.post("/contacts", payload)
+        Swal.fire({
+          icon: "success",
+          title: "Contact Created",
+          timer: 1500,
+          showConfirmButton: false,
+        })
+      }
+
+      fetchContacts()
+      setShowModal(false)
+
+    } catch (err) {
+      console.error(err)
+      const message = err?.response?.data?.message || "Something went wrong!"
+      Swal.fire("Error", message, "error")
     }
   };
 
@@ -338,52 +332,53 @@ const ContactManagement = ({ darkMode }) => {
 
 
   const handleBulkUploadContacts = async (file) => {
-    if (!file) return alert("Please select a file first!");
+    if (!file) {
+      Swal.fire("Error", "Please select a file first!", "error")
+      return
+    }
 
-    const formData = new FormData();
-    formData.append("excel", file);
+    const formData = new FormData()
+    formData.append("excel", file)
 
     try {
-      setGlobalLoading(true); // loader start
+      setGlobalLoading(true)
 
       const res = await axiosInstance.post("/contacts/bulk-upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
-      });
+      })
 
-      const { createdContacts = [], errors: rawErrors, message } = res.data;
-      const errors = rawErrors || []; // null protection
+      // 🔥 FIX: Backend returns { message, inserted, failed, errors }
+      const { message, inserted = 0, failed = 0, errors = [] } = res.data
 
-      const successCount = createdContacts.length;
-      const errorCount = errors.length;
-
-      // 🟢 summary HTML
       const summaryHtml = `
-      <p><b>${successCount}</b> contact(s) imported successfully.</p>
-      ${successCount > 0 ? "<ul>" + createdContacts.map(c => `<li>${c.email || c.name}</li>`).join("") + "</ul>" : ""}
-
-      <p><b>${errorCount}</b> contact(s) failed to import.</p>
-      ${errorCount > 0 ? "<ul>" + errors.map(e => `<li>${e.email || e.name} - ${e.message}</li>`).join("") + "</ul>" : ""}
-    `;
+        <p><b>${inserted}</b> contact(s) imported successfully.</p>
+        <p><b>${failed}</b> contact(s) failed to import.</p>
+        ${errors?.length > 0 
+          ? `<ul>${errors.map(e => `<li>Row ${e.row}: ${e.message}</li>`).join("")}</ul>` 
+          : ""
+        }
+      `
 
       Swal.fire({
-        icon: errorCount > 0 ? "warning" : "success",
-        title: message || "Bulk contacts import processed",
+        icon: failed > 0 ? "warning" : "success",
+        title: message || "Bulk import completed",
         html: summaryHtml,
         width: 600,
-      });
+      })
 
-      await fetchContacts(); // refresh contacts list
-      setShowImportModal(false); // close modal
+      await fetchContacts()
+      setShowImportModal(false)
+      setFile(null)
+
     } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Import Failed",
-        text: err.response?.data?.message || "Something went wrong while importing contacts.",
-      });
-      console.error("❌ Import error:", err.response?.data || err.message);
+        text: err.response?.data?.message || "Something went wrong",
+      })
+      console.error("Import error:", err)
     } finally {
-      setGlobalLoading(false); // loader stop
+      setGlobalLoading(false)
     }
   };
 
@@ -821,76 +816,250 @@ const ContactManagement = ({ darkMode }) => {
       )}
 
       {/* View Contact Modal */}
-      {showViewModal && (
+      {showViewModal && viewContact && (
         <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowViewModal(false)}>
-          <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-end mt-2 me-2">
-              <button className="modal-close" onClick={() => setShowModal(false)}>
+          <div className="modal-container max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="d-flex justify-content-between align-items-center p-4 border-b sticky top-0 bg-white dark:bg-gray-800">
+              <h2 className="text-xl font-semibold">Contact Details</h2>
+              <button className="modal-close" onClick={() => setShowViewModal(false)}>
                 ×
               </button>
             </div>
-            <div className="p-4">
-              <div className="flex flex-col gap-4">
-                <div className="form-group">
-                  <label className="form-label">Name</label>
-                  <div className="form-text">{viewContact?.name || "-"}</div>
+            <div className="p-4 py-0">
+              {/* Basic Info Section */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-3 text-primary">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Name</label>
+                    <div className="form-text">{viewContact?.name || "-"}</div>
+                  </div>
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Email</label>
+                    <div className="form-text">{viewContact?.email || "-"}</div>
+                  </div>
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Phone</label>
+                    <div className="form-text">{viewContact?.phone || "-"}</div>
+                  </div>
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Company</label>
+                    <div className="form-text">{viewContact?.company || "-"}</div>
+                  </div>
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Status</label>
+                    <span className={`status-badge ${viewContact?.status?.toLowerCase()}-status`}>
+                      {viewContact?.status || "-"}
+                    </span>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <div className="form-text">{viewContact.email}</div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Phone</label>
-                  <div className="form-text">{viewContact.phone}</div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Company</label>
-                  <div className="form-text">{viewContact.company}</div>
-                </div>
-                {/* <div className="form-group">
-                  <label className="form-label">Segment</label>
-                  <div className="form-text">{viewContact.segment?.name}</div>
-                </div> */}
-                <div className="form-group">
-                  <label className="form-label">Tags</label>
-                  <div className="form-text">{viewContact.tags}</div>
-                </div>
-                {viewContact.autoTags?.length ? (
-                  <div className="form-group">
+              </div>
+
+              {/* Categories & Tags Section */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-3 text-primary">Categories & Tags</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Contact Categories</label>
+                    <div className="flex flex-wrap gap-1">
+                      {viewContact?.contactCategories?.length > 0 ? (
+                        viewContact.contactCategories.map((cat) => (
+                          <span key={cat?._id || cat} className="contact-tag category-tag">
+                            {cat?.name || cat}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-muted">No categories</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Manual Tags</label>
+                    <div className="flex flex-wrap gap-1">
+                      {viewContact?.tags?.length > 0 ? (
+                        (Array.isArray(viewContact.tags) ? viewContact.tags : viewContact.tags.split(","))
+                          .map((tag) => tag.trim())
+                          .filter(Boolean)
+                          .map((tag) => (
+                            <span key={tag} className="contact-tag">
+                              {tag}
+                            </span>
+                          ))
+                      ) : (
+                        <span className="text-muted">No tags</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
                     <label className="form-label">Auto Tags</label>
                     <div className="flex flex-wrap gap-1">
-                      {viewContact.autoTags.map((tag) => (
-                        <span key={tag} className="contact-tag auto-tag">
-                          {tag}
+                      {viewContact?.autoTags?.length > 0 ? (
+                        viewContact.autoTags.map((tag) => (
+                          <span key={tag} className="contact-tag auto-tag">
+                            {tag}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-muted">No auto tags</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Survey Stats Section */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-3 text-primary">Survey Statistics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="stat-card-mini">
+                    <div className="stat-value-mini">{viewContact?.surveyStats?.invitedCount ?? 0}</div>
+                    <div className="stat-label-mini">Invites Sent</div>
+                  </div>
+                  <div className="stat-card-mini">
+                    <div className="stat-value-mini">{viewContact?.surveyStats?.respondedCount ?? 0}</div>
+                    <div className="stat-label-mini">Responses</div>
+                  </div>
+                  <div className="stat-card-mini">
+                    <div className="stat-value-mini">
+                      {viewContact?.surveyStats?.latestNpsScore !== undefined 
+                        ? viewContact.surveyStats.latestNpsScore 
+                        : "-"}
+                    </div>
+                    <div className="stat-label-mini">Latest NPS</div>
+                  </div>
+                  <div className="stat-card-mini">
+                    <div className="stat-value-mini">
+                      {viewContact?.surveyStats?.avgNpsScore !== undefined 
+                        ? viewContact.surveyStats.avgNpsScore.toFixed(1) 
+                        : "-"}
+                    </div>
+                    <div className="stat-label-mini">Avg NPS</div>
+                  </div>
+                  <div className="stat-card-mini">
+                    <div className="stat-value-mini">
+                      {viewContact?.surveyStats?.latestRating !== undefined 
+                        ? `${viewContact.surveyStats.latestRating}/5` 
+                        : "-"}
+                    </div>
+                    <div className="stat-label-mini">Latest Rating</div>
+                  </div>
+                  <div className="stat-card-mini">
+                    <div className="stat-value-mini">
+                      {viewContact?.surveyStats?.avgRating !== undefined 
+                        ? `${viewContact.surveyStats.avgRating.toFixed(1)}/5` 
+                        : "-"}
+                    </div>
+                    <div className="stat-label-mini">Avg Rating</div>
+                  </div>
+                  <div className="stat-card-mini col-span-2">
+                    <div className="stat-value-mini">
+                      {viewContact?.surveyStats?.npsCategory ? (
+                        <span className={`nps-badge ${viewContact.surveyStats.npsCategory}`}>
+                          {viewContact.surveyStats.npsCategory.charAt(0).toUpperCase() + 
+                           viewContact.surveyStats.npsCategory.slice(1)}
                         </span>
-                      ))}
+                      ) : "-"}
+                    </div>
+                    <div className="stat-label-mini">NPS Category</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Last Invited</label>
+                    <div className="form-text">
+                      {viewContact?.surveyStats?.lastInvitedDate 
+                        ? new Date(viewContact.surveyStats.lastInvitedDate).toLocaleDateString() 
+                        : "-"}
                     </div>
                   </div>
-                ) : null}
-                {viewContact.enrichment ? (
-                  <div className="form-group">
-                    <label className="form-label">Enrichment</label>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      {viewContact.enrichment.country && <div>Country: {viewContact.enrichment.country}</div>}
-                      {viewContact.enrichment.region && <div>Region: {viewContact.enrichment.region}</div>}
-                      {viewContact.enrichment.city && <div>City: {viewContact.enrichment.city}</div>}
-                      {viewContact.enrichment.domain && <div>Domain: {viewContact.enrichment.domain}</div>}
-                      {viewContact.enrichment.company && <div>Company: {viewContact.enrichment.company}</div>}
-                      {viewContact.enrichment.gender && <div>Gender: {viewContact.enrichment.gender}</div>}
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Last Response</label>
+                    <div className="form-text">
+                      {viewContact?.surveyStats?.lastResponseDate 
+                        ? new Date(viewContact.surveyStats.lastResponseDate).toLocaleDateString() 
+                        : "-"}
                     </div>
                   </div>
-                ) : null}
-                <div className="form-group">
-                  <label className="form-label">Status</label>
-                  <div className="form-text">{viewContact.status}</div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Last Activity</label>
-                  <div className="form-text">{new Date(viewContact.lastActivity).toLocaleDateString()}</div>
+              </div>
+
+              {/* Enrichment Section */}
+              {viewContact?.enrichment && Object.values(viewContact.enrichment).some(v => v) && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-3 text-primary">Enrichment Data</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {viewContact.enrichment.country && (
+                      <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                        <label className="form-label">Country</label>
+                        <div className="form-text">
+                          {viewContact.enrichment.country}
+                          {viewContact.enrichment.countryCode && ` (${viewContact.enrichment.countryCode})`}
+                        </div>
+                      </div>
+                    )}
+                    {viewContact.enrichment.region && (
+                      <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                        <label className="form-label">Region</label>
+                        <div className="form-text">{viewContact.enrichment.region}</div>
+                      </div>
+                    )}
+                    {viewContact.enrichment.city && (
+                      <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                        <label className="form-label">City</label>
+                        <div className="form-text">{viewContact.enrichment.city}</div>
+                      </div>
+                    )}
+                    {viewContact.enrichment.domain && (
+                      <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                        <label className="form-label">Domain</label>
+                        <div className="form-text">{viewContact.enrichment.domain}</div>
+                      </div>
+                    )}
+                    {viewContact.enrichment.company && (
+                      <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                        <label className="form-label">Enriched Company</label>
+                        <div className="form-text">{viewContact.enrichment.company}</div>
+                      </div>
+                    )}
+                    {viewContact.enrichment.gender && (
+                      <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                        <label className="form-label">Gender</label>
+                        <div className="form-text">{viewContact.enrichment.gender}</div>
+                      </div>
+                    )}
+                    {viewContact.enrichment.inferredAt && (
+                      <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                        <label className="form-label">Enriched On</label>
+                        <div className="form-text">
+                          {new Date(viewContact.enrichment.inferredAt).toLocaleDateString()}
+                          {viewContact.enrichment.source && ` (${viewContact.enrichment.source})`}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Created At</label>
-                  <div className="form-text">{new Date(viewContact.createdAt).toLocaleDateString()}</div>
+              )}
+
+              {/* Timestamps Section */}
+              <div className="mb-2">
+                <h3 className="text-lg font-medium mb-3 text-primary">Activity</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Created At</label>
+                    <div className="form-text">
+                      {viewContact?.createdAt 
+                        ? new Date(viewContact.createdAt).toLocaleDateString() 
+                        : "-"}
+                    </div>
+                  </div>
+                  <div className="form-group d-flex flex-row justify-content-between align-items-center">
+                    <label className="form-label">Last Activity</label>
+                    <div className="form-text">
+                      {viewContact?.lastActivity 
+                        ? new Date(viewContact.lastActivity).toLocaleDateString() 
+                        : "-"}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

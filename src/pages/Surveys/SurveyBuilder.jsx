@@ -21,6 +21,7 @@ import {
   Md123, MdQuestionAnswer, MdPeople, MdGroup, MdHandshake,
   MdSchedule, MdArrowForward, MdArrowBack,
 } from 'react-icons/md';
+import { MdFilterList, MdCategory, MdInfo } from "react-icons/md";
 import { FaUsers, FaLightbulb, FaPalette } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import axiosInstance from '../../api/axiosInstance';
@@ -1446,112 +1447,142 @@ const SurveyBuilder = () => {
       (publishSettings.publishNow || (publishSettings.scheduleDate && publishSettings.scheduleTime));
   };
 
-  // const fetchAudienceSegments = async () => {
-  //   try {
-  //     setLoadingSegments(true);
-  //     const response = await axiosInstance.get('/contact-categories/');
-  //     let segmentsArray = [];
-  //     console.log("Segments response:", response.data);
+  // ✅ FIXED: Fetch Audience Segments from /api/segments with counts
+  const fetchAudienceSegments = async () => {
+    try {
+      setLoadingSegments(true);
+      const response = await axiosInstance.get('/segments?withCounts=true');
 
-  //     // Multiple possible response structures handle karo
-  //     if (response.data.success && Array.isArray(response.data.segments)) {
-  //       segmentsArray = response.data.segments;
-  //     } else if (response.data.data && Array.isArray(response.data.data.segments)) {
-  //       segmentsArray = response.data.data.segments;
-  //     } else if (Array.isArray(response.data)) {
-  //       segmentsArray = response.data;
-  //     } else if (Array.isArray(response.data.data)) {
-  //       segmentsArray = response.data.data;
-  //     } else {
-  //       console.warn("Unexpected segments response format:", response.data);
-  //       setAudienceSegments([]);
-  //       return;
-  //     }
+      if (response.data?.success && Array.isArray(response.data?.data?.segments)) {
+        // Filter only segments with contacts
+        const segmentsWithContacts = response.data.data.segments.filter(
+          (seg) => (seg.contactCount || 0) > 0
+        );
+        setAudienceSegments(segmentsWithContacts);
+      } else {
+        console.warn("Unexpected segments response format:", response.data);
+        setAudienceSegments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching audience segments:', error);
+      setAudienceSegments([]);
+    } finally {
+      setLoadingSegments(false);
+    }
+  };
 
-  //     // ACTIVE segments filter karo (multiple possible field names)
-  //     const filteredSegments = segmentsArray.filter(seg => {
-  //       // 1️⃣ Active status check
-  //       const status = seg.status || seg.segmentStatus || seg.isActive || seg.active;
+  // ✅ FIXED: Fetch Contact Categories from /api/contact-categories
+  const fetchContactCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await axiosInstance.get('/contact-categories');
 
-  //       let isActive = false;
-  //       if (typeof status === 'string') {
-  //         isActive =
-  //           status.toLowerCase() === 'active' ||
-  //           status.toLowerCase() === 'published';
-  //       } else if (typeof status === 'boolean') {
-  //         isActive = status === true;
-  //       }
+      if (response.data?.success && Array.isArray(response.data?.data?.categories)) {
+        // Filter only categories with contacts
+        const categoriesWithContacts = response.data.data.categories.filter(
+          (cat) => (cat.contactCount || 0) > 0
+        );
+        setContactCategories(categoriesWithContacts);
+      } else {
+        console.warn("Unexpected categories response format:", response.data);
+        setContactCategories([]);
+      }
+    } catch (error) {
+      console.error('Error fetching contact categories:', error);
+      setContactCategories([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
-  //       // 2️⃣ Size check (safe default)
-  //       const size = Number(seg.size || 0);
-  //       const hasContacts = size > 0;
+  // ✅ Load segments and categories when component mounts (skip in template mode)
+  useEffect(() => {
+    if (user && !isTemplateMode) {
+      fetchAudienceSegments();
+      fetchContactCategories();
+    }
+  }, [user, isTemplateMode]);
 
-  //       return isActive && hasContacts;
-  //     });
+  // ✅ FIXED: Debug useEffect with correct dependencies
+  useEffect(() => {
+  }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
 
-  //     setAudienceSegments(filteredSegments);
 
-  //   } catch (error) {
-  //     console.error('Error fetching audience segments:', error);
-  //     if (error.response) {
-  //       console.error("Error response:", error.response.data);
-  //       console.error("Status:", error.response.status);
-  //     }
-  //     Swal.fire('Error', 'Failed to load audience segments', 'error');
-  //   } finally {
-  //     setLoadingSegments(false);
-  //   }
-  // };
+  useEffect(() => {
+    const initializeSurveyBuilder = async () => {
+      setGlobalLoading(true);
+      setLoading(true);
 
-  // // ✅ NEW: Fetch Contact Categories
-  // const fetchContactCategories = async () => {
-  //   try {
-  //     setLoadingCategories(true);
-  //     const response = await axiosInstance.get('/contact-categories');
-  //     if (response.data) {
-  //       // Handle different response formats
-  //       const categories = response.data.data?.categories || response.data.categories || response.data;
-  //       setContactCategories(Array.isArray(categories) ? categories : []);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching contact categories:', error);
-  //   } finally {
-  //     setLoadingCategories(false);
-  //   }
-  // };
+      try {
+        // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
+        if (isTemplateBasedSurvey && user?.role === 'admin') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Access Restricted',
+            text: 'Admins cannot use templates. Please create surveys directly.',
+            confirmButtonColor: '#007bff',
+          }).then(() => {
+            navigate('/app/surveys');
+          });
+          return;
+        }
 
-  // // ✅ NEW: Fetch Contacts with Pagination and Search
-  // const fetchContacts = async (page = 1, search = '') => {
-  //   try {
-  //     setLoadingContacts(true);
-  //     const response = await axiosInstance.get('/contacts', {
-  //       params: {
-  //         page,
-  //         limit: contactLimit,
-  //         search
-  //       }
-  //     });
-  //     if (response.data) {
-  //       setContacts(response.data.contacts || []);
-  //       setContactTotal(response.data.total || 0);
-  //       setContactPage(page);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching contacts:', error);
-  //   } finally {
-  //     setLoadingContacts(false);
-  //   }
-  // };
+        // CASE 1: Editing existing survey
+        if (isEditing && surveyId && !isTemplateMode) {
+          await fetchExistingSurvey(surveyId);
+          setShowModeSelector(false);
+          setSurveyMode('user-defined');
+        }
+        // CASE 2: Creating from template
+        else if (templateData && !isTemplateMode) {
+          initializeFromTemplate(templateData);
+          setShowModeSelector(false);
+          setSurveyMode('user-defined');
+        }
+        // CASE 3: Admin editing template
+        else if (isTemplateMode && surveyId) {
 
-  // // ✅ NEW: Load segments and categories when component mounts (skip audience fetch in template mode)
-  // useEffect(() => {
-  //   if (user) {
-  //     if (!isTemplateMode) {
-  //       fetchAudienceSegments();
-  //     }
-  //     fetchContactCategories();
-  //   }
-  // }, [user, isTemplateMode]);
+          // Agar state mein templateData hai → usko use karo
+          if (templateData) {
+            initializeFromTemplate(templateData); // Reuse existing function
+          } else {
+            // Warna backend se fetch karo
+            await fetchTemplateData(surveyId);
+          }
+
+          setShowModeSelector(false);
+          setSurveyMode('user-defined');
+        }
+        // CASE 4: Admin creating new template
+        else if (isTemplateMode && !surveyId) {
+          setShowModeSelector(false);
+          setSurveyMode('ai-assisted');
+          setShowAIModal(true);
+        }
+        // CASE 5: Creating new survey (manual/AI)
+        else {
+          setShowModeSelector(true);
+          setSurveyMode('user-defined');
+        }
+
+      } catch (error) {
+        console.error('Error initializing survey builder:', error);
+        setError(error.message);
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Initialization Failed',
+          text: error.message || 'Failed to load survey data. Please try again.',
+          confirmButtonColor: '#dc3545',
+        });
+      } finally {
+        setLoading(false);
+        setGlobalLoading(false);
+      }
+    };
+
+    initializeSurveyBuilder();
+  }, [surveyId, isTemplateMode, templateData, isEditing, user, navigate]);
 
   // Target Audience Functions
 
@@ -1592,48 +1623,6 @@ const SurveyBuilder = () => {
     }
     return [];
   };
-
-  const fetchContactCategories = async () => {
-    try {
-      setLoadingCategories(true);
-
-      const { data } = await axiosInstance.get('/contact-categories/');
-      const categories = normalizeCategories(data);
-
-      // ALL categories
-      setContactCategories(categories);
-
-      // ONLY active + size > 0
-      const audienceSegments = categories.filter(seg => {
-        const status = seg.status || seg.segmentStatus || seg.isActive || seg.active;
-        const isActive =
-          typeof status === 'boolean'
-            ? status
-            : typeof status === 'string' &&
-            ['active', 'published'].includes(status.toLowerCase());
-
-        return isActive && Number(seg.size || 0) > 0;
-      });
-
-      setAudienceSegments(audienceSegments);
-
-    } catch (error) {
-      console.error('Error fetching contact categories:', error);
-      Swal.fire('Error', 'Failed to load contact categories', 'error');
-    } finally {
-      setLoadingCategories(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!user) return;
-
-    fetchContactCategories();
-  }, [user]);
-
-
-
-
 
   const toggleAudience = (audienceId) => {
     // Handle "custom" selection differently
@@ -2249,12 +2238,17 @@ const SurveyBuilder = () => {
           </p>
         </Card.Header>
         <Card.Body>
-          {/* ✅ Active Audience Segments Section */}
+          {/* ═══════════════════════════════════════════════════════════════
+              AUDIENCE SEGMENTS SECTION (from /api/segments)
+          ═══════════════════════════════════════════════════════════════ */}
           <div className="mb-4">
             <h6 className="fw-bold mb-3">
-              <MdPeople className="me-2" />
-              Active Audience Segments
+              <MdFilterList className="me-2" />
+              Audience Segments (Dynamic)
             </h6>
+            <p className="text-muted small mb-3">
+              Segments are rule-based groups that automatically include contacts matching specific criteria.
+            </p>
             {loadingSegments ? (
               <div className="text-center py-3">
                 <Spinner animation="border" size="sm" />
@@ -2273,15 +2267,15 @@ const SurveyBuilder = () => {
                     >
                       <Card.Body>
                         <div className="d-flex align-items-start">
-                          <MdGroup size={24} className="text-primary me-2 mt-1" />
+                          <MdFilterList size={24} className="text-primary me-2 mt-1" />
                           <div className="flex-grow-1">
                             <h6 className="fw-bold mb-1">{segment.name}</h6>
                             <p className="text-muted small mb-2">
-                              {segment.description || 'Audience segment'}
+                              {segment.description || 'Dynamic audience segment'}
                             </p>
                             <div className="d-flex align-items-center justify-content-between">
-                              <Badge bg="light" text="dark" className="small">
-                                {segment.size || 0} contacts
+                              <Badge bg="primary" className="small">
+                                {segment.contactCount || 0} contacts
                               </Badge>
                               <Form.Check
                                 type="checkbox"
@@ -2299,19 +2293,25 @@ const SurveyBuilder = () => {
               </Row>
             ) : (
               <Alert variant="info" className="small">
-                No active audience segments available. Create segments in Audience Management.
+                <MdInfo className="me-2" />
+                No audience segments with contacts available. Create segments in Audience Segments page.
               </Alert>
             )}
           </div>
 
           <hr />
 
-          {/* ✅ Contact Categories Section */}
-          {/* <div className="mb-4">
+          {/* ═══════════════════════════════════════════════════════════════
+              CONTACT CATEGORIES SECTION (from /api/contact-categories)
+          ═══════════════════════════════════════════════════════════════ */}
+          <div className="mb-4">
             <h6 className="fw-bold mb-3">
-              <MdHandshake className="me-2" />
-              Contact Categories
+              <MdCategory className="me-2" />
+              Contact Categories (Static)
             </h6>
+            <p className="text-muted small mb-3">
+              Categories are fixed groups where contacts are manually assigned.
+            </p>
             {loadingCategories ? (
               <div className="text-center py-3">
                 <Spinner animation="border" size="sm" />
@@ -2330,16 +2330,23 @@ const SurveyBuilder = () => {
                     >
                       <Card.Body>
                         <div className="d-flex align-items-start">
-                          <MdHandshake size={24} className="text-success me-2 mt-1" />
+                          <MdCategory size={24} className="text-success me-2 mt-1" />
                           <div className="flex-grow-1">
                             <h6 className="fw-bold mb-1">{category.name}</h6>
                             <p className="text-muted small mb-2">
-                              {category.description || 'Contact category'}
+                              {category.description || `${category.type || 'external'} category`}
                             </p>
                             <div className="d-flex align-items-center justify-content-between">
-                              <Badge bg="light" text="dark" className="small">
-                                Category
-                              </Badge>
+                              <div>
+                                <Badge bg="success" className="small me-1">
+                                  {category.contactCount || 0} contacts
+                                </Badge>
+                                {category.type && (
+                                  <Badge bg="light" text="dark" className="small">
+                                    {category.type}
+                                  </Badge>
+                                )}
+                              </div>
                               <Form.Check
                                 type="checkbox"
                                 checked={targetAudience.includes(`category_${category._id}`)}
@@ -2356,14 +2363,17 @@ const SurveyBuilder = () => {
               </Row>
             ) : (
               <Alert variant="info" className="small">
-                No contact categories available. Create categories in Contact Management.
+                <MdInfo className="me-2" />
+                No contact categories with contacts available. Assign contacts to categories in Contact Management.
               </Alert>
             )}
-          </div> */}
+          </div>
 
           <hr />
 
-          {/* ✅ Custom Contact Selection */}
+          {/* ═══════════════════════════════════════════════════════════════
+              CUSTOM CONTACT SELECTION
+          ═══════════════════════════════════════════════════════════════ */}
           <div className="mb-4">
             <h6 className="fw-bold mb-3">
               <FaUsers className="me-2" />
@@ -2374,7 +2384,12 @@ const SurveyBuilder = () => {
                 ? 'border-warning bg-warning bg-opacity-10'
                 : 'border-light'
                 }`}
-              onClick={() => toggleAudience('custom')}
+              onClick={() => {
+                toggleAudience('custom');
+                if (!targetAudience.includes('custom')) {
+                  setShowCustomContactModal(true);
+                }
+              }}
             >
               <Card.Body>
                 <div className="d-flex align-items-center justify-content-between">
@@ -2394,7 +2409,14 @@ const SurveyBuilder = () => {
                       </Badge>
                     )}
                     <div>
-                      <Button variant="warning" size="sm">
+                      <Button
+                        variant="warning"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowCustomContactModal(true);
+                        }}
+                      >
                         <MdEdit className="me-1" />
                         Select Contacts
                       </Button>
@@ -2405,31 +2427,44 @@ const SurveyBuilder = () => {
             </Card>
           </div>
 
-          {/* Selected Audiences Summary */}
+          {/* ═══════════════════════════════════════════════════════════════
+              SELECTED AUDIENCES SUMMARY
+          ═══════════════════════════════════════════════════════════════ */}
           {targetAudience.length > 0 && (
             <Alert variant="success" className="mt-4">
               <strong>Selected Audiences ({targetAudience.length}):</strong>
               <div className="mt-2 d-flex flex-wrap gap-2">
                 {targetAudience.map(audienceId => {
-                  let label = audienceId;
-                  let bgColor = 'primary';
+                  let label = '';
+                  let icon = null;
 
                   if (audienceId.startsWith('segment_')) {
-                    const segment = audienceSegments.find(s => `segment_${s._id}` === audienceId);
-                    label = segment ? `📊 ${segment.name}` : 'Segment';
-                    bgColor = 'primary';
+                    const segmentId = audienceId.replace('segment_', '');
+                    const segment = audienceSegments.find(s => s._id === segmentId);
+                    label = segment ? `🎯 ${segment.name} (${segment.contactCount})` : audienceId;
+                    icon = <MdPeople className="me-1" />;
                   } else if (audienceId.startsWith('category_')) {
-                    const category = contactCategories.find(c => `category_${c._id}` === audienceId);
-                    label = category ? `🏷️ ${category.name}` : 'Category';
-                    bgColor = 'success';
+                    const categoryId = audienceId.replace('category_', '');
+                    const category = contactCategories.find(c => c._id === categoryId);
+                    label = category ? `📁 ${category.name} (${category.contactCount})` : audienceId;
+                    icon = <MdHandshake className="me-1" />;
                   } else if (audienceId === 'custom') {
-                    label = `👥 Custom (${selectedContacts.length} contacts)`;
-                    bgColor = 'warning';
+                    label = `👤 Custom (${selectedContacts.length})`;
+                    icon = <FaUsers className="me-1" />;
                   }
 
                   return (
-                    <Badge key={audienceId} bg={bgColor} className="p-2">
-                      {label}
+                    <Badge
+                      key={audienceId}
+                      bg="secondary"
+                      className="d-flex align-items-center gap-1"
+                    >
+                      {icon}{label}
+                      <MdClose
+                        size={14}
+                        className="cursor-pointer"
+                        onClick={() => toggleAudience(audienceId)}
+                      />
                     </Badge>
                   );
                 })}
@@ -2596,11 +2631,13 @@ const SurveyBuilder = () => {
                         let icon = null;
 
                         if (audienceId.startsWith('segment_')) {
-                          const segment = audienceSegments.find(s => `segment_${s._id}` === audienceId);
+                          const segmentId = audienceId.replace('segment_', '');
+                          const segment = audienceSegments.find(s => s._id === segmentId);
                           label = segment ? segment.name : 'Unknown Segment';
                           icon = <MdPeople className="me-1" />;
                         } else if (audienceId.startsWith('category_')) {
-                          const category = contactCategories.find(c => `category_${c._id}` === audienceId);
+                          const categoryId = audienceId.replace('category_', '');
+                          const category = contactCategories.find(c => c._id === categoryId);
                           label = category ? category.name : 'Unknown Category';
                           icon = <MdHandshake className="me-1" />;
                         } else if (audienceId === 'custom') {
@@ -2639,8 +2676,7 @@ const SurveyBuilder = () => {
                 <p className="text-muted mb-2">
                   {publishSettings.publishNow
                     ? 'Immediately'
-                    : `${publishSettings.scheduleDate} at ${publishSettings.scheduleTime}`
-                  }
+                    : `${publishSettings.scheduleDate} at ${publishSettings.scheduleTime}`}
                 </p>
               </div>
             </Card.Body>
