@@ -1,7 +1,7 @@
 // src/pages/UserManagement/UserForm.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Container, Row, Col, Card, Form, Button, Spinner } from "react-bootstrap";
+import { Row, Col, Form, Button, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
 import {
   MdSave,
@@ -18,7 +18,6 @@ import {
   MdCheckCircle,
   MdError,
   MdInfo,
-  MdCategory // <-- NEW ICON
 } from "react-icons/md";
 import { updateUser, getUserById, axiosInstance } from "../../api/axiosInstance";
 import { createUser } from "../../api/createUser";
@@ -40,8 +39,9 @@ const UserForm = () => {
     tenantId: "",
     departments: [],
     departmentId: "",
-    contactCategories: [], // <-- NEW
-    contactCategoryIds: [] // <-- NEW: for API
+    originalName: "",
+    originalDepartmentId: "",
+    originalIsActive: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -50,45 +50,11 @@ const UserForm = () => {
   const [formChanged, setFormChanged] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [validationState, setValidationState] = useState({});
-  const [categoryOptions, setCategoryOptions] = useState([]);
-  const [showDepartment, setShowDepartment] = useState(false);
 
   const currentUserRole = currentUser?.role || "";
   const memberCanCreate = hasPermission("user:create");
   const memberCanUpdate = hasPermission("user:update");
 
-
-  // === FETCH CONTACT CATEGORIES ===
-  const fetchContactCategories = async (tenantId) => {
-    if (!tenantId) {
-      setCategoryOptions([]);
-      return;
-    }
-
-    try {
-      const res = await axiosInstance.get(`/contact-categories?tenantId=${tenantId}`);
-      console.log("Contact Categories Response:", res);
-      let categoriesData = [];
-      if (Array.isArray(res?.data?.data?.categories)) {
-        categoriesData = res.data.data.categories;
-      } else if (Array.isArray(res?.data?.categories)) {
-        categoriesData = res.data.categories;
-      } else if (Array.isArray(res?.data)) {
-        categoriesData = res.data;
-      }
-
-      
-      const options = categoriesData.map((cat) => ({
-        value: cat._id,
-        label: cat.name,
-        type: cat.type,
-      }));
-      setCategoryOptions(options);
-    } catch (err) {
-      console.error("Failed to load contact categories:", err);
-      Swal.fire("Error", "Could not load contact categories", "error");
-    }
-  };
 
   // === HANDLE FORM FIELD CHANGES ===
   const handleChange = (e) => {
@@ -110,28 +76,6 @@ const UserForm = () => {
     }
   };
 
-  // === HANDLE CATEGORY CHANGE ===
-  const handleCategoryChange = (selected) => {
-    setUser(prev => ({
-      ...prev,
-      contactCategories: selected,
-    }));
-
-    // Agar selected category internal nahi hai, department clear kar do
-    const selectedLabels = selected.map(opt => opt.label.toLowerCase());
-    const hasInternal = selectedLabels.includes('internal');
-
-    if (!hasInternal) {
-      setUser(prev => ({
-        ...prev,
-        contactCategories: selected,
-        department: hasInternal ? prev.department : '', // clear department if not internal
-      }));
-    }
-
-    setShowDepartment(hasInternal); // state to toggle UI
-  };
-
   // === FORM VALIDATION ===
   const validateForm = () => {
     const newErrors = {};
@@ -144,19 +88,15 @@ const UserForm = () => {
     if (currentUserRole === "admin" && user.role === "companyAdmin" && !user.tenantName.trim())
       newErrors.tenantName = "Company name is required";
 
-    if ((currentUserRole === "companyAdmin" || (currentUserRole === "member" && user.role === "member")) && showDepartment && !user.departmentId)
-      newErrors.departmentId = "Department is required for internal user";
-
-    // NEW: Category validation for member
-    if (user.role === "member" && user.contactCategoryIds.length === 0) {
-      newErrors.contactCategories = "At least one category is required";
-    }
+    // Department is always required for members
+    if ((currentUserRole === "companyAdmin" || currentUserRole === "member") && user.role === "member" && !user.departmentId)
+      newErrors.departmentId = "Department is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // === FETCH TENANT DATA + CATEGORIES ===
+  // === FETCH TENANT DATA ===
   const fetchTenantData = async (tenantId) => {
     try {
       const res = await axiosInstance.get(`/tenants/${tenantId}`, {
@@ -169,7 +109,6 @@ const UserForm = () => {
         tenantName: tenant.name || "",
         departments: tenant.departments || [],
       }));
-      await fetchContactCategories(tenant._id);
     } catch (err) {
       console.error("fetchTenantData error:", err);
       Swal.fire("Error", "Failed to load tenant data", "error");
@@ -184,7 +123,7 @@ const UserForm = () => {
         const res = await getUserById(id);
         const userData = res.data.user;
 
-        let tenantName = "", departments = [], tenantId = "", departmentId = "", categoryIds = [];
+        let tenantName = "", departments = [], tenantId = "", departmentId = "";
 
         if (userData.tenant && typeof userData.tenant === 'object') {
           tenantName = userData.tenant.name || "";
@@ -196,25 +135,6 @@ const UserForm = () => {
           departmentId = userData.department?._id?.toString() || "";
         }
 
-        // 🧠 Step 1: Pehle categories load karo
-        if (tenantId) await fetchContactCategories(tenantId);
-
-        // 🧠 Step 2: Ab category IDs extract karo
-        if (userData.contactCategories && Array.isArray(userData.contactCategories)) {
-          if (typeof userData.contactCategories[0] === "string") {
-            categoryIds = userData.contactCategories;
-          } else {
-            categoryIds = userData.contactCategories.map(c => c._id?.toString()).filter(Boolean);
-          }
-        }
-
-        // 🧠 Step 3: ab categoryOptions available hain, label mil jayega
-        const selectedCategory = categoryOptions.find(
-          opt => opt.value === (categoryIds?.[0] || "")
-        );
-        const selectedLabel = selectedCategory?.label?.toLowerCase() || "";
-
-        // 🧠 Step 4: ab state set karo
         setUser({
           _id: userData._id,
           name: userData.name || "",
@@ -226,16 +146,10 @@ const UserForm = () => {
           tenantName,
           departments,
           departmentId,
-          contactCategoryIds: categoryIds,
-          originalCategoryIds: categoryIds,
-          contactCategories: categoryIds.length ? categoryOptions
-            .filter(opt => categoryIds.includes(opt.value))
-            .map(opt => opt.label)
-            : []
+          originalName: userData.name || "",
+          originalDepartmentId: departmentId,
+          originalIsActive: userData.isActive?.toString() || "true",
         });
-
-        // ✅ Step 5: showDepartment set karo
-        setShowDepartment(selectedLabel === "internal" || selectedLabel === "employee");
 
       } catch (err) {
         console.error("Error loading user:", err);
@@ -245,7 +159,7 @@ const UserForm = () => {
     };
 
     if (isEditMode) fetchUser();
-  }, [id, navigate, isEditMode, categoryOptions]);
+  }, [id, navigate, isEditMode]);
 
   // === FETCH TENANT DATA IF NOT ADMIN ===
   useEffect(() => {
@@ -286,15 +200,7 @@ const UserForm = () => {
       if (currentUserRole === "admin" && user.role === "companyAdmin") {
         payload.tenantName = user.tenantName;
       } else if (user.role === "member") {
-        // Only add department if contactCategories includes 'internal'
-        const selectedCategories = user.contactCategories || [];
-        const isInternal = selectedCategories.some(cat => cat.toLowerCase() === "internal");
-
-        if (isInternal) {
-          payload.department = user.departmentId; // required
-        }
-
-        payload.contactCategories = user.contactCategoryIds; // always send IDs
+        payload.department = user.departmentId;
       }
 
       if (isEditMode) {
@@ -302,11 +208,10 @@ const UserForm = () => {
         if (user.name !== user.originalName) updates.name = user.name;
         if (user.departmentId !== user.originalDepartmentId) updates.department = user.departmentId;
         if (user.isActive !== user.originalIsActive) updates.isActive = user.isActive === "true";
-        if (JSON.stringify(user.contactCategoryIds) !== JSON.stringify(user.originalCategoryIds || [])) {
-          updates.contactCategories = user.contactCategoryIds;
-        }
+
         if (Object.keys(updates).length === 0) {
           Swal.fire({ icon: "info", title: "No changes" });
+          setIsSubmitting(false);
           return;
         }
         await updateUser(id, updates);
@@ -375,7 +280,7 @@ const UserForm = () => {
       <div className="form-content">
         <div className="form-wrapper">
           <Form onSubmit={handleSubmit} className="user-form">
-            {/* BASIC INFO - SAME */}
+            {/* BASIC INFO */}
             <div className="form-section animate-slide-up" style={{ '--delay': '0.1s' }}>
               <div className="section-header">
                 <div className="section-icon">
@@ -434,7 +339,7 @@ const UserForm = () => {
                 </Row>
               </div>
             </div>
-            {/* ACCOUNT INFO - SAME */}
+            {/* ACCOUNT INFO */}
             <div className="form-section animate-slide-up" style={{ '--delay': '0.2s' }}>
               <div className="section-header">
                 <div className="section-icon">
@@ -526,7 +431,8 @@ const UserForm = () => {
                 </Row>
               </div>
             </div>
-            {/* ROLE & STATUS - SAME */}
+
+            {/* ROLE & STATUS */}
             <div className="form-section animate-slide-up" style={{ '--delay': '0.3s' }}>
               <div className="section-header">
                 <div className="section-icon">
@@ -619,7 +525,7 @@ const UserForm = () => {
               </div>
             </div>
 
-            {/* COMPANY INFO - SAME */}
+            {/* COMPANY INFO - For Admin creating CompanyAdmin */}
             {currentUserRole === "admin" && user.role === "companyAdmin" && (
               <div className="form-section animate-slide-up" style={{ '--delay': '0.4s' }}>
                 <div className="section-header">
@@ -657,7 +563,7 @@ const UserForm = () => {
               </div>
             )}
 
-            {/* ORGANIZATION ASSIGNMENT - UPDATED */}
+            {/* DEPARTMENT ASSIGNMENT - Always visible for members */}
             {(currentUserRole === "companyAdmin" || memberCanCreate) && user.role === "member" && (
               <div className="form-section animate-slide-up" style={{ '--delay': '0.5s' }}>
                 <div className="section-header">
@@ -665,8 +571,8 @@ const UserForm = () => {
                     <MdBusiness />
                   </div>
                   <div>
-                    <h3 className="section-title" style={{ color: '#1fdae4' }}>Assignment</h3>
-                    <p className="section-subtitle">Department & Categories</p>
+                    <h3 className="section-title" style={{ color: '#1fdae4' }}>Department Assignment</h3>
+                    <p className="section-subtitle">Assign user to a department</p>
                   </div>
                 </div>
 
@@ -674,90 +580,30 @@ const UserForm = () => {
                   <Row className="g-3">
                     <Col md={6}>
                       <div className="form-group">
-                        <label className="form-label required">User Categories</label>
+                        <label className="form-label required">Department</label>
                         <div className="input-wrapper">
                           <MdGroup className="input-icon" />
                           <Form.Select
-                            name="ContactCategory"
-                            value={user.contactCategoryIds?.[0] || ""} // ✅ single value only
-                            // onChange={(e) => {
-                            //   const selectedId = e.target.value;
-                            //   const selectedLabel = e.target.options[e.target.selectedIndex].text;
-
-                            //   setUser((prev) => ({
-                            //     ...prev,
-                            //     contactCategoryIds: [selectedId],    // store single id inside array
-                            //     contactCategories: [selectedLabel],  // store single label inside array
-                            //   }));
-
-                            //   if (selectedLabel?.toLowerCase() === "employee" || selectedOption?.userType === "internal") {
-                            //     setShowDepartment(true);
-                            //   } else {
-                            //     setShowDepartment(false);
-                            //     setUser(prev => ({ ...prev, departmentId: "" })); // clear department
-                            //   }
-
-                            //   setFormChanged(true);
-                            // }}
-                            onChange={(e) => {
-                              const selectedId = e.target.value;
-                              const selectedOption = categoryOptions.find(opt => opt.value === selectedId) || null;
-                              const selectedLabel = selectedOption?.label?.toLowerCase() || "";
-
-                              const showDept = selectedLabel === "internal" || selectedLabel === "employee";
-
-                              setUser(prev => ({
-                                ...prev,
-                                contactCategoryIds: [selectedId],
-                                contactCategories: [selectedOption?.label || ""],
-                                departmentId: showDept ? prev.departmentId : "" // clear department if not internal
-                              }));
-
-                              setShowDepartment(showDept);
-                              setFormChanged(true);
-                            }}
+                            name="departmentId"
+                            value={user.departmentId}
+                            onChange={handleChange}
                             className="form-input form-select"
                           >
-                            <option value="">Select Category</option>
-                            {categoryOptions.map((cat) => (
-                              <option key={cat.value} value={cat.value}>
-                                {cat.label}
-                              </option>
+                            <option value="">Select Department</option>
+                            {user.departments.map(dept => (
+                              <option key={dept._id} value={dept._id}>{dept.name}</option>
                             ))}
                           </Form.Select>
                         </div>
-                        {errors.contactCategories && <div className="field-error">{errors.contactCategories}</div>}
+                        {errors.departmentId && <div className="field-error">{errors.departmentId}</div>}
                       </div>
                     </Col>
-
-                    {showDepartment && (
-                      <Col md={6}>
-                        <div className="form-group">
-                          <label className="form-label required">Department</label>
-                          <div className="input-wrapper">
-                            <MdGroup className="input-icon" />
-                            <Form.Select
-                              name="departmentId"
-                              value={user.departmentId}
-                              onChange={handleChange}
-                              className="form-input form-select"
-                            >
-                              <option value="">Select Department</option>
-                              {user.departments.map(dept => (
-                                <option key={dept._id} value={dept._id}>{dept.name}</option>
-                              ))}
-                            </Form.Select>
-                          </div>
-                          {errors.departmentId && <div className="field-error">{errors.departmentId}</div>}
-                        </div>
-                      </Col>
-                    )}
                   </Row>
                 </div>
               </div>
             )}
 
-            {/* FORM ACTIONS - SAME */}
+            {/* FORM ACTIONS */}
             <div className="form-actions animate-slide-up" style={{ '--delay': '0.6s' }}>
               <div className="actions-wrapper">
                 <div className="actions-left">
