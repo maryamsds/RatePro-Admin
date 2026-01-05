@@ -20,7 +20,9 @@ export default defineConfig({
   },
   server: {
     historyApiFallback: true,
-    host: true // Add this line!
+    host: true,
+    port: 5173,
+    strictPort: true,
   },
   optimizeDeps: {
     include: ["react", "react-dom", "react-router-dom", "bootstrap", "react-bootstrap"],

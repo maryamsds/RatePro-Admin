@@ -1,6 +1,6 @@
 // src\pages\Dashboard\ExecutiveDashboard.jsx
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container, Row, Col, Card, Button, Badge, Table,
@@ -32,7 +32,10 @@ import {
   ArcElement,
   RadialLinearScale
 } from 'chart.js';
-import axiosInstance from '../../api/axiosInstance';
+
+// API Services
+import { getExecutiveDashboard, getOperationalDashboard } from '../../api/services/dashboardService';
+import { getAlerts } from '../../api/services/analyticsService';
 
 
 // Register Chart.js components
@@ -55,45 +58,79 @@ const ExecutiveDashboard = () => {
   // State Management
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [selectedTimeframe, setSelectedTimeframe] = useState('month');
-  const [realTimeAlerts, setRealTimeAlerts] = useState([]);
 
   // Fetch Dashboard Data
+  const fetchDashboardData = useCallback(async (showRefreshSpinner = false) => {
+    try {
+      if (showRefreshSpinner) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+
+      // Fetch executive dashboard and alerts in parallel
+      const [executiveData, operationalData, alertsData] = await Promise.all([
+        getExecutiveDashboard({ range: selectedTimeframe === 'week' ? '7d' : selectedTimeframe === 'month' ? '30d' : '90d' })
+          .catch(err => {
+            console.warn("Executive dashboard API error:", err.message);
+            return null;
+          }),
+        getOperationalDashboard()
+          .catch(err => {
+            console.warn("Operational dashboard API error:", err.message);
+            return null;
+          }),
+        getAlerts()
+          .catch(err => {
+            console.warn("Alerts API error:", err.message);
+            return [];
+          }),
+      ]);
+
+      // Combine data or use fallback
+      if (executiveData || operationalData) {
+        setDashboardData({
+          kpis: executiveData?.kpis || mockDashboardData.kpis,
+          trends: executiveData?.trends || mockDashboardData.trends,
+          locations: executiveData?.locations || mockDashboardData.locations,
+          topComplaints: executiveData?.topComplaints || operationalData?.topComplaints || mockDashboardData.topComplaints,
+          topPraises: executiveData?.topPraises || operationalData?.topPraises || mockDashboardData.topPraises,
+        });
+      } else {
+        setDashboardData(mockDashboardData);
+      }
+
+      // Set alerts
+      setAlerts(alertsData?.length > 0 ? alertsData : mockAlerts);
+
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+      setError('Failed to load dashboard data');
+      setDashboardData(mockDashboardData);
+      setAlerts(mockAlerts);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [selectedTimeframe]);
+
+  // Initial fetch and refresh interval
   useEffect(() => {
     fetchDashboardData();
-    fetchAlerts();
     
     // Set up real-time updates
     const interval = setInterval(() => {
-      fetchAlerts();
-    }, 30000); // Update every 30 seconds
+      fetchDashboardData(true);
+    }, 60000); // Update every 60 seconds
 
     return () => clearInterval(interval);
-  }, [selectedTimeframe]);
+  }, [fetchDashboardData]);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get(`/dashboard/executive?timeframe=${selectedTimeframe}`);
-      setDashboardData(response.data || mockDashboardData);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setDashboardData(mockDashboardData); // Fallback to mock data
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAlerts = async () => {
-    try {
-      const response = await axiosInstance.get('/dashboard/alerts');
-      setAlerts(response.data.alerts || mockAlerts);
-      setRealTimeAlerts(response.data.realTimeAlerts || []);
-    } catch (error) {
-      console.error('Error fetching alerts:', error);
-      setAlerts(mockAlerts);
-    }
+  // Handle manual refresh
+  const handleRefresh = () => {
+    fetchDashboardData(true);
   };
 
   // Mock Data (fallback)
@@ -314,20 +351,57 @@ const ExecutiveDashboard = () => {
               <Button
                 variant="outline-primary"
                 size="sm"
-                onClick={() => fetchDashboardData()}
+                onClick={handleRefresh}
+                disabled={refreshing}
               >
-                <MdRefresh className="me-1" />
-                Refresh
+                {refreshing ? (
+                  <Spinner animation="border" size="sm" className="me-1" />
+                ) : (
+                  <MdRefresh className="me-1" />
+                )}
+                {refreshing ? 'Refreshing...' : 'Refresh'}
               </Button>
               <Button
                 variant="outline-secondary"
                 size="sm"
-                onClick={() => navigate('/dashboard/analytics')}
+                onClick={() => navigate('/app/analytics')}
               >
                 <MdAnalytics className="me-1" />
                 Detailed Analytics
               </Button>
             </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Error Alert */}
+      {error && (
+        <Row className="mb-4">
+          <Col>
+            <Alert variant="danger" className="d-flex align-items-center justify-content-between">
+              <span>{error}</span>
+              <Button variant="outline-danger" size="sm" onClick={handleRefresh}>
+                Try Again
+              </Button>
+            </Alert>
+          </Col>
+        </Row>
+      )}
+
+      {/* Timeframe Selector */}
+      <Row className="mb-4">
+        <Col>
+          <div className="d-flex gap-2">
+            {['week', 'month', 'quarter'].map((tf) => (
+              <Button
+                key={tf}
+                variant={selectedTimeframe === tf ? 'primary' : 'outline-secondary'}
+                size="sm"
+                onClick={() => setSelectedTimeframe(tf)}
+              >
+                {tf === 'week' ? 'Last 7 Days' : tf === 'month' ? 'Last 30 Days' : 'Last 90 Days'}
+              </Button>
+            ))}
           </div>
         </Col>
       </Row>
@@ -343,7 +417,7 @@ const ExecutiveDashboard = () => {
                     <MdNotifications className="text-warning me-2" size={24} />
                     <strong>Active Alerts ({alerts.length})</strong>
                   </div>
-                  <Button variant="link" size="sm" onClick={() => navigate('/alerts')}>
+                  <Button variant="link" size="sm" onClick={() => navigate('/app/actions')}>
                     View All
                   </Button>
                 </div>
@@ -570,7 +644,7 @@ const ExecutiveDashboard = () => {
               <Button
                 variant="outline-danger"
                 size="sm"
-                onClick={() => navigate('/actions')}
+                onClick={() => navigate('/app/actions')}
               >
                 <MdAssignment className="me-1" />
                 Create Actions

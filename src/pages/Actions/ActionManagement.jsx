@@ -1,6 +1,6 @@
-// src\pages\Actions\ActionManagement.jsx
+﻿// src\pages\Actions\ActionManagement.jsx
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container, Row, Col, Card, Button, Badge, Tab, Tabs,
@@ -21,7 +21,13 @@ import {
   FaClock, FaUsers, FaExclamationTriangle, FaChartLine,
   FaBuilding, FaMapMarkerAlt, FaStar, FaRegStar
 } from 'react-icons/fa';
-import axiosInstance from '../../api/axiosInstance';
+import {
+  listActions,
+  getActionStats,
+  updateAction,
+  assignAction,
+  generateActionsFromFeedback
+} from '../../api/services/actionService';
 import Swal from 'sweetalert2';
 
 
@@ -31,6 +37,7 @@ const ActionManagement = () => {
   // State Management
   const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
@@ -63,134 +70,62 @@ const ActionManagement = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastVariant, setToastVariant] = useState('success');
 
-  // Fetch Actions
-  useEffect(() => {
-    fetchActions();
-    fetchStats();
-  }, [filters, activeTab]); // fetchActions and fetchStats are defined below, dependency is acceptable
-
-  const fetchActions = async () => {
+  // Fetch data using service layer
+  const fetchData = useCallback(async (isRefresh = false) => {
     try {
-      setLoading(true);
-
-      // Build query parameters
-      const queryParams = new URLSearchParams();
-
-      // Add filters
-      if (filters.priority && filters.priority !== 'all') {
-        queryParams.append('priority', filters.priority);
-      }
-      if (filters.status && filters.status !== 'all') {
-        queryParams.append('status', filters.status);
-      }
-      if (filters.assignee && filters.assignee !== 'all') {
-        queryParams.append('assignedTo', filters.assignee);
-      }
-      if (filters.department && filters.department !== 'all') {
-        queryParams.append('team', filters.department);
-      }
-
-      // Add tab-based filtering
-      if (activeTab !== 'all') {
-        queryParams.append('status', activeTab);
-      }
-
-      queryParams.append('page', 1);
-      queryParams.append('limit', 20);
-      queryParams.append('sortBy', 'createdAt');
-      queryParams.append('sortOrder', 'desc');
-
-      const response = await axiosInstance.get(`/actions?${queryParams}`);
-
-      if (response.data.success) {
-        setActions(response.data.data.actions || []);
-        setStats(response.data.data.analytics || {
-          total: 0, high: 0, medium: 0, longTerm: 0,
-          open: 0, inProgress: 0, resolved: 0
-        });
+      if (isRefresh) {
+        setRefreshing(true);
       } else {
-        throw new Error(response.data.message || 'Failed to fetch actions');
+        setLoading(true);
       }
 
+      // Fetch actions and stats in parallel
+      const [actionsData, statsData] = await Promise.all([
+        listActions({
+          priority: filters.priority,
+          status: filters.status !== 'all' ? filters.status : activeTab !== 'all' ? activeTab : undefined,
+          assignee: filters.assignee,
+          department: filters.department,
+          dateRange: filters.dateRange,
+          tab: activeTab,
+          page: 1,
+          limit: 20
+        }),
+        getActionStats({ period: '30' })
+      ]);
+
+      setActions(actionsData.actions || []);
+      setStats(statsData);
       setError('');
     } catch (err) {
       console.error('Error fetching actions:', err);
-      setError(err.response?.data?.message || 'Failed to load actions');
-      // Don't fallback to mock data in production
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await axiosInstance.get('/actions/analytics/summary?period=30');
-
-      if (response.data.success) {
-        const analytics = response.data.data;
-        setStats({
-          total: analytics.byPriority?.reduce((sum, item) => sum + item.count, 0) || 0,
-          pending: analytics.byStatus?.find(i => i._id === 'open')?.count || 0,
-          inProgress: analytics.byStatus?.find(i => i._id === 'in-progress')?.count || 0,
-          completed: analytics.byStatus?.find(i => i._id === 'resolved')?.count || 0,
-          overdue: analytics.overdue || 0,
-          highPriority: analytics.byPriority?.find(i => i._id === 'high')?.count || 0
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      if (error.response?.status === 403) {
-        showErrorToast("You don’t have permission to view analytics");
-      } else {
-        showErrorToast("Failed to load analytics data");
-      }
-
+      setError(err.response?.data?.message || err.message || 'Failed to load actions');
+      
       // Prevent crash by keeping stats safe
       setStats(prev => prev?.total ? prev : {
         total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0, highPriority: 0
       });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [filters, activeTab]);
 
+  // Handle refresh button click
+  const handleRefresh = useCallback(() => {
+    fetchData(true);
+  }, [fetchData]);
 
-  // const fetchStats = async () => {
-  //   try {
-  //     const response = await axiosInstance.get('/actions/analytics/summary?period=30');
-
-  //     if (response.data.success) {
-  //       const analytics = response.data.data;
-  //       setStats({
-  //         total: analytics.byPriority?.reduce((sum, item) => sum + item.count, 0) || 0,
-  //         pending: analytics.byStatus?.find(item => item._id === 'open')?.count || 0,
-  //         inProgress: analytics.byStatus?.find(item => item._id === 'in-progress')?.count || 0,
-  //         completed: analytics.byStatus?.find(item => item._id === 'resolved')?.count || 0,
-  //         overdue: analytics.overdue || 0,
-  //         highPriority: analytics.byPriority?.find(item => item._id === 'high')?.count || 0
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching stats:', error);
-  //     // Keep existing stats or set defaults
-  //     setStats(prev => prev.total ? prev : {
-  //       total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0, highPriority: 0
-  //     });
-  //   }
-  // };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Action Handlers
   const handleStatusChange = async (actionId, newStatus) => {
     try {
-      const response = await axiosInstance.put(`/actions/${actionId}`, {
-        status: newStatus
-      });
-
-      if (response.data.success) {
-        showSuccessToast(`Action ${newStatus} successfully!`);
-        fetchActions();
-        fetchStats();
-      } else {
-        throw new Error(response.data.message);
-      }
+      await updateAction(actionId, { status: newStatus });
+      showSuccessToast(`Action ${newStatus} successfully!`);
+      handleRefresh();
     } catch (error) {
       console.error('Error updating action status:', error);
       showErrorToast(
@@ -208,17 +143,9 @@ const ActionManagement = () => {
 
   const handleAssignAction = async (actionId, assigneeId, team = null) => {
     try {
-      const response = await axiosInstance.put(`/actions/${actionId}/assign`, {
-        assignedTo: assigneeId,
-        team
-      });
-
-      if (response.data.success) {
-        showSuccessToast('Action assigned successfully!');
-        fetchActions();
-      } else {
-        throw new Error(response.data.message);
-      }
+      await assignAction(actionId, { assignedTo: assigneeId, team });
+      showSuccessToast('Action assigned successfully!');
+      handleRefresh();
     } catch (error) {
       console.error('Error assigning action:', error);
       showErrorToast(
@@ -227,7 +154,20 @@ const ActionManagement = () => {
     }
   };
 
-  const handleGenerateActions = async () => {}
+  const handleGenerateActions = async () => {
+    try {
+      setRefreshing(true);
+      await generateActionsFromFeedback({});
+      showSuccessToast('AI actions generated successfully!');
+      handleRefresh();
+    } catch (error) {
+      console.error('Error generating AI actions:', error);
+      showErrorToast(
+        error.response?.data?.message || 'Failed to generate AI actions'
+      );
+      setRefreshing(false);
+    }
+  }
 
   // Toast Functions
   const showSuccessToast = (message) => {
@@ -379,10 +319,15 @@ const ActionManagement = () => {
                 <div className="d-flex gap-2">
                   <Button
                     variant="outline-primary"
-                    onClick={fetchActions}
+                    onClick={handleRefresh}
+                    disabled={refreshing}
                   >
-                    <MdRefresh className="me-2" />
-                    Refresh
+                    {refreshing ? (
+                      <Spinner animation="border" size="sm" className="me-2" />
+                    ) : (
+                      <MdRefresh className="me-2" />
+                    )}
+                    {refreshing ? 'Refreshing...' : 'Refresh'}
                   </Button>
                   {/* <Button
                     variant="success"

@@ -2,7 +2,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Row, Col, Card, Button, Badge, Tab, Tabs,
@@ -41,9 +41,12 @@ import {
   ArcElement,
   RadialLinearScale
 } from 'chart.js';
-import axiosInstance from '../../api/axiosInstance';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+
+// API Services
+import { getSurveyById, exportSurveyReport } from '../../api/services/surveyService';
+import { getSurveyAnalytics } from '../../api/services/analyticsService';
 
 
 // Register Chart.js components
@@ -67,6 +70,7 @@ const SurveyAnalytics = () => {
   // State Management
   const [survey, setSurvey] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState('last30days');
@@ -129,80 +133,181 @@ const SurveyAnalytics = () => {
   const [toastVariant, setToastVariant] = useState('success');
 
   // Fetch Data
-  useEffect(() => {
-    fetchSurveyData();
-    fetchAnalyticsData();
-  }, [id, dateRange, startDate, endDate]);
+  // const fetchData = useCallback(async (showRefreshSpinner = false) => {
+  //   try {
+  //     if (showRefreshSpinner) setRefreshing(true);
+  //     else setLoading(true);
+  //     setError('');
 
-  const fetchSurveyData = async () => {
-    try {
-      const response = await axiosInstance.get(`/surveys/${id}`);
-      setSurvey(response.data.survey);
-    } catch (err) {
-      console.error('Error fetching survey:', err);
-      setError('Failed to load survey data');
-    }
-  };
+  //     // Convert dateRange to API format
+  //     const rangeMap = {
+  //       'last7days': '7d',
+  //       'last30days': '30d',
+  //       'last90days': '90d',
+  //       'custom': 'custom'
+  //     };
 
-  const fetchAnalyticsData = async () => {
+  //     // Fetch survey and analytics in parallel
+  //     const [surveyData, analytics] = await Promise.all([
+  //       getSurveyById(id).catch(err => {
+  //         console.warn('Survey fetch error:', err.message);
+  //         return null;
+  //       }),
+  //       getSurveyAnalytics(id, {
+  //         dateRange: rangeMap[dateRange] || '30d',
+  //         startDate: dateRange === 'custom' ? startDate.toISOString() : undefined,
+  //         endDate: dateRange === 'custom' ? endDate.toISOString() : undefined,
+  //       }).catch(err => {
+  //         console.warn('Analytics fetch error:', err.message);
+  //         return null;
+  //       }),
+  //     ]);
+
+  //     if (surveyData) {
+  //       setSurvey(surveyData);
+  //     }
+
+  //     if (analytics) {
+  //       setAnalyticsData(analytics);
+  //     }
+
+  //   } catch (err) {
+  //     console.error('Error fetching data:', err);
+  //     setError('Failed to load analytics data. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // }, [id, dateRange, startDate, endDate]);
+
+  const fetchData = useCallback(async (showRefreshSpinner = false) => {
+    console.groupCollapsed('[SurveyAnalytics] fetchData');
+
     try {
-      setLoading(true);
-      const params = {
+      console.log('Params:', {
+        surveyId: id,
         dateRange,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
+        startDate,
+        endDate,
+        showRefreshSpinner,
+      });
+
+      if (showRefreshSpinner) {
+        setRefreshing(true);
+        console.log('Refreshing spinner enabled');
+      } else {
+        setLoading(true);
+        console.log('Loading spinner enabled');
+      }
+
+      setError('');
+
+      const rangeMap = {
+        last7days: '7d',
+        last30days: '30d',
+        last90days: '90d',
+        custom: 'custom',
       };
 
-      const response = await axiosInstance.get(`/surveys/${id}/analytics`, { params });
-      setAnalyticsData(response.data);
-      setError('');
+      const analyticsParams = {
+        dateRange: rangeMap[dateRange] || '30d',
+        startDate: dateRange === 'custom' ? startDate?.toISOString() : undefined,
+        endDate: dateRange === 'custom' ? endDate?.toISOString() : undefined,
+      };
+
+      console.log('Analytics API Params:', analyticsParams);
+
+      const [surveyData, analytics] = await Promise.all([
+        getSurveyById(id).catch(err => {
+          console.warn('[SurveyAnalytics] Survey fetch failed:', {
+            message: err.message,
+            status: err?.response?.status,
+          });
+          return null;
+        }),
+        getSurveyAnalytics(id, analyticsParams).catch(err => {
+          console.warn('[SurveyAnalytics] Analytics fetch failed:', {
+            message: err.message,
+            status: err?.response?.status,
+          });
+          return null;
+        }),
+      ]);
+
+      console.log('Survey Response:', surveyData);
+      console.log('Analytics Response:', analytics);
+
+      if (surveyData) {
+        setSurvey(surveyData);
+        console.log('Survey state updated');
+      }
+
+      if (analytics) {
+        setAnalyticsData(analytics);
+        console.log('Analytics state updated');
+      }
+
     } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError('Failed to load analytics data');
+      console.error('[SurveyAnalytics] Fatal fetch error:', err);
+      setError('Failed to load analytics data. Please try again.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      console.log('Loading states reset');
+      console.groupEnd();
     }
-  }; 
+  }, [id, dateRange, startDate, endDate]);
+
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchData(true);
+  };
+
+  // Handle date range change
+  const handleDateRangeChange = (range) => {
+    setDateRange(range);
+  };
 
   // Export Functions
   const handleExportPDF = async () => {
     try {
-      const response = await axiosInstance.get(`/surveys/${id}/analytics/export/pdf`, {
-        responseType: 'blob',
-        params: { dateRange, startDate, endDate }
-      });
-      
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = await exportSurveyReport(id, 'pdf');
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${survey.title}_analytics.pdf`;
+      link.download = `${survey?.title || 'survey'}_analytics.pdf`;
       link.click();
       window.URL.revokeObjectURL(url);
-      
+
       showSuccessToast('Analytics report downloaded successfully!');
+      setShowExportModal(false);
     } catch (err) {
+      console.error('Export PDF error:', err);
       showErrorToast('Failed to export analytics report');
     }
   };
 
   const handleExportExcel = async () => {
     try {
-      const response = await axiosInstance.get(`/surveys/${id}/analytics/export/excel`, {
-        responseType: 'blob',
-        params: { dateRange, startDate, endDate }
-      });
-      
-      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const blob = await exportSurveyReport(id, 'csv');
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${survey.title}_analytics.xlsx`;
+      link.download = `${survey?.title || 'survey'}_analytics.csv`;
       link.click();
       window.URL.revokeObjectURL(url);
-      
-      showSuccessToast('Analytics data exported to Excel successfully!');
+
+      showSuccessToast('Analytics data exported successfully!');
+      setShowExportModal(false);
     } catch (err) {
+      console.error('Export Excel error:', err);
       showErrorToast('Failed to export to Excel');
     }
   };
@@ -225,9 +330,9 @@ const SurveyAnalytics = () => {
     const maxRating = 5;
     for (let i = 1; i <= maxRating; i++) {
       stars.push(
-        i <= rating ? 
-        <FaStar key={i} className="text-warning" /> : 
-        <FaRegStar key={i} className="text-muted" />
+        i <= rating ?
+          <FaStar key={i} className="text-warning" /> :
+          <FaRegStar key={i} className="text-muted" />
       );
     }
     return stars;
@@ -255,7 +360,7 @@ const SurveyAnalytics = () => {
 
   // Chart Data
   const responsesTrendData = {
-    labels: analyticsData.trends.responsesByDate?.map(item => 
+    labels: analyticsData.trends.responsesByDate?.map(item =>
       new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     ) || [],
     datasets: [
@@ -271,7 +376,7 @@ const SurveyAnalytics = () => {
   };
 
   const ratingTrendData = {
-    labels: analyticsData.trends.ratingTrends?.map(item => 
+    labels: analyticsData.trends.ratingTrends?.map(item =>
       new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     ) || [],
     datasets: [
@@ -323,7 +428,7 @@ const SurveyAnalytics = () => {
   };
 
   const npsData = {
-    labels: analyticsData.trends.npsHistory?.map(item => 
+    labels: analyticsData.trends.npsHistory?.map(item =>
       new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     ) || [],
     datasets: [
@@ -377,7 +482,7 @@ const SurveyAnalytics = () => {
           {error}
           <div className="mt-3">
             <Button variant="outline-danger" onClick={() => navigate(`/app/surveys`)}>
-              Back to Survey Details
+              Back to Survey
             </Button>
           </div>
         </Alert>
@@ -397,10 +502,10 @@ const SurveyAnalytics = () => {
                   <Button
                     variant="link"
                     className="p-0 mb-2 text-primary"
-                    onClick={() => navigate(`/surveys/${id}`)}
+                    onClick={() => navigate(`/app/surveys`)}
                   >
                     <i className="fas fa-arrow-left me-2"></i>
-                    Back to Survey Details
+                    Back to Survey
                   </Button>
                   <h1 className="h3 mb-1 fw-bold">
                     <MdAnalytics className="me-2 text-primary" />
@@ -422,30 +527,30 @@ const SurveyAnalytics = () => {
                     </Badge>
                   </div>
                 </div>
-                
+
                 <div className="d-flex gap-2">
                   <Dropdown>
                     <Dropdown.Toggle variant="outline-primary" size="sm">
                       <MdDateRange className="me-2" />
-                      {dateRange === 'custom' ? 'Custom Range' : 
-                       dateRange === 'today' ? 'Today' :
-                       dateRange === 'yesterday' ? 'Yesterday' :
-                       dateRange === 'last7days' ? 'Last 7 Days' :
-                       dateRange === 'last30days' ? 'Last 30 Days' :
-                       dateRange === 'last3months' ? 'Last 3 Months' : 'All Time'}
+                      {dateRange === 'custom' ? 'Custom Range' :
+                        dateRange === 'today' ? 'Today' :
+                          dateRange === 'yesterday' ? 'Yesterday' :
+                            dateRange === 'last7days' ? 'Last 7 Days' :
+                              dateRange === 'last30days' ? 'Last 30 Days' :
+                                dateRange === 'last3months' ? 'Last 3 Months' : 'All Time'}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      <Dropdown.Item onClick={() => setDateRange('today')}>Today</Dropdown.Item>
-                      <Dropdown.Item onClick={() => setDateRange('yesterday')}>Yesterday</Dropdown.Item>
-                      <Dropdown.Item onClick={() => setDateRange('last7days')}>Last 7 Days</Dropdown.Item>
-                      <Dropdown.Item onClick={() => setDateRange('last30days')}>Last 30 Days</Dropdown.Item>
-                      <Dropdown.Item onClick={() => setDateRange('last3months')}>Last 3 Months</Dropdown.Item>
-                      <Dropdown.Item onClick={() => setDateRange('alltime')}>All Time</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDateRangeChange('today')}>Today</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDateRangeChange('yesterday')}>Yesterday</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDateRangeChange('last7days')}>Last 7 Days</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDateRangeChange('last30days')}>Last 30 Days</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDateRangeChange('last3months')}>Last 3 Months</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDateRangeChange('alltime')}>All Time</Dropdown.Item>
                       <Dropdown.Divider />
                       <Dropdown.Item onClick={() => setShowFilterModal(true)}>Custom Range</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
-                  
+
                   <Button
                     variant="outline-success"
                     size="sm"
@@ -454,14 +559,19 @@ const SurveyAnalytics = () => {
                     <MdDownload className="me-2" />
                     Export
                   </Button>
-                  
+
                   <Button
                     variant="outline-secondary"
                     size="sm"
-                    onClick={fetchAnalyticsData}
+                    onClick={handleRefresh}
+                    disabled={refreshing}
                   >
-                    <MdRefresh className="me-2" />
-                    Refresh
+                    {refreshing ? (
+                      <Spinner animation="border" size="sm" className="me-2" />
+                    ) : (
+                      <MdRefresh className="me-2" />
+                    )}
+                    {refreshing ? 'Refreshing...' : 'Refresh'}
                   </Button>
                 </div>
               </div>
@@ -487,7 +597,7 @@ const SurveyAnalytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="metrics-card h-100">
             <Card.Body className="text-center p-3">
@@ -503,7 +613,7 @@ const SurveyAnalytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="metrics-card h-100">
             <Card.Body className="text-center p-3">
@@ -519,7 +629,7 @@ const SurveyAnalytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="metrics-card h-100">
             <Card.Body className="text-center p-3">
@@ -535,7 +645,7 @@ const SurveyAnalytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="metrics-card h-100">
             <Card.Body className="text-center p-3">
@@ -551,7 +661,7 @@ const SurveyAnalytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col lg={2} md={4} sm={6} className="mb-3">
           <Card className="metrics-card h-100">
             <Card.Body className="text-center p-3">
@@ -591,19 +701,19 @@ const SurveyAnalytics = () => {
                           <Card.Header className="d-flex justify-content-between align-items-center">
                             <Card.Title className="mb-0">Response Trends</Card.Title>
                             <ButtonGroup size="sm">
-                              <Button 
+                              <Button
                                 variant={selectedMetric === 'responses' ? 'primary' : 'outline-primary'}
                                 onClick={() => setSelectedMetric('responses')}
                               >
                                 Responses
                               </Button>
-                              <Button 
+                              <Button
                                 variant={selectedMetric === 'ratings' ? 'primary' : 'outline-primary'}
                                 onClick={() => setSelectedMetric('ratings')}
                               >
                                 Ratings
                               </Button>
-                              <Button 
+                              <Button
                                 variant={selectedMetric === 'nps' ? 'primary' : 'outline-primary'}
                                 onClick={() => setSelectedMetric('nps')}
                               >
@@ -651,7 +761,7 @@ const SurveyAnalytics = () => {
                           </Card.Body>
                         </Card>
                       </Col>
-                      
+
                       {/* Sentiment Breakdown */}
                       <Col lg={4} className="mb-4">
                         <Card>
@@ -665,7 +775,7 @@ const SurveyAnalytics = () => {
                                 legend: { position: 'bottom' }
                               }
                             }} />
-                            
+
                             <div className="mt-3">
                               <div className="d-flex justify-content-between align-items-center mb-2">
                                 <span className="d-flex align-items-center">
@@ -693,7 +803,7 @@ const SurveyAnalytics = () => {
                         </Card>
                       </Col>
                     </Row>
-                    
+
                     <Row>
                       {/* Device Breakdown */}
                       <Col lg={6} className="mb-4">
@@ -711,7 +821,7 @@ const SurveyAnalytics = () => {
                           </Card.Body>
                         </Card>
                       </Col>
-                      
+
                       {/* Question Performance */}
                       <Col lg={6} className="mb-4">
                         <Card>
@@ -769,7 +879,7 @@ const SurveyAnalytics = () => {
                           </Card.Body>
                         </Card>
                       </Col>
-                      
+
                       <Col lg={6} className="mb-4">
                         <Card>
                           <Card.Header>
@@ -792,9 +902,9 @@ const SurveyAnalytics = () => {
                                   </div>
                                 </div>
                               ))}
-                              
+
                               <hr />
-                              
+
                               <h6 className="mb-3">Peak Days</h6>
                               {analyticsData.demographics.byDayOfWeek?.map((day, index) => (
                                 <div key={index} className="d-flex justify-content-between align-items-center mb-2">
@@ -845,7 +955,7 @@ const SurveyAnalytics = () => {
                                 </div>
                               </div>
                             ))}
-                            
+
                             {(!analyticsData.feedback.topComplaints || analyticsData.feedback.topComplaints.length === 0) && (
                               <div className="text-center py-4">
                                 <MdCheckCircle size={48} className="text-success mb-3" />
@@ -855,7 +965,7 @@ const SurveyAnalytics = () => {
                           </Card.Body>
                         </Card>
                       </Col>
-                      
+
                       <Col lg={6} className="mb-4">
                         <Card className="h-100">
                           <Card.Header className="bg-success bg-opacity-10">
@@ -880,7 +990,7 @@ const SurveyAnalytics = () => {
                                 </div>
                               </div>
                             ))}
-                            
+
                             {(!analyticsData.feedback.topPraises || analyticsData.feedback.topPraises.length === 0) && (
                               <div className="text-center py-4">
                                 <MdSentimentNeutral size={48} className="text-muted mb-3" />
@@ -891,7 +1001,7 @@ const SurveyAnalytics = () => {
                         </Card>
                       </Col>
                     </Row>
-                    
+
                     <Row>
                       <Col>
                         <Card>
@@ -920,7 +1030,7 @@ const SurveyAnalytics = () => {
                                   </Alert>
                                 ))}
                               </Col>
-                              
+
                               <Col lg={6}>
                                 <h6 className="text-info mb-3">
                                   <MdInsights className="me-2" />
@@ -982,9 +1092,9 @@ const SurveyAnalytics = () => {
                                       <td>
                                         <div className="d-flex align-items-center">
                                           <div className="progress-sm me-2" style={{ width: '60px' }}>
-                                            <ProgressBar 
-                                              now={question.completionRate} 
-                                              variant={getPerformanceColor(question.completionRate)} 
+                                            <ProgressBar
+                                              now={question.completionRate}
+                                              variant={getPerformanceColor(question.completionRate)}
                                             />
                                           </div>
                                           <span>{question.completionRate}%</span>
@@ -1020,7 +1130,7 @@ const SurveyAnalytics = () => {
                         </Card>
                       </Col>
                     </Row>
-                    
+
                     <Row>
                       <Col lg={6} className="mb-4">
                         <Card>
@@ -1048,7 +1158,7 @@ const SurveyAnalytics = () => {
                           </Card.Body>
                         </Card>
                       </Col>
-                      
+
                       <Col lg={6} className="mb-4">
                         <Card>
                           <Card.Header>
@@ -1068,9 +1178,9 @@ const SurveyAnalytics = () => {
                                 </div>
                                 <div className="mt-2">
                                   <div className="progress-sm">
-                                    <ProgressBar 
-                                      now={(time.averageTime / time.maxTime) * 100} 
-                                      variant="info" 
+                                    <ProgressBar
+                                      now={(time.averageTime / time.maxTime) * 100}
+                                      variant="info"
                                     />
                                   </div>
                                 </div>
@@ -1126,7 +1236,7 @@ const SurveyAnalytics = () => {
           <Button variant="primary" onClick={() => {
             setDateRange('custom');
             setShowFilterModal(false);
-            fetchAnalyticsData();
+            handleRefresh();
           }}>
             Apply Range
           </Button>

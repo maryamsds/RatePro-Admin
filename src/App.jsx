@@ -70,8 +70,6 @@ import ContactManagement from "./pages/Audiences/ContactManagement"
 import Support from "./pages/Support/CreateTicket"
 import VerifyEmail from "./pages/Auth/VerifyEmail"
 import TokenRedirector from "./components/TokenRedirector"
-import IncentiveManagement from "./pages/Incentives/IncentiveManagement"
-import RewardSystem from "./pages/Incentives/RewardSystem"
 import WhatsAppSettings from "./pages/Communication/WhatsAppSettings"
 import SMSSettings from "./pages/Communication/SMSSettings"
 import FeedbackAnalysis from "./pages/Analytics/FeedbackAnalysis"
@@ -80,6 +78,7 @@ import { ToastContainer } from "react-toastify"
 import { useAuth } from "./context/AuthContext"
 import FullScreenLoader from "./components/Loader/FullScreenLoader"
 import PlanBuilder from "./pages/Subscription/PlanBuilder"
+import ExecutiveDashboard from "./pages/Dashboard/ExecutiveDashboard"
 
 function App() {
   // const navigate = useNavigate();
@@ -166,7 +165,7 @@ function App() {
               {/* Users */}
               <Route path="users" element={<UserList />} />
               <Route path="users/:id/edit" element={<UserForm />} />
-              <Route path="users/form" element={<UserForm />} />
+              <Route path="users/create" element={<UserForm />} />
 
               {/* Access */}
               <Route path="access" element={<AccessManagement />} />
@@ -175,25 +174,21 @@ function App() {
               {/* Audiences */}
               <Route path="audiences" element={<AudiencesSegments />} />
               <Route path="audiences/category" element={<AudienceCategory />} />
-              <Route path="audiences/contact-management" element={<ContactManagement />} />
+              <Route path="audiences/contacts" element={<ContactManagement />} />
 
               {/* Analytics */}
               <Route path="analytics" element={<Analytics />} />
-              <Route path="analytics/dashboard" element={<AnalyticsDashboard />} />
+              <Route path="analytics/dashboard" element={<ExecutiveDashboard />} />
               <Route path="analytics/feedback" element={<FeedbackAnalysis />} />
               <Route path="analytics/custom-reports" element={<CustomReports />} />
               <Route path="analytics/real-time" element={<RealTimeResults />} />
               <Route path="analytics/trends" element={<TrendAnalysis />} />
               <Route path="analytics/response-overview" element={<ResponseOverview />} />
-
-              {/* Incentives */}
-              <Route path="incentives/incentives-management" element={<IncentiveManagement />} />
-              <Route path="incentives/reward-system" element={<RewardSystem />} />
               
               {/* Subscription  */}
                {/* <Route path="subscription/manage-plans" element={<SubscriptionPlans/>} /> */}
-               <Route path="subscription/manage-plans" element={<PlanBuilder />} />
-              <Route path="subscription/my-subscription" element={<MyPlans/>} />
+               <Route path="subscription/plans" element={<PlanBuilder />} />
+              <Route path="subscription/my-plan" element={<MyPlans/>} />
               {/* Support */}
               <Route path="support" element={<SupportTickets />} />
               <Route path="support/create" element={<CreateTicket />} />
@@ -211,17 +206,17 @@ function App() {
               <Route path="settings/thank-you" element={<CustomThankYou />} />
 
               {/* <Route path="settings/billing-plans" element={<BillingPlans />} /> */}
-              <Route path="settings/custom-thank-you" element={<ThankYouPage />} />
+              <Route path="settings/thank-you" element={<ThankYouPage />} />
               <Route path="settings/email-templates" element={<EmailTemplates />} />
-              <Route path="settings/notification-settings" element={<NotificationSettings />} />
-              <Route path="settings/smtp-config" element={<SMTPConfig />} />
-              <Route path="settings/theme-settings" element={<ThemeSettings />} />
+              <Route path="settings/notifications" element={<NotificationSettings />} />
+              <Route path="settings/smtp" element={<SMTPConfig />} />
+              <Route path="settings/theme" element={<ThemeSettings />} />
 
               {/* Profile */}
               <Route path="profile" element={<Profile />} />
 
               {/* Content */}
-              <Route path="features" element={<Features />} />
+              <Route path="content/features" element={<Features />} />
               <Route path="content/pricing" element={<Pricing />} />
               <Route path="content/testimonials" element={<Testimonials />} />
               <Route path="content/widgets" element={<Widgets />} />

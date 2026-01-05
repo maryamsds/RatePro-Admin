@@ -1,8 +1,8 @@
 // src\pages\Dashboard\Dashboard.jsx
 "use client"
 
-import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Button, Table, Badge, ProgressBar } from "react-bootstrap"
+import { useState, useEffect, useCallback } from "react"
+import { Container, Row, Col, Card, Button, Table, Badge, ProgressBar, Spinner } from "react-bootstrap"
 import { Line, Bar, Doughnut } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -41,6 +41,10 @@ import { Link, useNavigate } from "react-router-dom"
 import Swal from "sweetalert2"
 import { useAuth } from "../../context/AuthContext.jsx"
 
+// API Services
+import { listSurveys } from "../../api/services/surveyService"
+import { getExecutiveDashboard } from "../../api/services/dashboardService"
+
 
 // Register Chart.js components including Filler
 ChartJS.register(
@@ -56,19 +60,23 @@ ChartJS.register(
   Filler,
 )
 
-const Dashboard = ({ darkMode, limit = 5 }) => {
+const Dashboard = ({ darkMode }) => {
   const [stats, setStats] = useState({
-    totalSurveys: 24,
-    activeResponses: 1247,
-    completionRate: 78.5,
-    avgResponseTime: "3.2 min",
+    totalSurveys: 0,
+    activeResponses: 0,
+    completionRate: 0,
+    avgResponseTime: "-- min",
+    npsScore: 0,
+    satisfactionIndex: 0,
   })
 
   const [recentSurveys, setRecentSurveys] = useState([])
   const [pagination, setPagination] = useState({ page: 1, limit: 5, total: 0 })
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState(null)
+  const [trendData, setTrendData] = useState({ labels: [], data: [] })
   const navigate = useNavigate();
-  const [responses, setResponses] = useState([]);
   const { user } = useAuth();
 
   const createNewSurvey = () => {
@@ -81,6 +89,75 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
 
   const ViewRecentSurveys = () => {
     navigate("/app/surveys/responses");
+  };
+
+  // Fetch dashboard data from API
+  const fetchDashboardData = useCallback(async (showRefreshSpinner = false) => {
+    try {
+      if (showRefreshSpinner) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+
+      // Fetch dashboard stats and recent surveys in parallel
+      const [dashboardData, surveysData] = await Promise.all([
+        getExecutiveDashboard().catch(err => {
+          console.warn("Dashboard API error, using fallback:", err.message);
+          return null;
+        }),
+        listSurveys({ page: 1, limit: 10, sort: "-createdAt" }).catch(err => {
+          console.warn("Surveys API error:", err.message);
+          return { surveys: [], total: 0 };
+        }),
+      ]);
+
+      // Update stats from dashboard API
+      if (dashboardData) {
+        setStats({
+          totalSurveys: dashboardData.kpis?.totalSurveys || 0,
+          activeResponses: dashboardData.kpis?.totalResponses || 0,
+          completionRate: dashboardData.kpis?.completionRate || 0,
+          avgResponseTime: dashboardData.kpis?.avgResponseTime || "-- min",
+          npsScore: dashboardData.kpis?.npsScore || 0,
+          satisfactionIndex: dashboardData.kpis?.satisfactionIndex || 0,
+        });
+
+        // Set trend data for chart
+        if (dashboardData.trends?.responses) {
+          setTrendData({
+            labels: dashboardData.trends.responses.labels || [],
+            data: dashboardData.trends.responses.data || [],
+          });
+        }
+      }
+
+      // Update recent surveys
+      if (surveysData?.surveys) {
+        const transformedSurveys = surveysData.surveys.map((survey) => ({
+          id: survey.id || survey._id,
+          name: survey.title,
+          responses: survey.responseCount || 0,
+          status: survey.status === "active" ? "Active" : 
+                  survey.status === "completed" ? "Completed" : 
+                  survey.status === "draft" ? "Draft" : 
+                  survey.status === "paused" ? "Paused" : survey.status,
+          completion: survey.stats?.completionRate || 0,
+        }));
+        setRecentSurveys(transformedSurveys);
+        setPagination(prev => ({ ...prev, total: surveysData.total || transformedSurveys.length }));
+      }
+
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      setError("Failed to load dashboard data. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Handle refresh button
+  const handleRefresh = () => {
+    fetchDashboardData(true);
   };
 
   useEffect(() => {
@@ -105,34 +182,18 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
     }
   }, [user, navigate])
 
-
+  // Fetch data on mount
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setRecentSurveys([
-        { id: 1, name: "Customer Satisfaction Q4", responses: 156, status: "Active", completion: 85 },
-        { id: 2, name: "Product Feedback Survey", responses: 89, status: "Active", completion: 67 },
-        { id: 3, name: "Employee Engagement", responses: 234, status: "Completed", completion: 100 },
-        { id: 4, name: "Market Research Study", responses: 45, status: "Draft", completion: 0 },
-        { id: 5, name: "User Experience Survey", responses: 178, status: "Active", completion: 92 },
-        { id: 6, name: "Brand Awareness Survey", responses: 67, status: "Active", completion: 45 },
-        { id: 7, name: "Website Usability Test", responses: 123, status: "Completed", completion: 100 },
-        { id: 8, name: "Training Effectiveness", responses: 89, status: "Active", completion: 73 },
-        { id: 9, name: "Customer Support Feedback", responses: 156, status: "Active", completion: 88 },
-        { id: 10, name: "Product Launch Survey", responses: 234, status: "Draft", completion: 15 },
-      ])
-      setPagination((prev) => ({ ...prev, total: 10 }))
-      setLoading(false)
-    }, 1000)
-  }, [])
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-  // Chart data with visible colors for both light and dark modes
+  // Chart data - use real data when available, fallback to placeholder
   const responseData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: trendData.labels.length > 0 ? trendData.labels : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
       {
         label: "Responses",
-        data: [65, 78, 90, 81, 96, 105],
+        data: trendData.data.length > 0 ? trendData.data : [0, 0, 0, 0, 0, 0],
         borderColor: "#054a4eff",
         backgroundColor: darkMode ? "#054a4eff" : "#054a4eff",
         fill: true,
@@ -265,97 +326,10 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
     },
   }
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      Active: "success",
-      Completed: "primary",
-      Draft: "secondary",
-      Paused: "warning",
-    }
-    return (
-      <Badge bg={variants[status] || "secondary"} className="badge-enhanced">
-        {status}
-      </Badge>
-    )
-  }
-
   const currentSurveys = recentSurveys.slice(
     (pagination.page - 1) * pagination.limit,
     pagination.page * pagination.limit,
   )
-
-  useEffect(() => {
-    setTimeout(() => {
-      const dummyResponses = [
-        {
-          id: 1,
-          surveyId: 1,
-          surveyTitle: "Customer Satisfaction Survey",
-          respondent: "John Doe",
-          email: "john.doe@example.com",
-          submittedAt: "2023-06-01 14:32",
-          satisfaction: 4.5,
-        },
-        {
-          id: 2,
-          surveyId: 1,
-          surveyTitle: "Customer Satisfaction Survey",
-          respondent: "Jane Smith",
-          email: "jane.smith@example.com",
-          submittedAt: "2023-06-01 13:15",
-          satisfaction: 3.8,
-        },
-        {
-          id: 3,
-          surveyId: 2,
-          surveyTitle: "Product Feedback Survey",
-          respondent: "Robert Johnson",
-          email: "robert.j@example.com",
-          submittedAt: "2023-06-01 11:45",
-          satisfaction: 4.2,
-        },
-        {
-          id: 4,
-          surveyId: 4,
-          surveyTitle: "Website Usability Survey",
-          respondent: "Emily Davis",
-          email: "emily.d@example.com",
-          submittedAt: "2023-05-31 16:20",
-          satisfaction: 4.0,
-        },
-        {
-          id: 5,
-          surveyId: 1,
-          surveyTitle: "Customer Satisfaction Survey",
-          respondent: "Michael Wilson",
-          email: "michael.w@example.com",
-          submittedAt: "2023-05-31 15:10",
-          satisfaction: 4.7,
-        },
-      ]
-
-      setResponses(dummyResponses.slice(0, limit))
-      setLoading(false)
-    }, 800)
-  }, [limit])
-
-  const getSatisfactionVariant = (score) => {
-    if (score >= 4.5) return "success"
-    if (score >= 3.5) return "primary"
-    if (score >= 2.5) return "warning"
-    return "danger"
-  }
-
-  // if (loading) {
-  //   return (
-  //     <Container fluid className="dashboard-container">
-  //       <div className="loading-container">
-  //         <div className="loading-spinner"></div>
-  //         <p className="loading-text">Loading dashboard...</p>
-  //       </div>
-  //     </Container>
-  //   )
-  // }
 
   return (
     <Container fluid className="dashboard-container">
@@ -367,9 +341,18 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
             <p>Welcome back! Here's what's happening with your surveys today.</p>
           </div>
           <div className="d-flex gap-2 flex-wrap">
-            <Button variant="outline-secondary" size="sm">
-              <MdRefresh size={16} className="me-1" />
-              Refresh
+            <Button 
+              variant="outline-secondary" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <Spinner animation="border" size="sm" className="me-1" />
+              ) : (
+                <MdRefresh size={16} className="me-1" />
+              )}
+              {refreshing ? "Refreshing..." : "Refresh"}
             </Button>
             <Button variant="outline-secondary" size="sm">
               <MdDownload size={16} className="me-1" />
@@ -383,6 +366,24 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
         </div>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
+          <span>{error}</span>
+          <Button variant="link" className="ms-auto p-0" onClick={handleRefresh}>
+            Try Again
+          </Button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3 text-muted">Loading dashboard...</p>
+        </div>
+      ) : (
+        <>
       {/* Stats Cards */}
       <Row className="g-3 mb-4">
         <Col xl={3} lg={6} md={6} xs={12}>
@@ -512,82 +513,101 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
               </Button>
             </div>
             <div className="table-container">
-              <Table className="custom-table" hover responsive>
-                <thead>
-                  <tr>
-                    <th>Survey Name</th>
-                    <th className="d-none d-md-table-cell">Responses</th>
-                    <th>Status</th>
-                    <th className="d-none d-lg-table-cell">Progress</th>
-                    <th className="text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentSurveys.map((survey) => (
-                    <tr key={survey.id}>
-                      <td>
-                        <div style={{ fontWeight: 500 }}>{survey.name}</div>
-                        <small className="d-md-none text-muted">{survey.responses} responses</small>
-                      </td>
-                      <td className="d-none d-md-table-cell">
-                        <strong>{survey.responses}</strong>
-                      </td>
-                      <td>
-                        <span className={`status-badge status-${survey.status.toLowerCase()}`}>
-                          {survey.status}
-                        </span>
-                      </td>
-                      <td className="d-none d-lg-table-cell">
-                        <div className="progress-container" style={{ width: '120px' }}>
-                          <div className="progress-bar-wrapper">
-                            <div 
-                              className="progress-bar-fill" 
-                              style={{ width: `${survey.completion}%` }}
-                            ></div>
-                          </div>
-                          <span className="progress-text">{survey.completion}%</span>
-                        </div>
-                      </td>
-                      <td className="text-center">
-                        <div className="d-flex gap-1 justify-content-center">
-                          <button className="action-button" title="View Survey">
-                            <MdVisibility size={18} />
-                          </button>
-                          <button className="action-button" title="Edit Survey">
-                            <MdEdit size={18} />
-                          </button>
-                          <button className="action-button" title="More Options">
-                            <MdMoreVert size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-              <div className="pagination-container">
-                <div className="pagination-info">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} surveys
+              {recentSurveys.length === 0 ? (
+                <div className="text-center py-5">
+                  <MdPoll size={48} className="text-muted mb-3" />
+                  <h6 className="text-muted">No surveys yet</h6>
+                  <p className="text-muted small mb-3">Create your first survey to get started</p>
+                  <Button variant="primary" size="sm" onClick={createNewSurvey}>
+                    <MdAdd size={16} className="me-1" />
+                    Create Survey
+                  </Button>
                 </div>
-                <div className="pagination-controls">
-                  <button 
-                    className="pagination-button"
-                    disabled={pagination.page === 1}
-                    onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-                  >
-                    <MdChevronLeft size={18} />
-                    Previous
-                  </button>
-                  <button 
-                    className="pagination-button"
-                    disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
-                    onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-                  >
-                    Next
-                    <MdChevronRight size={18} />
-                  </button>
-                </div>
-              </div>
+              ) : (
+                <>
+                  <Table className="custom-table" hover responsive>
+                    <thead>
+                      <tr>
+                        <th>Survey Name</th>
+                        <th className="d-none d-md-table-cell">Responses</th>
+                        <th>Status</th>
+                        <th className="d-none d-lg-table-cell">Progress</th>
+                        <th className="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentSurveys.map((survey) => (
+                        <tr key={survey.id}>
+                          <td>
+                            <Link 
+                              to={`/app/surveys/${survey.id}`} 
+                              style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                              <div style={{ fontWeight: 500 }}>{survey.name}</div>
+                            </Link>
+                            <small className="d-md-none text-muted">{survey.responses} responses</small>
+                          </td>
+                          <td className="d-none d-md-table-cell">
+                            <strong>{survey.responses}</strong>
+                          </td>
+                          <td>
+                            <span className={`status-badge status-${survey.status.toLowerCase()}`}>
+                              {survey.status}
+                            </span>
+                          </td>
+                          <td className="d-none d-lg-table-cell">
+                            <div className="progress-container" style={{ width: '120px' }}>
+                              <div className="progress-bar-wrapper">
+                                <div 
+                                  className="progress-bar-fill" 
+                                  style={{ width: `${survey.completion}%` }}
+                                ></div>
+                              </div>
+                              <span className="progress-text">{survey.completion}%</span>
+                            </div>
+                          </td>
+                          <td className="text-center">
+                            <div className="d-flex gap-1 justify-content-center">
+                              <Link to={`/app/surveys/${survey.id}`} className="action-button" title="View Survey">
+                                <MdVisibility size={18} />
+                              </Link>
+                              <Link to={`/app/surveys/${survey.id}/edit`} className="action-button" title="Edit Survey">
+                                <MdEdit size={18} />
+                              </Link>
+                              <button className="action-button" title="More Options">
+                                <MdMoreVert size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                  <div className="pagination-container">
+                    <div className="pagination-info">
+                      Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} surveys
+                    </div>
+                    <div className="pagination-controls">
+                      <button 
+                        className="pagination-button"
+                        disabled={pagination.page === 1}
+                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                      >
+                        <MdChevronLeft size={18} />
+                        Previous
+                      </button>
+                      <button 
+                        className="pagination-button"
+                        disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                      >
+                        Next
+                        <MdChevronRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </Col>
@@ -604,6 +624,8 @@ const Dashboard = ({ darkMode, limit = 5 }) => {
           </div>
         </Col>
       </Row>
+        </>
+      )}
     </Container>
   )
 }

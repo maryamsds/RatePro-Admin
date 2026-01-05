@@ -1589,22 +1589,23 @@ const SurveyBuilder = () => {
   const fetchContacts = async (page = 1, search = '') => {
     try {
       setLoadingContacts(true);
-
       const { data } = await axiosInstance.get('/contacts', {
         params: { page, limit: contactLimit, search }
       });
+      console.log('API Response:', data);
+      // Backend returns { success, data: { contacts, total, page, limit, totalPages } }
+      const contactsData = data?.data?.contacts || data?.contacts || [];
+      const totalCount = data?.data?.total ?? data?.total ?? 0;
 
-      setContacts(Array.isArray(data?.contacts) ? data.contacts : []);
-      setContactTotal(Number(data?.total || 0));
+      setContacts(Array.isArray(contactsData) ? contactsData : []);
+      setContactTotal(Number(totalCount));
       setContactPage(page);
-
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {
       setLoadingContacts(false);
     }
   };
-
   const normalizeCategories = (responseData = {}) => {
     if (responseData.success && Array.isArray(responseData.segments)) {
       return responseData.segments;
@@ -2415,6 +2416,7 @@ const SurveyBuilder = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowCustomContactModal(true);
+                          fetchContacts(1, '');
                         }}
                       >
                         <MdEdit className="me-1" />

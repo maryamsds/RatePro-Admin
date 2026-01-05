@@ -501,14 +501,27 @@ const Sidebar = ({
         "survey:detail:view",
       ],
       submenuItems: [
-        { path: "/app/surveys", name: "All Surveys", icon: <MdViewList />, roles: ["companyAdmin", "admin"], permissions: ["survey:read"] },
-        { path: "/app/surveys/create", name: "Create Survey", icon: <MdAddCircleOutline />, roles: ["companyAdmin"], permissions: ["survey:create"] },
-        { path: "/app/surveys/templates", name: "Survey Templates", icon: <MdDescription />, roles: ["admin", "companyAdmin"], permissions: ["survey:templates"] },
-        // { path: "/app/surveys/scheduling", name: "Survey Scheduling", icon: <MdSchedule />, roles: ["companyAdmin"], permissions: ["survey:schedule"] },
-        // { path: "/app/surveys/responses/", name: "Survey Responses", icon: <MdQuestionAnswer />, roles: ["companyAdmin"], permissions: ["survey:responses:view"] },
-        // { path: "/app/surveys/analytics/:id", name: "Survey Analytics", icon: <MdAnalytics />, roles: ["companyAdmin"], permissions: ["survey:analytics:view"] },
-        // { path: "/app/surveys/:id/customize", name: "Customization", icon: <MdOutlineSettingsApplications />, roles: ["companyAdmin"], permissions: ["survey:customize"] },
-        // { path: "/app/surveys/:id/share", name: "Survey Sharing", icon: <MdShare />, roles: ["companyAdmin"], permissions: ["survey:share"] },
+        { 
+          path: "/app/surveys", 
+          name: "All Surveys", 
+          icon: <MdViewList />, 
+          roles: ["companyAdmin", "admin"], 
+          permissions: ["survey:read"] 
+        },
+        { 
+          path: "/app/surveys/create", 
+          name: "Create Survey", 
+          icon: <MdAddCircleOutline />, 
+          roles: ["companyAdmin"], 
+          permissions: ["survey:create"] 
+        },
+        { 
+          path: "/app/templates", 
+          name: "Survey Templates", 
+          icon: <MdDescription />, 
+          roles: ["admin", "companyAdmin"], 
+          permissions: ["survey:templates"] 
+        },
         {
           path: "/app/surveys/settings",
           name: "Survey Settings",
@@ -516,7 +529,6 @@ const Sidebar = ({
           roles: ["companyAdmin"],
           permissions: ["survey:settings:update"],
         },
-        // { path: "/app/surveys/detail", name: "Survey Detail", icon: <MdVisibility />, roles: ["companyAdmin"], permissions: ["survey:detail:view"] },
       ],
     },
     {
@@ -552,7 +564,7 @@ const Sidebar = ({
           ],
         },
         {
-          path: "/app/users/form",
+          path: "/app/users/create",
           name: "Create User",
           icon: <MdPersonAdd />,
           roles: ["companyAdmin", "admin"],
@@ -560,9 +572,25 @@ const Sidebar = ({
         },
       ],
     },
-    { path: "/app/access", name: "Access Management", icon: <MdSecurity />, roles: ["companyAdmin"], },
-    { path: "/app/roles", name: "Role Management", icon: <MdGroup />, roles: ["companyAdmin"], permissions: ["role:create", "role:read", "role:update", "role:delete"], },
-    { path: "/app/actions", name: "Action Management", icon: <MdTask />, roles: ["companyAdmin", "admin"], },
+    { 
+      path: "/app/access", 
+      name: "Access Management", 
+      icon: <MdSecurity />, 
+      roles: ["companyAdmin"], 
+    },
+    { 
+      path: "/app/roles", 
+      name: "Role Management", 
+      icon: <MdManageAccounts />, 
+      roles: ["companyAdmin"], 
+      permissions: ["role:create", "role:read", "role:update", "role:delete"], 
+    },
+    { 
+      path: "/app/actions", 
+      name: "Action Management", 
+      icon: <MdTask />, 
+      roles: ["companyAdmin", "admin"], 
+    },
     {
       name: "Analytics & Reports",
       icon: <MdInsertChart />,
@@ -623,34 +651,6 @@ const Sidebar = ({
       ],
     },
     {
-      name: "Incentives Management",
-      icon: <MdMonetizationOn />,
-      submenu: true,
-      isOpen: incentivesSubmenuOpen,
-      toggle: () => toggleSubmenu("incentives"),
-      roles: ["companyAdmin"],
-      permissions: [
-        "incentives:create",
-        "incentives:read",
-        "incentives:update",
-        "incentives:delete",
-      ],
-      submenuItems: [
-        {
-          path: "/app/incentives/incentives-management",
-          name: "Incentives Management",
-          icon: <MdMonetizationOn />,
-          roles: ["companyAdmin"],
-        },
-        {
-          path: "/app/incentives/reward-system",
-          name: "Reward System",
-          icon: <MdOutlineCardGiftcard/>,
-          roles: ["companyAdmin"],
-        },
-      ],
-    },
-    {
       name: "Communication",
       icon: <MdMessage />,
       submenu: true,
@@ -705,7 +705,7 @@ const Sidebar = ({
           roles: ["companyAdmin", "admin"],
         },
         {
-          path: "/app/audiences/contact-management",
+          path: "/app/audiences/contacts",
           name: "Contact Management",
           icon: <MdContacts />,
           roles: ["companyAdmin", "admin"],
@@ -721,13 +721,13 @@ const Sidebar = ({
       toggle: () => toggleSubmenu("subscription"),
       submenuItems: [
         { 
-          path: "/app/subscription/manage-plans", 
+          path: "/app/subscription/plans", 
           name: "Manage Plans",
           icon: <MdCreditCard />, 
           roles: ["admin"]
         },
         { 
-          path: "/app/subscription/my-subscription", 
+          path: "/app/subscription/my-plan", 
           name: "My Subscription",
           icon: <MdReceipt />, 
           roles: ["companyAdmin"]
@@ -736,7 +736,7 @@ const Sidebar = ({
     },
     {
       name: "Content Management",
-      icon: <MdSettings />,
+      icon: <MdOutlineDashboardCustomize />,
       submenu: true,
       isOpen: contentmanagement,
       roles: ["admin"],
@@ -749,9 +749,9 @@ const Sidebar = ({
       ],
       submenuItems: [
         {
-          path: "/app/features",
+          path: "/app/content/features",
           name: "Features",
-          icon: <MdSettings />,
+          icon: <MdCode />,
           roles: ["admin"],
         },
         {
@@ -769,13 +769,12 @@ const Sidebar = ({
         {
           path: "/app/content/widgets",
           name: "Widgets",
-          icon: <MdMailOutline />,
+          icon: <MdCampaign />,
           roles: ["admin"],
         },
       ],
     },
     {
-      // path: "/app/support",
       name: "Support Tickets",
       icon: <MdSupport />,
       toggle: () => toggleSubmenu("support"),
@@ -823,30 +822,36 @@ const Sidebar = ({
           roles: ["admin"],
         },
         {
-          path: "/app/settings/notification-settings",
+          path: "/app/settings/notifications",
           name: "Notification Settings",
           icon: <MdNotifications />,
           roles: ["admin"],
         },
         {
-          path: "/app/settings/smtp-config",
+          path: "/app/settings/smtp",
           name: "SMTP Configuration",
           icon: <MdEmail />,
           roles: ["admin"],
         },
         {
-          path: "/app/settings/custom-thank-you",
+          path: "/app/settings/thank-you",
           name: "Thank You Page",
           icon: <MdThumbUp />,
-          roles: ["admin"],
+          roles: ["admin", "companyAdmin"],
         },
         {
-          path: "/app/settings/theme-settings",
+          path: "/app/settings/theme",
           name: "Theme Settings",
           icon: <MdColorLens />,
           roles: ["admin", "companyAdmin", "member"],
         },
       ],
+    },
+    {
+      path: "/app/profile",
+      name: "Profile",
+      icon: <MdPersonOutline />,
+      roles: ["admin", "companyAdmin", "member"],
     },
   ];
 
