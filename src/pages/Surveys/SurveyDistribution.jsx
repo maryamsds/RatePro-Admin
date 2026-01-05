@@ -34,7 +34,6 @@ const SurveyDistribution = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
-  console.log('Survey ID:', id);
   // State Management
   const [survey, setSurvey] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +42,7 @@ const SurveyDistribution = () => {
   const [showSMSModal, setShowSMSModal] = useState(false);
   // const [showEmbedModal, setShowEmbedModal] = useState(false); // TODO: Implement embed modal
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+
 
   const [qrSettings, setQrSettings] = useState({
     size: 256,
@@ -138,17 +138,18 @@ const SurveyDistribution = () => {
     const fetchSurvey = async () => {
       try {
         setLoading(true);
-        const survey = await axiosInstance.get(`/surveys/${id}`);
-        console.log('Fetched Survey Data:', survey.data);
+        const response = await axiosInstance.get(`/surveys/${id}`);
+        console.log('Fetched Survey Data:', response.data);
+        const surveyData = response.data.survey; // Access the nested survey object
         setSurvey({
-          id: survey.data._id,
-          title: survey.data.title,
-          description: survey.data.description,
-          url: `https://rate-pro-public.vercel.app/survey/${survey.data._id}`,
-          // shortUrl: `https://ratepro.me/s/${survey.data._id}`,
-          isActive: survey.data.isActive,
-          responseCount: survey.data.responseCount,
-          distributionStats: survey.data.distributionStats
+          id: surveyData._id,
+          title: surveyData.title,
+          description: surveyData.description,
+          url: `https://rate-pro-public.vercel.app/survey/${surveyData._id}`,
+          // shortUrl: `https://ratepro.me/s/${surveyData._id}`,
+          isActive: surveyData.isActive,
+          responseCount: surveyData.responseCount,
+          distributionStats: surveyData.distributionStats
         });
       } catch (error) {
         console.error('Error fetching survey:', error);
