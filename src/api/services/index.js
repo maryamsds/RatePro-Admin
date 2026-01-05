@@ -9,7 +9,25 @@ export * from "./surveyService";
 
 // Analytics Service
 export { default as analyticsService } from "./analyticsService";
-export * from "./analyticsService";
+export {
+  getSurveyAnalytics,
+  getTenantAnalytics,
+  getTrendsAnalytics,
+  getAlerts,
+  getSurveySentiment,
+  getSentimentHeatmap,
+  getSurveySummary,
+  getTenantSummary,
+  getQuickSummary,
+  getAllTrends,
+  getSatisfactionTrend,
+  getEngagementTrend,
+  getSurveyResponses,
+  getFlaggedResponses,
+  exportResponsesCSV,
+  exportAnalyticsPDF,
+  downloadFile,
+} from "./analyticsService";
 
 // Dashboard Service
 export { default as dashboardService } from "./dashboardService";

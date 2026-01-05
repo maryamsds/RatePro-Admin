@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { Container, Row, Col, Card, Form, Button, Table, Badge, Spinner } from "react-bootstrap"
 import { MdAnalytics, MdRefresh, MdSentimentSatisfied, MdSentimentDissatisfied, MdTrendingUp } from "react-icons/md"
 import axiosInstance from "../../api/axiosInstance"
+import { getSurveySentiment, getSurveySummary } from "../../api/services/analyticsService"
 
 const FeedbackAnalysis = () => {
   const [loading, setLoading] = useState(false)
@@ -19,9 +20,9 @@ const FeedbackAnalysis = () => {
 
   const fetchSurveys = async () => {
     try {
-      const response = await axiosInstance.get('/api/surveys')
+      const response = await axiosInstance.get('/surveys')
       if (response.data.success) {
-        setSurveys(response.data.data || [])
+        setSurveys(response.data.data || response.data.surveys || [])
       }
     } catch (error) {
       console.error('Error fetching surveys:', error)
@@ -33,14 +34,23 @@ const FeedbackAnalysis = () => {
     
     try {
       setLoading(true)
-      const response = await axiosInstance.post('/api/feedback/analyze', {
-        surveyId: selectedSurvey,
-        timeRange
-      })
       
-      if (response.data.success) {
-        setAnalysis(response.data.data)
-      }
+      // Use new analytics APIs
+      const [sentimentData, summaryData] = await Promise.all([
+        getSurveySentiment(selectedSurvey, { range: timeRange }),
+        getSurveySummary(selectedSurvey, { range: timeRange })
+      ])
+      
+      // Combine sentiment and summary data for analysis view
+      setAnalysis({
+        sentiment: sentimentData,
+        summary: summaryData,
+        topComplaints: summaryData.insights?.topComplaints || [],
+        topPraises: summaryData.insights?.topPraises || [],
+        urgentIssues: summaryData.insights?.urgentIssues || [],
+        keywords: sentimentData.topKeywords || [],
+        themes: sentimentData.topThemes || []
+      })
     } catch (error) {
       console.error('Error analyzing feedback:', error)
     } finally {
@@ -53,7 +63,7 @@ const FeedbackAnalysis = () => {
     
     try {
       setLoading(true)
-      const response = await axiosInstance.post('/api/feedback/actions/generate', {
+      const response = await axiosInstance.post('/actions/generate', {
         surveyId: selectedSurvey,
         analysis: analysis
       })

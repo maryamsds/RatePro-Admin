@@ -25,7 +25,13 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
-import axiosInstance from '../../api/axiosInstance';
+import {
+  getTenantSummary,
+  getQuickSummary,
+  getAllTrends,
+  getAlerts,
+  getFlaggedResponses
+} from '../../api/services/analyticsService';
 
 
 // Register Chart.js components
@@ -66,25 +72,68 @@ const AnalyticsDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch multiple analytics endpoints
-      const [executiveRes, operationalRes, trendsRes, alertsRes] = await Promise.allSettled([
-        axiosInstance.get(`/analytics/executive?range=${dateRange}`),
-        axiosInstance.get(`/analytics/operational?range=${dateRange}`),
-        axiosInstance.get(`/analytics/trends?range=${dateRange}`),
-        axiosInstance.get(`/analytics/alerts`)
+      // Fetch multiple analytics endpoints using new API services
+      const [tenantSummaryRes, quickSummaryRes, trendsRes, alertsRes, flaggedRes] = await Promise.allSettled([
+        getTenantSummary({ range: dateRange }),
+        getQuickSummary(),
+        getAllTrends({ range: dateRange }),
+        getAlerts(),
+        getFlaggedResponses({ range: dateRange, limit: 10 })
       ]);
 
       // Process results with fallbacks for missing endpoints
-      const executiveData = executiveRes.status === 'fulfilled' ? executiveRes.value.data : getMockExecutiveData();
-      const operationalData = operationalRes.status === 'fulfilled' ? operationalRes.value.data : getMockOperationalData();
-      const trendsData = trendsRes.status === 'fulfilled' ? trendsRes.value.data : getMockTrendsData();
-      const alertsData = alertsRes.status === 'fulfilled' ? alertsRes.value.data : getMockAlertsData();
+      const tenantData = tenantSummaryRes.status === 'fulfilled' ? tenantSummaryRes.value : getMockExecutiveData();
+      const quickData = quickSummaryRes.status === 'fulfilled' ? quickSummaryRes.value : {};
+      const trendsData = trendsRes.status === 'fulfilled' ? trendsRes.value : getMockTrendsData();
+      const alertsData = alertsRes.status === 'fulfilled' ? alertsRes.value : getMockAlertsData().alerts;
+      const flaggedData = flaggedRes.status === 'fulfilled' ? flaggedRes.value : { responses: [] };
+
+      // Build executive data from tenant summary
+      const executiveData = {
+        customerSatisfactionIndex: {
+          overall: tenantData.overallSatisfaction || 0,
+          trend: tenantData.trends?.satisfactionOverTime?.slice(-1)?.[0]?.change || 0,
+          locations: [],
+          services: []
+        },
+        npsScore: {
+          current: tenantData.overallNPS || 0,
+          trend: 0,
+          promoters: 0,
+          detractors: 0,
+          passives: 0
+        },
+        responseRate: {
+          current: quickData.completionRateToday || 0,
+          trend: quickData.responsesChange || 0,
+          total: tenantData.totalResponses || 0,
+          completed: 0
+        },
+        ...tenantData
+      };
+
+      // Build operational data
+      const operationalData = {
+        alerts: {
+          critical: alertsData.filter(a => a.type === 'critical').length,
+          warning: alertsData.filter(a => a.type === 'warning').length,
+          info: alertsData.filter(a => a.type === 'info').length
+        },
+        slaMetrics: {
+          averageResponseTime: 'N/A',
+          onTimeResolution: 0,
+          overdueActions: tenantData.actions?.overdue || 0
+        },
+        topComplaints: flaggedData.summary?.byReason || [],
+        topPraises: [],
+        quickStats: quickData
+      };
 
       setDashboardData({
         executive: executiveData,
         operational: operationalData,
         trends: trendsData,
-        alerts: alertsData.alerts || [],
+        alerts: alertsData || [],
         aiInsights: await generateAIInsights(executiveData, operationalData)
       });
 

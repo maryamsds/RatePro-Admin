@@ -3,6 +3,7 @@
 // 📊 Dashboard Service - API calls with response transformation
 // ============================================================================
 import axiosInstance from "../axiosInstance";
+import { getQuickSummary, getTenantSummary, getAlerts } from "./analyticsService";
 
 /**
  * Get executive dashboard data
@@ -39,6 +40,53 @@ export const getDashboardStats = async () => {
   return {
     ...executive,
     ...operational,
+  };
+};
+
+/**
+ * Get real-time dashboard widget data
+ * Uses the new quick summary endpoint
+ * @returns {Promise<Object>}
+ */
+export const getRealTimeStats = async () => {
+  try {
+    const quickData = await getQuickSummary();
+    return {
+      todayResponses: quickData.todayResponses || 0,
+      activeRespondents: quickData.activeRespondents || 0,
+      avgRatingToday: quickData.avgRatingToday || 0,
+      responsesChange: quickData.responsesChange || 0,
+      ratingChange: quickData.ratingChange || 0,
+      criticalAlerts: quickData.criticalAlerts || 0,
+      pendingActions: quickData.pendingActions || 0,
+      completionRateToday: quickData.completionRateToday || 0,
+      npsToday: quickData.npsToday || 0,
+      lastUpdated: quickData.lastUpdated || new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('Error fetching real-time stats:', error);
+    return null;
+  }
+};
+
+/**
+ * Get comprehensive dashboard data with new analytics
+ * @param {Object} params - { range }
+ * @returns {Promise<Object>}
+ */
+export const getComprehensiveDashboard = async (params = {}) => {
+  const { range = "30d" } = params;
+  
+  const [tenantSummary, quickStats, alerts] = await Promise.allSettled([
+    getTenantSummary({ range }),
+    getQuickSummary(),
+    getAlerts(),
+  ]);
+  
+  return {
+    summary: tenantSummary.status === 'fulfilled' ? tenantSummary.value : null,
+    realTime: quickStats.status === 'fulfilled' ? quickStats.value : null,
+    alerts: alerts.status === 'fulfilled' ? alerts.value : [],
   };
 };
 
@@ -198,4 +246,6 @@ export default {
   getExecutiveDashboard,
   getOperationalDashboard,
   getDashboardStats,
+  getRealTimeStats,
+  getComprehensiveDashboard,
 };

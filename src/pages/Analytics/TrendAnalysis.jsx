@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Line, Bar } from "react-chartjs-2"
 import { 
   MdTrendingUp, 
@@ -13,24 +13,48 @@ import {
   MdRefresh,
   MdDownload
 } from "react-icons/md"
+import { 
+  getAllTrends, 
+  getSatisfactionTrend, 
+  getEngagementTrend 
+} from "../../api/services/analyticsService"
 
 const TrendAnalysis = () => {
   const [timeRange, setTimeRange] = useState("30d")
   const [selectedMetric, setSelectedMetric] = useState("responses")
+  const [loading, setLoading] = useState(true)
+  const [trendsData, setTrendsData] = useState(null)
 
+  const fetchTrends = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await getAllTrends({ range: timeRange })
+      setTrendsData(data)
+    } catch (error) {
+      console.error('Error fetching trends:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [timeRange])
+
+  useEffect(() => {
+    fetchTrends()
+  }, [fetchTrends])
+
+  // Build chart data from API response or use fallback
   const trendData = {
-    labels: ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"],
+    labels: trendsData?.satisfaction?.labels || ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"],
     datasets: [
       {
         label: "Survey Responses",
-        data: [120, 150, 180, 165, 200, 190],
+        data: trendsData?.volume?.responses || [120, 150, 180, 165, 200, 190],
         borderColor: "rgb(75, 192, 192)",
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         tension: 0.1,
       },
       {
-        label: "Completion Rate",
-        data: [75, 82, 78, 85, 88, 83],
+        label: "Satisfaction Score",
+        data: trendsData?.satisfaction?.values || [75, 82, 78, 85, 88, 83],
         borderColor: "rgb(255, 99, 132)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
         tension: 0.1,
@@ -39,17 +63,17 @@ const TrendAnalysis = () => {
   }
 
   const comparisonData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: trendsData?.nps?.labels || ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
       {
-        label: "2024",
-        data: [65, 78, 90, 81, 96, 105],
+        label: "NPS Score",
+        data: trendsData?.nps?.scores || [65, 78, 90, 81, 96, 105],
         backgroundColor: "rgba(54, 162, 235, 0.5)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
       },
       {
-        label: "2023",
+        label: "Previous Period",
         data: [45, 58, 70, 61, 76, 85],
         backgroundColor: "rgba(255, 206, 86, 0.5)",
         borderColor: "rgba(255, 206, 86, 1)",

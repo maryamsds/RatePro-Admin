@@ -46,7 +46,16 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 // API Services
 import { getSurveyById, exportSurveyReport } from '../../api/services/surveyService';
-import { getSurveyAnalytics } from '../../api/services/analyticsService';
+import { 
+  getSurveyAnalytics,
+  getSurveySentiment,
+  getSentimentHeatmap,
+  getSurveySummary,
+  getSurveyResponses,
+  exportResponsesCSV,
+  exportAnalyticsPDF,
+  downloadFile
+} from '../../api/services/analyticsService';
 
 
 // Register Chart.js components
@@ -276,14 +285,18 @@ const SurveyAnalytics = () => {
   // Export Functions
   const handleExportPDF = async () => {
     try {
-      const blob = await exportSurveyReport(id, 'pdf');
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${survey?.title || 'survey'}_analytics.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      const rangeMap = {
+        last7days: '7d',
+        last30days: '30d',
+        last90days: '90d',
+        custom: 'custom'
+      };
+      
+      const blob = await exportAnalyticsPDF(id, { 
+        range: rangeMap[dateRange] || '30d' 
+      });
+      
+      downloadFile(blob, `${survey?.title || 'survey'}_analytics.pdf`);
 
       showSuccessToast('Analytics report downloaded successfully!');
       setShowExportModal(false);
@@ -295,20 +308,18 @@ const SurveyAnalytics = () => {
 
   const handleExportExcel = async () => {
     try {
-      const blob = await exportSurveyReport(id, 'csv');
+      const blob = await exportResponsesCSV(id, {
+        startDate: dateRange === 'custom' ? startDate?.toISOString() : undefined,
+        endDate: dateRange === 'custom' ? endDate?.toISOString() : undefined,
+      });
+      
+      downloadFile(blob, `${survey?.title || 'survey'}_responses.csv`);
 
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${survey?.title || 'survey'}_analytics.csv`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-
-      showSuccessToast('Analytics data exported successfully!');
+      showSuccessToast('Responses exported successfully!');
       setShowExportModal(false);
     } catch (err) {
-      console.error('Export Excel error:', err);
-      showErrorToast('Failed to export to Excel');
+      console.error('Export CSV error:', err);
+      showErrorToast('Failed to export responses');
     }
   };
 

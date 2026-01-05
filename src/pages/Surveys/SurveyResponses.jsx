@@ -141,6 +141,8 @@ const SurveyResponses = () => {
         search: searchTerm || undefined
       });
 
+      console.log('Responses Data:', responsesData);
+
       setResponses(responsesData.responses || []);
       setTotalResponses(responsesData.total || 0);
       setTotalPages(responsesData.totalPages || 1);
