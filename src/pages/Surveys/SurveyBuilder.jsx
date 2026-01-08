@@ -140,7 +140,7 @@ const SurveyBuilder = () => {
     surveyGoal: "",
     questionCount: 8,
     includeNPS: true,
-    languages: ['English'],
+    language: 'en',
     tone: 'friendly-professional',
     additionalInstructions: ''
   });
@@ -428,85 +428,85 @@ const SurveyBuilder = () => {
   };
 
   // ✅ FIXED: Debug useEffect with correct dependencies
-  useEffect(() => {
-  }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
+  // useEffect(() => {
+  // }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
 
 
-  useEffect(() => {
-    const initializeSurveyBuilder = async () => {
-      setGlobalLoading(true);
-      setLoading(true);
+  // useEffect(() => {
+  //   const initializeSurveyBuilder = async () => {
+  //     setGlobalLoading(true);
+  //     setLoading(true);
 
-      try {
-        // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
-        if (isTemplateBasedSurvey && user?.role === 'admin') {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Access Restricted',
-            text: 'Admins cannot use templates. Please create surveys directly.',
-            confirmButtonColor: '#007bff',
-          }).then(() => {
-            navigate('/app/surveys');
-          });
-          return;
-        }
+  //     try {
+  //       // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
+  //       if (isTemplateBasedSurvey && user?.role === 'admin') {
+  //         Swal.fire({
+  //           icon: 'warning',
+  //           title: 'Access Restricted',
+  //           text: 'Admins cannot use templates. Please create surveys directly.',
+  //           confirmButtonColor: '#007bff',
+  //         }).then(() => {
+  //           navigate('/app/surveys');
+  //         });
+  //         return;
+  //       }
 
-        // CASE 1: Editing existing survey
-        if (isEditing && surveyId && !isTemplateMode) {
-          await fetchExistingSurvey(surveyId);
-          setShowModeSelector(false);
-          setSurveyMode('user-defined');
-        }
-        // CASE 2: Creating from template
-        else if (templateData && !isTemplateMode) {
-          initializeFromTemplate(templateData);
-          setShowModeSelector(false);
-          setSurveyMode('user-defined');
-        }
-        // CASE 3: Admin editing template
-        else if (isTemplateMode && surveyId) {
+  //       // CASE 1: Editing existing survey
+  //       if (isEditing && surveyId && !isTemplateMode) {
+  //         await fetchExistingSurvey(surveyId);
+  //         setShowModeSelector(false);
+  //         setSurveyMode('user-defined');
+  //       }
+  //       // CASE 2: Creating from template
+  //       else if (templateData && !isTemplateMode) {
+  //         initializeFromTemplate(templateData);
+  //         setShowModeSelector(false);
+  //         setSurveyMode('user-defined');
+  //       }
+  //       // CASE 3: Admin editing template
+  //       else if (isTemplateMode && surveyId) {
 
-          // Agar state mein templateData hai → usko use karo
-          if (templateData) {
-            initializeFromTemplate(templateData); // Reuse existing function
-          } else {
-            // Warna backend se fetch karo
-            await fetchTemplateData(surveyId);
-          }
+  //         // Agar state mein templateData hai → usko use karo
+  //         if (templateData) {
+  //           initializeFromTemplate(templateData); // Reuse existing function
+  //         } else {
+  //           // Warna backend se fetch karo
+  //           await fetchTemplateData(surveyId);
+  //         }
 
-          setShowModeSelector(false);
-          setSurveyMode('user-defined');
-        }
-        // CASE 4: Admin creating new template
-        else if (isTemplateMode && !surveyId) {
-          setShowModeSelector(false);
-          setSurveyMode('ai-assisted');
-          setShowAIModal(true);
-        }
-        // CASE 5: Creating new survey (manual/AI)
-        else {
-          setShowModeSelector(true);
-          setSurveyMode('user-defined');
-        }
+  //         setShowModeSelector(false);
+  //         setSurveyMode('user-defined');
+  //       }
+  //       // CASE 4: Admin creating new template
+  //       else if (isTemplateMode && !surveyId) {
+  //         setShowModeSelector(false);
+  //         setSurveyMode('ai-assisted');
+  //         setShowAIModal(true);
+  //       }
+  //       // CASE 5: Creating new survey (manual/AI)
+  //       else {
+  //         setShowModeSelector(true);
+  //         setSurveyMode('user-defined');
+  //       }
 
-      } catch (error) {
-        console.error('Error initializing survey builder:', error);
-        setError(error.message);
+  //     } catch (error) {
+  //       console.error('Error initializing survey builder:', error);
+  //       setError(error.message);
 
-        Swal.fire({
-          icon: 'error',
-          title: 'Initialization Failed',
-          text: error.message || 'Failed to load survey data. Please try again.',
-          confirmButtonColor: '#dc3545',
-        });
-      } finally {
-        setLoading(false);
-        setGlobalLoading(false);
-      }
-    };
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Initialization Failed',
+  //         text: error.message || 'Failed to load survey data. Please try again.',
+  //         confirmButtonColor: '#dc3545',
+  //       });
+  //     } finally {
+  //       setLoading(false);
+  //       setGlobalLoading(false);
+  //     }
+  //   };
 
-    initializeSurveyBuilder();
-  }, [surveyId, isTemplateMode, templateData, isEditing, user, navigate]);
+  //   initializeSurveyBuilder();
+  // }, [surveyId, isTemplateMode, templateData, isEditing, user, navigate]);
 
   // ✅ FIXED: Fetch template data for admin editing
   const fetchTemplateData = async (templateId) => {
@@ -520,7 +520,7 @@ const SurveyBuilder = () => {
           title: template.name || '',
           description: template.description || '',
           category: template.category || '',
-          language: template.language || ['English'],
+          language: template.language || 'en',
           isPublic: true,
           allowAnonymous: true,
           collectEmail: false,
@@ -572,7 +572,7 @@ const SurveyBuilder = () => {
           title: surveyData.title || '',
           description: surveyData.description || '',
           category: surveyData.category || '',
-          language: Array.isArray(surveyData.language) ? surveyData.language : ['English'],
+          language: surveyData.language || 'en',
           isPublic: surveyData.settings?.isPublic !== false,
           allowAnonymous: surveyData.settings?.isAnonymous !== false,
           collectEmail: surveyData.settings?.collectEmail || false,
@@ -664,7 +664,7 @@ const SurveyBuilder = () => {
       title: template.name || '',
       description: template.description || '',
       category: template.category || '',
-      language: template.language || ['English'],
+      language: template.language || 'en',
       isPublic: true,
       allowAnonymous: true,
       collectEmail: false,
@@ -747,6 +747,16 @@ const SurveyBuilder = () => {
     return typeMapping[aiType] || 'text_short';
   };
 
+  // ✅ ADD: Sync companyProfile language with survey language when survey changes
+  useEffect(() => {
+    if (survey.language && survey.language !== companyProfile.language) {
+      setCompanyProfile(prev => ({
+        ...prev,
+        language: survey.language
+      }));
+    }
+  }, [survey.language]);
+
   // AI Survey Generation
   const generateAISurvey = async () => {
     if (!aiPrompt.trim() && !companyProfile.industry) {
@@ -761,6 +771,9 @@ const SurveyBuilder = () => {
     setAILoadingStates(prev => ({ ...prev, generating: true }));
     setGlobalLoading(true);
     try {
+      // ✅ FIX: Use companyProfile.language (canonical 'en'/'ar') instead of languages array
+      const selectedLanguage = companyProfile.language || survey.language || 'en';
+
       const requestPayload = {
         industry: companyProfile.industry || 'general',
         products: companyProfile.products
@@ -770,10 +783,12 @@ const SurveyBuilder = () => {
         goal: companyProfile.surveyGoal || aiPrompt || 'customer feedback',
         questionCount: companyProfile.questionCount || 8,
         includeNPS: companyProfile.includeNPS || true,
-        languages: companyProfile.languages || ['English'],
+        language: selectedLanguage, // ✅ Send canonical value 'en' or 'ar'
         tone: companyProfile.tone || 'friendly-professional',
         additionalInstructions: companyProfile.additionalInstructions || aiPrompt.trim() || ''
       };
+
+      console.log('🤖 AI Survey Generation Request:', requestPayload);
 
       const response = await axiosInstance.post('/ai/generate-from-profile', requestPayload);
 
@@ -993,7 +1008,7 @@ const SurveyBuilder = () => {
           })),
           themeColor: survey.branding?.primaryColor || '#007bff',
           status: finalStatus, // ✅ Use the properly determined status
-          language: survey.language || ['English'],
+          language: normalizeLanguage(survey.language) || 'en',
           tags: [],
           isPremium: false
         };
@@ -1180,7 +1195,7 @@ const SurveyBuilder = () => {
         let response;
         if (isEditMode && surveyId) {
           // Updating existing draft
-          response = await axiosInstance.put(`/surveys/${surveyId}`, surveyData);
+          response = await axiosInstance.post(`/surveys/${surveyId}/publish`, surveyData);
         } else {
           // Creating new draft
           response = await axiosInstance.post('/surveys/save-draft', surveyData);
@@ -1504,8 +1519,8 @@ const SurveyBuilder = () => {
   }, [user, isTemplateMode]);
 
   // ✅ FIXED: Debug useEffect with correct dependencies
-  useEffect(() => {
-  }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
+  // useEffect(() => {
+  // }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
 
 
   useEffect(() => {
@@ -1625,6 +1640,17 @@ const SurveyBuilder = () => {
     return [];
   };
 
+  const normalizeLanguage = (lang) => {
+    if (Array.isArray(lang)) {
+      const first = lang[0];
+      if (first === 'Arabic' || first === 'ar') return 'ar';
+      return 'en';
+    }
+    if (lang === 'Arabic' || lang === 'ar') return 'ar';
+    if (lang === 'English' || lang === 'en') return 'en';
+    return 'en'; // default
+  };
+
   const toggleAudience = (audienceId) => {
     // Handle "custom" selection differently
     if (audienceId === 'custom') {
@@ -1727,7 +1753,7 @@ const SurveyBuilder = () => {
         title: survey.title,
         description: survey.description,
         category: survey.category,
-        language: survey.language,
+        language: normalizeLanguage(survey.language),
         themeColor: survey.branding?.primaryColor?.startsWith('#')
           ? survey.branding.primaryColor
           : getComputedStyle(document.documentElement)
@@ -2674,7 +2700,9 @@ const SurveyBuilder = () => {
 
               <div className="mb-3">
                 <strong>Languages:</strong>
-                <p className="text-muted mb-2">{survey.language.join(', ')}</p>
+                <p className="text-muted mb-2">
+                  {survey.language === 'en' ? 'English' : survey.language === 'ar' ? 'Arabic' : survey.language || 'Not specified'}
+                </p>
               </div>
 
               <div className="mb-3">
@@ -3016,26 +3044,35 @@ const SurveyBuilder = () => {
                           </Form.Group>
 
                           <Form.Group className="mb-3">
-                            <Form.Label className="fw-semibold">Languages</Form.Label>
-                            <div className="d-flex gap-2 flex-wrap">
-                              {['English', 'Arabic'].map(lang => (
-                                <Form.Check
-                                  key={lang}
-                                  type="checkbox"
-                                  id={`lang-${lang}`}
-                                  label={lang}
-                                  checked={survey.language.includes(lang)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSurvey({ ...survey, language: [...survey.language, lang] });
-                                    } else {
-                                      setSurvey({ ...survey, language: survey.language.filter(l => l !== lang) });
-                                    }
-                                  }}
-                                />
-                              ))}
+                            <Form.Label className="fw-semibold">Language</Form.Label>
+
+                            <div className="d-flex gap-3">
+                              <Form.Check
+                                type="radio"
+                                name="survey-language"
+                                id="lang-en"
+                                label="English"
+                                value="en"
+                                checked={survey.language === 'en'}
+                                onChange={(e) =>
+                                  setSurvey({ ...survey, language: e.target.value })
+                                }
+                              />
+
+                              <Form.Check
+                                type="radio"
+                                name="survey-language"
+                                id="lang-ar"
+                                label="Arabic"
+                                value="ar"
+                                checked={survey.language === 'ar'}
+                                onChange={(e) =>
+                                  setSurvey({ ...survey, language: e.target.value })
+                                }
+                              />
                             </div>
                           </Form.Group>
+
                         </Col>
                       </Row>
                     </Card.Body>
@@ -3514,31 +3551,28 @@ const SurveyBuilder = () => {
 
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Languages</Form.Label>
-                      <div>
-                        {['English', 'Arabic', 'Both'].map(lang => (
-                          <Form.Check
-                            key={lang}
-                            type="checkbox"
-                            id={`lang-${lang}`}
-                            label={lang}
-                            checked={companyProfile.languages.includes(lang)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setCompanyProfile({
-                                  ...companyProfile,
-                                  languages: [...companyProfile.languages, lang]
-                                });
-                              } else {
-                                setCompanyProfile({
-                                  ...companyProfile,
-                                  languages: companyProfile.languages.filter(l => l !== lang)
-                                });
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
+                      <Form.Label className="fw-semibold">Language *</Form.Label>
+
+                      {[
+                        { label: 'English', value: 'en' },
+                        { label: 'Arabic', value: 'ar' }
+                      ].map(lang => (
+                        <Form.Check
+                          key={lang.value}
+                          type="radio"
+                          name="survey-language"
+                          id={`lang-${lang.value}`}
+                          label={lang.label}
+                          value={lang.value}
+                          checked={companyProfile.language === lang.value}
+                          onChange={(e) =>
+                            setCompanyProfile({
+                              ...companyProfile,
+                              language: e.target.value
+                            })
+                          }
+                        />
+                      ))}
                     </Form.Group>
 
                     <Form.Group className="mb-3">

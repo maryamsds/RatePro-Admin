@@ -26,7 +26,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
-import logo from '../../../public/images/qr_logo.png';
+import logo from '../../images/qr_logo.png';
 import { Canvg } from "canvg";
 
 
