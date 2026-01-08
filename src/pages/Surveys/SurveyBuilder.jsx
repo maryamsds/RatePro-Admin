@@ -58,7 +58,7 @@ const SurveyBuilder = () => {
     title: '',
     description: '',
     category: '',
-    language: ['English'],
+    language: "en",
     isPublic: true,
     allowAnonymous: true,
     collectEmail: false,
@@ -1728,7 +1728,11 @@ const SurveyBuilder = () => {
         description: survey.description,
         category: survey.category,
         language: survey.language,
-        themeColor: survey.branding?.primaryColor || 'var(--bs-primary)',
+        themeColor: survey.branding?.primaryColor?.startsWith('#')
+          ? survey.branding.primaryColor
+          : getComputedStyle(document.documentElement)
+            .getPropertyValue('--bs-primary')
+            .trim(),
 
         // Questions array
         questions: questions.map((q, index) => ({
@@ -1970,20 +1974,20 @@ const SurveyBuilder = () => {
 
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-semibold">Languages</Form.Label>
-                    <div className="d-flex gap-2 flex-wrap">
-                      {['English', 'Arabic'].map(lang => (
+                    <div className="d-flex gap-3">
+                      {[
+                        { label: "English", value: "en" },
+                        { label: "Arabic", value: "ar" },
+                      ].map(lang => (
                         <Form.Check
-                          key={lang}
-                          type="checkbox"
-                          id={`lang-${lang}`}
-                          label={lang}
-                          checked={survey.language.includes(lang)}
-                          onChange={(e) => {
-                            const newLanguages = e.target.checked
-                              ? [...survey.language, lang]
-                              : survey.language.filter(l => l !== lang);
-                            setSurvey({ ...survey, language: newLanguages });
-                          }}
+                          key={lang.value}
+                          type="radio"
+                          name="language"
+                          label={lang.label}
+                          checked={survey.language === lang.value}
+                          onChange={() =>
+                            setSurvey({ ...survey, language: lang.value })
+                          }
                         />
                       ))}
                     </div>
