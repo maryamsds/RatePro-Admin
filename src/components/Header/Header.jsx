@@ -30,7 +30,7 @@ import {
 } from "react-icons/md";
 import LanguageSelector from "../LanguageSelector/LanguageSelector.jsx";
 import { capitalize } from "../../utilities/capitalize";
-import axiosInstance from "../../api/axiosInstance.js";
+import { notificationAPI } from "../../api/axiosInstance.js";
 
 const Header = ({
   isMobile,
@@ -74,51 +74,95 @@ const Header = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Add this function inside component
-  const fetchNotifications = async () => {
+  // Fetch notifications from backend
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoadingNotifications(true);
-      let response = null;
-      try {
-        response = await axiosInstance.get('/notifications');
-      } catch (reqErr) {
-        // Optional/soft-fail endpoint; fallback handled below
-        console.log('Notifications API unavailable (optional):', reqErr?.message);
-      }
-
+      // ✅ FIX: Don't pass status filter to get all notifications
+      const response = await notificationAPI.getMyNotifications({ 
+        limit: 10,
+        sort: '-createdAt'
+        // Remove status filter - we want all notifications
+      });
+      console.log('Notifications response:', response.data);
       if (response?.data?.success) {
         const notifs = response.data.data?.notifications || response.data.notifications || [];
         setNotifications(notifs);
-        setUnreadCount(notifs.filter(n => !n.read).length);
-      } else {
-        // Fallback to mock data when API missing or disabled
-        setNotifications([
-          { id: 1, title: "New Response", message: "You received a new survey response", time: "5 mins ago", read: false },
-          { id: 2, title: "Survey Completed", message: "Customer survey reached 100 responses", time: "1 hour ago", read: false },
-          { id: 3, title: "Low Response Rate", message: "Product feedback survey needs attention", time: "2 hours ago", read: true }
-        ]);
-        setUnreadCount(2);
       }
     } catch (err) {
-      console.log('Notifications fetch failed (optional)', err.message);
-      // Fallback to mock
-      setNotifications([
-        { id: 1, title: "New Response", message: "You received a new survey response", time: "5 mins ago", read: false },
-        // { id: 2, title: "Survey Completed", message: "Customer survey reached 100 responses", time: "1 hour ago", read: false },
-        // { id: 3, title: "Low Response Rate", message: "Product feedback survey needs attention", time: "2 hours ago", read: true }
-      ]);
-      setUnreadCount(2);
+      console.error('Failed to fetch notifications:', err?.message);
+      setNotifications([]);
     } finally {
       setLoadingNotifications(false);
     }
-  };
+  }, []);
+
+  // Fetch unread count separately for efficiency
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationAPI.getUnreadCount();
+      if (response?.data?.success) {
+        setUnreadCount(response.data.count || response.data.data?.count || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch unread count:', err?.message);
+      setUnreadCount(0);
+    }
+  }, []);
+
+  // Mark notification as read
+  const handleMarkAsRead = useCallback(async (notificationId) => {
+    try {
+      await notificationAPI.markAsRead(notificationId);
+      // Update local state
+      setNotifications(prev => 
+        prev.map(n => n._id === notificationId ? { ...n, status: 'read', read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err?.message);
+    }
+  }, []);
+
+  // Mark all notifications as read
+  const handleMarkAllAsRead = useCallback(async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, status: 'read', read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to mark all as read:', err?.message);
+    }
+  }, []);
+
+  // Format notification time
+  const formatNotificationTime = useCallback((dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
-    // Optional: Poll every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    fetchUnreadCount();
+    // Poll for new notifications every 30 seconds
+    const notifInterval = setInterval(fetchNotifications, 30000);
+    const countInterval = setInterval(fetchUnreadCount, 15000);
+    return () => {
+      clearInterval(notifInterval);
+      clearInterval(countInterval);
+    };
+  }, [fetchNotifications, fetchUnreadCount]);
 
   // Handle fullscreen toggle
   const toggleFullscreen = useCallback(() => {
@@ -441,32 +485,87 @@ const Header = ({
 
                 <Dropdown.Menu
                   style={{
-                    width: "300px",
-                    maxHeight: "350px",
+                    width: "320px",
+                    maxHeight: "400px",
                     overflowY: "auto",
                     backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
                     borderColor: darkMode ? "var(--dark-border)" : "var(--light-border)"
                   }}
                 >
-                  {notifications.length > 0 ? (
-                    notifications.slice(0, 5).map((notif) => (
-                      <Dropdown.Item
-                        key={notif.id}
-                        as={Link}
-                        to="/app/notifications"
-                        className={`py-2 ${!notif.read ? "bg-primary bg-opacity-10" : ""}`}
+                  <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <span className="fw-semibold" style={{ color: darkMode ? "#fff" : "#000" }}>Notifications</span>
+                    {unreadCount > 0 && (
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="p-0 text-primary"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMarkAllAsRead();
+                        }}
                       >
-                        <div>
-                          <h6 className="mb-1 small fw-bold">{notif.title}</h6>
-                          <p className="mb-1 small text-muted">{notif.message}</p>
-                          <small className="text-muted">{notif.time}</small>
-                        </div>
+                        Mark all read
+                      </Button>
+                    )}
+                  </div>
+                  {loadingNotifications ? (
+                    <div className="text-center py-3">
+                      <span className="text-muted">Loading...</span>
+                    </div>
+                  ) : notifications.length > 0 ? (
+                    <>
+                      {notifications.slice(0, 5).map((notif) => (
+                        <Dropdown.Item
+                          key={notif._id || notif.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (notif.status !== 'read' && !notif.read) {
+                              handleMarkAsRead(notif._id || notif.id);
+                            }
+                            if (notif.link) {
+                              navigate(notif.link);
+                            } else {
+                              navigate('/app/notifications');
+                            }
+                            setShowNotifications(false);
+                          }}
+                          className={`py-2 ${notif.status !== 'read' && !notif.read ? "bg-primary bg-opacity-10" : ""}`}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div>
+                            <div className="d-flex justify-content-between align-items-start">
+                              <h6 className="mb-1 small fw-bold" style={{ color: darkMode ? "#fff" : "#000" }}>
+                                {notif.title}
+                              </h6>
+                              {notif.priority === 'high' && (
+                                <Badge bg="danger" className="ms-2" style={{ fontSize: '9px' }}>High</Badge>
+                              )}
+                            </div>
+                            <p className="mb-1 small text-muted text-truncate" style={{ maxWidth: '260px' }}>
+                              {notif.message || notif.body}
+                            </p>
+                            <small className="text-muted">
+                              {formatNotificationTime(notif.createdAt)}
+                            </small>
+                          </div>
+                        </Dropdown.Item>
+                      ))}
+                      <Dropdown.Divider className="my-0" />
+                      <Dropdown.Item 
+                        as={Link} 
+                        to="/app/notifications" 
+                        className="text-center py-2 text-primary"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        View all notifications
                       </Dropdown.Item>
-                    ))
+                    </>
                   ) : (
-                    <Dropdown.Item className="text-center text-muted">
-                      No new notifications
-                    </Dropdown.Item>
+                    <div className="text-center py-4">
+                      <MdNotifications size={32} className="text-muted mb-2" />
+                      <p className="text-muted mb-0 small">No notifications</p>
+                    </div>
                   )}
                 </Dropdown.Menu>
               </Dropdown>

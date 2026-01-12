@@ -246,6 +246,41 @@ export const emailTemplateAPI = {
   toggleStatus: (id) => axiosInstance.patch(`/email-templates/${id}/toggle-status`),
 };
 
+// ------------------- Notification APIs -------------------
+export const notificationAPI = {
+  // Get current user's notifications with optional filters
+  getMyNotifications: (params = {}) => 
+    axiosInstance.get("/notifications", { params }),
+  
+  // Get unread notification count
+  getUnreadCount: () => 
+    axiosInstance.get("/notifications/unread/count"),
+  
+  // Get a single notification by ID
+  getById: (id) => 
+    axiosInstance.get(`/notifications/${id}`),
+  
+  // Mark a notification as read
+  markAsRead: (id) => 
+    axiosInstance.patch(`/notifications/${id}/read`),
+  
+  // Mark all notifications as read
+  markAllAsRead: () => 
+    axiosInstance.patch("/notifications/read-all"),
+  
+  // Archive a notification
+  archive: (id) => 
+    axiosInstance.patch(`/notifications/${id}/archive`),
+  
+  // Delete a notification
+  delete: (id) => 
+    axiosInstance.delete(`/notifications/${id}`),
+  
+  // Delete all notifications
+  deleteAll: () => 
+    axiosInstance.delete("/notifications"),
+};
+
 // RatePro-Admin\src\api\axiosInstance.js
 
 // // /api/axiosInstance.js

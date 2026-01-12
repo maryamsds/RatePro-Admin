@@ -79,6 +79,7 @@ import { useAuth } from "./context/AuthContext"
 import FullScreenLoader from "./components/Loader/FullScreenLoader"
 import PlanBuilder from "./pages/Subscription/PlanBuilder"
 import ExecutiveDashboard from "./pages/Dashboard/ExecutiveDashboard"
+import Notifications from "./pages/Notifications/Notifications"
 
 function App() {
   // const navigate = useNavigate();
@@ -90,7 +91,6 @@ function App() {
         ? JSON.parse(saved)
         : window.matchMedia("(prefers-color-scheme: dark)").matches
     } catch (err) {
-      console.log("Error getting dark mode from localStorage:", err);
       return window.matchMedia("(prefers-color-scheme: dark)").matches;
     }
   })
@@ -211,6 +211,9 @@ function App() {
               <Route path="settings/notifications" element={<NotificationSettings />} />
               <Route path="settings/smtp" element={<SMTPConfig />} />
               <Route path="settings/theme" element={<ThemeSettings />} />
+
+              {/* Notifications */}
+              <Route path="notifications" element={<Notifications />} />
 
               {/* Profile */}
               <Route path="profile" element={<Profile />} />

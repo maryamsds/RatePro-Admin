@@ -33,11 +33,6 @@ export const createTicket = async (ticketData, attachments = []) => {
       });
     }
 
-    console.log("Creating ticket with data:", {
-      ...ticketData,
-      attachmentCount: attachments.length
-    });
-
     const response = await axiosInstance.post("/tickets", formData, {
       headers: {
         "Content-Type": "multipart/form-data",

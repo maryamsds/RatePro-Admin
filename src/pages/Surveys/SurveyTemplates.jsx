@@ -185,28 +185,19 @@ const SurveyTemplates = ({ darkMode }) => {
       if (selectedStatus !== "all") params.status = selectedStatus; // ✅ NEW: Status filter
       if (searchTerm) params.search = searchTerm;
 
-      console.log("Fetching templates from backend API with params:", params);
-
-      const response = await axiosInstance.get("/survey-templates", { params });
+     const response = await axiosInstance.get("/survey-templates", { params });
 
       if (response.data.success) {
-        console.log(
-          "Templates fetched successfully from database:",
-          response.data.data.length
-        );
+       
 
         // ✅ TEMPORARY FIX: Agar companyAdmin hai aur template draft hai toh active karein
         const processedTemplates = response.data.data.map(template => {
           if (user?.role === 'companyAdmin' && template.status === 'draft') {
-            console.log("🔄 Converting draft to active for companyAdmin:", template.name);
             return { ...template, status: 'active' };
           }
           return template;
         });
 
-        console.log("📊 Processed templates:",
-          processedTemplates.map(t => ({ name: t.name, status: t.status }))
-        );
         // ✅ Use processed data
         setTemplates(processedTemplates);
 
@@ -296,8 +287,7 @@ const SurveyTemplates = ({ darkMode }) => {
         if (userRole === "companyAdmin") {
           // Try company path first, if fails use app path
           targetPath = "/app/surveys/builder";
-          console.log("🎯 Attempting company admin path:", targetPath);
-        } else {
+           } else {
           targetPath = "/app/surveys/builder";
         }
 
@@ -384,8 +374,7 @@ const SurveyTemplates = ({ darkMode }) => {
       if (!result.isConfirmed) return;
 
       const response = await axiosInstance.delete(`/survey-templates/delete/${id}`);
-      console.log("Template deleted:", response.data);
-
+     
       await MySwal.fire({
         title: "Deleted!",
         text: "Your template has been removed.",
