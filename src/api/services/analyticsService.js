@@ -16,14 +16,40 @@ import axiosInstance from "../axiosInstance";
  */
 export const getSurveyAnalytics = async (surveyId, params = {}) => {
   const { dateRange = "30d", startDate, endDate } = params;
-  
-  const queryParams = new URLSearchParams();
-  queryParams.append("range", dateRange);
-  if (startDate) queryParams.append("startDate", startDate);
-  if (endDate) queryParams.append("endDate", endDate);
 
-  const response = await axiosInstance.get(`/surveys/${surveyId}/analytics?${queryParams.toString()}`);
-  
+  const queryParams = new URLSearchParams();
+
+  // Normalize dateRange for backend
+  const rangeMap = {
+    last7days: "7d",
+    last30days: "30d",
+    custom: "custom"
+  };
+
+  const normalizedRange = rangeMap[dateRange] || "30d";
+  queryParams.append("range", normalizedRange);
+
+  // Only send dates for custom range
+  if (normalizedRange === "custom") {
+    if (startDate && endDate) {
+      queryParams.append("startDate", startDate.toISOString());
+      queryParams.append("endDate", endDate.toISOString());
+    } else {
+      console.warn("Custom range selected but start/end dates missing");
+    }
+  }
+
+  console.log(
+    "Fetching survey analytics for:",
+    surveyId,
+    "with params:",
+    queryParams.toString()
+  );
+
+  const response = await axiosInstance.get(
+    `/surveys/${surveyId}/analytics?${queryParams.toString()}`
+  );
+
   return transformSurveyAnalytics(response.data);
 };
 

@@ -386,6 +386,7 @@ const SurveyAnalytics = () => {
     ]
   };
 
+  // Chart Data - Rating Trends (fix field name)
   const ratingTrendData = {
     labels: analyticsData.trends.ratingTrends?.map(item =>
       new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -393,9 +394,26 @@ const SurveyAnalytics = () => {
     datasets: [
       {
         label: 'Average Rating',
-        data: analyticsData.trends.ratingTrends?.map(item => item.averageRating) || [],
+        data: analyticsData.trends.ratingTrends?.map(item => item.rating || item.avgRating || 0) || [],
         borderColor: 'rgb(var(--bs-warning-rgb))',
         backgroundColor: 'rgba(var(--bs-warning-rgb), 0.2)',
+        tension: 0.4,
+        fill: true
+      }
+    ]
+  };
+
+  // NPS History (fix field name from npsScore to score)
+  const npsData = {
+    labels: analyticsData.trends.npsHistory?.map(item =>
+      new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ) || [],
+    datasets: [
+      {
+        label: 'NPS Score',
+        data: analyticsData.trends.npsHistory?.map(item => item.score || item.npsScore || 0) || [],
+        borderColor: 'rgb(var(--bs-primary-rgb))',
+        backgroundColor: 'rgba(var(--bs-primary-rgb), 0.2)',
         tension: 0.4,
         fill: true
       }
@@ -434,22 +452,6 @@ const SurveyAnalytics = () => {
           '#ffc107',
           '#dc3545'
         ]
-      }
-    ]
-  };
-
-  const npsData = {
-    labels: analyticsData.trends.npsHistory?.map(item =>
-      new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    ) || [],
-    datasets: [
-      {
-        label: 'NPS Score',
-        data: analyticsData.trends.npsHistory?.map(item => item.npsScore) || [],
-        borderColor: 'rgb(var(--bs-primary-rgb))',
-        backgroundColor: 'rgba(var(--bs-primary-rgb), 0.2)',
-        tension: 0.4,
-        fill: true
       }
     ]
   };
@@ -601,10 +603,14 @@ const SurveyAnalytics = () => {
               </div>
               <h4 className="mb-1">{analyticsData.overview.totalResponses}</h4>
               <small className="text-muted">Total Responses</small>
-              <div className="mt-1">
-                {getTrendIcon(5.2)}
-                <small className="ms-1 text-success">+5.2%</small>
-              </div>
+              {analyticsData.trends?.responseTrend !== undefined && (
+                <div className="mt-1">
+                  {getTrendIcon(analyticsData.trends.responseTrend)}
+                  <small className={`ms-1 ${analyticsData.trends.responseTrend >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {analyticsData.trends.responseTrend >= 0 ? '+' : ''}{analyticsData.trends.responseTrend?.toFixed(1) || 0}%
+                  </small>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -615,12 +621,16 @@ const SurveyAnalytics = () => {
               <div className="metrics-icon bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-2">
                 <FaStar size={24} />
               </div>
-              <h4 className="mb-1">{analyticsData.overview.averageRating.toFixed(1)}</h4>
+              <h4 className="mb-1">{analyticsData.overview.averageRating?.toFixed(1) || 0}</h4>
               <small className="text-muted">Average Rating</small>
-              <div className="mt-1">
-                {getTrendIcon(2.1)}
-                <small className="ms-1 text-success">+2.1%</small>
-              </div>
+              {analyticsData.trends?.ratingTrend !== undefined && (
+                <div className="mt-1">
+                  {getTrendIcon(analyticsData.trends.ratingTrend)}
+                  <small className={`ms-1 ${analyticsData.trends.ratingTrend >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {analyticsData.trends.ratingTrend >= 0 ? '+' : ''}{analyticsData.trends.ratingTrend?.toFixed(1) || 0}%
+                  </small>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -631,12 +641,16 @@ const SurveyAnalytics = () => {
               <div className="metrics-icon bg-info bg-opacity-10 text-info rounded-circle mx-auto mb-2">
                 <MdCheckCircle size={24} />
               </div>
-              <h4 className="mb-1">{analyticsData.overview.completionRate}%</h4>
+              <h4 className="mb-1">{analyticsData.overview.completionRate || 0}%</h4>
               <small className="text-muted">Completion Rate</small>
-              <div className="mt-1">
-                {getTrendIcon(-1.5)}
-                <small className="ms-1 text-danger">-1.5%</small>
-              </div>
+              {analyticsData.trends?.completionTrend !== undefined && (
+                <div className="mt-1">
+                  {getTrendIcon(analyticsData.trends.completionTrend)}
+                  <small className={`ms-1 ${analyticsData.trends.completionTrend >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {analyticsData.trends.completionTrend >= 0 ? '+' : ''}{analyticsData.trends.completionTrend?.toFixed(1) || 0}%
+                  </small>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -647,12 +661,16 @@ const SurveyAnalytics = () => {
               <div className="metrics-icon bg-warning bg-opacity-10 text-warning rounded-circle mx-auto mb-2">
                 <FaChartLine size={24} />
               </div>
-              <h4 className="mb-1">{analyticsData.overview.npsScore}</h4>
+              <h4 className="mb-1">{analyticsData.overview.npsScore || 0}</h4>
               <small className="text-muted">NPS Score</small>
-              <div className="mt-1">
-                {getTrendIcon(8.3)}
-                <small className="ms-1 text-success">+8.3%</small>
-              </div>
+              {analyticsData.nps?.trend !== undefined && (
+                <div className="mt-1">
+                  {getTrendIcon(analyticsData.nps.trend)}
+                  <small className={`ms-1 ${analyticsData.nps.trend >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {analyticsData.nps.trend >= 0 ? '+' : ''}{analyticsData.nps.trend?.toFixed(1) || 0}%
+                  </small>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -663,12 +681,16 @@ const SurveyAnalytics = () => {
               <div className="metrics-icon bg-purple bg-opacity-10 text-purple rounded-circle mx-auto mb-2">
                 <MdSentimentSatisfied size={24} />
               </div>
-              <h4 className="mb-1">{analyticsData.overview.satisfactionScore}%</h4>
+              <h4 className="mb-1">{analyticsData.overview.satisfactionScore || 0}%</h4>
               <small className="text-muted">Satisfaction</small>
-              <div className="mt-1">
-                {getTrendIcon(3.7)}
-                <small className="ms-1 text-success">+3.7%</small>
-              </div>
+              {analyticsData.trends?.satisfactionTrend !== undefined && (
+                <div className="mt-1">
+                  {getTrendIcon(analyticsData.trends.satisfactionTrend)}
+                  <small className={`ms-1 ${analyticsData.trends.satisfactionTrend >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {analyticsData.trends.satisfactionTrend >= 0 ? '+' : ''}{analyticsData.trends.satisfactionTrend?.toFixed(1) || 0}%
+                  </small>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
@@ -679,12 +701,8 @@ const SurveyAnalytics = () => {
               <div className="metrics-icon bg-teal bg-opacity-10 text-teal rounded-circle mx-auto mb-2">
                 <MdCompare size={24} />
               </div>
-              <h4 className="mb-1">{analyticsData.overview.benchmarkComparison}%</h4>
+              <h4 className="mb-1">{analyticsData.overview.benchmarkComparison || 0}%</h4>
               <small className="text-muted">vs Industry</small>
-              <div className="mt-1">
-                {getTrendIcon(12.5)}
-                <small className="ms-1 text-success">+12.5%</small>
-              </div>
             </Card.Body>
           </Card>
         </Col>
