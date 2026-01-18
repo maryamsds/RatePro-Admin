@@ -4,34 +4,37 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Line, Bar } from "react-chartjs-2"
-import { 
-  MdTrendingUp, 
-  MdAnalytics, 
-  MdDateRange, 
-  MdBarChart, 
+import {
+  MdTrendingUp,
+  MdAnalytics,
+  MdDateRange,
+  MdBarChart,
   MdShowChart,
   MdRefresh,
   MdDownload
 } from "react-icons/md"
-import { 
-  getAllTrends, 
-  getSatisfactionTrend, 
-  getEngagementTrend 
+import {
+  getAllTrends,
+  getSatisfactionTrend,
+  getEngagementTrend
 } from "../../api/services/analyticsService"
 
 const TrendAnalysis = () => {
   const [timeRange, setTimeRange] = useState("30d")
   const [selectedMetric, setSelectedMetric] = useState("responses")
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [trendsData, setTrendsData] = useState(null)
 
   const fetchTrends = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const data = await getAllTrends({ range: timeRange })
       setTrendsData(data)
-    } catch (error) {
-      console.error('Error fetching trends:', error)
+    } catch (err) {
+      console.error('Error fetching trends:', err)
+      setError('Failed to load trend data. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -41,20 +44,24 @@ const TrendAnalysis = () => {
     fetchTrends()
   }, [fetchTrends])
 
-  // Build chart data from API response or use fallback
+  // Check if we have data - no mock fallbacks!
+  const hasData = trendsData &&
+    (trendsData.satisfaction?.labels?.length > 0 || trendsData.volume?.responses?.length > 0)
+
+  // Build chart data from API response only
   const trendData = {
-    labels: trendsData?.satisfaction?.labels || ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"],
+    labels: trendsData?.satisfaction?.labels || [],
     datasets: [
       {
         label: "Survey Responses",
-        data: trendsData?.volume?.responses || [120, 150, 180, 165, 200, 190],
+        data: trendsData?.volume?.responses || [],
         borderColor: "rgb(75, 192, 192)",
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         tension: 0.1,
       },
       {
         label: "Satisfaction Score",
-        data: trendsData?.satisfaction?.values || [75, 82, 78, 85, 88, 83],
+        data: trendsData?.satisfaction?.values || [],
         borderColor: "rgb(255, 99, 132)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
         tension: 0.1,
@@ -62,19 +69,20 @@ const TrendAnalysis = () => {
     ],
   }
 
+  // NPS comparison data - use real data only
   const comparisonData = {
-    labels: trendsData?.nps?.labels || ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: trendsData?.nps?.labels || [],
     datasets: [
       {
         label: "NPS Score",
-        data: trendsData?.nps?.scores || [65, 78, 90, 81, 96, 105],
+        data: trendsData?.nps?.scores || [],
         backgroundColor: "rgba(54, 162, 235, 0.5)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
       },
       {
         label: "Previous Period",
-        data: [45, 58, 70, 61, 76, 85],
+        data: trendsData?.nps?.previousScores || [],
         backgroundColor: "rgba(255, 206, 86, 0.5)",
         borderColor: "rgba(255, 206, 86, 1)",
         borderWidth: 1,
@@ -135,9 +143,9 @@ const TrendAnalysis = () => {
               <h3 className="control-title">Time Range</h3>
             </div>
             <div className="control-content">
-              <select 
+              <select
                 className="time-range-select"
-                value={timeRange} 
+                value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value)}
               >
                 <option value="7d">Last 7 days</option>
@@ -147,7 +155,7 @@ const TrendAnalysis = () => {
               </select>
             </div>
           </div>
-          
+
           <div className="control-panel">
             <div className="control-header">
               <div className="control-icon">
@@ -191,7 +199,25 @@ const TrendAnalysis = () => {
             <h2 className="section-title">Trend Overview</h2>
           </div>
           <div className="chart-container">
-            <Line data={trendData} options={chartOptions} />
+            {loading ? (
+              <div className="loading-state">
+                <div className="spinner"></div>
+                <p>Loading trend data...</p>
+              </div>
+            ) : error ? (
+              <div className="error-state">
+                <p className="error-message">{error}</p>
+                <button onClick={fetchTrends} className="btn btn-primary">Retry</button>
+              </div>
+            ) : !hasData ? (
+              <div className="empty-state">
+                <MdShowChart size={48} />
+                <p>No trend data available for the selected period.</p>
+                <p className="text-muted">Try selecting a different time range or submitting more survey responses.</p>
+              </div>
+            ) : (
+              <Line data={trendData} options={chartOptions} />
+            )}
           </div>
         </div>
       </div>
@@ -206,7 +232,23 @@ const TrendAnalysis = () => {
             <h2 className="section-title">Year-over-Year Comparison</h2>
           </div>
           <div className="chart-container">
-            <Bar data={comparisonData} options={chartOptions} />
+            {loading ? (
+              <div className="loading-state">
+                <div className="spinner"></div>
+                <p>Loading comparison data...</p>
+              </div>
+            ) : error ? (
+              <div className="error-state">
+                <p className="error-message">{error}</p>
+              </div>
+            ) : !trendsData?.nps?.labels?.length ? (
+              <div className="empty-state">
+                <MdBarChart size={48} />
+                <p>No NPS comparison data available.</p>
+              </div>
+            ) : (
+              <Bar data={comparisonData} options={chartOptions} />
+            )}
           </div>
         </div>
       </div>

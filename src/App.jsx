@@ -178,7 +178,7 @@ function App() {
 
               {/* Analytics */}
               <Route path="analytics" element={<Analytics />} />
-              <Route path="analytics/dashboard" element={<ExecutiveDashboard />} />
+              <Route path="analytics/dashboard" element={<AnalyticsDashboard />} />
               <Route path="analytics/feedback" element={<FeedbackAnalysis />} />
               <Route path="analytics/custom-reports" element={<CustomReports />} />
               <Route path="analytics/real-time" element={<RealTimeResults />} />

@@ -163,7 +163,7 @@ export const getAllTrends = async (params = {}) => {
   const { range = "30d", surveyId } = params;
   const queryParams = new URLSearchParams({ range });
   if (surveyId) queryParams.append("surveyId", surveyId);
-  
+
   const response = await axiosInstance.get(`/analytics/trends/all?${queryParams.toString()}`);
   return transformAllTrends(response.data);
 };
@@ -177,7 +177,7 @@ export const getSatisfactionTrend = async (params = {}) => {
   const { range = "30d", surveyId } = params;
   const queryParams = new URLSearchParams({ range });
   if (surveyId) queryParams.append("surveyId", surveyId);
-  
+
   const response = await axiosInstance.get(`/analytics/trends/satisfaction?${queryParams.toString()}`);
   return transformSatisfactionTrend(response.data);
 };
@@ -191,7 +191,7 @@ export const getEngagementTrend = async (params = {}) => {
   const { range = "30d", surveyId } = params;
   const queryParams = new URLSearchParams({ range });
   if (surveyId) queryParams.append("surveyId", surveyId);
-  
+
   const response = await axiosInstance.get(`/analytics/trends/engagement?${queryParams.toString()}`);
   return transformEngagementData(response.data);
 };
@@ -207,18 +207,18 @@ export const getEngagementTrend = async (params = {}) => {
  * @returns {Promise<Object>}
  */
 export const getSurveyResponses = async (surveyId, params = {}) => {
-  const { 
-    page = 1, 
-    limit = 20, 
-    sentiment, 
-    rating, 
-    startDate, 
-    endDate, 
+  const {
+    page = 1,
+    limit = 20,
+    sentiment,
+    rating,
+    startDate,
+    endDate,
     search,
     sortBy = "createdAt",
     sortOrder = "desc"
   } = params;
-  
+
   const queryParams = new URLSearchParams();
   queryParams.append("page", page);
   queryParams.append("limit", limit);
@@ -243,7 +243,7 @@ export const getSurveyResponses = async (surveyId, params = {}) => {
  */
 export const getFlaggedResponses = async (params = {}) => {
   const { page = 1, limit = 20, threshold = 3, range = "30d" } = params;
-  
+
   const queryParams = new URLSearchParams();
   queryParams.append("page", page);
   queryParams.append("limit", limit);
@@ -266,7 +266,7 @@ export const getFlaggedResponses = async (params = {}) => {
  */
 export const exportResponsesCSV = async (surveyId, params = {}) => {
   const { startDate, endDate, sentiment } = params;
-  
+
   const queryParams = new URLSearchParams();
   if (startDate) queryParams.append("startDate", startDate);
   if (endDate) queryParams.append("endDate", endDate);
@@ -276,7 +276,7 @@ export const exportResponsesCSV = async (surveyId, params = {}) => {
     `/analytics/responses/${surveyId}/export/csv?${queryParams.toString()}`,
     { responseType: "blob" }
   );
-  
+
   return response.data;
 };
 
@@ -288,12 +288,12 @@ export const exportResponsesCSV = async (surveyId, params = {}) => {
  */
 export const exportAnalyticsPDF = async (surveyId, params = {}) => {
   const { range = "30d" } = params;
-  
+
   const response = await axiosInstance.get(
     `/analytics/responses/${surveyId}/export/pdf?range=${range}`,
     { responseType: "blob" }
   );
-  
+
   return response.data;
 };
 
@@ -331,7 +331,7 @@ const transformSurveyAnalytics = (data) => ({
     satisfactionScore: data.satisfactionScore || 0,
     benchmarkComparison: data.benchmarkComparison || 0,
   },
-  
+
   // NPS breakdown
   nps: {
     score: data.nps?.score || 0,
@@ -340,7 +340,7 @@ const transformSurveyAnalytics = (data) => ({
     detractors: data.nps?.detractors || 0,
     trend: data.nps?.trend || 0,
   },
-  
+
   // Trends data
   trends: {
     responsesByDate: transformTrendline(data.trendline || []),
@@ -348,7 +348,7 @@ const transformSurveyAnalytics = (data) => ({
     completionTrends: data.completionTrends || [],
     npsHistory: data.npsHistory || [],
   },
-  
+
   // Demographics
   demographics: {
     byDevice: data.demographics?.byDevice || [],
@@ -356,7 +356,7 @@ const transformSurveyAnalytics = (data) => ({
     byTimeOfDay: data.demographics?.byTimeOfDay || [],
     byDayOfWeek: data.demographics?.byDayOfWeek || [],
   },
-  
+
   // Sentiment analysis
   sentiment: {
     breakdown: transformSentimentBreakdown(data.sentimentHeatmap || data.sentiment || {}),
@@ -364,7 +364,7 @@ const transformSurveyAnalytics = (data) => ({
     emotionalTrends: data.emotionalTrends || [],
     satisfactionDrivers: data.satisfactionDrivers || [],
   },
-  
+
   // Question performance
   questions: {
     performance: data.questionPerformance || [],
@@ -372,7 +372,7 @@ const transformSurveyAnalytics = (data) => ({
     timeSpent: data.timeSpent || [],
     skipRates: data.skipRates || [],
   },
-  
+
   // Feedback insights
   feedback: {
     topComplaints: data.topComplaints || [],
@@ -387,7 +387,7 @@ const transformSurveyAnalytics = (data) => ({
  */
 const transformTrendline = (trendline) => {
   if (!Array.isArray(trendline)) return [];
-  
+
   return trendline.map((item) => ({
     date: item.date || item._id,
     count: item.count || item.responses || 0,
@@ -402,7 +402,7 @@ const transformSentimentBreakdown = (sentimentData) => {
   if (!sentimentData || typeof sentimentData !== "object") {
     return { positive: 0, negative: 0, neutral: 0 };
   }
-  
+
   // If already in correct format
   if ("positive" in sentimentData) {
     return {
@@ -411,10 +411,10 @@ const transformSentimentBreakdown = (sentimentData) => {
       neutral: sentimentData.neutral || 0,
     };
   }
-  
+
   // Transform from heatmap format
   let positive = 0, negative = 0, neutral = 0;
-  
+
   Object.values(sentimentData).forEach((value) => {
     if (typeof value === "object") {
       positive += value.positive || 0;
@@ -422,7 +422,7 @@ const transformSentimentBreakdown = (sentimentData) => {
       neutral += value.neutral || 0;
     }
   });
-  
+
   return { positive, negative, neutral };
 };
 
@@ -454,7 +454,7 @@ const transformTrendsData = (data) => ({
  */
 const transformAlerts = (alerts) => {
   if (!Array.isArray(alerts)) return [];
-  
+
   return alerts.map((alert) => ({
     id: alert._id || alert.id,
     type: alert.type || "info",
@@ -479,24 +479,24 @@ const transformSentimentAnalysis = (data) => ({
   surveyTitle: data.surveyTitle,
   totalResponses: data.totalResponses || 0,
   analyzedResponses: data.analyzedResponses || 0,
-  
+
   // Overall sentiment breakdown
   breakdown: {
     positive: data.breakdown?.positive || data.positive || 0,
     negative: data.breakdown?.negative || data.negative || 0,
     neutral: data.breakdown?.neutral || data.neutral || 0,
   },
-  
+
   // Percentages
   percentages: {
     positive: data.percentages?.positive || 0,
     negative: data.percentages?.negative || 0,
     neutral: data.percentages?.neutral || 0,
   },
-  
+
   // Average sentiment score (-1 to 1)
   averageSentimentScore: data.averageSentimentScore || 0,
-  
+
   // Emotion distribution
   emotions: data.emotions || {
     joy: 0,
@@ -506,20 +506,20 @@ const transformSentimentAnalysis = (data) => ({
     anger: 0,
     gratitude: 0,
   },
-  
+
   // Top keywords and themes
   topKeywords: (data.topKeywords || []).map(kw => ({
     word: kw.word || kw.keyword || kw,
     count: kw.count || kw.frequency || 0,
     sentiment: kw.sentiment || "neutral",
   })),
-  
+
   topThemes: (data.topThemes || []).map(theme => ({
     name: theme.name || theme.theme || theme,
     count: theme.count || 0,
     sentiment: theme.sentiment || "neutral",
   })),
-  
+
   // Trend over time
   trend: (data.trend || []).map(item => ({
     date: item.date || item._id,
@@ -535,7 +535,7 @@ const transformSentimentAnalysis = (data) => ({
 const transformSentimentHeatmap = (data) => ({
   surveyId: data.surveyId,
   groupBy: data.groupBy || "day",
-  
+
   // Heatmap data points
   data: (data.heatmap || data.data || []).map(item => ({
     period: item.period || item.date || item._id,
@@ -547,7 +547,7 @@ const transformSentimentHeatmap = (data) => ({
     total: item.total || (item.positive + item.negative + item.neutral) || 0,
     dominantSentiment: item.dominantSentiment || getDominantSentiment(item),
   })),
-  
+
   // Summary stats
   summary: {
     peakPositiveTime: data.summary?.peakPositiveTime || null,
@@ -565,7 +565,7 @@ const transformSurveySummary = (data) => ({
   surveyTitle: data.surveyTitle,
   status: data.status,
   createdAt: data.createdAt,
-  
+
   // Response metrics
   responses: {
     total: data.totalResponses || 0,
@@ -574,7 +574,7 @@ const transformSurveySummary = (data) => ({
     completionRate: data.completionRate || 0,
     avgCompletionTime: data.avgCompletionTime || 0,
   },
-  
+
   // Satisfaction metrics
   satisfaction: {
     averageRating: data.averageRating || 0,
@@ -582,11 +582,11 @@ const transformSurveySummary = (data) => ({
     csi: data.csi || 0,
     trend: data.satisfactionTrend || [],
   },
-  
+
   // Sentiment analysis
   sentiment: transformSentimentBreakdown(data.sentiment || {}),
   sentimentScore: data.sentimentScore || 0,
-  
+
   // Key insights
   insights: {
     topComplaints: data.topComplaints || [],
@@ -594,7 +594,7 @@ const transformSurveySummary = (data) => ({
     urgentIssues: data.urgentIssues || [],
     actionableItems: data.actionableItems || [],
   },
-  
+
   // Question breakdown
   questionAnalysis: (data.questionAnalysis || []).map(q => ({
     questionId: q.questionId,
@@ -605,7 +605,7 @@ const transformSurveySummary = (data) => ({
     distribution: q.distribution || [],
     topAnswers: q.topAnswers || [],
   })),
-  
+
   // Actions generated
   actionsGenerated: data.actionsGenerated || 0,
   openActions: data.openActions || 0,
@@ -620,19 +620,19 @@ const transformTenantSummary = (data) => ({
   activeSurveys: data.activeSurveys || 0,
   totalResponses: data.totalResponses || 0,
   avgResponsesPerSurvey: data.avgResponsesPerSurvey || 0,
-  
+
   // Satisfaction metrics
   overallSatisfaction: data.overallSatisfaction || 0,
   overallNPS: data.overallNPS || 0,
   overallCSI: data.overallCSI || 0,
-  
+
   // Sentiment overview
   sentiment: {
     positive: data.sentiment?.positive || 0,
     negative: data.sentiment?.negative || 0,
     neutral: data.sentiment?.neutral || 0,
   },
-  
+
   // Top performing surveys
   topSurveys: (data.topSurveys || []).map(s => ({
     id: s._id || s.id,
@@ -641,7 +641,7 @@ const transformTenantSummary = (data) => ({
     avgRating: s.avgRating || 0,
     nps: s.nps || 0,
   })),
-  
+
   // Attention needed
   surveysNeedingAttention: (data.surveysNeedingAttention || []).map(s => ({
     id: s._id || s.id,
@@ -649,14 +649,14 @@ const transformTenantSummary = (data) => ({
     issue: s.issue,
     severity: s.severity || "warning",
   })),
-  
+
   // Trends
   trends: {
     responsesOverTime: data.responsesOverTime || [],
     satisfactionOverTime: data.satisfactionOverTime || [],
     npsOverTime: data.npsOverTime || [],
   },
-  
+
   // Actions summary
   actions: {
     open: data.openActions || 0,
@@ -674,19 +674,19 @@ const transformQuickSummary = (data) => ({
   todayResponses: data.todayResponses || 0,
   activeRespondents: data.activeRespondents || 0,
   avgRatingToday: data.avgRatingToday || 0,
-  
+
   // Comparison with yesterday
   responsesChange: data.responsesChange || 0,
   ratingChange: data.ratingChange || 0,
-  
+
   // Alerts
   criticalAlerts: data.criticalAlerts || 0,
   pendingActions: data.pendingActions || 0,
-  
+
   // Quick stats
   completionRateToday: data.completionRateToday || 0,
   npsToday: data.npsToday || 0,
-  
+
   // Last updated
   lastUpdated: data.lastUpdated || new Date().toISOString(),
 });
@@ -730,7 +730,7 @@ const transformSatisfactionTrend = (data) => ({
   average: data.average || 0,
   trend: data.trend || "stable",
   change: data.change || 0,
-  
+
   // Breakdown by question type if available
   byQuestionType: data.byQuestionType || [],
 });
@@ -745,7 +745,7 @@ const transformEngagementData = (data) => ({
     responses: h.responses || h.count || 0,
     avgRating: h.avgRating || 0,
   })),
-  
+
   // Peak days analysis
   peakDays: (data.peakDays || data.byDay || []).map(d => ({
     day: d.day || d._id,
@@ -753,7 +753,7 @@ const transformEngagementData = (data) => ({
     responses: d.responses || d.count || 0,
     avgRating: d.avgRating || 0,
   })),
-  
+
   // Summary
   mostActiveHour: data.mostActiveHour || null,
   mostActiveDay: data.mostActiveDay || null,
@@ -772,33 +772,33 @@ const transformResponseList = (data) => ({
     respondentEmail: r.respondent?.email || r.email,
     respondentName: r.respondent?.name || r.name,
     isAnonymous: r.isAnonymous || !r.respondent,
-    
+
     // Response data
     completedAt: r.completedAt || r.createdAt,
     completionTime: r.completionTime || 0,
     status: r.status || "completed",
-    
+
     // Analysis
     sentiment: r.analysis?.sentiment || r.sentiment || "neutral",
     sentimentScore: r.analysis?.sentimentScore || 0,
     rating: r.analysis?.avgRating || r.avgRating || null,
-    
+
     // Flags
     isFlagged: r.isFlagged || false,
     flagReason: r.flagReason || null,
-    
+
     // Quick preview
     previewText: r.analysis?.summary || r.previewText || "",
     keywords: r.analysis?.keywords || [],
   })),
-  
+
   pagination: {
     page: data.page || 1,
     limit: data.limit || 20,
     total: data.total || 0,
     totalPages: data.totalPages || Math.ceil((data.total || 0) / (data.limit || 20)),
   },
-  
+
   // Aggregated stats
   stats: {
     total: data.total || 0,
@@ -817,34 +817,34 @@ const transformFlaggedResponses = (data) => ({
     id: r._id || r.id,
     surveyId: r.survey?._id || r.surveyId,
     surveyTitle: r.survey?.title || r.surveyTitle,
-    
+
     // Respondent info
     respondent: r.respondent || null,
     isAnonymous: r.isAnonymous || !r.respondent,
-    
+
     // Flag details
     flagReason: r.flagReason || r.reason || "Low rating",
     flaggedAt: r.flaggedAt || r.createdAt,
     severity: r.severity || getSeverityFromRating(r.avgRating),
-    
+
     // Analysis
     sentiment: r.analysis?.sentiment || r.sentiment || "negative",
     rating: r.analysis?.avgRating || r.avgRating || 0,
     summary: r.analysis?.summary || r.summary || "",
-    
+
     // Action status
     hasAction: r.hasAction || false,
     actionId: r.actionId || null,
     actionStatus: r.actionStatus || null,
   })),
-  
+
   pagination: {
     page: data.page || 1,
     limit: data.limit || 20,
     total: data.total || 0,
     totalPages: data.totalPages || Math.ceil((data.total || 0) / (data.limit || 20)),
   },
-  
+
   // Summary
   summary: {
     totalFlagged: data.total || 0,
@@ -888,6 +888,39 @@ const getSeverityFromRating = (rating) => {
 };
 
 // ============================================================================
+// 📊 Demographics Analytics
+// ============================================================================
+
+/**
+ * Get response demographics breakdown
+ * @param {Object} params - { days, surveyId }
+ * @returns {Promise<Object>}
+ */
+export const getDemographics = async (params = {}) => {
+  const { days = 30, surveyId } = params;
+
+  const queryParams = new URLSearchParams();
+  queryParams.append("days", days);
+  if (surveyId) queryParams.append("surveyId", surveyId);
+
+  const response = await axiosInstance.get(`/analytics/demographics?${queryParams.toString()}`);
+  return response.data.data;
+};
+
+/**
+ * Get survey-specific demographics
+ * @param {string} surveyId
+ * @param {Object} params - { days }
+ * @returns {Promise<Object>}
+ */
+export const getSurveyDemographics = async (surveyId, params = {}) => {
+  const { days = 30 } = params;
+
+  const response = await axiosInstance.get(`/analytics/demographics/${surveyId}?days=${days}`);
+  return response.data.data;
+};
+
+// ============================================================================
 // 📦 Default Export
 // ============================================================================
 export default {
@@ -896,25 +929,29 @@ export default {
   getTenantAnalytics,
   getTrendsAnalytics,
   getAlerts,
-  
+
   // Sentiment
   getSurveySentiment,
   getSentimentHeatmap,
-  
+
   // Summary
   getSurveySummary,
   getTenantSummary,
   getQuickSummary,
-  
+
   // Trends
   getAllTrends,
   getSatisfactionTrend,
   getEngagementTrend,
-  
+
+  // Demographics
+  getDemographics,
+  getSurveyDemographics,
+
   // Responses
   getSurveyResponses,
   getFlaggedResponses,
-  
+
   // Export
   exportResponsesCSV,
   exportAnalyticsPDF,

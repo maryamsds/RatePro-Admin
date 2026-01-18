@@ -59,7 +59,7 @@ const AnalyticsDashboard = () => {
   });
   const [dateRange, setDateRange] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('satisfaction');
-  
+
   // Modals
   const [showInsightsModal, setShowInsightsModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
@@ -71,7 +71,7 @@ const AnalyticsDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch multiple analytics endpoints using new API services
       const [tenantSummaryRes, quickSummaryRes, trendsRes, alertsRes, flaggedRes] = await Promise.allSettled([
         getTenantSummary({ range: dateRange }),
@@ -81,33 +81,41 @@ const AnalyticsDashboard = () => {
         getFlaggedResponses({ range: dateRange, limit: 10 })
       ]);
 
-      // Process results with fallbacks for missing endpoints
-      const tenantData = tenantSummaryRes.status === 'fulfilled' ? tenantSummaryRes.value : getMockExecutiveData();
+      // Process results - show empty states instead of mock data
+      const tenantData = tenantSummaryRes.status === 'fulfilled' ? tenantSummaryRes.value : null;
       const quickData = quickSummaryRes.status === 'fulfilled' ? quickSummaryRes.value : {};
-      const trendsData = trendsRes.status === 'fulfilled' ? trendsRes.value : getMockTrendsData();
-      const alertsData = alertsRes.status === 'fulfilled' ? alertsRes.value : getMockAlertsData().alerts;
+      const trendsData = trendsRes.status === 'fulfilled' ? trendsRes.value : { satisfactionTrend: [], volumeTrend: [] };
+      const alertsData = alertsRes.status === 'fulfilled' ? alertsRes.value : [];
       const flaggedData = flaggedRes.status === 'fulfilled' ? flaggedRes.value : { responses: [] };
 
-      // Build executive data from tenant summary
+      // If tenant data failed, show error state
+      if (!tenantData) {
+        setError('Failed to load dashboard data');
+        setLoading(false);
+        return;
+      }
+
+      // Build executive data from tenant summary with proper NPS breakdown mapping
       const executiveData = {
         customerSatisfactionIndex: {
-          overall: tenantData.overallSatisfaction || 0,
-          trend: tenantData.trends?.satisfactionOverTime?.slice(-1)?.[0]?.change || 0,
-          locations: [],
-          services: []
+          overall: tenantData.kpis?.csi?.current || tenantData.overallSatisfaction || 0,
+          trend: tenantData.comparison?.ratingChange || 0,
+          locations: tenantData.kpis?.csi?.locations || [],
+          services: tenantData.kpis?.csi?.services || []
         },
+        // Fixed: Map NPS breakdown from kpis.nps object
         npsScore: {
-          current: tenantData.overallNPS || 0,
-          trend: 0,
-          promoters: 0,
-          detractors: 0,
-          passives: 0
+          current: tenantData.kpis?.nps?.current || tenantData.overallNPS || 0,
+          trend: tenantData.kpis?.nps?.change || 0,
+          promoters: tenantData.kpis?.nps?.promoters || 0,
+          detractors: tenantData.kpis?.nps?.detractors || 0,
+          passives: tenantData.kpis?.nps?.passives || 0
         },
         responseRate: {
-          current: quickData.completionRateToday || 0,
+          current: tenantData.kpis?.responseRate?.current || quickData.completionRateToday || 0,
           trend: quickData.responsesChange || 0,
-          total: tenantData.totalResponses || 0,
-          completed: 0
+          total: tenantData.overview?.totalResponses || tenantData.totalResponses || 0,
+          completed: tenantData.kpis?.responseRate?.current || 0
         },
         ...tenantData
       };
@@ -134,19 +142,13 @@ const AnalyticsDashboard = () => {
         operational: operationalData,
         trends: trendsData,
         alerts: alertsData || [],
-        aiInsights: await generateAIInsights(executiveData, operationalData)
+        aiInsights: null  // AI insights not implemented - removed mock data
       });
 
     } catch (error) {
       console.error('Dashboard data fetch error:', error);
-      // Use mock data as fallback
-      setDashboardData({
-        executive: getMockExecutiveData(),
-        operational: getMockOperationalData(), 
-        trends: getMockTrendsData(),
-        alerts: getMockAlertsData().alerts,
-        aiInsights: getMockAIInsights()
-      });
+      // Show error state instead of mock data
+      setError('Failed to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -234,7 +236,7 @@ const AnalyticsDashboard = () => {
       },
       {
         id: 2,
-        type: 'warning', 
+        type: 'warning',
         title: 'Response Rate Low',
         message: 'Survey completion rate fell below 70% threshold',
         timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
@@ -355,9 +357,9 @@ const AnalyticsDashboard = () => {
             </div>
           </div>
           <div className="header-actions">
-            <select 
+            <select
               className="date-range-select"
-              value={dateRange} 
+              value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
             >
               <option value="7d">Last 7 Days</option>
@@ -382,7 +384,7 @@ const AnalyticsDashboard = () => {
             </div>
             <h2 className="section-title">Executive Dashboard</h2>
           </div>
-          
+
           {/* Executive Stats Grid */}
           <div className="stats-grid">
             {/* Customer Satisfaction Index */}
@@ -449,7 +451,7 @@ const AnalyticsDashboard = () => {
               </div>
               <div className="progress-wrapper">
                 <div className="progress-bar-wrapper">
-                  <div 
+                  <div
                     className="progress-fill"
                     style={{ width: `${dashboardData.executive?.responseRate?.current || 0}%` }}
                   />
@@ -467,15 +469,15 @@ const AnalyticsDashboard = () => {
               <h3 className="chart-title">Satisfaction Trend (Month-on-Month)</h3>
             </div>
             <div className="chart-container">
-              <Line 
-                data={satisfactionChartData} 
-                options={{ 
+              <Line
+                data={satisfactionChartData}
+                options={{
                   maintainAspectRatio: false,
                   responsive: true,
                   plugins: {
                     legend: { display: false }
                   }
-                }} 
+                }}
               />
             </div>
           </div>
@@ -493,7 +495,7 @@ const AnalyticsDashboard = () => {
                 </div>
                 <h2 className="section-title">Operational Dashboard - Real-time Alerts</h2>
               </div>
-              
+
               {/* Alert Stats */}
               <div className="alert-stats">
                 <div className="alert-stat alert-critical">
@@ -539,9 +541,9 @@ const AnalyticsDashboard = () => {
                         <div className="feedback-meta">
                           <span className="feedback-count complaint-count">{complaint.count}</span>
                           <div className={`trend-indicator ${complaint.trend === 'up' ? 'trend-up' : complaint.trend === 'down' ? 'trend-down' : 'trend-neutral'}`}>
-                            {complaint.trend === 'up' ? <MdTrendingUp /> : 
-                             complaint.trend === 'down' ? <MdTrendingDown /> : 
-                             <span>—</span>}
+                            {complaint.trend === 'up' ? <MdTrendingUp /> :
+                              complaint.trend === 'down' ? <MdTrendingDown /> :
+                                <span>—</span>}
                           </div>
                         </div>
                       </div>
@@ -560,9 +562,9 @@ const AnalyticsDashboard = () => {
                         <div className="feedback-meta">
                           <span className="feedback-count praise-count">{praise.count}</span>
                           <div className={`trend-indicator ${praise.trend === 'up' ? 'trend-up' : praise.trend === 'down' ? 'trend-down' : 'trend-neutral'}`}>
-                            {praise.trend === 'up' ? <MdTrendingUp /> : 
-                             praise.trend === 'down' ? <MdTrendingDown /> : 
-                             <span>—</span>}
+                            {praise.trend === 'up' ? <MdTrendingUp /> :
+                              praise.trend === 'down' ? <MdTrendingDown /> :
+                                <span>—</span>}
                           </div>
                         </div>
                       </div>
@@ -595,7 +597,7 @@ const AnalyticsDashboard = () => {
                     <span className="sla-value">{dashboardData.operational?.slaMetrics?.onTimeResolution || 0}%</span>
                   </div>
                   <div className="progress-bar-wrapper">
-                    <div 
+                    <div
                       className="progress-fill success-progress"
                       style={{ width: `${dashboardData.operational?.slaMetrics?.onTimeResolution || 0}%` }}
                     />
@@ -624,7 +626,7 @@ const AnalyticsDashboard = () => {
             </div>
             <h2 className="section-title">AI Insights Report - Predictive Analysis</h2>
           </div>
-          
+
           <div className="insights-grid">
             <div className="insights-main">
               <div className="insights-header">
@@ -655,7 +657,7 @@ const AnalyticsDashboard = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="insights-sidebar">
               <div className="sentiment-section">
                 <div className="sentiment-header">
@@ -669,7 +671,7 @@ const AnalyticsDashboard = () => {
                     <div key={idx} className="sentiment-region">
                       <span className="region-name">{region.name}</span>
                       <div className="region-sentiment">
-                        <div 
+                        <div
                           className="sentiment-indicator"
                           style={{ backgroundColor: region.color }}
                         />
@@ -695,7 +697,7 @@ const AnalyticsDashboard = () => {
               <h2 className="section-title">Recent Alerts & Notifications</h2>
             </div>
             <div className="section-actions">
-              <button 
+              <button
                 className="btn btn-outline-primary btn-sm"
                 onClick={() => setShowAlertsModal(true)}
               >
@@ -703,11 +705,11 @@ const AnalyticsDashboard = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="alerts-list">
             {dashboardData.alerts?.slice(0, 3).map((alert, idx) => (
-              <div 
-                key={alert.id} 
+              <div
+                key={alert.id}
                 className={`alert-card alert-${alert.type}`}
               >
                 <div className="alert-content">

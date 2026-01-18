@@ -46,7 +46,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 // API Services
 import { getSurveyById, exportSurveyReport } from '../../api/services/surveyService';
-import { 
+import {
   getSurveyAnalytics,
   getSurveySentiment,
   getSentimentHeatmap,
@@ -54,7 +54,8 @@ import {
   getSurveyResponses,
   exportResponsesCSV,
   exportAnalyticsPDF,
-  downloadFile
+  downloadFile,
+  getSurveyDemographics
 } from '../../api/services/analyticsService';
 
 
@@ -226,7 +227,7 @@ const SurveyAnalytics = () => {
 
       console.log('Analytics API Params:', analyticsParams);
 
-      const [surveyData, analytics] = await Promise.all([
+      const [surveyData, analytics, demographics] = await Promise.all([
         getSurveyById(id).catch(err => {
           console.warn('[SurveyAnalytics] Survey fetch failed:', {
             message: err.message,
@@ -241,10 +242,18 @@ const SurveyAnalytics = () => {
           });
           return null;
         }),
+        getSurveyDemographics(id, { days: 30 }).catch(err => {
+          console.warn('[SurveyAnalytics] Demographics fetch failed:', {
+            message: err.message,
+            status: err?.response?.status,
+          });
+          return null;
+        }),
       ]);
 
       console.log('Survey Response:', surveyData);
       console.log('Analytics Response:', analytics);
+      console.log('Demographics Response:', demographics);
 
       if (surveyData) {
         setSurvey(surveyData);
@@ -252,8 +261,18 @@ const SurveyAnalytics = () => {
       }
 
       if (analytics) {
-        setAnalyticsData(analytics);
-        console.log('Analytics state updated');
+        // Merge demographics data into analytics if available
+        const mergedAnalytics = {
+          ...analytics,
+          demographics: demographics ? {
+            byDevice: demographics.byDevice || [],
+            byLocation: demographics.byLocation || [],
+            byTimeOfDay: demographics.byHour || [],
+            byDayOfWeek: demographics.byDayOfWeek || []
+          } : analytics.demographics
+        };
+        setAnalyticsData(mergedAnalytics);
+        console.log('Analytics state updated with demographics');
       }
 
     } catch (err) {
@@ -291,11 +310,11 @@ const SurveyAnalytics = () => {
         last90days: '90d',
         custom: 'custom'
       };
-      
-      const blob = await exportAnalyticsPDF(id, { 
-        range: rangeMap[dateRange] || '30d' 
+
+      const blob = await exportAnalyticsPDF(id, {
+        range: rangeMap[dateRange] || '30d'
       });
-      
+
       downloadFile(blob, `${survey?.title || 'survey'}_analytics.pdf`);
 
       showSuccessToast('Analytics report downloaded successfully!');
@@ -312,7 +331,7 @@ const SurveyAnalytics = () => {
         startDate: dateRange === 'custom' ? startDate?.toISOString() : undefined,
         endDate: dateRange === 'custom' ? endDate?.toISOString() : undefined,
       });
-      
+
       downloadFile(blob, `${survey?.title || 'survey'}_responses.csv`);
 
       showSuccessToast('Responses exported successfully!');

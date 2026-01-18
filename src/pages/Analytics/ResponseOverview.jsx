@@ -1,30 +1,99 @@
 // src/pages/Analytics/ResponseOverview.jsx
 "use client"
 
-import { useState } from "react"
-import { MdTableChart, MdFilterList, MdDownload, MdVisibility, MdSort, MdRefresh, MdSettings, MdFileDownload } from 'react-icons/md'
+import { useState, useEffect, useCallback } from "react"
+import { MdTableChart, MdFilterList, MdDownload, MdVisibility, MdSort, MdRefresh, MdSettings, MdFileDownload, MdError } from 'react-icons/md'
 import Pagination from "../../components/Pagination/Pagination.jsx"
+import { getFlaggedResponses, getSurveyResponses, exportResponsesCSV } from "../../api/services/analyticsService"
+import axiosInstance from "../../api/axiosInstance"
 
 const ResponseOverview = ({ darkMode }) => {
   const [sortBy, setSortBy] = useState("date")
   const [filterStatus, setFilterStatus] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 3
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [responses, setResponses] = useState([])
+  const [surveys, setSurveys] = useState([])
+  const [selectedSurvey, setSelectedSurvey] = useState("")
+  const [totalResponses, setTotalResponses] = useState(0)
+  const itemsPerPage = 10
 
-  const responses = [
-    { id: 1, survey: "Customer Satisfaction Q4", respondent: "john@example.com", date: "2024-01-15", status: "Completed", score: 8.5 },
-    { id: 2, survey: "Product Feedback Survey", respondent: "jane@example.com", date: "2024-01-14", status: "Partial", score: 7.2 },
-    { id: 3, survey: "Employee Engagement", respondent: "bob@company.com", date: "2024-01-13", status: "Completed", score: 9.1 },
-    { id: 4, survey: "Market Research Study", respondent: "alice@test.com", date: "2024-01-12", status: "Completed", score: 6.8 },
-    { id: 5, survey: "User Experience Survey", respondent: "charlie@demo.com", date: "2024-01-11", status: "Abandoned", score: null },
-  ]
+  // Fetch surveys for dropdown
+  const fetchSurveys = useCallback(async () => {
+    try {
+      const response = await axiosInstance.get('/surveys')
+      if (response.data.success) {
+        setSurveys(response.data.data || response.data.surveys || [])
+      }
+    } catch (err) {
+      console.error('Error fetching surveys:', err)
+    }
+  }, [])
 
-  // Status badges now handled with CSS classes directly in JSX
+  // Fetch responses based on selected survey or all
+  const fetchResponses = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
 
-  const totalItems = responses.length
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentResponses = responses.slice(indexOfFirstItem, indexOfLastItem)
+      let data
+      if (selectedSurvey) {
+        // Fetch responses for specific survey
+        data = await getSurveyResponses(selectedSurvey, {
+          page: currentPage,
+          limit: itemsPerPage,
+          sort: sortBy,
+          status: filterStatus !== 'all' ? filterStatus : undefined
+        })
+      } else {
+        // Fetch all flagged/recent responses across tenant
+        data = await getFlaggedResponses({
+          range: '30d',
+          limit: itemsPerPage,
+          page: currentPage
+        })
+      }
+
+      setResponses(data.responses || [])
+      setTotalResponses(data.total || data.responses?.length || 0)
+    } catch (err) {
+      console.error('Error fetching responses:', err)
+      setError('Failed to load responses. Please try again.')
+      setResponses([])
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedSurvey, currentPage, sortBy, filterStatus])
+
+  useEffect(() => {
+    fetchSurveys()
+  }, [fetchSurveys])
+
+  useEffect(() => {
+    fetchResponses()
+  }, [fetchResponses])
+
+  const handleExport = async () => {
+    if (!selectedSurvey) {
+      alert('Please select a survey to export')
+      return
+    }
+    try {
+      await exportResponsesCSV(selectedSurvey)
+    } catch (err) {
+      console.error('Error exporting:', err)
+      alert('Export failed. Please try again.')
+    }
+  }
+
+  const getStatusClass = (status) => {
+    const statusLower = status?.toLowerCase() || ''
+    if (statusLower.includes('complete')) return 'completed'
+    if (statusLower.includes('partial') || statusLower.includes('progress')) return 'partial'
+    if (statusLower.includes('abandon')) return 'abandoned'
+    return 'completed'
+  }
 
   return (
     <div className="response-overview-container">
@@ -37,13 +106,13 @@ const ResponseOverview = ({ darkMode }) => {
           <p>View and analyze all survey responses</p>
         </div>
         <div className="section-actions">
-          <button className="action-button secondary">
-            <MdRefresh />
+          <button className="action-button secondary" onClick={fetchResponses} disabled={loading}>
+            <MdRefresh className={loading ? 'spinning' : ''} />
             Refresh
           </button>
-          <button className="action-button primary">
-            <MdSettings />
-            Settings
+          <button className="action-button primary" onClick={handleExport} disabled={!selectedSurvey}>
+            <MdDownload />
+            Export
           </button>
         </div>
       </div>
@@ -60,18 +129,38 @@ const ResponseOverview = ({ darkMode }) => {
             <div className="controls-grid">
               <div className="control-group">
                 <label className="control-label">
+                  <MdTableChart />
+                  Survey
+                </label>
+                <select
+                  className="control-select"
+                  value={selectedSurvey}
+                  onChange={(e) => {
+                    setSelectedSurvey(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                >
+                  <option value="">All Surveys (Recent)</option>
+                  {surveys.map(survey => (
+                    <option key={survey._id} value={survey._id}>
+                      {survey.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="control-group">
+                <label className="control-label">
                   <MdSort />
                   Sort By
                 </label>
-                <select 
-                  className="control-select" 
-                  value={sortBy} 
+                <select
+                  className="control-select"
+                  value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                 >
                   <option value="date">Date</option>
-                  <option value="survey">Survey</option>
+                  <option value="rating">Rating</option>
                   <option value="status">Status</option>
-                  <option value="score">Score</option>
                 </select>
               </div>
               <div className="control-group">
@@ -79,9 +168,9 @@ const ResponseOverview = ({ darkMode }) => {
                   <MdFilterList />
                   Filter by Status
                 </label>
-                <select 
-                  className="control-select" 
-                  value={filterStatus} 
+                <select
+                  className="control-select"
+                  value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                 >
                   <option value="all">All Statuses</option>
@@ -89,16 +178,6 @@ const ResponseOverview = ({ darkMode }) => {
                   <option value="partial">Partial</option>
                   <option value="abandoned">Abandoned</option>
                 </select>
-              </div>
-              <div className="control-group">
-                <label className="control-label">
-                  <MdDownload />
-                  Export
-                </label>
-                <button className="export-button">
-                  <MdFileDownload />
-                  Export Data
-                </button>
               </div>
             </div>
           </div>
@@ -110,63 +189,86 @@ const ResponseOverview = ({ darkMode }) => {
           <div className="section-icon">
             <MdTableChart />
           </div>
-          <h2>All Responses</h2>
+          <h2>All Responses {totalResponses > 0 && `(${totalResponses})`}</h2>
         </div>
         <div className="section-content">
-          <div className="data-table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Survey</th>
-                  <th>Respondent</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Score</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentResponses.map((response) => (
-                  <tr key={response.id}>
-                    <td className="survey-name">{response.survey}</td>
-                    <td className="respondent-email">{response.respondent}</td>
-                    <td className="response-date">{new Date(response.date).toLocaleDateString()}</td>
-                    <td>
-                      <span className={`status-badge ${response.status.toLowerCase()}`}>
-                        {response.status}
-                      </span>
-                    </td>
-                    <td className="response-score">
-                      {response.score ? (
-                        <span className="score-value">{response.score.toFixed(1)}</span>
-                      ) : (
-                        <span className="no-score">-</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button className="action-button small primary" title="View Response">
-                          <MdVisibility />
-                        </button>
-                        <button className="action-button small secondary" title="Download">
-                          <MdDownload />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="table-footer">
-            <Pagination
-              current={currentPage}
-              total={totalItems}
-              limit={itemsPerPage}
-              onChange={(page) => setCurrentPage(page)}
-              darkMode={darkMode}
-            />
-          </div>
+          {loading ? (
+            <div className="loading-state" style={{ padding: '2rem', textAlign: 'center' }}>
+              <div className="spinner"></div>
+              <p>Loading responses...</p>
+            </div>
+          ) : error ? (
+            <div className="error-state" style={{ padding: '2rem', textAlign: 'center' }}>
+              <MdError size={48} color="#dc3545" />
+              <p className="error-message">{error}</p>
+              <button className="action-button primary" onClick={fetchResponses}>Retry</button>
+            </div>
+          ) : responses.length === 0 ? (
+            <div className="empty-state" style={{ padding: '2rem', textAlign: 'center' }}>
+              <MdTableChart size={48} style={{ opacity: 0.5 }} />
+              <p>No responses found.</p>
+              <p className="text-muted">Try adjusting your filters or selecting a different survey.</p>
+            </div>
+          ) : (
+            <>
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Survey</th>
+                      <th>Respondent</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Rating</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {responses.map((response) => (
+                      <tr key={response._id || response.id}>
+                        <td className="survey-name">{response.survey?.title || response.surveyTitle || 'N/A'}</td>
+                        <td className="respondent-email">{response.contact?.email || response.email || (response.isAnonymous ? 'Anonymous' : 'N/A')}</td>
+                        <td className="response-date">{response.createdAt ? new Date(response.createdAt).toLocaleDateString() : 'N/A'}</td>
+                        <td>
+                          <span className={`status-badge ${getStatusClass(response.status || 'Completed')}`}>
+                            {response.status || 'Completed'}
+                          </span>
+                        </td>
+                        <td className="response-score">
+                          {response.rating ? (
+                            <span className="score-value">{response.rating.toFixed(1)}</span>
+                          ) : response.score !== undefined ? (
+                            <span className="score-value">{response.score}</span>
+                          ) : (
+                            <span className="no-score">-</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="action-buttons">
+                            <button className="action-button small primary" title="View Response">
+                              <MdVisibility />
+                            </button>
+                            <button className="action-button small secondary" title="Download">
+                              <MdDownload />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="table-footer">
+                <Pagination
+                  current={currentPage}
+                  total={totalResponses}
+                  limit={itemsPerPage}
+                  onChange={(page) => setCurrentPage(page)}
+                  darkMode={darkMode}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

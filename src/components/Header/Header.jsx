@@ -79,12 +79,11 @@ const Header = ({
     try {
       setLoadingNotifications(true);
       // ✅ FIX: Don't pass status filter to get all notifications
-      const response = await notificationAPI.getMyNotifications({ 
+      const response = await notificationAPI.getMyNotifications({
         limit: 10,
         sort: '-createdAt'
         // Remove status filter - we want all notifications
       });
-      console.log('Notifications response:', response.data);
       if (response?.data?.success) {
         const notifs = response.data.data?.notifications || response.data.notifications || [];
         setNotifications(notifs);
@@ -115,7 +114,7 @@ const Header = ({
     try {
       await notificationAPI.markAsRead(notificationId);
       // Update local state
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => n._id === notificationId ? { ...n, status: 'read', read: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -495,9 +494,9 @@ const Header = ({
                   <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
                     <span className="fw-semibold" style={{ color: darkMode ? "#fff" : "#000" }}>Notifications</span>
                     {unreadCount > 0 && (
-                      <Button 
-                        variant="link" 
-                        size="sm" 
+                      <Button
+                        variant="link"
+                        size="sm"
                         className="p-0 text-primary"
                         onClick={(e) => {
                           e.preventDefault();
@@ -552,9 +551,9 @@ const Header = ({
                         </Dropdown.Item>
                       ))}
                       <Dropdown.Divider className="my-0" />
-                      <Dropdown.Item 
-                        as={Link} 
-                        to="/app/notifications" 
+                      <Dropdown.Item
+                        as={Link}
+                        to="/app/notifications"
                         className="text-center py-2 text-primary"
                         onClick={() => setShowNotifications(false)}
                       >
