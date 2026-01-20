@@ -59,6 +59,9 @@ const Analytics = ({ darkMode }) => {
         getAllTrends({ range: apiRange })
       ])
 
+      console.log("summaryData", summaryData)
+      console.log("trendsData", trendsData)
+
       // Transform summary data into metrics cards
       const transformedMetrics = [
         {

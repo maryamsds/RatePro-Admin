@@ -20,27 +20,36 @@ const FeedbackAnalysis = () => {
 
   const fetchSurveys = async () => {
     try {
+      console.log('[FeedbackAnalysis] Fetching surveys...')
       const response = await axiosInstance.get('/surveys')
-      if (response.data.success) {
-        setSurveys(response.data.data || response.data.surveys || [])
-      }
+      console.log('[FeedbackAnalysis] Surveys API response:', response.data)
+
+      // Handle both response structures: {success: true, data: [...]} OR {surveys: [...]}
+      const surveyList = response.data.data || response.data.surveys || []
+      console.log('[FeedbackAnalysis] Surveys loaded:', surveyList.length)
+      setSurveys(surveyList)
     } catch (error) {
-      console.error('Error fetching surveys:', error)
+      console.error('[FeedbackAnalysis] Error fetching surveys:', error)
     }
   }
 
   const analyzeFeeedback = async () => {
     if (!selectedSurvey) return
-    
+
     try {
       setLoading(true)
-      
+
       // Use new analytics APIs
       const [sentimentData, summaryData] = await Promise.all([
         getSurveySentiment(selectedSurvey, { range: timeRange }),
         getSurveySummary(selectedSurvey, { range: timeRange })
       ])
-      
+
+      // DEBUG: Log raw API responses
+      console.log('[FeedbackAnalysis] Raw API Responses:')
+      console.log('  sentimentData:', sentimentData)
+      console.log('  summaryData:', summaryData)
+
       // Combine sentiment and summary data for analysis view
       setAnalysis({
         sentiment: sentimentData,
@@ -60,14 +69,14 @@ const FeedbackAnalysis = () => {
 
   const generateActions = async () => {
     if (!analysis) return
-    
+
     try {
       setLoading(true)
       const response = await axiosInstance.post('/actions/generate', {
         surveyId: selectedSurvey,
         analysis: analysis
       })
-      
+
       if (response.data.success) {
         // Actions generated successfully
         alert('Actions generated successfully! Check the Action Management page.')
@@ -153,7 +162,7 @@ const FeedbackAnalysis = () => {
               <Card className="text-center">
                 <Card.Body>
                   <MdSentimentSatisfied size={48} className="text-success mb-2" />
-                  <h4>{analysis.sentiment?.positive || 0}</h4>
+                  <h4>{analysis.summary?.sentiment?.positive || analysis.sentiment?.breakdown?.positive || 0}</h4>
                   <small className="text-muted">Positive Responses</small>
                 </Card.Body>
               </Card>
@@ -162,7 +171,7 @@ const FeedbackAnalysis = () => {
               <Card className="text-center">
                 <Card.Body>
                   <MdSentimentDissatisfied size={48} className="text-danger mb-2" />
-                  <h4>{analysis.sentiment?.negative || 0}</h4>
+                  <h4>{analysis.summary?.sentiment?.negative || analysis.sentiment?.breakdown?.negative || 0}</h4>
                   <small className="text-muted">Negative Responses</small>
                 </Card.Body>
               </Card>
@@ -171,7 +180,7 @@ const FeedbackAnalysis = () => {
               <Card className="text-center">
                 <Card.Body>
                   <MdTrendingUp size={48} className="text-warning mb-2" />
-                  <h4>{analysis.sentiment?.neutral || 0}</h4>
+                  <h4>{analysis.summary?.sentiment?.neutral || analysis.sentiment?.breakdown?.neutral || 0}</h4>
                   <small className="text-muted">Neutral Responses</small>
                 </Card.Body>
               </Card>
@@ -179,7 +188,7 @@ const FeedbackAnalysis = () => {
             <Col md={3}>
               <Card className="text-center">
                 <Card.Body>
-                  <h4>{analysis.totalResponses || 0}</h4>
+                  <h4>{analysis.sentiment?.totalResponses || analysis.summary?.responses?.total || 0}</h4>
                   <small className="text-muted">Total Analyzed</small>
                 </Card.Body>
               </Card>
@@ -208,8 +217,8 @@ const FeedbackAnalysis = () => {
                           <td>{issue.count}</td>
                           <td>
                             <Badge variant={
-                              issue.severity === 'high' ? 'danger' : 
-                              issue.severity === 'medium' ? 'warning' : 'info'
+                              issue.severity === 'high' ? 'danger' :
+                                issue.severity === 'medium' ? 'warning' : 'info'
                             }>
                               {issue.severity}
                             </Badge>
@@ -225,8 +234,8 @@ const FeedbackAnalysis = () => {
               <Card>
                 <Card.Header className="d-flex justify-content-between align-items-center">
                   <h6 className="mb-0">AI Insights</h6>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="success"
                     onClick={generateActions}
                     disabled={loading}

@@ -56,6 +56,11 @@ const RealTimeResults = ({ darkMode }) => {
         getDemographics({ surveyId: selectedSurvey, days: 7 })
       ])
 
+      // DEBUG: Log raw API responses
+      console.log('[RealTimeResults] Raw API Responses:')
+      console.log('  responsesData:', responsesData)
+      console.log('  demographicsData:', demographicsData)
+
       setRecentResponses(responsesData.responses || [])
       setDemographics(demographicsData)
 

@@ -88,6 +88,14 @@ const AnalyticsDashboard = () => {
       const alertsData = alertsRes.status === 'fulfilled' ? alertsRes.value : [];
       const flaggedData = flaggedRes.status === 'fulfilled' ? flaggedRes.value : { responses: [] };
 
+      // DEBUG: Log raw API responses
+      console.log('[AnalyticsDashboard] Raw API Responses:');
+      console.log('  tenantSummary:', tenantSummaryRes.status, tenantData);
+      console.log('  quickSummary:', quickSummaryRes.status, quickData);
+      console.log('  trends:', trendsRes.status, trendsData);
+      console.log('  alerts:', alertsRes.status, alertsData);
+      console.log('  flagged:', flaggedRes.status, flaggedData);
+
       // If tenant data failed, show error state
       if (!tenantData) {
         setError('Failed to load dashboard data');
@@ -95,27 +103,29 @@ const AnalyticsDashboard = () => {
         return;
       }
 
-      // Build executive data from tenant summary with proper NPS breakdown mapping
+      // Build executive data from tenant summary - using transformed data structure
       const executiveData = {
         customerSatisfactionIndex: {
-          overall: tenantData.kpis?.csi?.current || tenantData.overallSatisfaction || 0,
+          overall: tenantData.overallSatisfaction || tenantData.sentiment?.avgRating || 0,
           trend: tenantData.comparison?.ratingChange || 0,
-          locations: tenantData.kpis?.csi?.locations || [],
-          services: tenantData.kpis?.csi?.services || []
+          locations: [],  // Not available in current API
+          services: []    // Not available in current API
         },
-        // Fixed: Map NPS breakdown from kpis.nps object
         npsScore: {
-          current: tenantData.kpis?.nps?.current || tenantData.overallNPS || 0,
-          trend: tenantData.kpis?.nps?.change || 0,
-          promoters: tenantData.kpis?.nps?.promoters || 0,
-          detractors: tenantData.kpis?.nps?.detractors || 0,
-          passives: tenantData.kpis?.nps?.passives || 0
+          current: tenantData.overallNPS || 0,
+          trend: tenantData.comparison?.responseChange || 0,
+          promoters: 0,   // Need separate NPS breakdown API
+          detractors: 0,
+          passives: 0
         },
         responseRate: {
-          current: tenantData.kpis?.responseRate?.current || quickData.completionRateToday || 0,
+          // Calculate response rate: if we have responses, show as percentage of active surveys
+          current: tenantData.totalResponses > 0 && tenantData.activeSurveys > 0
+            ? Math.round((tenantData.totalResponses / tenantData.activeSurveys) * 10)
+            : quickData.completionRateToday || 0,
           trend: quickData.responsesChange || 0,
-          total: tenantData.overview?.totalResponses || tenantData.totalResponses || 0,
-          completed: tenantData.kpis?.responseRate?.current || 0
+          total: tenantData.totalResponses || 0,
+          completed: tenantData.totalResponses || 0
         },
         ...tenantData
       };

@@ -23,12 +23,16 @@ const CustomReports = ({ darkMode }) => {
     try {
       setLoading(true)
       setError(null)
+      console.log('[CustomReports] Fetching surveys...')
       const response = await axiosInstance.get('/surveys')
-      if (response.data.success) {
-        setSurveys(response.data.data || response.data.surveys || [])
-      }
+      console.log('[CustomReports] Surveys API response:', response.data)
+
+      // Handle both response structures
+      const surveyList = response.data.data || response.data.surveys || []
+      console.log('[CustomReports] Surveys loaded:', surveyList.length)
+      setSurveys(surveyList)
     } catch (err) {
-      console.error('Error fetching surveys:', err)
+      console.error('[CustomReports] Error fetching surveys:', err)
       setError('Failed to load surveys. Please try again.')
     } finally {
       setLoading(false)
@@ -55,16 +59,19 @@ const CustomReports = ({ darkMode }) => {
       // For now, export PDF for the first selected survey
       // TODO: Backend needs a proper report generation endpoint
       const surveyId = selectedSurveys[0]
+      console.log('[CustomReports] Generating report for survey:', surveyId, 'Type:', reportType)
 
       if (reportType === 'detailed') {
-        await exportResponsesCSV(surveyId)
+        const result = await exportResponsesCSV(surveyId)
+        console.log('[CustomReports] CSV export result:', result)
       } else {
-        await exportAnalyticsPDF(surveyId)
+        const result = await exportAnalyticsPDF(surveyId)
+        console.log('[CustomReports] PDF export result:', result)
       }
 
       alert('Report downloaded successfully!')
     } catch (err) {
-      console.error('Error generating report:', err)
+      console.error('[CustomReports] Error generating report:', err)
       alert('Failed to generate report. Please try again.')
     } finally {
       setGenerating(false)

@@ -46,6 +46,8 @@ const ResponseOverview = ({ darkMode }) => {
           sort: sortBy,
           status: filterStatus !== 'all' ? filterStatus : undefined
         })
+        // DEBUG: Log raw API response
+        console.log('[ResponseOverview] getSurveyResponses:', data)
       } else {
         // Fetch all flagged/recent responses across tenant
         data = await getFlaggedResponses({
@@ -53,6 +55,8 @@ const ResponseOverview = ({ darkMode }) => {
           limit: itemsPerPage,
           page: currentPage
         })
+        // DEBUG: Log raw API response
+        console.log('[ResponseOverview] getFlaggedResponses:', data)
       }
 
       setResponses(data.responses || [])

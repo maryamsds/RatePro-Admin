@@ -31,6 +31,10 @@ const TrendAnalysis = () => {
       setLoading(true)
       setError(null)
       const data = await getAllTrends({ range: timeRange })
+
+      // DEBUG: Log raw API response
+      console.log('[TrendAnalysis] getAllTrends response:', data)
+
       setTrendsData(data)
     } catch (err) {
       console.error('Error fetching trends:', err)

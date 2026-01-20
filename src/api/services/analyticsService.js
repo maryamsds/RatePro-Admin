@@ -277,14 +277,24 @@ export const exportResponsesCSV = async (surveyId, params = {}) => {
     { responseType: "blob" }
   );
 
-  return response.data;
+  // Extract filename from Content-Disposition header or generate one
+  const contentDisposition = response.headers?.["content-disposition"];
+  let filename = `survey_responses_${new Date().toISOString().split("T")[0]}.csv`;
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match) filename = match[1];
+  }
+
+  // Trigger the download
+  downloadFile(response.data, filename);
+  return { success: true, filename };
 };
 
 /**
  * Export survey analytics as PDF
  * @param {string} surveyId
  * @param {Object} params - { range }
- * @returns {Promise<Blob>}
+ * @returns {Promise<Object>}
  */
 export const exportAnalyticsPDF = async (surveyId, params = {}) => {
   const { range = "30d" } = params;
@@ -294,7 +304,17 @@ export const exportAnalyticsPDF = async (surveyId, params = {}) => {
     { responseType: "blob" }
   );
 
-  return response.data;
+  // Extract filename from Content-Disposition header or generate one
+  const contentDisposition = response.headers?.["content-disposition"];
+  let filename = `survey_analytics_${new Date().toISOString().split("T")[0]}.pdf`;
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match) filename = match[1];
+  }
+
+  // Trigger the download
+  downloadFile(response.data, filename);
+  return { success: true, filename };
 };
 
 /**
@@ -473,61 +493,63 @@ const transformAlerts = (alerts) => {
 
 /**
  * Transform sentiment analysis response
+ * Handles both direct data or wrapped in {success: true, data: {...}}
  */
-const transformSentimentAnalysis = (data) => ({
-  surveyId: data.surveyId,
-  surveyTitle: data.surveyTitle,
-  totalResponses: data.totalResponses || 0,
-  analyzedResponses: data.analyzedResponses || 0,
+const transformSentimentAnalysis = (response) => {
+  // Unwrap from success response if needed
+  const data = response?.data || response;
 
-  // Overall sentiment breakdown
-  breakdown: {
-    positive: data.breakdown?.positive || data.positive || 0,
-    negative: data.breakdown?.negative || data.negative || 0,
-    neutral: data.breakdown?.neutral || data.neutral || 0,
-  },
+  return {
+    surveyId: data.surveyId,
+    surveyTitle: data.surveyTitle,
+    totalResponses: data.totalResponses || 0,
+    analyzedResponses: data.analyzedResponses || 0,
 
-  // Percentages
-  percentages: {
-    positive: data.percentages?.positive || 0,
-    negative: data.percentages?.negative || 0,
-    neutral: data.percentages?.neutral || 0,
-  },
+    // Overall sentiment breakdown
+    breakdown: {
+      positive: data.breakdown?.positive || data.positive || 0,
+      negative: data.breakdown?.negative || data.negative || 0,
+      neutral: data.breakdown?.neutral || data.neutral || 0,
+    },
 
-  // Average sentiment score (-1 to 1)
-  averageSentimentScore: data.averageSentimentScore || 0,
+    // Percentages
+    percentages: {
+      positive: data.percentages?.positive || 0,
+      negative: data.percentages?.negative || 0,
+      neutral: data.percentages?.neutral || 0,
+    },
 
-  // Emotion distribution
-  emotions: data.emotions || {
-    joy: 0,
-    frustration: 0,
-    satisfaction: 0,
-    disappointment: 0,
-    anger: 0,
-    gratitude: 0,
-  },
+    // Average sentiment score (-1 to 1)
+    averageSentimentScore: data.averageSentimentScore || data.averageScore || 0,
 
-  // Top keywords and themes
-  topKeywords: (data.topKeywords || []).map(kw => ({
-    word: kw.word || kw.keyword || kw,
-    count: kw.count || kw.frequency || 0,
-    sentiment: kw.sentiment || "neutral",
-  })),
+    // Emotion distribution
+    emotions: data.emotions || {
+      joy: 0, frustration: 0, satisfaction: 0,
+      disappointment: 0, anger: 0, gratitude: 0,
+    },
 
-  topThemes: (data.topThemes || []).map(theme => ({
-    name: theme.name || theme.theme || theme,
-    count: theme.count || 0,
-    sentiment: theme.sentiment || "neutral",
-  })),
+    // Top keywords and themes
+    topKeywords: (data.topKeywords || []).map(kw => ({
+      word: kw.word || kw.keyword || kw,
+      count: kw.count || kw.frequency || 0,
+      sentiment: kw.sentiment || "neutral",
+    })),
 
-  // Trend over time
-  trend: (data.trend || []).map(item => ({
-    date: item.date || item._id,
-    positive: item.positive || 0,
-    negative: item.negative || 0,
-    neutral: item.neutral || 0,
-  })),
-});
+    topThemes: (data.topThemes || []).map(theme => ({
+      name: theme.name || theme.theme || theme,
+      count: theme.count || 0,
+      sentiment: theme.sentiment || "neutral",
+    })),
+
+    // Trend over time
+    trend: (data.trend || []).map(item => ({
+      date: item.date || item._id,
+      positive: item.positive || 0,
+      negative: item.negative || 0,
+      neutral: item.neutral || 0,
+    })),
+  };
+};
 
 /**
  * Transform sentiment heatmap for visualization
@@ -559,112 +581,153 @@ const transformSentimentHeatmap = (data) => ({
 
 /**
  * Transform comprehensive survey summary
+ * Handles both direct data or wrapped in {success: true, data: {...}}
  */
-const transformSurveySummary = (data) => ({
-  surveyId: data.surveyId,
-  surveyTitle: data.surveyTitle,
-  status: data.status,
-  createdAt: data.createdAt,
+const transformSurveySummary = (response) => {
+  // Unwrap from success response if needed
+  const data = response?.data || response;
 
-  // Response metrics
-  responses: {
-    total: data.totalResponses || 0,
-    completed: data.completedResponses || 0,
-    partial: data.partialResponses || 0,
-    completionRate: data.completionRate || 0,
-    avgCompletionTime: data.avgCompletionTime || 0,
-  },
+  return {
+    surveyId: data.surveyId || data.survey?._id,
+    surveyTitle: data.surveyTitle || data.survey?.title,
+    status: data.status || data.survey?.status,
+    createdAt: data.createdAt || data.survey?.createdAt,
 
-  // Satisfaction metrics
-  satisfaction: {
-    averageRating: data.averageRating || 0,
-    nps: data.nps || { score: 0, promoters: 0, passives: 0, detractors: 0 },
-    csi: data.csi || 0,
-    trend: data.satisfactionTrend || [],
-  },
+    // Response metrics
+    responses: {
+      total: data.totalResponses || data.responses?.total || 0,
+      completed: data.completedResponses || 0,
+      partial: data.partialResponses || 0,
+      completionRate: data.completionRate || 0,
+      avgCompletionTime: data.avgCompletionTime || 0,
+    },
 
-  // Sentiment analysis
-  sentiment: transformSentimentBreakdown(data.sentiment || {}),
-  sentimentScore: data.sentimentScore || 0,
+    // Satisfaction metrics
+    satisfaction: {
+      averageRating: data.averageRating || data.metrics?.averageRating || 0,
+      nps: data.nps || data.metrics?.nps || { score: 0, promoters: 0, passives: 0, detractors: 0 },
+      csi: data.csi || data.metrics?.csi || 0,
+      trend: data.satisfactionTrend || [],
+    },
 
-  // Key insights
-  insights: {
-    topComplaints: data.topComplaints || [],
-    topPraises: data.topPraises || [],
-    urgentIssues: data.urgentIssues || [],
-    actionableItems: data.actionableItems || [],
-  },
+    // Sentiment analysis
+    sentiment: transformSentimentBreakdown(data.sentiment || data.metrics?.sentiment || {}),
+    sentimentScore: data.sentimentScore || data.metrics?.sentimentScore || 0,
 
-  // Question breakdown
-  questionAnalysis: (data.questionAnalysis || []).map(q => ({
-    questionId: q.questionId,
-    questionText: q.questionText || q.text,
-    questionType: q.questionType || q.type,
-    responseCount: q.responseCount || 0,
-    avgRating: q.avgRating || null,
-    distribution: q.distribution || [],
-    topAnswers: q.topAnswers || [],
-  })),
+    // Key insights
+    insights: {
+      topComplaints: data.topComplaints || data.insights?.topComplaints || [],
+      topPraises: data.topPraises || data.insights?.topPraises || [],
+      urgentIssues: data.urgentIssues || data.insights?.urgentIssues || [],
+      actionableItems: data.actionableItems || data.insights?.actionableItems || [],
+    },
 
-  // Actions generated
-  actionsGenerated: data.actionsGenerated || 0,
-  openActions: data.openActions || 0,
-});
+    // Question breakdown
+    questionAnalysis: (data.questionAnalysis || data.questions || []).map(q => ({
+      questionId: q.questionId || q._id,
+      questionText: q.questionText || q.text,
+      questionType: q.questionType || q.type,
+      responseCount: q.responseCount || q.responses || 0,
+      avgRating: q.avgRating || null,
+      distribution: q.distribution || [],
+      topAnswers: q.topAnswers || [],
+    })),
+
+    // Actions generated
+    actionsGenerated: data.actionsGenerated || 0,
+    openActions: data.openActions || 0,
+  };
+};
 
 /**
  * Transform tenant-wide summary
+ * Maps backend structure: { overview, kpis, sentiment, trends, engagement, comparison }
+ * to frontend expected structure
  */
-const transformTenantSummary = (data) => ({
-  // Overall metrics
-  totalSurveys: data.totalSurveys || 0,
-  activeSurveys: data.activeSurveys || 0,
-  totalResponses: data.totalResponses || 0,
-  avgResponsesPerSurvey: data.avgResponsesPerSurvey || 0,
+const transformTenantSummary = (response) => {
+  // Handle both direct data or wrapped in success response
+  const data = response?.data || response;
 
-  // Satisfaction metrics
-  overallSatisfaction: data.overallSatisfaction || 0,
-  overallNPS: data.overallNPS || 0,
-  overallCSI: data.overallCSI || 0,
+  // Extract from nested backend structure
+  const overview = data.overview || {};
+  const kpis = data.kpis || {};
+  const sentiment = data.sentiment || {};
+  const trends = data.trends || {};
+  const comparison = data.comparison || {};
 
-  // Sentiment overview
-  sentiment: {
-    positive: data.sentiment?.positive || 0,
-    negative: data.sentiment?.negative || 0,
-    neutral: data.sentiment?.neutral || 0,
-  },
+  return {
+    // Overall metrics (from overview)
+    totalSurveys: overview.totalSurveys || data.totalSurveys || 0,
+    activeSurveys: overview.activeSurveys || data.activeSurveys || 0,
+    totalResponses: overview.totalResponses || data.totalResponses || 0,
+    avgResponsesPerSurvey: kpis.responseRate?.avgPerSurvey || data.avgResponsesPerSurvey || 0,
 
-  // Top performing surveys
-  topSurveys: (data.topSurveys || []).map(s => ({
-    id: s._id || s.id,
-    title: s.title,
-    responseCount: s.responseCount || 0,
-    avgRating: s.avgRating || 0,
-    nps: s.nps || 0,
-  })),
+    // Satisfaction metrics (from kpis)
+    overallSatisfaction: kpis.csi?.current || data.overallSatisfaction || 0,
+    overallNPS: kpis.nps?.current || data.overallNPS || 0,
+    overallCSI: kpis.csi?.current || data.overallCSI || 0,
 
-  // Attention needed
-  surveysNeedingAttention: (data.surveysNeedingAttention || []).map(s => ({
-    id: s._id || s.id,
-    title: s.title,
-    issue: s.issue,
-    severity: s.severity || "warning",
-  })),
+    // Sentiment overview
+    sentiment: {
+      positive: sentiment.positive || data.sentiment?.positive || 0,
+      negative: sentiment.negative || data.sentiment?.negative || 0,
+      neutral: sentiment.neutral || data.sentiment?.neutral || 0,
+      avgRating: sentiment.avgRating || 0,
+      avgScore: sentiment.avgScore || 0,
+    },
 
-  // Trends
-  trends: {
-    responsesOverTime: data.responsesOverTime || [],
-    satisfactionOverTime: data.satisfactionOverTime || [],
-    npsOverTime: data.npsOverTime || [],
-  },
+    // Top performing surveys
+    topSurveys: (data.topSurveys || []).map(s => ({
+      id: s._id || s.id,
+      title: s.title,
+      responseCount: s.responseCount || s.totalResponses || 0,
+      avgRating: s.avgRating || 0,
+      nps: s.nps || 0,
+    })),
 
-  // Actions summary
-  actions: {
-    open: data.openActions || 0,
-    inProgress: data.inProgressActions || 0,
-    resolved: data.resolvedActions || 0,
-    overdue: data.overdueActions || 0,
-  },
-});
+    // Attention needed
+    surveysNeedingAttention: (data.surveysNeedingAttention || []).map(s => ({
+      id: s._id || s.id,
+      title: s.title,
+      issue: s.issue,
+      severity: s.severity || "warning",
+    })),
+
+    // Trends (from trends object with volume array)
+    trends: {
+      responsesOverTime: (trends.volume || data.responsesOverTime || []).map(t => ({
+        date: t.date,
+        value: t.count || t.responses || t.value || 0,
+      })),
+      satisfactionOverTime: data.satisfactionOverTime || [],
+      npsOverTime: data.npsOverTime || [],
+      growth: trends.growth || 0,
+      peakDate: trends.peakDate || null,
+    },
+
+    // Actions summary
+    actions: {
+      open: overview.actionsGenerated || data.openActions || 0,
+      inProgress: data.inProgressActions || 0,
+      resolved: data.resolvedActions || 0,
+      overdue: data.overdueActions || 0,
+    },
+
+    // Comparison data
+    comparison: {
+      responseChange: comparison.responseChange || 0,
+      ratingChange: comparison.ratingChange || 0,
+      direction: comparison.direction || "stable",
+    },
+
+    // Engagement data
+    engagement: data.engagement || {},
+
+    // Period info
+    period: data.period || {},
+  };
+};
+
 
 /**
  * Transform quick summary for widgets
@@ -693,33 +756,57 @@ const transformQuickSummary = (data) => ({
 
 /**
  * Transform all trends data
+ * Maps backend structure: { satisfaction: { trend: [] }, volume: { trend: [] }, ... }
+ * to frontend expected structure with labels/values arrays
  */
-const transformAllTrends = (data) => ({
-  satisfaction: transformSatisfactionTrend(data.satisfaction || {}),
-  volume: {
-    labels: data.volume?.labels || [],
-    responses: data.volume?.responses || [],
-    surveys: data.volume?.surveys || [],
-  },
-  nps: {
-    labels: data.nps?.labels || [],
-    scores: data.nps?.scores || [],
-    promoters: data.nps?.promoters || [],
-    detractors: data.nps?.detractors || [],
-  },
-  sentiment: {
-    labels: data.sentiment?.labels || [],
-    positive: data.sentiment?.positive || [],
-    negative: data.sentiment?.negative || [],
-    neutral: data.sentiment?.neutral || [],
-  },
-  engagement: transformEngagementData(data.engagement || {}),
-  complaints: {
-    labels: data.complaints?.labels || [],
-    counts: data.complaints?.counts || [],
-    categories: data.complaints?.categories || [],
-  },
-});
+const transformAllTrends = (response) => {
+  // Handle both direct data or wrapped in success response
+  const data = response?.data || response;
+
+  // Backend returns: satisfaction.trend, volume.trend, etc.
+  const satisfaction = data.satisfaction || {};
+  const volume = data.volume || {};
+  const complaints = data.complaints || {};
+  const engagement = data.engagement || {};
+
+  // Extract trend arrays or use empty fallbacks
+  const satisfactionTrend = satisfaction.trend || [];
+  const volumeTrend = volume.trend || [];
+
+  return {
+    satisfaction: {
+      labels: satisfactionTrend.map(t => t.date),
+      values: satisfactionTrend.map(t => t.avgRating || t.avgScore || 0),
+      average: satisfaction.summary?.overallAvgRating || 0,
+      trend: "stable",
+      change: 0,
+    },
+    volume: {
+      labels: volumeTrend.map(t => t.date),
+      responses: volumeTrend.map(t => t.count || t.responses || 0),
+      surveys: volumeTrend.map(() => 0), // Not available in backend response
+    },
+    nps: {
+      labels: [],
+      scores: [],
+      promoters: [],
+      detractors: [],
+    },
+    sentiment: {
+      labels: [],
+      positive: [],
+      negative: [],
+      neutral: [],
+    },
+    engagement: transformEngagementData(engagement),
+    complaints: {
+      labels: (complaints.categories || []).map(c => c.category),
+      counts: (complaints.categories || []).map(c => c.count || 0),
+      categories: complaints.categories || [],
+    },
+  };
+};
+
 
 /**
  * Transform satisfaction trend data
@@ -737,29 +824,32 @@ const transformSatisfactionTrend = (data) => ({
 
 /**
  * Transform engagement patterns
+ * Maps backend: { hourlyDistribution, dailyDistribution, peakEngagement, avgCompletionTime }
  */
 const transformEngagementData = (data) => ({
-  // Peak hours analysis
-  peakHours: (data.peakHours || data.byHour || []).map(h => ({
-    hour: h.hour || h._id,
-    responses: h.responses || h.count || 0,
+  // Peak hours analysis - backend uses hourlyDistribution[]
+  peakHours: (data.hourlyDistribution || data.peakHours || data.byHour || []).map(h => ({
+    hour: h.hour ?? h._id,
+    responses: h.count || h.responses || 0,
     avgRating: h.avgRating || 0,
   })),
 
-  // Peak days analysis
-  peakDays: (data.peakDays || data.byDay || []).map(d => ({
+  // Peak days analysis - backend uses dailyDistribution[]
+  peakDays: (data.dailyDistribution || data.peakDays || data.byDay || []).map(d => ({
     day: d.day || d._id,
-    dayName: getDayName(d.day || d._id),
-    responses: d.responses || d.count || 0,
+    dayName: d.name || getDayName(d.day || d._id),
+    responses: d.count || d.responses || 0,
     avgRating: d.avgRating || 0,
   })),
 
-  // Summary
-  mostActiveHour: data.mostActiveHour || null,
-  mostActiveDay: data.mostActiveDay || null,
-  avgSessionDuration: data.avgSessionDuration || 0,
+  // Summary - backend uses peakEngagement object
+  mostActiveHour: data.peakEngagement?.hourFormatted || data.mostActiveHour || null,
+  mostActiveDay: data.peakEngagement?.day || data.mostActiveDay || null,
+  avgSessionDuration: data.avgCompletionTime || data.avgSessionDuration || 0,
   peakResponseTime: data.peakResponseTime || null,
+  totalResponses: data.totalResponses || 0,
 });
+
 
 /**
  * Transform response list
