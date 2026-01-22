@@ -1,6 +1,6 @@
 ﻿// src\pages\Actions\ActionManagement.jsx
 "use client"
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container, Row, Col, Card, Button, Badge, Tab, Tabs,
@@ -15,21 +15,375 @@ import {
   MdFilterList, MdRefresh, MdDownload, MdAssignmentTurnedIn,
   MdAssignmentLate, MdPriorityHigh, MdBusiness, MdGroup,
   MdComment, MdAttachment, MdTimer, MdSentimentSatisfied,
-  MdSentimentDissatisfied, MdSentimentNeutral, MdInsights
+  MdSentimentDissatisfied, MdSentimentNeutral, MdInsights,
+  MdError
 } from 'react-icons/md';
 import {
   FaClock, FaUsers, FaExclamationTriangle, FaChartLine,
   FaBuilding, FaMapMarkerAlt, FaStar, FaRegStar
 } from 'react-icons/fa';
+import Swal from 'sweetalert2';
+
+// Service imports
 import {
   listActions,
   getActionStats,
   updateAction,
   assignAction,
+  deleteAction,
+  createAction,
   generateActionsFromFeedback
 } from '../../api/services/actionService';
-import Swal from 'sweetalert2';
 
+// Constants imports
+import {
+  ACTION_STATUSES,
+  ACTION_PRIORITIES,
+  STATUS_CONFIG,
+  PRIORITY_CONFIG,
+  DEFAULT_STATS,
+  DEFAULT_FILTERS,
+  ACTION_TABS,
+  DEPARTMENTS
+} from '../../constants/actionConstants';
+
+// Adapters
+import { formatDate, isActionOverdue } from '../../api/adapters/actionAdapters';
+
+// ============================================================================
+// 🎨 Badge Rendering Components
+// ============================================================================
+
+const PriorityBadge = ({ priority }) => {
+  const config = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG[ACTION_PRIORITIES.MEDIUM];
+  const IconMap = {
+    MdPriorityHigh,
+    MdWarning,
+    MdFlag,
+    MdSchedule,
+  };
+  const Icon = IconMap[config.icon] || MdFlag;
+
+  return (
+    <Badge bg={config.color} className="d-flex align-items-center gap-1">
+      <Icon size={14} />
+      {config.label?.toUpperCase() || priority?.toUpperCase() || 'MEDIUM'}
+    </Badge>
+  );
+};
+
+const StatusBadge = ({ status }) => {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG[ACTION_STATUSES.PENDING];
+  const IconMap = {
+    MdSchedule,
+    MdAssignment,
+    MdTimer,
+    MdCheckCircle,
+  };
+  const Icon = IconMap[config.icon] || MdSchedule;
+
+  return (
+    <Badge bg={config.color} className="d-flex align-items-center gap-1">
+      <Icon size={14} />
+      {config.label?.toUpperCase() || status?.replace('-', ' ').toUpperCase() || 'PENDING'}
+    </Badge>
+  );
+};
+
+// ============================================================================
+// 📋 Action Card Component
+// ============================================================================
+
+const ActionCard = ({
+  action,
+  onStatusChange,
+  onViewDetails,
+  onDelete,
+  isUpdating
+}) => {
+  const isOverdue = action.isOverdue || isActionOverdue(action);
+
+  return (
+    <Card className={`action-item mb-3 border ${isOverdue ? 'border-danger' : ''}`}>
+      <Card.Body>
+        <Row className="align-items-start">
+          <Col lg={6}>
+            <div className="d-flex align-items-start mb-2">
+              <div className="me-3">
+                <PriorityBadge priority={action.priority} />
+              </div>
+              <div className="flex-grow-1">
+                <h6 className="mb-1 fw-bold">
+                  {action.title || 'Untitled Action'}
+                  {isOverdue && (
+                    <Badge bg="danger" className="ms-2" pill>Overdue</Badge>
+                  )}
+                </h6>
+                <p className="text-muted small mb-2">
+                  {action.description || 'No description provided'}
+                </p>
+
+                <div className="d-flex flex-wrap gap-2 mb-2">
+                  <Badge bg="light" text="dark" className="d-flex align-items-center">
+                    <MdLocationOn className="me-1" />
+                    {action.location || action.team || 'N/A'}
+                  </Badge>
+                  <Badge bg="light" text="dark" className="d-flex align-items-center">
+                    <MdBusiness className="me-1" />
+                    {action.department || action.category || 'Unassigned'}
+                  </Badge>
+                  <Badge bg="light" text="dark" className="d-flex align-items-center">
+                    <MdPerson className="me-1" />
+                    {action.assigneeName || action.assignee?.name || 'Unassigned'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col lg={3}>
+            <div className="mb-2">
+              <StatusBadge status={action.status} />
+            </div>
+            <div className="small text-muted">
+              <div className="mb-1">
+                <FaClock className="me-1" />
+                Due: {action.dueDate ? formatDate(action.dueDate) : 'Not set'}
+              </div>
+              <div className="mb-1">
+                <MdComment className="me-1" />
+                {action.feedback?.count ?? 0} feedback items
+              </div>
+              <div className="d-flex align-items-center">
+                <FaStar className="me-1 text-warning" />
+                {(action.feedback?.avgRating ?? 0).toFixed(1)} avg rating
+              </div>
+            </div>
+          </Col>
+
+          <Col lg={3} className="text-end">
+            <div className="d-flex flex-column gap-1">
+              {action.status === ACTION_STATUSES.PENDING && (
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => onStatusChange(action.id, ACTION_STATUSES.IN_PROGRESS)}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <Spinner animation="border" size="sm" className="me-1" />
+                  ) : (
+                    <MdTimer className="me-1" />
+                  )}
+                  Start
+                </Button>
+              )}
+
+              {action.status === ACTION_STATUSES.IN_PROGRESS && (
+                <Button
+                  variant="outline-success"
+                  size="sm"
+                  onClick={() => onStatusChange(action.id, ACTION_STATUSES.RESOLVED)}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <Spinner animation="border" size="sm" className="me-1" />
+                  ) : (
+                    <MdCheckCircle className="me-1" />
+                  )}
+                  Complete
+                </Button>
+              )}
+
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => onViewDetails(action)}
+              >
+                <MdVisibility className="me-1" />
+                Details
+              </Button>
+
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => onDelete(action)}
+              >
+                <MdDelete className="me-1" />
+                Delete
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+    </Card>
+  );
+};
+
+// ============================================================================
+// 🗂️ Empty State Component
+// ============================================================================
+
+const EmptyState = ({ onGenerateActions, isGenerating }) => (
+  <div className="text-center py-5">
+    <MdAssignment size={64} className="text-muted mb-3" />
+    <h5>No Actions Found</h5>
+    <p className="text-muted mb-3">
+      No action items match your current filters. Try generating AI actions from recent feedback.
+    </p>
+    <Button
+      variant="primary"
+      onClick={onGenerateActions}
+      disabled={isGenerating}
+    >
+      {isGenerating ? (
+        <Spinner animation="border" size="sm" className="me-2" />
+      ) : (
+        <MdInsights className="me-2" />
+      )}
+      Generate AI Actions
+    </Button>
+  </div>
+);
+
+// ============================================================================
+// ❌ Error State Component
+// ============================================================================
+
+const ErrorState = ({ error, onRetry }) => (
+  <Alert variant="danger" className="d-flex align-items-center justify-content-between">
+    <div className="d-flex align-items-center">
+      <MdError size={24} className="me-2" />
+      <span>{error || 'Failed to load actions. Please try again.'}</span>
+    </div>
+    <Button variant="outline-danger" size="sm" onClick={onRetry}>
+      <MdRefresh className="me-1" />
+      Retry
+    </Button>
+  </Alert>
+);
+
+// ============================================================================
+// 📊 Stats Cards Component
+// ============================================================================
+
+const StatsCards = ({ stats }) => {
+  const cards = [
+    { key: 'total', label: 'Total Actions', icon: MdAssignment, color: 'primary', value: stats.total },
+    { key: 'pending', label: 'Pending', icon: MdSchedule, color: 'warning', value: stats.pending },
+    { key: 'inProgress', label: 'In Progress', icon: MdTimer, color: 'info', value: stats.inProgress },
+    { key: 'completed', label: 'Completed', icon: MdCheckCircle, color: 'success', value: stats.completed },
+    { key: 'overdue', label: 'Overdue', icon: MdAssignmentLate, color: 'danger', value: stats.overdue },
+    { key: 'highPriority', label: 'High Priority', icon: MdPriorityHigh, color: 'danger', value: stats.highPriority },
+  ];
+
+  return (
+    <Row className="mb-4">
+      {cards.map(({ key, label, icon: Icon, color, value }) => (
+        <Col key={key} lg={2} md={4} sm={6} className="mb-3">
+          <Card className="stats-card h-100">
+            <Card.Body className="p-3 text-center">
+              <div className={`stats-icon bg-${color} bg-opacity-10 text-${color} rounded-circle p-3 mx-auto mb-2`}>
+                <Icon size={24} />
+              </div>
+              <h5 className="mb-0">{value ?? 0}</h5>
+              <small className="text-muted">{label}</small>
+            </Card.Body>
+          </Card>
+        </Col>
+      ))}
+    </Row>
+  );
+};
+
+// ============================================================================
+// 🎛️ Filters Component
+// ============================================================================
+
+const FiltersBar = ({ filters, setFilters, onClearFilters }) => (
+  <Card className="mb-4">
+    <Card.Body>
+      <Row className="align-items-center">
+        <Col lg={2} md={6} className="mb-2">
+          <Form.Select
+            size="sm"
+            value={filters.priority}
+            onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
+          >
+            <option value="all">All Priorities</option>
+            {Object.values(ACTION_PRIORITIES).map(p => (
+              <option key={p} value={p}>
+                {PRIORITY_CONFIG[p]?.label || p} Priority
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+
+        <Col lg={2} md={6} className="mb-2">
+          <Form.Select
+            size="sm"
+            value={filters.status}
+            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+          >
+            <option value="all">All Status</option>
+            {Object.values(ACTION_STATUSES).map(s => (
+              <option key={s} value={s}>
+                {STATUS_CONFIG[s]?.label || s}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+
+        <Col lg={2} md={6} className="mb-2">
+          <Form.Select
+            size="sm"
+            value={filters.department}
+            onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
+          >
+            <option value="all">All Departments</option>
+            {DEPARTMENTS.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </Form.Select>
+        </Col>
+
+        <Col lg={2} md={6} className="mb-2">
+          <Form.Select
+            size="sm"
+            value={filters.dateRange}
+            onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
+          >
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+          </Form.Select>
+        </Col>
+
+        <Col lg={4} className="mb-2">
+          <div className="d-flex gap-2">
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={onClearFilters}
+            >
+              <MdRefresh className="me-1" />
+              Clear Filters
+            </Button>
+            <Button variant="outline-secondary" size="sm">
+              <MdDownload className="me-1" />
+              Export
+            </Button>
+          </div>
+        </Col>
+      </Row>
+    </Card.Body>
+  </Card>
+);
+
+// ============================================================================
+// 🏠 Main Component
+// ============================================================================
 
 const ActionManagement = () => {
   const navigate = useNavigate();
@@ -39,7 +393,8 @@ const ActionManagement = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(ACTION_TABS.ALL);
+  const [updatingActionId, setUpdatingActionId] = useState(null);
 
   // Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -47,30 +402,20 @@ const ActionManagement = () => {
   const [selectedAction, setSelectedAction] = useState(null);
 
   // Filters
-  const [filters, setFilters] = useState({
-    priority: 'all',
-    status: 'all',
-    assignee: 'all',
-    department: 'all',
-    dateRange: 'all'
-  });
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
 
   // Stats
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    inProgress: 0,
-    completed: 0,
-    overdue: 0,
-    highPriority: 0
-  });
+  const [stats, setStats] = useState({ ...DEFAULT_STATS });
 
   // Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastVariant, setToastVariant] = useState('success');
 
-  // Fetch data using service layer
+  // ============================================================================
+  // 📡 Data Fetching
+  // ============================================================================
+
   const fetchData = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -78,40 +423,37 @@ const ActionManagement = () => {
       } else {
         setLoading(true);
       }
+      setError('');
 
       // Fetch actions and stats in parallel
       const [actionsData, statsData] = await Promise.all([
         listActions({
           priority: filters.priority,
-          status: filters.status !== 'all' ? filters.status : activeTab !== 'all' ? activeTab : undefined,
+          status: filters.status !== 'all' ? filters.status : undefined,
           assignee: filters.assignee,
           department: filters.department,
           dateRange: filters.dateRange,
           tab: activeTab,
           page: 1,
-          limit: 20
+          limit: 50
         }),
         getActionStats({ period: '30' })
       ]);
 
       setActions(actionsData.actions || []);
-      setStats(statsData);
-      setError('');
+      setStats(statsData || { ...DEFAULT_STATS });
     } catch (err) {
       console.error('Error fetching actions:', err);
       setError(err.response?.data?.message || err.message || 'Failed to load actions');
-      
-      // Prevent crash by keeping stats safe
-      setStats(prev => prev?.total ? prev : {
-        total: 0, pending: 0, inProgress: 0, completed: 0, overdue: 0, highPriority: 0
-      });
+
+      // Keep previous stats on error
+      setStats(prev => prev.total > 0 ? prev : { ...DEFAULT_STATS });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [filters, activeTab]);
 
-  // Handle refresh button click
   const handleRefresh = useCallback(() => {
     fetchData(true);
   }, [fetchData]);
@@ -120,56 +462,112 @@ const ActionManagement = () => {
     fetchData();
   }, [fetchData]);
 
-  // Action Handlers
+  // ============================================================================
+  // 🔄 Filter actions based on active tab
+  // ============================================================================
+
+  const filteredActions = useMemo(() => {
+    if (!Array.isArray(actions)) return [];
+
+    switch (activeTab) {
+      case ACTION_TABS.HIGH_PRIORITY:
+        return actions.filter(a => a.priority === ACTION_PRIORITIES.HIGH);
+      case ACTION_TABS.OVERDUE:
+        return actions.filter(a => a.isOverdue || isActionOverdue(a));
+      default:
+        return actions;
+    }
+  }, [actions, activeTab]);
+
+  // ============================================================================
+  // 🎯 Action Handlers with Optimistic Updates
+  // ============================================================================
+
   const handleStatusChange = async (actionId, newStatus) => {
+    setUpdatingActionId(actionId);
+
+    // Optimistic update
+    const previousActions = [...actions];
+    setActions(prev => prev.map(a =>
+      a.id === actionId ? { ...a, status: newStatus } : a
+    ));
+
     try {
       await updateAction(actionId, { status: newStatus });
-      showSuccessToast(`Action ${newStatus} successfully!`);
-      handleRefresh();
+      showSuccessToast(`Action ${newStatus === ACTION_STATUSES.RESOLVED ? 'completed' : 'started'} successfully!`);
+
+      // Refresh stats after status change
+      const statsData = await getActionStats({ period: '30' });
+      setStats(statsData || stats);
     } catch (error) {
       console.error('Error updating action status:', error);
-      showErrorToast(
-        error.response?.data?.message || 'Failed to update action status'
-      );
+      // Revert optimistic update
+      setActions(previousActions);
+      showErrorToast(error.response?.data?.message || 'Failed to update action status');
+    } finally {
+      setUpdatingActionId(null);
     }
   };
 
-  const isOverdue = (action) => {
-  return action.dueDate && 
-         new Date(action.dueDate) < new Date() && 
-         action.status !== 'completed' && 
-         action.status !== 'resolved';
-};
+  const handleDeleteAction = async (action) => {
+    const result = await Swal.fire({
+      title: 'Delete Action?',
+      text: `Are you sure you want to delete "${action.title || 'this action'}"? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    });
 
-  const handleAssignAction = async (actionId, assigneeId, team = null) => {
+    if (!result.isConfirmed) return;
+
+    // Optimistic update
+    const previousActions = [...actions];
+    setActions(prev => prev.filter(a => a.id !== action.id));
+
     try {
-      await assignAction(actionId, { assignedTo: assigneeId, team });
-      showSuccessToast('Action assigned successfully!');
-      handleRefresh();
+      await deleteAction(action.id);
+      showSuccessToast('Action deleted successfully!');
+
+      // Refresh stats after delete
+      const statsData = await getActionStats({ period: '30' });
+      setStats(statsData || stats);
     } catch (error) {
-      console.error('Error assigning action:', error);
-      showErrorToast(
-        error.response?.data?.message || 'Failed to assign action'
-      );
+      console.error('Error deleting action:', error);
+      // Revert optimistic update
+      setActions(previousActions);
+      showErrorToast(error.response?.data?.message || 'Failed to delete action');
     }
+  };
+
+  const handleViewDetails = (action) => {
+    setSelectedAction(action);
+    setShowDetailModal(true);
   };
 
   const handleGenerateActions = async () => {
+    setRefreshing(true);
     try {
-      setRefreshing(true);
       await generateActionsFromFeedback({});
       showSuccessToast('AI actions generated successfully!');
       handleRefresh();
     } catch (error) {
       console.error('Error generating AI actions:', error);
-      showErrorToast(
-        error.response?.data?.message || 'Failed to generate AI actions'
-      );
+      showErrorToast(error.response?.data?.message || 'Failed to generate AI actions');
       setRefreshing(false);
     }
-  }
+  };
 
-  // Toast Functions
+  const handleClearFilters = () => {
+    setFilters({ ...DEFAULT_FILTERS });
+  };
+
+  // ============================================================================
+  // 🍞 Toast Functions
+  // ============================================================================
+
   const showSuccessToast = (message) => {
     setToastMessage(message);
     setToastVariant('success');
@@ -182,110 +580,9 @@ const ActionManagement = () => {
     setShowToast(true);
   };
 
-  // Get Priority Badge
-  const getPriorityBadge = (priority) => {
-  const map = {
-    high: { color: 'danger', icon: MdPriorityHigh },
-    medium: { color: 'warning', icon: MdWarning },
-    low: { color: 'info', icon: MdFlag },
-    'long-term': { color: 'secondary', icon: MdSchedule }
-  };
-  const item = map[priority] || map.low;
-  return (
-    <Badge bg={item.color} className="d-flex align-items-center">
-      <item.icon className="me-1" />
-      {priority.toUpperCase()}
-    </Badge>
-  );
-};
-
-  // Get Status Badge
-  const getStatusBadge = (status) => {
-    const variants = {
-      pending: 'secondary',
-      'in-progress': 'primary',
-      completed: 'success',
-      overdue: 'danger'
-    };
-    const icons = {
-      pending: <MdSchedule />,
-      'in-progress': <MdTimer />,
-      completed: <MdCheckCircle />,
-      overdue: <MdAssignmentLate />
-    };
-    return (
-      <Badge bg={variants[status]} className="d-flex align-items-center">
-        {icons[status]} <span className="ms-1">{status.replace('-', ' ').toUpperCase()}</span>
-      </Badge>
-    );
-  };
-
-  // Mock Data (fallback)
-  const mockActions = [
-    {
-      id: 1,
-      title: "Improve Restroom Cleanliness",
-      description: "Multiple complaints about restroom cleanliness at Riyadh Stadium",
-      priority: "high",
-      status: "pending",
-      assignee: "Facilities Manager",
-      department: "Facilities",
-      location: "Riyadh Stadium",
-      dueDate: "2025-10-02",
-      createdAt: "2025-10-01",
-      feedback: {
-        count: 5,
-        sentiment: "negative",
-        avgRating: 2.1
-      },
-      relatedSurvey: "Event Feedback Survey"
-    },
-    {
-      id: 2,
-      title: "Reduce Queue Times",
-      description: "Long waiting times at Jeddah Airport check-in counters",
-      priority: "medium",
-      status: "in-progress",
-      assignee: "Operations Team",
-      department: "Operations",
-      location: "Jeddah Airport",
-      dueDate: "2025-10-05",
-      createdAt: "2025-09-30",
-      feedback: {
-        count: 12,
-        sentiment: "negative",
-        avgRating: 2.8
-      },
-      relatedSurvey: "Customer Service Survey"
-    },
-    {
-      id: 3,
-      title: "Install EV Charging Stations",
-      description: "Multiple requests for electric vehicle charging stations",
-      priority: "low",
-      status: "pending",
-      assignee: "Infrastructure Team",
-      department: "Infrastructure",
-      location: "All Locations",
-      dueDate: "2025-11-01",
-      createdAt: "2025-09-29",
-      feedback: {
-        count: 8,
-        sentiment: "neutral",
-        avgRating: 3.5
-      },
-      relatedSurvey: "Facility Improvement Survey"
-    }
-  ];
-
-  const mockStats = {
-    total: 15,
-    pending: 6,
-    inProgress: 4,
-    completed: 3,
-    overdue: 2,
-    highPriority: 4
-  };
+  // ============================================================================
+  // 🔄 Loading State
+  // ============================================================================
 
   if (loading) {
     return (
@@ -297,6 +594,10 @@ const ActionManagement = () => {
       </Container>
     );
   }
+
+  // ============================================================================
+  // 🎨 Main Render
+  // ============================================================================
 
   return (
     <Container fluid className="py-4">
@@ -329,20 +630,14 @@ const ActionManagement = () => {
                     )}
                     {refreshing ? 'Refreshing...' : 'Refresh'}
                   </Button>
-                  {/* <Button
+                  <Button
                     variant="success"
                     onClick={handleGenerateActions}
+                    disabled={refreshing}
                   >
                     <MdInsights className="me-2" />
                     Generate AI Actions
                   </Button>
-                  <Button
-                    variant="primary"
-                    onClick={() => setShowCreateModal(true)}
-                  >
-                    <MdAdd className="me-2" />
-                    Create Action
-                  </Button> */}
                 </div>
               </div>
             </Card.Body>
@@ -350,169 +645,18 @@ const ActionManagement = () => {
         </Col>
       </Row>
 
+      {/* Error State */}
+      {error && <ErrorState error={error} onRetry={handleRefresh} />}
+
       {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col lg={2} md={4} sm={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3 text-center">
-              <div className="stats-icon bg-info bg-opacity-10 text-primary rounded-circle p-3 mx-auto mb-2">
-                <MdAssignment size={24} />
-              </div>
-              <h5 className="mb-0">{stats.total}</h5>
-              <small className="text-muted">Total Actions</small>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={2} md={4} sm={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3 text-center">
-              <div className="stats-icon bg-warning bg-opacity-10 text-warning rounded-circle p-3 mx-auto mb-2">
-                <MdSchedule size={24} />
-              </div>
-              <h5 className="mb-0">{stats.pending}</h5>
-              <small className="text-muted">Pending</small>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={2} md={4} sm={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3 text-center">
-              <div className="stats-icon bg-info bg-opacity-10 text-info rounded-circle p-3 mx-auto mb-2">
-                <MdTimer size={24} />
-              </div>
-              <h5 className="mb-0">{stats.inProgress}</h5>
-              <small className="text-muted">In Progress</small>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={2} md={4} sm={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3 text-center">
-              <div className="stats-icon bg-success bg-opacity-10 text-success rounded-circle p-3 mx-auto mb-2">
-                <MdCheckCircle size={24} />
-              </div>
-              <h5 className="mb-0">{stats.completed}</h5>
-              <small className="text-muted">Completed</small>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={2} md={4} sm={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3 text-center">
-              <div className="stats-icon bg-danger bg-opacity-10 text-danger rounded-circle p-3 mx-auto mb-2">
-                <MdAssignmentLate size={24} />
-              </div>
-              <h5 className="mb-0">{stats.overdue}</h5>
-              <small className="text-muted">Overdue</small>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={2} md={4} sm={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3 text-center">
-              <div className="stats-icon bg-danger bg-opacity-10 text-danger rounded-circle p-3 mx-auto mb-2">
-                <MdPriorityHigh size={24} />
-              </div>
-              <h5 className="mb-0">{stats.highPriority}</h5>
-              <small className="text-muted">High Priority</small>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <StatsCards stats={stats} />
 
       {/* Filters */}
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Body>
-              <Row className="align-items-center">
-                <Col lg={2} md={6} className="mb-2">
-                  <Form.Select
-                    size="sm"
-                    value={filters.priority}
-                    onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-                  >
-                    <option value="all">All Priorities</option>
-                    <option value="high">High Priority</option>
-                    <option value="medium">Medium Priority</option>
-                    <option value="low">Low Priority</option>
-                  </Form.Select>
-                </Col>
-
-                <Col lg={2} md={6} className="mb-2">
-                  <Form.Select
-                    size="sm"
-                    value={filters.status}
-                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="overdue">Overdue</option>
-                  </Form.Select>
-                </Col>
-
-                <Col lg={2} md={6} className="mb-2">
-                  <Form.Select
-                    size="sm"
-                    value={filters.department}
-                    onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-                  >
-                    <option value="all">All Departments</option>
-                    <option value="Facilities">Facilities</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Customer Service">Customer Service</option>
-                    <option value="Infrastructure">Infrastructure</option>
-                    <option value="HR">Human Resources</option>
-                  </Form.Select>
-                </Col>
-
-                <Col lg={2} md={6} className="mb-2">
-                  <Form.Select
-                    size="sm"
-                    value={filters.dateRange}
-                    onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                  >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                  </Form.Select>
-                </Col>
-
-                <Col lg={4} className="mb-2">
-                  <div className="d-flex gap-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => setFilters({
-                        priority: 'all',
-                        status: 'all',
-                        assignee: 'all',
-                        department: 'all',
-                        dateRange: 'all'
-                      })}
-                    >
-                      <MdRefresh className="me-1" />
-                      Clear Filters
-                    </Button>
-                    <Button variant="outline-secondary" size="sm">
-                      <MdDownload className="me-1" />
-                      Export
-                    </Button>
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <FiltersBar
+        filters={filters}
+        setFilters={setFilters}
+        onClearFilters={handleClearFilters}
+      />
 
       {/* Action Items */}
       <Row>
@@ -521,137 +665,86 @@ const ActionManagement = () => {
             <Card.Body className="p-0">
               <Tabs
                 activeKey={activeTab}
-                onSelect={setActiveTab}
+                onSelect={(k) => setActiveTab(k)}
                 className="action-tabs"
               >
-                <Tab eventKey="all" title={
+                <Tab eventKey={ACTION_TABS.ALL} title={
                   <span><MdAssignment className="me-2" />All Actions ({stats.total})</span>
                 }>
                   <div className="p-4">
-                    {actions.length > 0 ? (
+                    {filteredActions.length > 0 ? (
                       <div className="actions-list">
-                        {actions.map(action => (
-                          <Card key={action.id} className="action-item mb-3 border">
-                            <Card.Body>
-                              <Row className="align-items-start">
-                                <Col lg={6}>
-                                  <div className="d-flex align-items-start mb-2">
-                                    <div className="me-3">
-                                      {getPriorityBadge(action.priority)}
-                                    </div>
-                                    <div className="flex-grow-1">
-                                      <h6 className="mb-1 fw-bold">{action.title}</h6>
-                                      <p className="text-muted small mb-2">{action.description}</p>
+                        {filteredActions.map(action => (
+                          <ActionCard
+                            key={action.id || action._id}
+                            action={action}
+                            onStatusChange={handleStatusChange}
+                            onViewDetails={handleViewDetails}
+                            onDelete={handleDeleteAction}
+                            isUpdating={updatingActionId === action.id}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState
+                        onGenerateActions={handleGenerateActions}
+                        isGenerating={refreshing}
+                      />
+                    )}
+                  </div>
+                </Tab>
 
-                                      <div className="d-flex flex-wrap gap-2 mb-2">
-                                        <Badge bg="light" text="dark" className="d-flex align-items-center">
-                                          <MdLocationOn className="me-1" />
-                                          {action.location}
-                                        </Badge>
-                                        <Badge bg="light" text="dark" className="d-flex align-items-center">
-                                          <MdBusiness className="me-1" />
-                                          {action.department}
-                                        </Badge>
-                                        <Badge bg="light" text="dark" className="d-flex align-items-center">
-                                          <MdPerson className="me-1" />
-                                          {action.assignee}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </Col>
-
-                                <Col lg={3}>
-                                  <div className="mb-2">
-                                    {getStatusBadge(action.status)}
-                                  </div>
-                                  <div className="small text-muted">
-                                    <div className="mb-1">
-                                      <FaClock className="me-1" />
-                                      Due: {new Date(action.dueDate).toLocaleDateString()}
-                                    </div>
-                                    <div className="mb-1">
-                                      <MdComment className="me-1" />
-                                      {action.feedback?.count} feedback items
-                                    </div>
-                                    <div className="d-flex align-items-center">
-                                      <FaStar className="me-1 text-warning" />
-                                      {action.feedback?.avgRating.toFixed(1)} avg rating
-                                    </div>
-                                  </div>
-                                </Col>
-
-                                <Col lg={3} className="text-end">
-                                  <div className="d-flex flex-column gap-1">
-                                    {action.status === 'pending' && (
-                                      <Button
-                                        variant="outline-primary"
-                                        size="sm"
-                                        onClick={() => handleStatusChange(action.id, 'in-progress')}
-                                      >
-                                        <MdTimer className="me-1" />
-                                        Start
-                                      </Button>
-                                    )}
-
-                                    {action.status === 'in-progress' && (
-                                      <Button
-                                        variant="outline-success"
-                                        size="sm"
-                                        onClick={() => handleStatusChange(action.id, 'completed')}
-                                      >
-                                        <MdCheckCircle className="me-1" />
-                                        Complete
-                                      </Button>
-                                    )}
-
-                                    <Button
-                                      variant="outline-secondary"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedAction(action);
-                                        setShowDetailModal(true);
-                                      }}
-                                    >
-                                      <MdVisibility className="me-1" />
-                                      Details
-                                    </Button>
-                                  </div>
-                                </Col>
-                              </Row>
-                            </Card.Body>
-                          </Card>
+                <Tab eventKey={ACTION_TABS.HIGH_PRIORITY} title={
+                  <span><MdPriorityHigh className="me-2" />High Priority ({stats.highPriority})</span>
+                }>
+                  <div className="p-4">
+                    {filteredActions.length > 0 ? (
+                      <div className="actions-list">
+                        {filteredActions.map(action => (
+                          <ActionCard
+                            key={action.id || action._id}
+                            action={action}
+                            onStatusChange={handleStatusChange}
+                            onViewDetails={handleViewDetails}
+                            onDelete={handleDeleteAction}
+                            isUpdating={updatingActionId === action.id}
+                          />
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-5">
-                        <MdAssignment size={64} className="text-muted mb-3" />
-                        <h5>No Actions Found</h5>
-                        <p className="text-muted mb-3">
-                          No action items match your current filters. Try generating AI actions from recent feedback.
-                        </p>
-                        <Button variant="primary" onClick={handleGenerateActions}>
-                          <MdInsights className="me-2" />
-                          Generate AI Actions
-                        </Button>
+                        <MdPriorityHigh size={64} className="text-muted mb-3" />
+                        <h5>No High Priority Actions</h5>
+                        <p className="text-muted">Great! There are no high priority actions at the moment.</p>
                       </div>
                     )}
                   </div>
                 </Tab>
 
-                <Tab eventKey="high-priority" title={
-                  <span><MdPriorityHigh className="me-2" />High Priority ({stats.highPriority})</span>
-                }>
-                  <div className="p-4">
-                    {/* Similar content filtered by high priority */}
-                  </div>
-                </Tab>
-
-                <Tab eventKey="overdue" title={
+                <Tab eventKey={ACTION_TABS.OVERDUE} title={
                   <span><MdAssignmentLate className="me-2" />Overdue ({stats.overdue})</span>
                 }>
                   <div className="p-4">
-                    {/* Similar content filtered by overdue */}
+                    {filteredActions.length > 0 ? (
+                      <div className="actions-list">
+                        {filteredActions.map(action => (
+                          <ActionCard
+                            key={action.id || action._id}
+                            action={action}
+                            onStatusChange={handleStatusChange}
+                            onViewDetails={handleViewDetails}
+                            onDelete={handleDeleteAction}
+                            isUpdating={updatingActionId === action.id}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-5">
+                        <MdCheckCircle size={64} className="text-success mb-3" />
+                        <h5>No Overdue Actions</h5>
+                        <p className="text-muted">Excellent! All actions are on track.</p>
+                      </div>
+                    )}
                   </div>
                 </Tab>
               </Tabs>
@@ -659,6 +752,53 @@ const ActionManagement = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Detail Modal */}
+      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Action Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedAction && (
+            <div>
+              <h5>{selectedAction.title}</h5>
+              <p className="text-muted">{selectedAction.description}</p>
+
+              <hr />
+
+              <Row>
+                <Col md={6}>
+                  <p><strong>Status:</strong> <StatusBadge status={selectedAction.status} /></p>
+                  <p><strong>Priority:</strong> <PriorityBadge priority={selectedAction.priority} /></p>
+                  <p><strong>Department:</strong> {selectedAction.department || 'N/A'}</p>
+                </Col>
+                <Col md={6}>
+                  <p><strong>Assignee:</strong> {selectedAction.assigneeName || 'Unassigned'}</p>
+                  <p><strong>Due Date:</strong> {formatDate(selectedAction.dueDate)}</p>
+                  <p><strong>Created:</strong> {formatDate(selectedAction.createdAt)}</p>
+                </Col>
+              </Row>
+
+              {selectedAction.feedback && (
+                <>
+                  <hr />
+                  <h6>Related Feedback</h6>
+                  <p>
+                    <strong>Feedback Count:</strong> {selectedAction.feedback.count ?? 0}<br />
+                    <strong>Sentiment:</strong> {selectedAction.feedback.sentiment || 'N/A'}<br />
+                    <strong>Avg Rating:</strong> {(selectedAction.feedback.avgRating ?? 0).toFixed(1)}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Toast Notifications */}
       <ToastContainer position="top-end" className="p-3">

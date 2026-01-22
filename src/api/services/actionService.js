@@ -3,6 +3,19 @@
 // ⚡ Action Service - API calls with response transformation
 // ============================================================================
 import axiosInstance from "../axiosInstance";
+import {
+  transformAction,
+  transformActions,
+  transformActionStats,
+  toCreateActionPayload,
+  toStatusUpdatePayload,
+  toPriorityUpdatePayload,
+  toAssignmentPayload,
+} from "../adapters/actionAdapters";
+
+// ============================================================================
+// 📋 Action CRUD Operations
+// ============================================================================
 
 /**
  * List actions with filters
@@ -10,35 +23,57 @@ import axiosInstance from "../axiosInstance";
  * @returns {Promise<Object>}
  */
 export const listActions = async (params = {}) => {
-  const { 
-    page = 1, 
-    limit = 20, 
-    status, 
-    priority, 
+  const {
+    page = 1,
+    limit = 20,
+    status,
+    priority,
     assignee,
     department,
     dateRange,
-    tab = "all" 
+    tab = "all",
+    search,
+    sortBy = "createdAt",
+    sortOrder = "desc",
   } = params;
-  
+
   const queryParams = new URLSearchParams();
   queryParams.append("page", page);
   queryParams.append("limit", limit);
+  queryParams.append("sortBy", sortBy);
+  queryParams.append("sortOrder", sortOrder);
+
   if (status && status !== "all") queryParams.append("status", status);
   if (priority && priority !== "all") queryParams.append("priority", priority);
-  if (assignee && assignee !== "all") queryParams.append("assignee", assignee);
-  if (department && department !== "all") queryParams.append("department", department);
+  if (assignee && assignee !== "all") queryParams.append("assignedTo", assignee);
+  if (department && department !== "all") queryParams.append("category", department);
   if (dateRange && dateRange !== "all") queryParams.append("dateRange", dateRange);
-  if (tab && tab !== "all") queryParams.append("tab", tab);
+  if (search) queryParams.append("search", search);
+
+  // Handle tab-specific filtering
+  if (tab === "high-priority") {
+    queryParams.set("priority", "high");
+  } else if (tab === "overdue") {
+    // Overdue filtering is handled client-side after fetch
+  }
 
   const response = await axiosInstance.get(`/actions?${queryParams.toString()}`);
-  
+
+  // Handle both response structures: { data: { actions } } or { actions }
+  const rawData = response.data?.data || response.data;
+  const rawActions = rawData?.actions || [];
+  const pagination = rawData?.pagination || {};
+  const analytics = rawData?.analytics || {};
+
+  const actions = transformActions(rawActions);
+
   return {
-    actions: (response.data.actions || []).map(transformAction),
-    total: response.data.total || 0,
-    page: response.data.page || page,
-    limit: response.data.limit || limit,
-    totalPages: Math.ceil((response.data.total || 0) / limit),
+    actions,
+    total: pagination.total || rawData?.total || actions.length,
+    page: pagination.current || page,
+    limit: pagination.limit || limit,
+    totalPages: pagination.pages || Math.ceil((pagination.total || actions.length) / limit),
+    analytics,
   };
 };
 
@@ -61,7 +96,7 @@ export const getActionById = async (actionId) => {
 export const getActionsBySurvey = async (surveyId, params = {}) => {
   const { page = 1, limit = 20 } = params;
   const response = await axiosInstance.get(`/actions/survey/${surveyId}?page=${page}&limit=${limit}`);
-  
+
   return {
     actions: (response.data.actions || []).map(transformAction),
     total: response.data.total || 0,
@@ -153,7 +188,7 @@ export const addActionComment = async (actionId, comment) => {
  * @returns {Promise<Object>}
  */
 export const generateActionsFromFeedback = async (data) => {
-  const response = await axiosInstance.post("/surveys/actions/generate", data);
+  const response = await axiosInstance.post("/actions/generate/feedback", data);
   return response.data;
 };
 
@@ -178,113 +213,74 @@ export const generateFollowUp = async (data) => {
 };
 
 // ============================================================================
-// 🔄 Transform Functions
+// 📊 Additional Endpoints
 // ============================================================================
 
 /**
- * Transform action item
+ * Get actions by priority
+ * @param {string} priority - high, medium, low, long-term
+ * @returns {Promise<Array>}
  */
-const transformAction = (action) => ({
-  id: action._id,
-  _id: action._id,
-  title: action.title,
-  description: action.description,
-  status: action.status || "open",
-  priority: action.priority || "medium",
-  dueDate: action.dueDate,
-  createdAt: action.createdAt,
-  updatedAt: action.updatedAt,
-  
-  // Assignee info
-  assignee: action.assignee ? {
-    id: action.assignee._id || action.assignee,
-    name: action.assignee.name || "Unassigned",
-    email: action.assignee.email,
-    avatar: action.assignee.avatar,
-  } : null,
-  
-  team: action.team,
-  department: action.department,
-  
-  // Source info
-  survey: action.survey ? {
-    id: action.survey._id || action.survey,
-    title: action.survey.title,
-  } : null,
-  response: action.response,
-  
-  // AI-generated metadata
-  isAiGenerated: action.isAiGenerated || action.source === "ai",
-  aiConfidence: action.aiConfidence,
-  suggestedActions: action.suggestedActions || [],
-  
-  // Progress
-  progress: action.progress || 0,
-  completedAt: action.completedAt,
-  
-  // Computed
-  isOverdue: action.dueDate ? new Date(action.dueDate) < new Date() && action.status !== "resolved" : false,
-  
-  // Comments
-  comments: action.comments || [],
-  commentCount: action.comments?.length || 0,
-});
+export const getActionsByPriority = async (priority) => {
+  const response = await axiosInstance.get(`/actions/priority/${priority}`);
+  const rawData = response.data?.data || response.data;
+  return transformActions(rawData?.actions || []);
+};
 
 /**
- * Transform action statistics
+ * Get actions by status
+ * @param {string} status - pending, open, in-progress, resolved
+ * @returns {Promise<Array>}
  */
-const transformActionStats = (data) => ({
-  total: data.total || sumByField(data.byPriority, "count"),
-  pending: getStatusCount(data.byStatus, "open"),
-  inProgress: getStatusCount(data.byStatus, "in-progress"),
-  completed: getStatusCount(data.byStatus, "resolved"),
-  overdue: data.overdue || 0,
-  highPriority: getPriorityCount(data.byPriority, "high"),
-  
-  byStatus: data.byStatus || [],
-  byPriority: data.byPriority || [],
-  byDepartment: data.byDepartment || [],
-  
-  avgResolutionTime: data.avgResolutionTime || null,
-  completionRate: data.completionRate || 0,
-});
+export const getActionsByStatus = async (status) => {
+  const response = await axiosInstance.get(`/actions/status/${status}`);
+  const rawData = response.data?.data || response.data;
+  return transformActions(rawData?.actions || []);
+};
+
+/**
+ * Bulk update multiple actions
+ * @param {Object} data - { actionIds, updates }
+ * @returns {Promise<Object>}
+ */
+export const bulkUpdateActions = async (data) => {
+  const response = await axiosInstance.put("/actions/bulk/update", data);
+  return response.data;
+};
+
+// ============================================================================
+// 🔄 Feedback Transform (kept locally for this service)
+// ============================================================================
 
 /**
  * Transform feedback analysis response
  */
-const transformFeedbackAnalysis = (data) => ({
-  summary: data.summary || {},
-  sentiment: {
-    overall: data.sentiment?.overall || "neutral",
-    breakdown: data.sentiment?.breakdown || { positive: 0, negative: 0, neutral: 0 },
-    trend: data.sentiment?.trend || "stable",
-  },
-  topThemes: data.topThemes || data.themes || [],
-  keyInsights: data.keyInsights || data.insights || [],
-  suggestedActions: data.suggestedActions || data.actions || [],
-  urgentIssues: data.urgentIssues || [],
-  opportunities: data.opportunities || [],
-});
+const transformFeedbackAnalysis = (data) => {
+  if (!data || typeof data !== 'object') {
+    return {
+      summary: {},
+      sentiment: { overall: 'neutral', breakdown: { positive: 0, negative: 0, neutral: 0 }, trend: 'stable' },
+      topThemes: [],
+      keyInsights: [],
+      suggestedActions: [],
+      urgentIssues: [],
+      opportunities: [],
+    };
+  }
 
-// ============================================================================
-// 🛠️ Helper Functions
-// ============================================================================
-
-const sumByField = (arr, field) => {
-  if (!Array.isArray(arr)) return 0;
-  return arr.reduce((sum, item) => sum + (item[field] || 0), 0);
-};
-
-const getStatusCount = (byStatus, status) => {
-  if (!Array.isArray(byStatus)) return 0;
-  const found = byStatus.find((item) => item._id === status || item.status === status);
-  return found?.count || 0;
-};
-
-const getPriorityCount = (byPriority, priority) => {
-  if (!Array.isArray(byPriority)) return 0;
-  const found = byPriority.find((item) => item._id === priority || item.priority === priority);
-  return found?.count || 0;
+  return {
+    summary: data.summary || {},
+    sentiment: {
+      overall: data.sentiment?.overall || "neutral",
+      breakdown: data.sentiment?.breakdown || { positive: 0, negative: 0, neutral: 0 },
+      trend: data.sentiment?.trend || "stable",
+    },
+    topThemes: data.topThemes || data.themes || [],
+    keyInsights: data.keyInsights || data.insights || [],
+    suggestedActions: data.suggestedActions || data.actions || [],
+    urgentIssues: data.urgentIssues || [],
+    opportunities: data.opportunities || [],
+  };
 };
 
 // ============================================================================
@@ -304,4 +300,8 @@ export default {
   generateActionsFromFeedback,
   analyzeFeedback,
   generateFollowUp,
+  getActionsByPriority,
+  getActionsByStatus,
+  bulkUpdateActions,
 };
+
