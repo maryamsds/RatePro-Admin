@@ -245,6 +245,20 @@ const Sidebar = ({
       setIncentivesSubmenuOpen(false);
       setcontentmanagement(false);
       setSupportTickets(false);
+      setSubscriptionSubmenuOpen(false);
+    } else if (currentPath.startsWith("/app/subscription")) {
+      setSubscriptionSubmenuOpen(true);
+      setAuthSubmenuOpen(false);
+      setSurveySubmenuOpen(false);
+      setUserSubmenuOpen(false);
+      setAccessSubmenuOpen(false);
+      setAnalyticsSubmenuOpen(false);
+      setAudienceSubmenuOpen(false);
+      setCommunicationSubmenuOpen(false);
+      setSettingsSubmenuOpen(false);
+      setIncentivesSubmenuOpen(false);
+      setcontentmanagement(false);
+      setSupportTickets(false);
     } else {
       // Close all submenus for single pages
       setAuthSubmenuOpen(false);
@@ -287,7 +301,7 @@ const Sidebar = ({
       if (closeButton) {
         closeButton.focus();
       }
-      
+
       // Prevent body scrolling when sidebar is open on mobile
       document.body.style.overflow = 'hidden';
       document.body.classList.add('sidebar-open');
@@ -295,7 +309,7 @@ const Sidebar = ({
       // When sidebar closes on mobile, restore body scroll and focus hamburger button
       document.body.style.overflow = '';
       document.body.classList.remove('sidebar-open');
-      
+
       // Return focus to hamburger button
       const hamburgerButton = document.getElementById('mobile-hamburger');
       if (hamburgerButton) {
@@ -321,7 +335,7 @@ const Sidebar = ({
           event.preventDefault();
           onClose();
         }
-        
+
         // Trap focus within sidebar on mobile
         if (event.key === 'Tab' && sidebarRef.current) {
           const focusableElements = sidebarRef.current.querySelectorAll(
@@ -464,9 +478,8 @@ const Sidebar = ({
     zIndex: 1050,
     transition: isMobile ? undefined : "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // Let CSS handle mobile transitions
     backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)", // Theme colors for consistency
-    borderRight: `1px solid ${
-      darkMode ? "var(--dark-border)" : "var(--light-border)"
-    }`,
+    borderRight: `1px solid ${darkMode ? "var(--dark-border)" : "var(--light-border)"
+      }`,
     boxShadow: "var(--shadow-md)",
     overflowY: "auto",
     overflowX: "hidden",
@@ -501,26 +514,26 @@ const Sidebar = ({
         "survey:detail:view",
       ],
       submenuItems: [
-        { 
-          path: "/app/surveys", 
-          name: "All Surveys", 
-          icon: <MdViewList />, 
-          roles: ["companyAdmin", "admin"], 
-          permissions: ["survey:read"] 
+        {
+          path: "/app/surveys",
+          name: "All Surveys",
+          icon: <MdViewList />,
+          roles: ["companyAdmin", "admin"],
+          permissions: ["survey:read"]
         },
-        { 
-          path: "/app/surveys/create", 
-          name: "Create Survey", 
-          icon: <MdAddCircleOutline />, 
-          roles: ["companyAdmin"], 
-          permissions: ["survey:create"] 
+        {
+          path: "/app/surveys/create",
+          name: "Create Survey",
+          icon: <MdAddCircleOutline />,
+          roles: ["companyAdmin"],
+          permissions: ["survey:create"]
         },
-        { 
-          path: "/app/templates", 
-          name: "Survey Templates", 
-          icon: <MdDescription />, 
-          roles: ["admin", "companyAdmin"], 
-          permissions: ["survey:templates"] 
+        {
+          path: "/app/templates",
+          name: "Survey Templates",
+          icon: <MdDescription />,
+          roles: ["admin", "companyAdmin"],
+          permissions: ["survey:templates"]
         },
         {
           path: "/app/surveys/settings",
@@ -572,24 +585,24 @@ const Sidebar = ({
         },
       ],
     },
-    { 
-      path: "/app/access", 
-      name: "Access Management", 
-      icon: <MdSecurity />, 
-      roles: ["companyAdmin"], 
+    {
+      path: "/app/access",
+      name: "Access Management",
+      icon: <MdSecurity />,
+      roles: ["companyAdmin"],
     },
-    { 
-      path: "/app/roles", 
-      name: "Role Management", 
-      icon: <MdManageAccounts />, 
-      roles: ["companyAdmin"], 
-      permissions: ["role:create", "role:read", "role:update", "role:delete"], 
+    {
+      path: "/app/roles",
+      name: "Role Management",
+      icon: <MdManageAccounts />,
+      roles: ["companyAdmin"],
+      permissions: ["role:create", "role:read", "role:update", "role:delete"],
     },
-    { 
-      path: "/app/actions", 
-      name: "Action Management", 
-      icon: <MdTask />, 
-      roles: ["companyAdmin", "admin"], 
+    {
+      path: "/app/actions",
+      name: "Action Management",
+      icon: <MdTask />,
+      roles: ["companyAdmin", "admin"],
     },
     {
       name: "Analytics & Reports",
@@ -720,17 +733,37 @@ const Sidebar = ({
       roles: ["admin", "companyAdmin"],
       toggle: () => toggleSubmenu("subscription"),
       submenuItems: [
-        { 
-          path: "/app/subscription/plans", 
-          name: "Manage Plans",
-          icon: <MdCreditCard />, 
+        // Company Admin pages
+        {
+          path: "/app/subscription/my-plan",
+          name: "My Plan",
+          icon: <MdReceipt />,
+          roles: ["companyAdmin"]
+        },
+        {
+          path: "/app/subscription/usage",
+          name: "Usage Dashboard",
+          icon: <MdBarChart />,
+          roles: ["companyAdmin"]
+        },
+        // Super Admin pages
+        {
+          path: "/app/subscription/features",
+          name: "Feature Definitions",
+          icon: <MdSettings />,
           roles: ["admin"]
         },
-        { 
-          path: "/app/subscription/my-plan", 
-          name: "My Subscription",
-          icon: <MdReceipt />, 
-          roles: ["companyAdmin"]
+        {
+          path: "/app/subscription/plans",
+          name: "Plan Templates",
+          icon: <MdCreditCard />,
+          roles: ["admin"]
+        },
+        {
+          path: "/app/subscription/tenants",
+          name: "Tenant Subscriptions",
+          icon: <MdBusiness />,
+          roles: ["admin"]
         }
       ]
     },
@@ -876,11 +909,9 @@ const Sidebar = ({
         id="mobile-sidebar"
         ref={sidebarRef}
         style={sidebarStyle}
-        className={`sidebar d-flex flex-column ${
-          collapsed ? "collapsed" : "expanded"
-        } ${isMobile ? "mobile" : ""} ${isTablet ? "tablet" : ""} ${
-          darkMode ? "dark-mode" : ""
-        } ${isOpen ? "open" : ""}`}
+        className={`sidebar d-flex flex-column ${collapsed ? "collapsed" : "expanded"
+          } ${isMobile ? "mobile" : ""} ${isTablet ? "tablet" : ""} ${darkMode ? "dark-mode" : ""
+          } ${isOpen ? "open" : ""}`}
         role={isMobile ? "dialog" : undefined}
         aria-modal={isMobile ? "true" : undefined}
         aria-label={isMobile ? "Navigation menu" : undefined}
@@ -891,7 +922,7 @@ const Sidebar = ({
         {/* Header with mobile close button */}
         <div className="sidebar-header">
           {!collapsed && <h4 className="sidebar-logo">Rate Pro</h4>}
-          
+
           {/* Mobile close button - only shows when sidebar is open on mobile */}
           {isMobile && isOpen ? (
             <Button
@@ -955,9 +986,8 @@ const Sidebar = ({
                         <>
                           <span className="nav-text">{item.name}</span>
                           <span
-                            className={`nav-arrow ${
-                              item.isOpen ? "rotated" : ""
-                            }`}
+                            className={`nav-arrow ${item.isOpen ? "rotated" : ""
+                              }`}
                           >
                             <MdExpandMore />
                           </span>
@@ -990,9 +1020,8 @@ const Sidebar = ({
                             .map((subItem, subIndex) => (
                               <div
                                 key={subIndex}
-                                className={`collapsed-dropdown-item ${
-                                  isActiveRoute(subItem.path) ? "active" : ""
-                                }`}
+                                className={`collapsed-dropdown-item ${isActiveRoute(subItem.path) ? "active" : ""
+                                  }`}
                                 onClick={() => {
                                   setCollapsedDropdownOpen(null);
                                   handleItemClick(subItem.path);
@@ -1024,9 +1053,8 @@ const Sidebar = ({
                               <div key={subIndex} className="submenu-item">
                                 <NavLink
                                   to={subItem.path}
-                                  className={`submenu-link ${
-                                    isActiveRoute(subItem.path) ? "active" : ""
-                                  }`}
+                                  className={`submenu-link ${isActiveRoute(subItem.path) ? "active" : ""
+                                    }`}
                                   onClick={() => handleItemClick(subItem.path)}
                                 >
                                   <span className="submenu-icon">
@@ -1043,9 +1071,8 @@ const Sidebar = ({
                 ) : (
                   <NavLink
                     to={item.path}
-                    className={`nav-link ${
-                      isActiveRoute(item.path) ? "active" : ""
-                    }`}
+                    className={`nav-link ${isActiveRoute(item.path) ? "active" : ""
+                      }`}
                     onClick={() => handleItemClick(item.path)}
                     onMouseEnter={() => setHoveredItem(item.name)}
                     onMouseLeave={() => setHoveredItem(null)}

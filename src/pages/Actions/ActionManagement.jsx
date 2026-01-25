@@ -34,6 +34,7 @@ import {
   createAction,
   generateActionsFromFeedback
 } from '../../api/services/actionService';
+import { getTenantUsersForPicker } from '../../api/services/userService';
 
 // Constants imports
 import {
@@ -49,6 +50,9 @@ import {
 
 // Adapters
 import { formatDate, isActionOverdue } from '../../api/adapters/actionAdapters';
+
+// Components
+import AssignmentHistory from '../../components/Actions/AssignmentHistory';
 
 // ============================================================================
 // 🎨 Badge Rendering Components
@@ -395,6 +399,7 @@ const ActionManagement = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState(ACTION_TABS.ALL);
   const [updatingActionId, setUpdatingActionId] = useState(null);
+  const [assigningActionId, setAssigningActionId] = useState(null);
 
   // Modal States
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -545,6 +550,55 @@ const ActionManagement = () => {
   const handleViewDetails = (action) => {
     setSelectedAction(action);
     setShowDetailModal(true);
+  };
+
+  const handleAssignToMe = async (actionId) => {
+    setAssigningActionId(actionId);
+
+    try {
+      // Get current user ID from localStorage or auth context
+      const userDataStr = localStorage.getItem('userData');
+      if (!userDataStr) {
+        showErrorToast('Please log in to assign actions');
+        return;
+      }
+
+      const userData = JSON.parse(userDataStr);
+      const currentUserId = userData._id || userData.id;
+
+      if (!currentUserId) {
+        showErrorToast('Unable to get user ID');
+        return;
+      }
+
+      // Call assign API
+      await assignAction(actionId, { assignedTo: currentUserId });
+
+      // Optimistic update
+      setActions(prev => prev.map(a =>
+        a.id === actionId ? {
+          ...a,
+          assignee: { id: currentUserId, name: userData.name || 'Me' },
+          assigneeName: userData.name || 'Me'
+        } : a
+      ));
+
+      // Update selected action if modal is open
+      if (selectedAction && selectedAction.id === actionId) {
+        setSelectedAction(prev => ({
+          ...prev,
+          assignee: { id: currentUserId, name: userData.name || 'Me' },
+          assigneeName: userData.name || 'Me'
+        }));
+      }
+
+      showSuccessToast('Action assigned to you successfully!');
+    } catch (error) {
+      console.error('Error assigning action:', error);
+      showErrorToast(error.response?.data?.message || 'Failed to assign action');
+    } finally {
+      setAssigningActionId(null);
+    }
   };
 
   const handleGenerateActions = async () => {
@@ -773,11 +827,45 @@ const ActionManagement = () => {
                   <p><strong>Department:</strong> {selectedAction.department || 'N/A'}</p>
                 </Col>
                 <Col md={6}>
-                  <p><strong>Assignee:</strong> {selectedAction.assigneeName || 'Unassigned'}</p>
                   <p><strong>Due Date:</strong> {formatDate(selectedAction.dueDate)}</p>
                   <p><strong>Created:</strong> {formatDate(selectedAction.createdAt)}</p>
                 </Col>
               </Row>
+
+              <hr />
+              <h6>Assignment</h6>
+              <Row className="align-items-center mb-3">
+                <Col md={6}>
+                  <p className="mb-1"><strong>Current Assignee:</strong></p>
+                  <Badge bg="secondary" className="py-2 px-3">
+                    <MdPerson className="me-1" />
+                    {selectedAction.assigneeName || 'Unassigned'}
+                  </Badge>
+                </Col>
+                <Col md={6}>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => handleAssignToMe(selectedAction.id)}
+                    disabled={assigningActionId === selectedAction.id}
+                  >
+                    {assigningActionId === selectedAction.id ? (
+                      <Spinner animation="border" size="sm" className="me-1" />
+                    ) : (
+                      <MdPerson className="me-1" />
+                    )}
+                    Assign to Me
+                  </Button>
+                </Col>
+              </Row>
+
+              {/* Assignment History Timeline */}
+              {selectedAction.assignmentHistory && selectedAction.assignmentHistory.length > 0 && (
+                <>
+                  <hr />
+                  <AssignmentHistory history={selectedAction.assignmentHistory} />
+                </>
+              )}
 
               {selectedAction.feedback && (
                 <>

@@ -1,303 +1,613 @@
 // src/pages/Subscription/PlanBuilder.jsx
+// Admin screen for managing plan templates with dynamic features
+
 import React, { useState, useEffect } from 'react';
 import {
-  Container, Row, Col, Form, Button, Table, Badge, Modal,
-  Card, ListGroup, InputGroup, Alert
+  Container, Row, Col, Card, Table, Button, Modal, Form,
+  Badge, InputGroup, Spinner, Alert, ListGroup
 } from 'react-bootstrap';
 import {
-  MdAdd, MdEdit, MdDelete, MdSave, MdRefresh, MdSearch,
-  MdCheckCircle, MdBlock, MdToggleOn, MdToggleOff
+  MdAdd, MdEdit, MdDelete, MdRefresh, MdSearch, MdSave,
+  MdCheck, MdClose, MdToggleOn, MdToggleOff, MdCreditCard,
+  MdStar, MdAttachMoney
 } from 'react-icons/md';
 import Swal from 'sweetalert2';
-import axiosInstance from '../../api/axiosInstance';
+import {
+  getFeatureDefinitions,
+  getPlanTemplates,
+  createPlanTemplate,
+  updatePlanTemplate,
+  deletePlanTemplate
+} from '../../api/services/subscriptionService';
 
-const ALL_FEATURES = [
-  { key: "smart_segments", label: "Smart Segments", desc: "Dynamic audience segmentation", tier: "pro" },
-  { key: "action_engine", label: "Action Engine", desc: "Auto-create tasks from feedback", tier: "enterprise" },
-  { key: "delivery_intelligence", label: "Delivery Intelligence", desc: "Open/click tracking + auto-resend", tier: "pro" },
-  { key: "global_ai_brain", label: "Global AI Brain", desc: "Predictive insights & alerts", tier: "enterprise" },
-  { key: "advanced_distribution", label: "WhatsApp + SMS", desc: "Multi-channel distribution", tier: "pro" },
-  { key: "custom_branding", label: "Custom Branding", desc: "Remove RatePro logo", tier: "pro" },
-  { key: "whitelabel", label: "White Label", desc: "Your brand only", tier: "enterprise" },
-  { key: "priority_support", label: "Priority Support", desc: "24/7 dedicated support", tier: "enterprise" },
-  { key: "api_access", label: "Full API Access", desc: "Programmatic control", tier: "enterprise" },
+const CATEGORIES = [
+  { value: 'core', label: 'Core', color: 'primary' },
+  { value: 'analytics', label: 'Analytics', color: 'info' },
+  { value: 'distribution', label: 'Distribution', color: 'success' },
+  { value: 'branding', label: 'Branding', color: 'warning' },
+  { value: 'automation', label: 'Automation', color: 'danger' },
+  { value: 'integration', label: 'Integration', color: 'secondary' },
+  { value: 'support', label: 'Support', color: 'dark' }
 ];
 
 const PlanBuilder = () => {
   const [plans, setPlans] = useState([]);
+  const [featureDefinitions, setFeatureDefinitions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
   const [formData, setFormData] = useState({
+    code: '',
     name: '',
     description: '',
+    pricing: { monthly: 0, yearly: 0, currency: 'USD' },
+    features: [],
+    trial: { enabled: false, days: 14 },
+    isPublic: true,
     isActive: true,
-    features: {},
-    limits: {
-      responsesPerMonth: 1000,
-      teamMembers: 5,
-      surveys: 'unlimited'
-    }
+    displayOrder: 0,
+    badge: ''
   });
 
   useEffect(() => {
-    fetchPlans();
+    fetchData();
   }, []);
 
-  const fetchPlans = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await axiosInstance.get('/plans');
-      setPlans(res.data.plans || []);
-    } catch (err) {
-      Swal.fire('Error', 'Failed to load plans', 'error');
+      const [plansRes, featuresRes] = await Promise.all([
+        getPlanTemplates(),
+        getFeatureDefinitions()
+      ]);
+      setPlans(plansRes.data || []);
+      setFeatureDefinitions(featuresRes.data || []);
+    } catch (error) {
+      Swal.fire('Error', 'Failed to load data', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleFeatureToggle = (key) => {
-    setFormData(prev => ({
-      ...prev,
-      features: { ...prev.features, [key]: !prev.features[key] }
+  const handleOpenCreate = () => {
+    setEditingPlan(null);
+    // Initialize features array with default values from definitions
+    const defaultFeatures = featureDefinitions.map(fd => ({
+      featureCode: fd.code,
+      enabled: fd.type === 'boolean' ? fd.defaultValue : true,
+      limitValue: fd.type === 'limit' ? fd.defaultValue : null
     }));
-  };
 
-  const handleLimitChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      limits: { ...prev.limits, [field]: value === '' ? 'unlimited' : parseInt(value) }
-    }));
-  };
-
-  const handleCreatePlan = async () => {
-    try {
-      await axiosInstance.post('/plans', formData);
-      Swal.fire('Success!', 'Plan created successfully', 'success');
-      setShowCreateModal(false);
-      resetForm();
-      fetchPlans();
-    } catch (err) {
-      Swal.fire('Error', err.response?.data?.message || 'Failed to create plan', 'error');
-    }
-  };
-
-  const handleUpdatePlan = async () => {
-    try {
-      await axiosInstance.put(`/plans/${editingPlan._id}`, formData);
-      Swal.fire('Updated!', 'Plan updated successfully', 'success');
-      setShowEditModal(false);
-      resetForm();
-      fetchPlans();
-    } catch (err) {
-      Swal.fire('Error', 'Failed to update plan', 'error');
-    }
-  };
-
-  const handleEdit = (plan) => {
-    setEditingPlan(plan);
     setFormData({
+      code: '',
+      name: '',
+      description: '',
+      pricing: { monthly: 0, yearly: 0, currency: 'USD' },
+      features: defaultFeatures,
+      trial: { enabled: false, days: 14 },
+      isPublic: true,
+      isActive: true,
+      displayOrder: plans.length,
+      badge: ''
+    });
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (plan) => {
+    setEditingPlan(plan);
+
+    // Merge plan features with all available features
+    const mergedFeatures = featureDefinitions.map(fd => {
+      const existingFeature = plan.features?.find(f => f.featureCode === fd.code);
+      return existingFeature || {
+        featureCode: fd.code,
+        enabled: false,
+        limitValue: fd.type === 'limit' ? 0 : null
+      };
+    });
+
+    setFormData({
+      code: plan.code,
       name: plan.name,
       description: plan.description || '',
-      isActive: plan.isActive,
-      features: plan.features || {},
-      limits: plan.limits || { responsesPerMonth: 1000, teamMembers: 5, surveys: 'unlimited' }
+      pricing: plan.pricing || { monthly: 0, yearly: 0, currency: 'USD' },
+      features: mergedFeatures,
+      trial: plan.trial || { enabled: false, days: 14 },
+      isPublic: plan.isPublic !== false,
+      isActive: plan.isActive !== false,
+      displayOrder: plan.displayOrder || 0,
+      badge: plan.badge || ''
     });
-    setShowEditModal(true);
+    setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleFeatureToggle = (featureCode) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.map(f =>
+        f.featureCode === featureCode
+          ? { ...f, enabled: !f.enabled }
+          : f
+      )
+    }));
+  };
+
+  const handleLimitChange = (featureCode, value) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.map(f =>
+        f.featureCode === featureCode
+          ? { ...f, limitValue: value === '' ? 0 : (value === '-1' ? -1 : parseInt(value)) }
+          : f
+      )
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      // Filter only enabled features for boolean or features with limit values
+      const filteredFeatures = formData.features.filter(f => {
+        const def = featureDefinitions.find(fd => fd.code === f.featureCode);
+        if (def?.type === 'boolean') return f.enabled;
+        if (def?.type === 'limit') return true; // Include all limits
+        return false;
+      });
+
+      const data = {
+        ...formData,
+        features: filteredFeatures
+      };
+
+      if (editingPlan) {
+        await updatePlanTemplate(editingPlan._id, data);
+        Swal.fire('Updated!', 'Plan updated successfully', 'success');
+      } else {
+        await createPlanTemplate(data);
+        Swal.fire('Created!', 'Plan created successfully', 'success');
+      }
+
+      setShowModal(false);
+      fetchData();
+    } catch (error) {
+      Swal.fire('Error', error.response?.data?.message || 'Operation failed', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (plan) => {
     const result = await Swal.fire({
       title: 'Delete Plan?',
-      text: "This cannot be undone!",
+      text: `This will delete "${plan.name}". This cannot be undone!`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, delete it!'
     });
 
     if (result.isConfirmed) {
-      await axiosInstance.delete(`/plans/${id}`);
-      Swal.fire('Deleted!', 'Plan has been deleted.', 'success');
-      fetchPlans();
+      try {
+        await deletePlanTemplate(plan._id);
+        Swal.fire('Deleted!', 'Plan has been deleted.', 'success');
+        fetchData();
+      } catch (error) {
+        Swal.fire('Error', error.response?.data?.message || 'Delete failed', 'error');
+      }
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      isActive: true,
-      features: {},
-      limits: { responsesPerMonth: 1000, teamMembers: 5, surveys: 'unlimited' }
-    });
-  };
+  // Get feature definition by code
+  const getFeatureDef = (code) => featureDefinitions.find(fd => fd.code === code);
 
+  // Get feature value from form
+  const getFeatureValue = (code) => formData.features.find(f => f.featureCode === code);
+
+  // Group features by category
+  const featuresByCategory = CATEGORIES.reduce((acc, cat) => {
+    acc[cat.value] = featureDefinitions.filter(fd => fd.category === cat.value);
+    return acc;
+  }, {});
+
+  // Filter plans
   const filteredPlans = plans.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Count enabled features in a plan
+  const countEnabledFeatures = (plan) => {
+    return plan.features?.filter(f => {
+      const def = getFeatureDef(f.featureCode);
+      if (def?.type === 'boolean') return f.enabled;
+      return f.limitValue > 0 || f.limitValue === -1;
+    }).length || 0;
+  };
+
   return (
-    <Container fluid>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h1>Plan Builder</h1>
-          <p className="text-muted">Create modern feature-based plans</p>
-        </div>
-        <div>
-          <Button onClick={fetchPlans} variant="outline-secondary" className="me-2">
-            <MdRefresh /> Refresh
-          </Button>
-          <Button onClick={() => { resetForm(); setShowCreateModal(true); }}>
-            <MdAdd /> Create Plan
-          </Button>
+    <Container fluid className="py-4">
+      {/* Header */}
+      <div className="page-header-section mb-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 className="d-flex align-items-center gap-2">
+              <MdCreditCard className="text-primary" />
+              Plan Builder
+            </h1>
+            <p className="text-muted mb-0">
+              Create and manage subscription plans with dynamic features
+            </p>
+          </div>
+          <div className="d-flex gap-2">
+            <Button variant="outline-secondary" onClick={fetchData}>
+              <MdRefresh className="me-1" /> Refresh
+            </Button>
+            <Button variant="primary" onClick={handleOpenCreate} disabled={featureDefinitions.length === 0}>
+              <MdAdd className="me-1" /> Create Plan
+            </Button>
+          </div>
         </div>
       </div>
 
-      <Row className="mb-4">
-        <Col md={4}>
-          <InputGroup>
-            <InputGroup.Text><MdSearch /></InputGroup.Text>
-            <Form.Control
-              placeholder="Search plans..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </InputGroup>
-        </Col>
-      </Row>
+      {featureDefinitions.length === 0 && !loading && (
+        <Alert variant="warning">
+          No features defined yet. Please create features first before building plans.
+        </Alert>
+      )}
 
-      <Row>
-        {filteredPlans.map(plan => (
-          <Col md={4} key={plan._id} className="mb-4">
-            <Card className={`h-100 border ${plan.isActive ? '' : 'border-danger'}`}>
-              <Card.Header className="d-flex justify-content-between">
-                <h5>{plan.name}</h5>
-                <Badge bg={plan.isActive ? 'success' : 'danger'}>
-                  {plan.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              </Card.Header>
-              <Card.Body>
-                <ListGroup variant="flush">
-                  {ALL_FEATURES.map(f => (
-                    <ListGroup.Item key={f.key} className="d-flex justify-content-between">
-                      <span>{f.label}</span>
-                      {plan.features[f.key] ? <MdCheckCircle className="text-success" /> : <MdBlock className="text-muted" />}
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-                <hr />
-                <div className="small">
-                  <strong>Limits:</strong><br />
-                  Responses: {plan.limits.responsesPerMonth === 'unlimited' ? '∞' : plan.limits.responsesPerMonth}/month<br />
-                  Team Members: {plan.limits.teamMembers}
-                </div>
-              </Card.Body>
-              <Card.Footer className="text-center">
-                <Button size="sm" variant="outline-primary" onClick={() => handleEdit(plan)} className="me-2">
-                  <MdEdit /> Edit
-                </Button>
-                <Button size="sm" variant="outline-danger" onClick={() => handleDelete(plan._id)}>
-                  <MdDelete />
-                </Button>
-              </Card.Footer>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      {/* Create / Edit Modal */}
-      <Modal show={showCreateModal || showEditModal} onHide={() => { setShowCreateModal(false); setShowEditModal(false); }} size="xl">
-        <Modal.Header closeButton>
-          <Modal.Title>{showEditModal ? 'Edit' : 'Create'} Plan</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+      {/* Search */}
+      <Card className="border-0 shadow-sm mb-4">
+        <Card.Body>
           <Row>
-            <Col md={4}>
-              <Form.Group className="mb-3">
-                <Form.Label>Plan Name</Form.Label>
+            <Col md={6}>
+              <InputGroup>
+                <InputGroup.Text><MdSearch /></InputGroup.Text>
                 <Form.Control
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Pro, Enterprise, etc."
+                  placeholder="Search plans..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Description</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                />
-              </Form.Group>
-
-              <Form.Check
-                type="switch"
-                label="Plan Active"
-                checked={formData.isActive}
-                onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-              />
-            </Col>
-
-            <Col md={4}>
-              <Card className="h-100">
-                <Card.Header>Core Features</Card.Header>
-                <Card.Body>
-                  {ALL_FEATURES.filter(f => ['pro', 'enterprise'].includes(f.tier)).map(f => (
-                    <div key={f.key} className="d-flex justify-content-between align-items-center mb-2">
-                      <div>
-                        <strong>{f.label}</strong><br />
-                        <small className="text-muted">{f.desc}</small>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant={formData.features[f.key] ? "success" : "outline-secondary"}
-                        onClick={() => handleFeatureToggle(f.key)}
-                      >
-                        {formData.features[f.key] ? <MdToggleOn /> : <MdToggleOff />}
-                      </Button>
-                    </div>
-                  ))}
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col md={4}>
-              <Card>
-                <Card.Header>Usage Limits</Card.Header>
-                <Card.Body>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Responses / Month</Form.Label>
-                    <Form.Control
-                      type="number"
-                      value={formData.limits.responsesPerMonth === 'unlimited' ? '' : formData.limits.responsesPerMonth}
-                      onChange={e => handleLimitChange('responsesPerMonth', e.target.value)}
-                      placeholder="Leave empty for unlimited"
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label>Team Members</Form.Label>
-                    <Form.Control
-                      type="number"
-                      value={formData.limits.teamMembers}
-                      onChange={e => handleLimitChange('teamMembers', e.target.value)}
-                    />
-                  </Form.Group>
-                </Card.Body>
-              </Card>
+              </InputGroup>
             </Col>
           </Row>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => { setShowCreateModal(false); setShowEditModal(false); }}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={showEditModal ? handleUpdatePlan : handleCreatePlan}>
-            <MdSave /> {showEditModal ? 'Update' : 'Create'} Plan
-          </Button>
-        </Modal.Footer>
+        </Card.Body>
+      </Card>
+
+      {/* Plans Grid */}
+      {loading ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-2">Loading plans...</p>
+        </div>
+      ) : (
+        <Row>
+          {filteredPlans.map(plan => (
+            <Col key={plan._id} md={4} lg={3} className="mb-4">
+              <Card className={`h-100 border-0 shadow-sm ${!plan.isActive ? 'opacity-50' : ''}`}>
+                {plan.badge && (
+                  <div className="position-absolute top-0 end-0 m-2">
+                    <Badge bg="warning" text="dark">
+                      <MdStar className="me-1" />{plan.badge}
+                    </Badge>
+                  </div>
+                )}
+                <Card.Header className="bg-gradient text-center py-3" style={{
+                  background: plan.isActive ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#ccc',
+                  color: 'white'
+                }}>
+                  <h4 className="mb-0">{plan.name}</h4>
+                  <small className="opacity-75">({plan.code})</small>
+                </Card.Header>
+                <Card.Body>
+                  {/* Pricing */}
+                  <div className="text-center mb-3">
+                    <div className="d-flex align-items-center justify-content-center">
+                      <MdAttachMoney className="text-success fs-4" />
+                      <span className="fs-2 fw-bold">{plan.pricing?.monthly || 0}</span>
+                      <span className="text-muted">/mo</span>
+                    </div>
+                    {plan.pricing?.yearly > 0 && (
+                      <small className="text-muted">
+                        ${plan.pricing.yearly}/year (save {Math.round((1 - plan.pricing.yearly / (plan.pricing.monthly * 12)) * 100)}%)
+                      </small>
+                    )}
+                  </div>
+
+                  {/* Features summary */}
+                  <div className="mb-3">
+                    <small className="text-muted d-flex justify-content-between">
+                      <span>Features included</span>
+                      <strong>{countEnabledFeatures(plan)} / {featureDefinitions.length}</strong>
+                    </small>
+                    <div className="progress" style={{ height: '4px' }}>
+                      <div
+                        className="progress-bar bg-success"
+                        style={{ width: `${(countEnabledFeatures(plan) / featureDefinitions.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Key features preview */}
+                  <ListGroup variant="flush" className="small">
+                    {plan.features?.slice(0, 5).map(f => {
+                      const def = getFeatureDef(f.featureCode);
+                      if (!def) return null;
+                      return (
+                        <ListGroup.Item key={f.featureCode} className="px-0 py-1 d-flex justify-content-between">
+                          <span>{def.name}</span>
+                          {def.type === 'boolean' ? (
+                            f.enabled ? <MdCheck className="text-success" /> : <MdClose className="text-muted" />
+                          ) : (
+                            <Badge bg="secondary">{f.limitValue === -1 ? '∞' : f.limitValue}</Badge>
+                          )}
+                        </ListGroup.Item>
+                      );
+                    })}
+                    {(plan.features?.length || 0) > 5 && (
+                      <ListGroup.Item className="px-0 py-1 text-center text-muted">
+                        +{plan.features.length - 5} more features
+                      </ListGroup.Item>
+                    )}
+                  </ListGroup>
+
+                  {/* Trial info */}
+                  {plan.trial?.enabled && (
+                    <Badge bg="info" className="mt-2">
+                      {plan.trial.days} day trial
+                    </Badge>
+                  )}
+                </Card.Body>
+                <Card.Footer className="bg-transparent border-0 text-center pb-3">
+                  <Button
+                    size="sm"
+                    variant="outline-primary"
+                    className="me-2"
+                    onClick={() => handleOpenEdit(plan)}
+                  >
+                    <MdEdit /> Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline-danger"
+                    onClick={() => handleDelete(plan)}
+                  >
+                    <MdDelete />
+                  </Button>
+                </Card.Footer>
+              </Card>
+            </Col>
+          ))}
+
+          {filteredPlans.length === 0 && !loading && (
+            <Col>
+              <Alert variant="info">
+                No plans found. Create your first plan to get started.
+              </Alert>
+            </Col>
+          )}
+        </Row>
+      )}
+
+      {/* Create/Edit Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="xl" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {editingPlan ? `Edit Plan: ${editingPlan.name}` : 'Create New Plan'}
+          </Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <Row>
+              {/* Basic Info */}
+              <Col md={4}>
+                <h5 className="mb-3">Basic Information</h5>
+                <Form.Group className="mb-3">
+                  <Form.Label>Plan Code *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                    placeholder="e.g., pro"
+                    required
+                    disabled={!!editingPlan}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Display Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., Pro Plan"
+                    required
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Description</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>Badge (optional)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.badge}
+                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    placeholder="e.g., Most Popular"
+                  />
+                </Form.Group>
+
+                <h5 className="mt-4 mb-3">Pricing</h5>
+                <Row>
+                  <Col>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Monthly ($)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        value={formData.pricing.monthly}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          pricing: { ...formData.pricing, monthly: parseFloat(e.target.value) || 0 }
+                        })}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Yearly ($)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        value={formData.pricing.yearly}
+                        onChange={(e) => setFormData({
+                          ...formData,
+                          pricing: { ...formData.pricing, yearly: parseFloat(e.target.value) || 0 }
+                        })}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <h5 className="mt-4 mb-3">Settings</h5>
+                <Form.Check
+                  type="switch"
+                  label="Trial enabled"
+                  checked={formData.trial.enabled}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    trial: { ...formData.trial, enabled: e.target.checked }
+                  })}
+                  className="mb-2"
+                />
+                {formData.trial.enabled && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Trial Days</Form.Label>
+                    <Form.Control
+                      type="number"
+                      value={formData.trial.days}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        trial: { ...formData.trial, days: parseInt(e.target.value) || 14 }
+                      })}
+                    />
+                  </Form.Group>
+                )}
+                <Form.Check
+                  type="switch"
+                  label="Public (show on pricing page)"
+                  checked={formData.isPublic}
+                  onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
+                  className="mb-2"
+                />
+                <Form.Check
+                  type="switch"
+                  label="Active"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                />
+              </Col>
+
+              {/* Features */}
+              <Col md={8}>
+                <h5 className="mb-3">Features</h5>
+                <Alert variant="info" className="small">
+                  Toggle features ON/OFF for boolean types. Set limit values for numeric features.
+                  Use -1 for unlimited.
+                </Alert>
+
+                {CATEGORIES.map(category => {
+                  const categoryFeatures = featuresByCategory[category.value] || [];
+                  if (categoryFeatures.length === 0) return null;
+
+                  return (
+                    <Card key={category.value} className="mb-3">
+                      <Card.Header className="py-2">
+                        <Badge bg={category.color} className="me-2">{category.label}</Badge>
+                        <small className="text-muted">
+                          {categoryFeatures.filter(fd => {
+                            const fv = getFeatureValue(fd.code);
+                            if (fd.type === 'boolean') return fv?.enabled;
+                            return fv?.limitValue > 0 || fv?.limitValue === -1;
+                          }).length} / {categoryFeatures.length} enabled
+                        </small>
+                      </Card.Header>
+                      <Card.Body className="py-2">
+                        {categoryFeatures.map(fd => {
+                          const fv = getFeatureValue(fd.code);
+                          const isEnabled = fd.type === 'boolean' ? fv?.enabled : (fv?.limitValue > 0 || fv?.limitValue === -1);
+
+                          return (
+                            <div key={fd.code} className="d-flex align-items-center justify-content-between py-2 border-bottom">
+                              <div>
+                                <strong>{fd.name}</strong>
+                                {fd.description && (
+                                  <div className="small text-muted">{fd.description}</div>
+                                )}
+                              </div>
+                              <div className="d-flex align-items-center gap-2">
+                                {fd.type === 'boolean' ? (
+                                  <Button
+                                    size="sm"
+                                    variant={fv?.enabled ? "success" : "outline-secondary"}
+                                    onClick={() => handleFeatureToggle(fd.code)}
+                                  >
+                                    {fv?.enabled ? <MdToggleOn /> : <MdToggleOff />}
+                                    {fv?.enabled ? ' ON' : ' OFF'}
+                                  </Button>
+                                ) : (
+                                  <InputGroup size="sm" style={{ width: '150px' }}>
+                                    <Form.Control
+                                      type="number"
+                                      value={fv?.limitValue ?? 0}
+                                      onChange={(e) => handleLimitChange(fd.code, e.target.value)}
+                                      placeholder="0"
+                                    />
+                                    {fd.unit && <InputGroup.Text>{fd.unit}</InputGroup.Text>}
+                                  </InputGroup>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </Card.Body>
+                    </Card>
+                  );
+                })}
+              </Col>
+            </Row>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving ? (
+                <>
+                  <Spinner size="sm" className="me-1" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <MdSave className="me-1" />
+                  {editingPlan ? 'Update Plan' : 'Create Plan'}
+                </>
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
     </Container>
   );

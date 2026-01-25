@@ -64,8 +64,12 @@ import Testimonials from "./pages/ContentManagement/Testimonials"
 import Widgets from "./pages/ContentManagement/Widgets"
 import Features from "./pages/ContentManagement/Features"
 import Pricing from "./pages/ContentManagement/Pricing"
-import SubscriptionPlans from './pages/Subscription/SubscriptionPlans';
+// Subscription Pages
 import MyPlans from './pages/Subscription/MyPlans';
+import PlanBuilder from "./pages/Subscription/PlanBuilder";
+import FeatureManagement from "./pages/Subscription/FeatureManagement";
+import TenantSubscriptions from "./pages/Subscription/TenantSubscriptions";
+import UsageDashboard from "./pages/Subscription/UsageDashboard";
 import ContactManagement from "./pages/Audiences/ContactManagement"
 import Support from "./pages/Support/CreateTicket"
 import VerifyEmail from "./pages/Auth/VerifyEmail"
@@ -77,7 +81,7 @@ import ActionManagement from "./pages/Actions/ActionManagement"
 import { ToastContainer } from "react-toastify"
 import { useAuth } from "./context/AuthContext"
 import FullScreenLoader from "./components/Loader/FullScreenLoader"
-import PlanBuilder from "./pages/Subscription/PlanBuilder"
+// PlanBuilder import moved above
 import ExecutiveDashboard from "./pages/Dashboard/ExecutiveDashboard"
 import Notifications from "./pages/Notifications/Notifications"
 
@@ -184,11 +188,15 @@ function App() {
               <Route path="analytics/real-time" element={<RealTimeResults />} />
               <Route path="analytics/trends" element={<TrendAnalysis />} />
               <Route path="analytics/response-overview" element={<ResponseOverview />} />
-              
-              {/* Subscription  */}
-               {/* <Route path="subscription/manage-plans" element={<SubscriptionPlans/>} /> */}
-               <Route path="subscription/plans" element={<PlanBuilder />} />
-              <Route path="subscription/my-plan" element={<MyPlans/>} />
+
+              {/* Subscription Management */}
+              <Route path="subscription/my-plan" element={<MyPlans />} />
+              <Route path="subscription/usage" element={<UsageDashboard />} />
+
+              {/* Admin: Subscription Management */}
+              <Route path="subscription/features" element={<FeatureManagement />} />
+              <Route path="subscription/plans" element={<PlanBuilder />} />
+              <Route path="subscription/tenants" element={<TenantSubscriptions />} />
               {/* Support */}
               <Route path="support" element={<SupportTickets />} />
               <Route path="support/create" element={<CreateTicket />} />
