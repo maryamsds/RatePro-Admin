@@ -202,7 +202,7 @@ const TrendAnalysis = () => {
             </div>
             <h2 className="section-title">Trend Overview</h2>
           </div>
-          <div className="chart-container">
+          <div className="chart-container d-flex justify-content-center align-items-center">
             {loading ? (
               <div className="loading-state">
                 <div className="spinner"></div>
@@ -235,7 +235,7 @@ const TrendAnalysis = () => {
             </div>
             <h2 className="section-title">Year-over-Year Comparison</h2>
           </div>
-          <div className="chart-container">
+          <div className="chart-container d-flex justify-content-center align-items-center">
             {loading ? (
               <div className="loading-state">
                 <div className="spinner"></div>

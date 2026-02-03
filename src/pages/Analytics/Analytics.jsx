@@ -354,7 +354,7 @@ const Analytics = ({ darkMode }) => {
                   </Form.Select>
                 </div>
               </div>
-              <div className="chart-container">
+              <div className="chart-container d-flex justify-content-center align-items-center">
                 <div className="chart-placeholder">
                   <div className="placeholder-content">
                     <MdBarChart className="placeholder-icon" />

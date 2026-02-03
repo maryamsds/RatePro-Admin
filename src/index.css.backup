@@ -12274,6 +12274,11 @@ canvas {
   box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
 }
 
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .stats-icon {
   width: 70px;
   height: 70px;
@@ -12682,9 +12687,22 @@ canvas {
   box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
 }
 
+/* src\pages\Actions\ActionManagement.css */
+
 .action-header {
   border: none;
   border-radius: 12px;
+}
+
+.stats-card {
+  border: none;
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 123, 255, 0.15);
 }
 
 .stats-icon {

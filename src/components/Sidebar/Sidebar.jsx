@@ -486,11 +486,19 @@ const Sidebar = ({
   };
 
   const navItems = [
+    // Platform Dashboard - System Admin Only
+    {
+      path: "/app/platform",
+      name: "Platform Overview",
+      icon: <MdDashboard />,
+      roles: ["admin"],
+    },
+    // Tenant Dashboard - Company Admin & Members
     {
       path: "/app",
       name: "Dashboard",
-      icon: <MdDashboard />,
-      roles: ["admin", "companyAdmin", "member"],
+      icon: <MdOutlineDashboardCustomize />,
+      roles: ["companyAdmin", "member"],
     },
     {
       name: "Survey Management",
@@ -518,7 +526,7 @@ const Sidebar = ({
           path: "/app/surveys",
           name: "All Surveys",
           icon: <MdViewList />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
           permissions: ["survey:read"]
         },
         {
@@ -602,7 +610,7 @@ const Sidebar = ({
       path: "/app/actions",
       name: "Action Management",
       icon: <MdTask />,
-      roles: ["companyAdmin", "admin"],
+      roles: ["companyAdmin"],
     },
     {
       name: "Analytics & Reports",
@@ -610,7 +618,7 @@ const Sidebar = ({
       submenu: true,
       isOpen: analyticsSubmenuOpen,
       toggle: () => toggleSubmenu("analytics"),
-      roles: ["companyAdmin", "admin"],
+      roles: ["companyAdmin"],
       permissions: [
         "analytics:view",
         "analytics:realtime",
@@ -623,43 +631,43 @@ const Sidebar = ({
           path: "/app/analytics",
           name: "Analytics Overview",
           icon: <MdInsertChart />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/analytics/dashboard",
           name: "Executive Dashboard",
           icon: <MdAnalytics />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/analytics/feedback",
           name: "Feedback Analysis",
           icon: <MdFeedback />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/analytics/real-time",
           name: "Real-Time Results",
           icon: <MdSync />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/analytics/trends",
           name: "Trend Analysis",
           icon: <MdTrendingUp />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/analytics/custom-reports",
           name: "Custom Reports",
           icon: <MdBarChart />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/analytics/response-overview",
           name: "Response Overview",
           icon: <MdShowChart />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
       ],
     },
@@ -669,7 +677,7 @@ const Sidebar = ({
       submenu: true,
       isOpen: communicationSubmenuOpen,
       toggle: () => toggleSubmenu("communication"),
-      roles: ["companyAdmin", "admin"],
+      roles: ["admin"],
       permissions: [
         "communication:whatsapp",
         "communication:sms",
@@ -680,20 +688,20 @@ const Sidebar = ({
           path: "/app/settings/email-templates",
           name: "Email Templates",
           icon: <MdMailOutline />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["admin"],
         },
         {
           path: "/app/communication/whatsapp",
           name: "WhatsApp Settings",
           icon: <IoLogoWhatsapp />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["admin"],
         },
-        {
-          path: "/app/communication/sms",
-          name: "SMS Settings",
-          icon: <MdSms />,
-          roles: ["companyAdmin", "admin"],
-        },
+        // {
+        //   path: "/app/communication/sms",
+        //   name: "SMS Settings",
+        //   icon: <MdSms />,
+        //   roles: ["admin"],
+        // },
       ],
     },
     {
@@ -701,7 +709,7 @@ const Sidebar = ({
       icon: <MdPeople />,
       submenu: true,
       isOpen: audienceSubmenuOpen,
-      roles: ["companyAdmin", "admin"],
+      roles: ["companyAdmin"],
       toggle: () => toggleSubmenu("audience"),
       permissions: ["audience:view", "audience:segment", "audience:contacts"],
       submenuItems: [
@@ -709,19 +717,19 @@ const Sidebar = ({
           path: "/app/audiences",
           name: "All Audiences",
           icon: <MdPeople />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/audiences/category",
           name: "Audience Category",
           icon: <MdSegment />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
         {
           path: "/app/audiences/contacts",
           name: "Contact Management",
           icon: <MdContacts />,
-          roles: ["companyAdmin", "admin"],
+          roles: ["companyAdmin"],
         },
       ],
     },
@@ -767,46 +775,46 @@ const Sidebar = ({
         }
       ]
     },
-    {
-      name: "Content Management",
-      icon: <MdOutlineDashboardCustomize />,
-      submenu: true,
-      isOpen: contentmanagement,
-      roles: ["admin"],
-      toggle: () => toggleSubmenu("content"),
-      permissions: [
-        "content:features",
-        "content:pricing",
-        "content:testimonials",
-        "content:widgets",
-      ],
-      submenuItems: [
-        {
-          path: "/app/content/features",
-          name: "Features",
-          icon: <MdCode />,
-          roles: ["admin"],
-        },
-        {
-          path: "/app/content/pricing",
-          name: "Pricing",
-          icon: <MdPayment />,
-          roles: ["admin"],
-        },
-        {
-          path: "/app/content/testimonials",
-          name: "Testimonials",
-          icon: <MdThumbUp />,
-          roles: ["admin"],
-        },
-        {
-          path: "/app/content/widgets",
-          name: "Widgets",
-          icon: <MdCampaign />,
-          roles: ["admin"],
-        },
-      ],
-    },
+    // {
+    //   name: "Content Management",
+    //   icon: <MdOutlineDashboardCustomize />,
+    //   submenu: true,
+    //   isOpen: contentmanagement,
+    //   roles: ["admin"],
+    //   toggle: () => toggleSubmenu("content"),
+    //   permissions: [
+    //     "content:features",
+    //     "content:pricing",
+    //     "content:testimonials",
+    //     "content:widgets",
+    //   ],
+    //   submenuItems: [
+    //     {
+    //       path: "/app/content/features",
+    //       name: "Features",
+    //       icon: <MdCode />,
+    //       roles: ["admin"],
+    //     },
+    //     {
+    //       path: "/app/content/pricing",
+    //       name: "Pricing",
+    //       icon: <MdPayment />,
+    //       roles: ["admin"],
+    //     },
+    //     {
+    //       path: "/app/content/testimonials",
+    //       name: "Testimonials",
+    //       icon: <MdThumbUp />,
+    //       roles: ["admin"],
+    //     },
+    //     {
+    //       path: "/app/content/widgets",
+    //       name: "Widgets",
+    //       icon: <MdCampaign />,
+    //       roles: ["admin"],
+    //     },
+    //   ],
+    // },
     {
       name: "Support Tickets",
       icon: <MdSupport />,
@@ -837,7 +845,7 @@ const Sidebar = ({
       icon: <MdSettings />,
       submenu: true,
       isOpen: settingsSubmenuOpen,
-      roles: ["admin", "companyAdmin"],
+      roles: ["admin"],
       toggle: () => toggleSubmenu("settings"),
       permissions: ["settings:general"],
       submenuItems: [
@@ -845,21 +853,15 @@ const Sidebar = ({
           path: "/app/settings",
           name: "General Settings",
           icon: <MdSettings />,
-          roles: ["admin", "companyAdmin"],
+          roles: ["admin"],
           permissions: ["settings:general"],
         },
-        {
-          path: "/app/settings/email-templates",
-          name: "Email Templates",
-          icon: <MdMailOutline />,
-          roles: ["admin"],
-        },
-        {
-          path: "/app/settings/notifications",
-          name: "Notification Settings",
-          icon: <MdNotifications />,
-          roles: ["admin"],
-        },
+        // {
+        //   path: "/app/settings/notifications",
+        //   name: "Notification Settings",
+        //   icon: <MdNotifications />,
+        //   roles: ["admin"],
+        // },
         {
           path: "/app/settings/smtp",
           name: "SMTP Configuration",
@@ -867,16 +869,16 @@ const Sidebar = ({
           roles: ["admin"],
         },
         {
-          path: "/app/settings/thank-you",
-          name: "Thank You Page",
-          icon: <MdThumbUp />,
-          roles: ["admin", "companyAdmin"],
-        },
-        {
           path: "/app/settings/theme",
           name: "Theme Settings",
           icon: <MdColorLens />,
-          roles: ["admin", "companyAdmin", "member"],
+          roles: ["admin"],
+        },
+        {
+          path: "/app/settings/dropdowns",
+          name: "Dropdown Settings",
+          icon: <MdList />,
+          roles: ["admin"], // System Admin only
         },
       ],
     },
@@ -927,7 +929,7 @@ const Sidebar = ({
           {isMobile && isOpen ? (
             <Button
               variant="link"
-              className="sidebar-toggle mobile-close-button"
+              className="sidebar-toggle d-flex align-items-center justify-content-center mobile-close-button cursor-pointer"
               onClick={onClose}
               aria-label="Close navigation menu"
               tabIndex={0}
@@ -939,7 +941,7 @@ const Sidebar = ({
             /* Desktop/tablet toggle button */
             <Button
               variant="link"
-              className="sidebar-toggle"
+              className="sidebar-toggle cursor-pointer"
               onClick={() => onToggle(!collapsed)}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               tabIndex={0}
@@ -962,7 +964,7 @@ const Sidebar = ({
                 {item.submenu ? (
                   <>
                     <button
-                      className="nav-link"
+                      className="nav-link d-flex align-items-center cursor-pointer position-relative w-100 text-decoration-none"
                       onClick={
                         collapsed
                           ? () => handleCollapsedDropdownClick(item.name)
@@ -1071,7 +1073,7 @@ const Sidebar = ({
                 ) : (
                   <NavLink
                     to={item.path}
-                    className={`nav-link ${isActiveRoute(item.path) ? "active" : ""
+                    className={`nav-link d-flex align-items-center cursor-pointer position-relative w-100 text-decoration-none ${isActiveRoute(item.path) ? "active" : ""
                       }`}
                     onClick={() => handleItemClick(item.path)}
                     onMouseEnter={() => setHoveredItem(item.name)}

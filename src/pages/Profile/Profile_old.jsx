@@ -391,7 +391,7 @@ const Profile = () => {
     }
   };
 
-  const tabClass = (tab) => `nav-link ${activeTab === tab ? "active" : ""}`;
+  const tabClass = (tab) => `nav-link d-flex align-items-center ${activeTab === tab ? "active" : ""}`;
 
   return (
     <div className="profile-container">

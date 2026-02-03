@@ -232,4 +232,4 @@ const Layout = ({ darkMode, toggleTheme }) => {
   )
 }
 
-export default Layout
+export default Layout;

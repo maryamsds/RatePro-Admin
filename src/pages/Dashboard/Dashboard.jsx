@@ -3,26 +3,22 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Container, Row, Col, Card, Button, Table, Badge, ProgressBar, Spinner } from "react-bootstrap"
-import { Line, Bar, Doughnut } from "react-chartjs-2"
+import { Line } from "react-chartjs-2"
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
-  ArcElement,
   Filler,
 } from "chart.js"
 import {
-  MdDashboard,
   MdPoll,
   MdPeople,
   MdTrendingUp,
-  MdTrendingDown,
   MdAccessTime,
   MdVisibility,
   MdEdit,
@@ -30,14 +26,12 @@ import {
   MdRefresh,
   MdDownload,
   MdAdd,
-  MdBarChart,
   MdShowChart,
-  MdPieChart,
   MdChevronLeft,
   MdChevronRight,
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, Navigate } from "react-router-dom"
 import Swal from "sweetalert2"
 import { useAuth } from "../../context/AuthContext.jsx"
 
@@ -52,15 +46,25 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
-  ArcElement,
   Filler,
 )
 
 const Dashboard = ({ darkMode }) => {
+  const { user, authLoading, hasPermission } = useAuth();
+  const navigate = useNavigate();
+
+  // ============================================================================
+  // 🔐 ROLE-BASED DASHBOARD ROUTING
+  // ============================================================================
+  // System Admin should not see tenant dashboard - redirect to platform dashboard
+  // This is a safety net in case they bypass frontend guards
+  if (!authLoading && user?.role === 'admin') {
+    return <Navigate to="/app/platform" replace />;
+  }
+
   const [stats, setStats] = useState({
     totalSurveys: 0,
     activeResponses: 0,
@@ -76,8 +80,13 @@ const Dashboard = ({ darkMode }) => {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
   const [trendData, setTrendData] = useState({ labels: [], data: [] })
-  const navigate = useNavigate();
-  const { user } = useAuth();
+
+  // ============================================================================
+  // 🔐 PERMISSION-BASED WIDGET VISIBILITY
+  // ============================================================================
+  const canViewSurveys = user?.role === 'companyAdmin' || hasPermission('survey:read');
+  const canCreateSurvey = user?.role === 'companyAdmin' || hasPermission('survey:create');
+  const canViewAnalytics = user?.role === 'companyAdmin' || hasPermission('analytics:view');
 
   const createNewSurvey = () => {
     navigate("/app/surveys/create");
@@ -136,10 +145,10 @@ const Dashboard = ({ darkMode }) => {
           id: survey.id || survey._id,
           name: survey.title,
           responses: survey.responseCount || 0,
-          status: survey.status === "active" ? "Active" : 
-                  survey.status === "completed" ? "Completed" : 
-                  survey.status === "draft" ? "Draft" : 
-                  survey.status === "paused" ? "Paused" : survey.status,
+          status: survey.status === "active" ? "Active" :
+            survey.status === "completed" ? "Completed" :
+              survey.status === "draft" ? "Draft" :
+                survey.status === "paused" ? "Paused" : survey.status,
           completion: survey.stats?.completionRate || 0,
         }));
         setRecentSurveys(transformedSurveys);
@@ -208,38 +217,10 @@ const Dashboard = ({ darkMode }) => {
     ],
   }
 
-  const surveyTypeData = {
-    labels: ["Customer Satisfaction", "Product Feedback", "Employee Engagement", "Market Research", "Other"],
-    datasets: [
-      {
-        data: [30, 25, 20, 15, 10],
-        backgroundColor: [
-          "#0d6efd",
-          "#198754",
-          "#ffc107",
-          "#dc3545",
-          "#6c757d",
-        ],
-        borderColor: darkMode ? "#1e293b" : "#ffffff",
-        borderWidth: 3,
-        hoverOffset: 8,
-      },
-    ],
-  }
-
-  const completionData = {
-    labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-    datasets: [
-      {
-        label: "Completion Rate %",
-        data: [75, 82, 78, 85],
-        backgroundColor: "#054a4eff",
-        borderColor: "#012a2dff",
-        borderWidth: 0,
-        borderRadius: 8,
-      },
-    ],
-  }
+  // Mock data charts removed - no backend support for these visualizations
+  // TODO: Implement backend APIs if these charts are needed:
+  // - GET /api/analytics/survey-types (for Survey Type Distribution)
+  // - GET /api/analytics/weekly-completion (for Weekly Completion chart)
 
   const chartOptions = {
     responsive: true,
@@ -265,7 +246,7 @@ const Dashboard = ({ darkMode }) => {
         padding: 12,
         displayColors: true,
         callbacks: {
-          labelTextColor: function() {
+          labelTextColor: function () {
             return darkMode ? "#e9ecef" : "#495057";
           }
         }
@@ -294,37 +275,7 @@ const Dashboard = ({ darkMode }) => {
     },
   }
 
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom",
-        labels: {
-          color: darkMode ? "#e9ecef" : "#212529",
-          usePointStyle: true,
-          padding: 15,
-          font: {
-            size: 12,
-          },
-        },
-      },
-      tooltip: {
-        backgroundColor: darkMode ? "#2d3748" : "#ffffff",
-        titleColor: darkMode ? "#ffffff" : "#212529",
-        bodyColor: darkMode ? "#e9ecef" : "#495057",
-        borderColor: darkMode ? "#4a5568" : "#dee2e6",
-        borderWidth: 1,
-        padding: 12,
-        displayColors: true,
-        callbacks: {
-          labelTextColor: function() {
-            return darkMode ? "#e9ecef" : "#495057";
-          }
-        }
-      },
-    },
-  }
+  // doughnutOptions removed - no longer needed without mock charts
 
   const currentSurveys = recentSurveys.slice(
     (pagination.page - 1) * pagination.limit,
@@ -341,9 +292,9 @@ const Dashboard = ({ darkMode }) => {
             <p>Welcome back! Here's what's happening with your surveys today.</p>
           </div>
           <div className="d-flex gap-2 flex-wrap">
-            <Button 
-              variant="outline-secondary" 
-              size="sm" 
+            <Button
+              variant="outline-secondary"
+              size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
             >
@@ -354,14 +305,12 @@ const Dashboard = ({ darkMode }) => {
               )}
               {refreshing ? "Refreshing..." : "Refresh"}
             </Button>
-            <Button variant="outline-secondary" size="sm">
-              <MdDownload size={16} className="me-1" />
-              Export
-            </Button>
-            <Button variant="primary" onClick={createNewSurvey} size="sm">
-              <MdAdd size={16} className="me-1" />
-              New Survey
-            </Button>
+            {canCreateSurvey && (
+              <Button variant="primary" onClick={createNewSurvey} size="sm">
+                <MdAdd size={16} className="me-1" />
+                New Survey
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -384,246 +333,225 @@ const Dashboard = ({ darkMode }) => {
         </div>
       ) : (
         <>
-      {/* Stats Cards */}
-      <Row className="g-3 mb-4">
-        <Col xl={3} lg={6} md={6} xs={12}>
-          <div className="stats-card">
-            <div className="stats-card-header">
-              <div className="stats-icon icon-primary">
-                <MdPoll />
+          {/* Stats Cards */}
+          <Row className="g-3 mb-4">
+            <Col xl={3} lg={6} md={6} xs={12}>
+              <div className="stats-card">
+                <div className="stats-card-header">
+                  <div className="stats-icon icon-primary">
+                    <MdPoll />
+                  </div>
+                </div>
+                <div className="stats-card-body">
+                  <h3>{stats.totalSurveys}</h3>
+                  <p>Total Surveys</p>
+                </div>
               </div>
-              <div className="stats-trend trend-up">
-                <MdTrendingUp size={14} />
-                <span>+12%</span>
-              </div>
-            </div>
-            <div className="stats-card-body">
-              <h3>{stats.totalSurveys}</h3>
-              <p>Total Surveys</p>
-            </div>
-          </div>
-        </Col>
-        
-        <Col xl={3} lg={6} md={6} xs={12}>
-          <div className="stats-card">
-            <div className="stats-card-header">
-              <div className="stats-icon icon-success">
-                <MdPeople />
-              </div>
-              <div className="stats-trend trend-up">
-                <MdTrendingUp size={14} />
-                <span>+8%</span>
-              </div>
-            </div>
-            <div className="stats-card-body">
-              <h3>{stats.activeResponses.toLocaleString()}</h3>
-              <p>Active Responses</p>
-            </div>
-          </div>
-        </Col>
-        
-        <Col xl={3} lg={6} md={6} xs={12}>
-          <div className="stats-card">
-            <div className="stats-card-header">
-              <div className="stats-icon icon-info">
-                <MdTrendingUp />
-              </div>
-              <div className="stats-trend trend-up">
-                <MdTrendingUp size={14} />
-                <span>+5%</span>
-              </div>
-            </div>
-            <div className="stats-card-body">
-              <h3>{stats.completionRate}%</h3>
-              <p>Completion Rate</p>
-            </div>
-          </div>
-        </Col>
-        
-        <Col xl={3} lg={6} md={6} xs={12}>
-          <div className="stats-card">
-            <div className="stats-card-header">
-              <div className="stats-icon icon-warning">
-                <MdAccessTime />
-              </div>
-              <div className="stats-trend trend-down">
-                <MdTrendingDown size={14} />
-                <span>-2%</span>
-              </div>
-            </div>
-            <div className="stats-card-body">
-              <h3>{stats.avgResponseTime}</h3>
-              <p>Avg Response Time</p>
-            </div>
-          </div>
-        </Col>
-      </Row>
+            </Col>
 
-      {/* Charts Row */}
-      <Row className="g-3 mb-4">
-        <Col lg={8}>
-          <div className="chart-card">
-            <h5>
-              <MdShowChart size={20} style={{ marginBottom: '2px' }} />
-              Response Trends
-              <Button 
-                variant="link" 
-                onClick={ViewTrendsAnalytics} 
-                size="sm" 
-                className="float-end"
-                style={{ textDecoration: 'none' }}
-              >
-                View Details →
-              </Button>
-            </h5>
-            <div className="chart-container">
-              <Line data={responseData} options={chartOptions} />
-            </div>
-          </div>
-        </Col>
-        <Col lg={4}>
-          <div className="chart-card">
-            <h5>
-              <MdPieChart size={20} style={{ marginBottom: '2px' }} />
-              Survey Types Distribution
-            </h5>
-            <div className="chart-container">
-              <Doughnut data={surveyTypeData} options={doughnutOptions} />
-            </div>
-          </div>
-        </Col>
-      </Row>
+            <Col xl={3} lg={6} md={6} xs={12}>
+              <div className="stats-card">
+                <div className="stats-card-header">
+                  <div className="stats-icon icon-success">
+                    <MdPeople />
+                  </div>
+                </div>
+                <div className="stats-card-body">
+                  <h3>{stats.activeResponses.toLocaleString()}</h3>
+                  <p>Active Responses</p>
+                </div>
+              </div>
+            </Col>
 
-      {/* Recent Surveys and Completion Rates */}
-      <Row className="g-3">
-        <Col lg={8}>
-          <div className="recent-surveys-section">
-            <div className="section-header">
-              <h5>
-                <MdPoll size={20} />
-                Recent Surveys
-              </h5>
-              <Button 
-                variant="link" 
-                onClick={ViewRecentSurveys} 
-                size="sm"
-                style={{ textDecoration: 'none' }}
-              >
-                View All →
-              </Button>
-            </div>
-            <div className="table-container">
-              {recentSurveys.length === 0 ? (
+            <Col xl={3} lg={6} md={6} xs={12}>
+              <div className="stats-card">
+                <div className="stats-card-header">
+                  <div className="stats-icon icon-info">
+                    <MdTrendingUp />
+                  </div>
+                </div>
+                <div className="stats-card-body">
+                  <h3>{stats.completionRate}%</h3>
+                  <p>Completion Rate</p>
+                </div>
+              </div>
+            </Col>
+
+            <Col xl={3} lg={6} md={6} xs={12}>
+              <div className="stats-card">
+                <div className="stats-card-header">
+                  <div className="stats-icon icon-warning">
+                    <MdAccessTime />
+                  </div>
+                </div>
+                <div className="stats-card-body">
+                  <h3>{stats.avgResponseTime}</h3>
+                  <p>Avg Response Time</p>
+                </div>
+              </div>
+            </Col>
+          </Row>
+
+          {/* Charts Row - Only show if user can view analytics */}
+          {canViewAnalytics && (
+            <Row className="g-3 mb-4">
+              <Col lg={12}>
+                <div className="chart-card">
+                  <h5 className="d-flex align-items-center gap-2">
+                    <MdShowChart size={20} />
+                    Response Trends
+                    <Button
+                      variant="link"
+                      onClick={ViewTrendsAnalytics}
+                      size="sm"
+                      className="ms-auto text-decoration-none"
+                    >
+                      View Details →
+                    </Button>
+                  </h5>
+                  <div className="chart-container d-flex justify-content-center align-items-center">
+                    <Line data={responseData} options={chartOptions} />
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          )}
+
+          {/* Recent Surveys and Completion Rates - Only show if user can view surveys */}
+          {canViewSurveys ? (
+            <Row className="g-3">
+              <Col lg={8}>
+                <div className="recent-surveys-section">
+                  <div className="section-header">
+                    <h5>
+                      <MdPoll size={20} />
+                      Recent Surveys
+                    </h5>
+                    <Button
+                      variant="link"
+                      onClick={ViewRecentSurveys}
+                      size="sm"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      View All →
+                    </Button>
+                  </div>
+                  <div className="table-container">
+                    {recentSurveys.length === 0 ? (
+                      <div className="text-center py-5">
+                        <MdPoll size={48} className="text-muted mb-3" />
+                        <h6 className="text-muted">No surveys yet</h6>
+                        <p className="text-muted small mb-3">Create your first survey to get started</p>
+                        {canCreateSurvey && (
+                          <Button variant="primary" size="sm" onClick={createNewSurvey}>
+                            <MdAdd size={16} className="me-1" />
+                            Create Survey
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <Table className="custom-table" hover responsive>
+                          <thead>
+                            <tr>
+                              <th>Survey Name</th>
+                              <th className="d-none d-md-table-cell">Responses</th>
+                              <th>Status</th>
+                              <th className="d-none d-lg-table-cell">Progress</th>
+                              <th className="text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {currentSurveys.map((survey) => (
+                              <tr key={survey.id}>
+                                <td>
+                                  <Link
+                                    to={`/app/surveys/${survey.id}`}
+                                    style={{ textDecoration: 'none', color: 'inherit' }}
+                                  >
+                                    <div style={{ fontWeight: 500 }}>{survey.name}</div>
+                                  </Link>
+                                  <small className="d-md-none text-muted">{survey.responses} responses</small>
+                                </td>
+                                <td className="d-none d-md-table-cell">
+                                  <strong>{survey.responses}</strong>
+                                </td>
+                                <td>
+                                  <span className={`status-badge status-${survey.status.toLowerCase()}`}>
+                                    {survey.status}
+                                  </span>
+                                </td>
+                                <td className="d-none d-lg-table-cell">
+                                  <div className="progress-container" style={{ width: '120px' }}>
+                                    <div className="progress-bar-wrapper">
+                                      <div
+                                        className="progress-bar-fill"
+                                        style={{ width: `${survey.completion}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="progress-text">{survey.completion}%</span>
+                                  </div>
+                                </td>
+                                <td className="text-center">
+                                  <div className="d-flex gap-1 justify-content-center">
+                                    <Link to={`/app/surveys/${survey.id}`} className="action-button" title="View Survey">
+                                      <MdVisibility size={18} />
+                                    </Link>
+                                    <Link to={`/app/surveys/${survey.id}/edit`} className="action-button" title="Edit Survey">
+                                      <MdEdit size={18} />
+                                    </Link>
+                                    <button className="action-button" title="More Options">
+                                      <MdMoreVert size={18} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                        <div className="pagination-container">
+                          <div className="pagination-info">
+                            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} surveys
+                          </div>
+                          <div className="pagination-controls">
+                            <button
+                              className="pagination-button"
+                              disabled={pagination.page === 1}
+                              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                            >
+                              <MdChevronLeft size={18} />
+                              Previous
+                            </button>
+                            <button
+                              className="pagination-button"
+                              disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                            >
+                              Next
+                              <MdChevronRight size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Col>
+
+              {/* Weekly Completion chart removed - no backend API support */}
+            </Row>
+          ) : (
+            /* Fallback for users without survey permissions */
+            <Row className="g-3">
+              <Col lg={12}>
                 <div className="text-center py-5">
                   <MdPoll size={48} className="text-muted mb-3" />
-                  <h6 className="text-muted">No surveys yet</h6>
-                  <p className="text-muted small mb-3">Create your first survey to get started</p>
-                  <Button variant="primary" size="sm" onClick={createNewSurvey}>
-                    <MdAdd size={16} className="me-1" />
-                    Create Survey
-                  </Button>
+                  <h6 className="text-muted">Limited Access</h6>
+                  <p className="text-muted small">You don't have permission to view surveys. Contact your administrator for access.</p>
                 </div>
-              ) : (
-                <>
-                  <Table className="custom-table" hover responsive>
-                    <thead>
-                      <tr>
-                        <th>Survey Name</th>
-                        <th className="d-none d-md-table-cell">Responses</th>
-                        <th>Status</th>
-                        <th className="d-none d-lg-table-cell">Progress</th>
-                        <th className="text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentSurveys.map((survey) => (
-                        <tr key={survey.id}>
-                          <td>
-                            <Link 
-                              to={`/app/surveys/${survey.id}`} 
-                              style={{ textDecoration: 'none', color: 'inherit' }}
-                            >
-                              <div style={{ fontWeight: 500 }}>{survey.name}</div>
-                            </Link>
-                            <small className="d-md-none text-muted">{survey.responses} responses</small>
-                          </td>
-                          <td className="d-none d-md-table-cell">
-                            <strong>{survey.responses}</strong>
-                          </td>
-                          <td>
-                            <span className={`status-badge status-${survey.status.toLowerCase()}`}>
-                              {survey.status}
-                            </span>
-                          </td>
-                          <td className="d-none d-lg-table-cell">
-                            <div className="progress-container" style={{ width: '120px' }}>
-                              <div className="progress-bar-wrapper">
-                                <div 
-                                  className="progress-bar-fill" 
-                                  style={{ width: `${survey.completion}%` }}
-                                ></div>
-                              </div>
-                              <span className="progress-text">{survey.completion}%</span>
-                            </div>
-                          </td>
-                          <td className="text-center">
-                            <div className="d-flex gap-1 justify-content-center">
-                              <Link to={`/app/surveys/${survey.id}`} className="action-button" title="View Survey">
-                                <MdVisibility size={18} />
-                              </Link>
-                              <Link to={`/app/surveys/${survey.id}/edit`} className="action-button" title="Edit Survey">
-                                <MdEdit size={18} />
-                              </Link>
-                              <button className="action-button" title="More Options">
-                                <MdMoreVert size={18} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                  <div className="pagination-container">
-                    <div className="pagination-info">
-                      Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} surveys
-                    </div>
-                    <div className="pagination-controls">
-                      <button 
-                        className="pagination-button"
-                        disabled={pagination.page === 1}
-                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-                      >
-                        <MdChevronLeft size={18} />
-                        Previous
-                      </button>
-                      <button 
-                        className="pagination-button"
-                        disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
-                        onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-                      >
-                        Next
-                        <MdChevronRight size={18} />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </Col>
-        
-        <Col lg={4}>
-          <div className="chart-card">
-            <h5>
-              <MdBarChart size={20} style={{ marginBottom: '2px' }} />
-              Weekly Completion
-            </h5>
-            <div className="chart-container">
-              <Bar data={completionData} options={chartOptions} />
-            </div>
-          </div>
-        </Col>
-      </Row>
+              </Col>
+            </Row>
+          )}
         </>
       )}
     </Container>

@@ -478,7 +478,7 @@ const AnalyticsDashboard = () => {
             <div className="chart-header">
               <h3 className="chart-title">Satisfaction Trend (Month-on-Month)</h3>
             </div>
-            <div className="chart-container">
+            <div className="chart-container d-flex justify-content-center align-items-center">
               <Line
                 data={satisfactionChartData}
                 options={{

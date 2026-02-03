@@ -4,6 +4,7 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute"
+import { TenantGuard, PlatformGuard, CompanyAdminGuard, SharedGuard } from "./components/Authorization"
 
 // Layout & Pages
 import Layout from "./components/Layout/Layout"
@@ -57,6 +58,7 @@ import UserForm from "./pages/UserManagement/UserForm"
 import AccessManagement from "./pages/AccessManagement/AccessManagement"
 import RoleManagement from "./pages/AccessManagement/RoleManagement"
 import EmailTemplates from "./pages/Settings/EmailTemplates"
+import DropdownSettings from "./pages/Settings/DropdownSettings"
 import SupportTickets from "./pages/Support/SupportTickets"
 import TicketDetail from "./pages/Support/TicketDetail"
 import CreateTicket from "./pages/Support/CreateTicket"
@@ -83,6 +85,7 @@ import { useAuth } from "./context/AuthContext"
 import FullScreenLoader from "./components/Loader/FullScreenLoader"
 // PlanBuilder import moved above
 import ExecutiveDashboard from "./pages/Dashboard/ExecutiveDashboard"
+import PlatformDashboard from "./pages/Dashboard/PlatformDashboard"
 import Notifications from "./pages/Notifications/Notifications"
 
 function App() {
@@ -144,93 +147,124 @@ function App() {
             >
               <Route index element={<Dashboard />} />
 
-              {/* Surveys */}
-              <Route path="surveys" element={<SurveyList />} />
-              <Route path="surveys/create" element={<SurveyBuilder darkMode={darkMode} />} />
-              <Route path="surveys/builder" element={<SurveyBuilder darkMode={darkMode} />} />
-              <Route path="surveys/builder/edit/:id" element={<SurveyBuilder darkMode={darkMode} />} />
-              <Route path="surveys/builder/:id" element={<SurveyBuilder darkMode={darkMode} />} />
-              <Route path="templates" element={<SurveyTemplates darkMode={darkMode} />} />
-              <Route path="templates/create" element={<SurveyBuilder darkMode={darkMode} />} />
-              <Route path="surveys/detail/:id" element={<SurveyDetail />} />
-              <Route path="surveys/responses/:id" element={<SurveyResponses />} />
-              <Route path="surveys/:id/analytics" element={<SurveyAnalytics />} />
-              <Route path="surveys/:id/distribution" element={<SurveyDistribution />} />
-              <Route path="surveys/customize/:id" element={<SurveyCustomization />} />
-              <Route path="surveys/share/:id" element={<SurveySharing />} />
-              <Route path="surveys/scheduling" element={<SurveyScheduling />} />
-              <Route path="surveys/:surveyId/target-audience" element={<TargetAudienceSelection />} />
-              <Route path="surveys/:surveyId/schedule" element={<SurveySchedule />} />
-              <Route path="surveys/templates" element={<SurveyTemplates />} />
-              <Route path="surveys/templates/create" element={<SurveyBuilder />} />
-              <Route path="surveys/takesurvey/:id" element={<TakeSurvey />} />
-              <Route path="surveys/settings" element={<SurveySettings />} />
+              {/* ============================================================================ */}
+              {/* � PLATFORM LAYER - Admin Only (System/Platform Level)                      */}
+              {/* Routes: /platform, /settings, /settings/smtp, /settings/theme,              */}
+              {/*         /settings/email-templates, /communication/whatsapp,                 */}
+              {/*         /subscription/features, /subscription/plans, /subscription/tenants, */}
+              {/*         /support                                                            */}
+              {/* ============================================================================ */}
 
-              {/* Users */}
-              <Route path="users" element={<UserList />} />
-              <Route path="users/:id/edit" element={<UserForm />} />
-              <Route path="users/create" element={<UserForm />} />
+              {/* Platform Dashboard */}
+              <Route path="platform" element={<PlatformGuard><PlatformDashboard darkMode={darkMode} /></PlatformGuard>} />
 
-              {/* Access */}
-              <Route path="access" element={<AccessManagement />} />
-              <Route path="roles" element={<RoleManagement />} />
+              {/* Global Settings - Admin Only */}
+              <Route path="settings" element={<PlatformGuard><Settings /></PlatformGuard>} />
+              <Route path="settings/smtp" element={<PlatformGuard><SMTPConfig /></PlatformGuard>} />
+              <Route path="settings/theme" element={<PlatformGuard><ThemeSettings /></PlatformGuard>} />
+              <Route path="settings/email-templates" element={<PlatformGuard><EmailTemplates /></PlatformGuard>} />
+              <Route path="settings/dropdowns" element={<PlatformGuard><DropdownSettings /></PlatformGuard>} />
 
-              {/* Audiences */}
-              <Route path="audiences" element={<AudiencesSegments />} />
-              <Route path="audiences/category" element={<AudienceCategory />} />
-              <Route path="audiences/contacts" element={<ContactManagement />} />
+              {/* Communication Settings - Admin Only */}
+              <Route path="communication/whatsapp" element={<PlatformGuard><WhatsAppSettings /></PlatformGuard>} />
 
-              {/* Analytics */}
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="analytics/dashboard" element={<AnalyticsDashboard />} />
-              <Route path="analytics/feedback" element={<FeedbackAnalysis />} />
-              <Route path="analytics/custom-reports" element={<CustomReports />} />
-              <Route path="analytics/real-time" element={<RealTimeResults />} />
-              <Route path="analytics/trends" element={<TrendAnalysis />} />
-              <Route path="analytics/response-overview" element={<ResponseOverview />} />
+              {/* Subscription Management - Admin Only */}
+              <Route path="subscription/features" element={<PlatformGuard><FeatureManagement /></PlatformGuard>} />
+              <Route path="subscription/plans" element={<PlatformGuard><PlanBuilder /></PlatformGuard>} />
+              <Route path="subscription/tenants" element={<PlatformGuard><TenantSubscriptions /></PlatformGuard>} />
 
-              {/* Subscription Management */}
-              <Route path="subscription/my-plan" element={<MyPlans />} />
-              <Route path="subscription/usage" element={<UsageDashboard />} />
+              {/* Support Management - Admin Only */}
+              <Route path="support" element={<PlatformGuard><SupportTickets /></PlatformGuard>} />
+              <Route path="support/create" element={<PlatformGuard><CreateTicket /></PlatformGuard>} />
+              <Route path="support/tickets/:id" element={<PlatformGuard><TicketDetail /></PlatformGuard>} />
 
-              {/* Admin: Subscription Management */}
-              <Route path="subscription/features" element={<FeatureManagement />} />
-              <Route path="subscription/plans" element={<PlanBuilder />} />
-              <Route path="subscription/tenants" element={<TenantSubscriptions />} />
-              {/* Support */}
-              <Route path="support" element={<SupportTickets />} />
-              <Route path="support/create" element={<CreateTicket />} />
-              <Route path="support/tickets/:id" element={<TicketDetail />} />
+              {/* ============================================================================ */}
+              {/* � SHARED LAYER - Admin & CompanyAdmin (Different Responsibilities)         */}
+              {/* Routes: /templates, /surveys/builder, /users, /users/create, /users/:id     */}
+              {/* ============================================================================ */}
 
-              {/* Actions */}
-              <Route path="actions" element={<ActionManagement />} />
+              {/* Templates - Admin: Create/manage templates, CompanyAdmin: Use templates only */}
+              <Route path="templates" element={<SharedGuard><SurveyTemplates darkMode={darkMode} /></SharedGuard>} />
 
-              {/* Communication */}
-              <Route path="communication/whatsapp" element={<WhatsAppSettings />} />
-              <Route path="communication/sms" element={<SMSSettings />} />
+              {/* Survey Builder - Admin: Create templates, CompanyAdmin: Create surveys */}
+              <Route path="surveys/builder" element={<SharedGuard><SurveyBuilder darkMode={darkMode} /></SharedGuard>} />
 
-              {/* Settings */}
-              <Route path="settings" element={<Settings />} />
-              <Route path="settings/thank-you" element={<CustomThankYou />} />
+              {/* User Management - Admin: All users, CompanyAdmin: Company members only */}
+              <Route path="users" element={<SharedGuard><UserList /></SharedGuard>} />
+              <Route path="users/create" element={<SharedGuard><UserForm /></SharedGuard>} />
+              <Route path="users/:id" element={<SharedGuard><UserForm /></SharedGuard>} />
+              <Route path="users/:id/edit" element={<SharedGuard><UserForm /></SharedGuard>} />
 
-              {/* <Route path="settings/billing-plans" element={<BillingPlans />} /> */}
-              <Route path="settings/thank-you" element={<ThankYouPage />} />
-              <Route path="settings/email-templates" element={<EmailTemplates />} />
-              <Route path="settings/notifications" element={<NotificationSettings />} />
-              <Route path="settings/smtp" element={<SMTPConfig />} />
-              <Route path="settings/theme" element={<ThemeSettings />} />
+              {/* ============================================================================ */}
+              {/* 🔵 TENANT LAYER - CompanyAdmin Only (Tenant-Level Management)               */}
+              {/* ============================================================================ */}
 
-              {/* Notifications */}
-              <Route path="notifications" element={<Notifications />} />
+              {/* Dashboard */}
+              <Route path="dashboard" element={<TenantGuard><Dashboard /></TenantGuard>} />
 
-              {/* Profile */}
-              <Route path="profile" element={<Profile />} />
+              {/* Surveys - CompanyAdmin Only */}
+              <Route path="surveys" element={<TenantGuard><SurveyList /></TenantGuard>} />
+              <Route path="surveys/create" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
+              <Route path="surveys/builder/edit/:id" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
+              <Route path="surveys/builder/:id" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
+              <Route path="templates/create" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
+              <Route path="surveys/detail/:id" element={<TenantGuard><SurveyDetail /></TenantGuard>} />
+              <Route path="surveys/responses/:id" element={<TenantGuard><SurveyResponses /></TenantGuard>} />
+              <Route path="surveys/:id/analytics" element={<TenantGuard><SurveyAnalytics /></TenantGuard>} />
+              <Route path="surveys/:id/distribution" element={<TenantGuard><SurveyDistribution /></TenantGuard>} />
+              <Route path="surveys/customize/:id" element={<TenantGuard><SurveyCustomization /></TenantGuard>} />
+              <Route path="surveys/share/:id" element={<TenantGuard><SurveySharing /></TenantGuard>} />
+              <Route path="surveys/scheduling" element={<TenantGuard><SurveyScheduling /></TenantGuard>} />
+              <Route path="surveys/:surveyId/target-audience" element={<TenantGuard><TargetAudienceSelection /></TenantGuard>} />
+              <Route path="surveys/:surveyId/schedule" element={<TenantGuard><SurveySchedule /></TenantGuard>} />
+              <Route path="surveys/templates" element={<TenantGuard><SurveyTemplates /></TenantGuard>} />
+              <Route path="surveys/templates/create" element={<TenantGuard><SurveyBuilder /></TenantGuard>} />
+              <Route path="surveys/takesurvey/:id" element={<TenantGuard><TakeSurvey /></TenantGuard>} />
+              <Route path="surveys/settings" element={<TenantGuard><SurveySettings /></TenantGuard>} />
 
-              {/* Content */}
-              <Route path="content/features" element={<Features />} />
-              <Route path="content/pricing" element={<Pricing />} />
-              <Route path="content/testimonials" element={<Testimonials />} />
-              <Route path="content/widgets" element={<Widgets />} />
+              {/* Analytics - CompanyAdmin Only */}
+              <Route path="analytics" element={<TenantGuard><Analytics /></TenantGuard>} />
+              <Route path="analytics/dashboard" element={<TenantGuard><AnalyticsDashboard /></TenantGuard>} />
+              <Route path="analytics/feedback" element={<TenantGuard><FeedbackAnalysis /></TenantGuard>} />
+              <Route path="analytics/custom-reports" element={<TenantGuard><CustomReports /></TenantGuard>} />
+              <Route path="analytics/real-time" element={<TenantGuard><RealTimeResults /></TenantGuard>} />
+              <Route path="analytics/trends" element={<TenantGuard><TrendAnalysis /></TenantGuard>} />
+              <Route path="analytics/response-overview" element={<TenantGuard><ResponseOverview /></TenantGuard>} />
+
+              {/* Actions - CompanyAdmin Only */}
+              <Route path="actions" element={<TenantGuard><ActionManagement /></TenantGuard>} />
+
+              {/* Audiences - CompanyAdmin Only */}
+              <Route path="audiences" element={<TenantGuard><AudiencesSegments /></TenantGuard>} />
+              <Route path="audiences/category" element={<TenantGuard><AudienceCategory /></TenantGuard>} />
+              <Route path="audiences/contacts" element={<TenantGuard><ContactManagement /></TenantGuard>} />
+
+              {/* Subscription (Tenant viewing their own plan) - CompanyAdmin Only */}
+              <Route path="subscription/my-plan" element={<TenantGuard><MyPlans /></TenantGuard>} />
+              <Route path="subscription/usage" element={<TenantGuard><UsageDashboard /></TenantGuard>} />
+
+              {/* Communication (Tenant-specific) - CompanyAdmin Only */}
+              <Route path="communication/sms" element={<TenantGuard><SMSSettings /></TenantGuard>} />
+
+              {/* Tenant Settings - CompanyAdmin Only */}
+              <Route path="settings/thank-you" element={<TenantGuard><ThankYouPage /></TenantGuard>} />
+              <Route path="settings/notifications" element={<TenantGuard><NotificationSettings /></TenantGuard>} />
+
+              {/* Access Management - CompanyAdmin Only */}
+              <Route path="access" element={<CompanyAdminGuard><AccessManagement /></CompanyAdminGuard>} />
+              <Route path="roles" element={<CompanyAdminGuard><RoleManagement /></CompanyAdminGuard>} />
+
+              {/* Profile - CompanyAdmin Only */}
+              <Route path="profile" element={<TenantGuard><Profile /></TenantGuard>} />
+
+              {/* Notifications - CompanyAdmin Only */}
+              <Route path="notifications" element={<TenantGuard><Notifications /></TenantGuard>} />
+
+              {/* Content Management - CompanyAdmin Only */}
+              <Route path="content/features" element={<TenantGuard><Features /></TenantGuard>} />
+              <Route path="content/pricing" element={<TenantGuard><Pricing /></TenantGuard>} />
+              <Route path="content/testimonials" element={<TenantGuard><Testimonials /></TenantGuard>} />
+              <Route path="content/widgets" element={<TenantGuard><Widgets /></TenantGuard>} />
             </Route>
 
             {/* 404 */}

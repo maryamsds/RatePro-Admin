@@ -159,7 +159,7 @@ const TakeSurvey = () => {
 
                 {/* Rating Question */}
                 {question.type === "rating" && (
-                  <div className="rating-buttons">
+                  <div className="rating-buttons d-flex flex-wrap">
                     {question.options.map((rating) => (
                       <Button
                         key={rating}
@@ -176,7 +176,7 @@ const TakeSurvey = () => {
                 {/* NPS Question */}
                 {question.type === "nps" && (
                   <div>
-                    <div className="rating-buttons mb-3">
+                    <div className="rating-buttons d-flex flex-wrap mb-3">
                       {question.options.map((rating) => (
                         <Button
                           key={rating}

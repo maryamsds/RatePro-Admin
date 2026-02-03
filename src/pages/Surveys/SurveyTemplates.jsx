@@ -33,6 +33,7 @@ import Pagination from "../../components/Pagination/Pagination";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import axiosInstance from "../../api/axiosInstance.js";
+import useDropdownOptions from "../../hooks/useDropdownOptions.js";
 
 const SurveyTemplates = ({ darkMode }) => {
   const navigate = useNavigate();
@@ -60,20 +61,16 @@ const SurveyTemplates = ({ darkMode }) => {
     pages: 0,
   });
 
-  // ✅ FIXED: Use static categories as fallback since backend endpoint doesn't exist
-  const categories = [
-    { id: "corporate", name: "Corporate / HR", color: "#007bff" },
-    { id: "education", name: "Education", color: "#28a745" },
-    { id: "healthcare", name: "Healthcare", color: "#dc3545" },
-    { id: "hospitality", name: "Hospitality & Tourism", color: "#ffc107" },
-    { id: "sports", name: "Sports & Entertainment", color: "#17a2b8" },
-    { id: "banking", name: "Banking & Financial", color: "#6f42c1" },
-    { id: "retail", name: "Retail & E-Commerce", color: "#fd7e14" },
-    { id: "government", name: "Government & Public", color: "#20c997" },
-    { id: "construction", name: "Construction & Real Estate", color: "#6c757d" },
-    { id: "automotive", name: "Automotive & Transport", color: "#e83e8c" },
-    { id: "technology", name: "Technology & Digital", color: "#495057" },
-  ];
+  // ✅ DYNAMIC CATEGORIES: Fetch from System Settings (DB-driven, no fallbacks)
+  const { options: dynamicCategories, loading: categoriesLoading, error: categoriesError } = useDropdownOptions('industry');
+
+  // Transform API response to component format
+  // Note: If no categories configured, this will be empty - that's a configuration issue, not code issue
+  const categories = dynamicCategories.map(cat => ({
+    id: cat.key,
+    name: cat.label,
+    color: cat.color || "#6c757d"
+  }));
 
   // ✅ STATUS BADGE COMPONENT
   const StatusBadge = ({ status }) => {
@@ -185,10 +182,10 @@ const SurveyTemplates = ({ darkMode }) => {
       if (selectedStatus !== "all") params.status = selectedStatus; // ✅ NEW: Status filter
       if (searchTerm) params.search = searchTerm;
 
-     const response = await axiosInstance.get("/survey-templates", { params });
+      const response = await axiosInstance.get("/survey-templates", { params });
 
       if (response.data.success) {
-       
+
 
         // ✅ TEMPORARY FIX: Agar companyAdmin hai aur template draft hai toh active karein
         const processedTemplates = response.data.data.map(template => {
@@ -287,7 +284,7 @@ const SurveyTemplates = ({ darkMode }) => {
         if (userRole === "companyAdmin") {
           // Try company path first, if fails use app path
           targetPath = "/app/surveys/builder";
-           } else {
+        } else {
           targetPath = "/app/surveys/builder";
         }
 
@@ -374,7 +371,7 @@ const SurveyTemplates = ({ darkMode }) => {
       if (!result.isConfirmed) return;
 
       const response = await axiosInstance.delete(`/survey-templates/delete/${id}`);
-     
+
       await MySwal.fire({
         title: "Deleted!",
         text: "Your template has been removed.",
