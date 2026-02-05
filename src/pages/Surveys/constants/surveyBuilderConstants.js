@@ -83,8 +83,8 @@ export const QUESTION_TYPE_MAP = {
 
 // Backend valid question types (from Survey.js model enum)
 export const VALID_BACKEND_QUESTION_TYPES = [
-  'text', 'textarea', 'numeric', 'email', 'radio', 'checkbox', 
-  'select', 'imageChoice', 'ranking', 'matrix', 'likert', 'scale', 
+  'text', 'textarea', 'numeric', 'email', 'radio', 'checkbox',
+  'select', 'imageChoice', 'ranking', 'matrix', 'likert', 'scale',
   'nps', 'rating', 'yesno', 'date', 'time', 'datetime', 'multiple_choice'
 ];
 
@@ -95,7 +95,11 @@ export const WIZARD_STEPS = [
   { id: 3, title: 'Publish & Schedule', description: 'When and how to deploy' }
 ];
 
-// Industry/Category Options (must match backend enum)
+/**
+ * @deprecated Use useDropdownOptions('industry') hook instead.
+ * This static list is kept for backwards compatibility only.
+ * New code should dynamically fetch industry options from the API.
+ */
 export const INDUSTRIES = [
   { id: 'corporate', name: 'Corporate / HR' },
   { id: 'education', name: 'Education' },

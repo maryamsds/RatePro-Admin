@@ -413,6 +413,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Container, Row, Col, Card, Form, Button, Alert, Tab, Nav } from "react-bootstrap"
 import { MdBusiness, MdPerson, MdCreditCard } from "react-icons/md"
+import useDropdownOptions from "../../hooks/useDropdownOptions"
 
 const CompanyRegistration = () => {
   const [activeTab, setActiveTab] = useState("company")
@@ -440,6 +441,9 @@ const CompanyRegistration = () => {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  // Dynamic industry options from Admin-managed settings
+  const { options: industryOptions, loading: industriesLoading } = useDropdownOptions('industry')
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -595,15 +599,12 @@ const CompanyRegistration = () => {
                               <Form.Select
                                 value={formData.industry}
                                 onChange={(e) => handleChange("industry", e.target.value)}
+                                disabled={industriesLoading}
                               >
-                                <option value="">Select industry</option>
-                                <option value="technology">Technology</option>
-                                <option value="healthcare">Healthcare</option>
-                                <option value="finance">Finance</option>
-                                <option value="education">Education</option>
-                                <option value="retail">Retail</option>
-                                <option value="manufacturing">Manufacturing</option>
-                                <option value="other">Other</option>
+                                <option value="">{industriesLoading ? 'Loading...' : 'Select industry'}</option>
+                                {industryOptions.map(opt => (
+                                  <option key={opt.key} value={opt.key}>{opt.label}</option>
+                                ))}
                               </Form.Select>
                             </Form.Group>
                           </Col>

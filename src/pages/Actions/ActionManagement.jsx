@@ -16,7 +16,7 @@ import {
   MdAssignmentLate, MdPriorityHigh, MdBusiness, MdGroup,
   MdComment, MdAttachment, MdTimer, MdSentimentSatisfied,
   MdSentimentDissatisfied, MdSentimentNeutral, MdInsights,
-  MdError
+  MdError, MdBlock
 } from 'react-icons/md';
 import {
   FaClock, FaUsers, FaExclamationTriangle, FaChartLine,
@@ -35,6 +35,9 @@ import {
   generateActionsFromFeedback
 } from '../../api/services/actionService';
 import { getTenantUsersForPicker } from '../../api/services/userService';
+
+// Hooks
+import { usePermissions } from '../../hooks/usePermissions';
 
 // Constants imports
 import {
@@ -95,6 +98,50 @@ const StatusBadge = ({ status }) => {
 };
 
 // ============================================================================
+// 🏷️ Source Badge Component (Action Origin)
+// ============================================================================
+
+const SourceBadge = ({ source }) => {
+  const sourceConfig = {
+    'ai_generated': { icon: MdInsights, color: 'info', label: 'AI' },
+    'survey_feedback': { icon: MdAssignment, color: 'primary', label: 'Survey' },
+    'manual': { icon: MdEdit, color: 'secondary', label: 'Manual' }
+  };
+  const config = sourceConfig[source] || sourceConfig.manual;
+  const Icon = config.icon;
+
+  return (
+    <Badge bg={config.color} className="d-flex align-items-center gap-1">
+      <Icon size={12} />
+      {config.label}
+    </Badge>
+  );
+};
+
+// ============================================================================
+// 😊 Sentiment Badge Component (Read-Only Context)
+// ============================================================================
+
+const SentimentBadge = ({ sentiment }) => {
+  if (!sentiment) return null;
+
+  const sentimentConfig = {
+    'positive': { icon: MdSentimentSatisfied, color: 'success', label: 'Positive' },
+    'neutral': { icon: MdSentimentNeutral, color: 'warning', label: 'Neutral' },
+    'negative': { icon: MdSentimentDissatisfied, color: 'danger', label: 'Negative' }
+  };
+  const config = sentimentConfig[sentiment] || sentimentConfig.neutral;
+  const Icon = config.icon;
+
+  return (
+    <Badge bg={config.color} className="bg-opacity-25 text-dark d-flex align-items-center gap-1">
+      <Icon size={14} />
+      {config.label}
+    </Badge>
+  );
+};
+
+// ============================================================================
 // 📋 Action Card Component
 // ============================================================================
 
@@ -103,7 +150,8 @@ const ActionCard = ({
   onStatusChange,
   onViewDetails,
   onDelete,
-  isUpdating
+  isUpdating,
+  canDelete = false // Permission-based delete visibility
 }) => {
   const isOverdue = action.isOverdue || isActionOverdue(action);
 
@@ -112,36 +160,32 @@ const ActionCard = ({
       <Card.Body>
         <Row className="align-items-start">
           <Col lg={6}>
-            <div className="d-flex align-items-start mb-2">
-              <div className="me-3">
-                <PriorityBadge priority={action.priority} />
-              </div>
-              <div className="flex-grow-1">
-                <h6 className="mb-1 fw-bold">
-                  {action.title || 'Untitled Action'}
-                  {isOverdue && (
-                    <Badge bg="danger" className="ms-2" pill>Overdue</Badge>
-                  )}
-                </h6>
-                <p className="text-muted small mb-2">
-                  {action.description || 'No description provided'}
-                </p>
+            {/* Header: Priority + Source + Overdue */}
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <PriorityBadge priority={action.priority} />
+              <SourceBadge source={action.source} />
+              {isOverdue && <Badge bg="danger" pill>Overdue</Badge>}
+            </div>
 
-                <div className="d-flex flex-wrap gap-2 mb-2">
-                  <Badge bg="light" text="dark" className="d-flex align-items-center">
-                    <MdLocationOn className="me-1" />
-                    {action.location || action.team || 'N/A'}
-                  </Badge>
-                  <Badge bg="light" text="dark" className="d-flex align-items-center">
-                    <MdBusiness className="me-1" />
-                    {action.department || action.category || 'Unassigned'}
-                  </Badge>
-                  <Badge bg="light" text="dark" className="d-flex align-items-center">
-                    <MdPerson className="me-1" />
-                    {action.assigneeName || action.assignee?.name || 'Unassigned'}
-                  </Badge>
-                </div>
-              </div>
+            {/* Title + Description */}
+            <h6 className="mb-1 fw-bold">{action.title || 'Untitled Action'}</h6>
+            <p className="text-muted small mb-2">
+              {action.description || 'No description provided'}
+            </p>
+
+            {/* Context Badges: Sentiment + Department + Assignee */}
+            <div className="d-flex flex-wrap gap-2 mb-2">
+              {action.metadata?.sentiment && (
+                <SentimentBadge sentiment={action.metadata.sentiment} />
+              )}
+              <Badge bg="light" text="dark" className="d-flex align-items-center">
+                <MdBusiness className="me-1" />
+                {action.department || action.category || 'Unassigned'}
+              </Badge>
+              <Badge bg="light" text="dark" className="d-flex align-items-center">
+                <MdPerson className="me-1" />
+                {action.assigneeName || action.assignee?.name || 'Unassigned'}
+              </Badge>
             </div>
           </Col>
 
@@ -155,12 +199,8 @@ const ActionCard = ({
                 Due: {action.dueDate ? formatDate(action.dueDate) : 'Not set'}
               </div>
               <div className="mb-1">
-                <MdComment className="me-1" />
-                {action.feedback?.count ?? 0} feedback items
-              </div>
-              <div className="d-flex align-items-center">
-                <FaStar className="me-1 text-warning" />
-                {(action.feedback?.avgRating ?? 0).toFixed(1)} avg rating
+                <MdSchedule className="me-1" />
+                Created: {action.createdAt ? formatDate(action.createdAt) : 'N/A'}
               </div>
             </div>
           </Col>
@@ -208,14 +248,17 @@ const ActionCard = ({
                 Details
               </Button>
 
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => onDelete(action)}
-              >
-                <MdDelete className="me-1" />
-                Delete
-              </Button>
+              {/* Delete button only visible for CompanyAdmin */}
+              {canDelete && (
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => onDelete(action)}
+                >
+                  <MdDelete className="me-1" />
+                  Delete
+                </Button>
+              )}
             </div>
           </Col>
         </Row>
@@ -228,25 +271,29 @@ const ActionCard = ({
 // 🗂️ Empty State Component
 // ============================================================================
 
-const EmptyState = ({ onGenerateActions, isGenerating }) => (
+const EmptyState = ({ onGenerateActions, isGenerating, canGenerate = false }) => (
   <div className="text-center py-5">
     <MdAssignment size={64} className="text-muted mb-3" />
     <h5>No Actions Found</h5>
     <p className="text-muted mb-3">
-      No action items match your current filters. Try generating AI actions from recent feedback.
+      No action items match your current filters.
+      {canGenerate && ' Try generating AI actions from recent feedback.'}
     </p>
-    <Button
-      variant="primary"
-      onClick={onGenerateActions}
-      disabled={isGenerating}
-    >
-      {isGenerating ? (
-        <Spinner animation="border" size="sm" className="me-2" />
-      ) : (
-        <MdInsights className="me-2" />
-      )}
-      Generate AI Actions
-    </Button>
+    {/* Generate button only visible for CompanyAdmin */}
+    {canGenerate && (
+      <Button
+        variant="primary"
+        onClick={onGenerateActions}
+        disabled={isGenerating}
+      >
+        {isGenerating ? (
+          <Spinner animation="border" size="sm" className="me-2" />
+        ) : (
+          <MdInsights className="me-2" />
+        )}
+        Generate AI Actions
+      </Button>
+    )}
   </div>
 );
 
@@ -391,6 +438,25 @@ const FiltersBar = ({ filters, setFilters, onClearFilters }) => (
 
 const ActionManagement = () => {
   const navigate = useNavigate();
+
+  // Permission-based access control (mirrors backend enforceTenantScope)
+  const { isSystemAdmin, isCompanyAdmin, hasPermission, canAssignAction, canAccessTenantFeatures } = usePermissions();
+
+  // System Admin blocked from tenant actions - show blocked state
+  if (isSystemAdmin) {
+    return (
+      <Container fluid className="py-5">
+        <div className="text-center">
+          <MdBlock size={64} className="text-danger mb-3" />
+          <h4>Access Restricted</h4>
+          <p className="text-muted">
+            System Admin cannot access tenant action management.<br />
+            Please use Company Admin or Member account to manage actions.
+          </p>
+        </div>
+      </Container>
+    );
+  }
 
   // State Management
   const [actions, setActions] = useState([]);
@@ -684,14 +750,17 @@ const ActionManagement = () => {
                     )}
                     {refreshing ? 'Refreshing...' : 'Refresh'}
                   </Button>
-                  <Button
-                    variant="success"
-                    onClick={handleGenerateActions}
-                    disabled={refreshing}
-                  >
-                    <MdInsights className="me-2" />
-                    Generate AI Actions
-                  </Button>
+                  {/* Only CompanyAdmin can generate AI actions */}
+                  {isCompanyAdmin && (
+                    <Button
+                      variant="success"
+                      onClick={handleGenerateActions}
+                      disabled={refreshing}
+                    >
+                      <MdInsights className="me-2" />
+                      Generate AI Actions
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card.Body>
@@ -736,6 +805,7 @@ const ActionManagement = () => {
                             onViewDetails={handleViewDetails}
                             onDelete={handleDeleteAction}
                             isUpdating={updatingActionId === action.id}
+                            canDelete={isCompanyAdmin}
                           />
                         ))}
                       </div>
@@ -743,6 +813,7 @@ const ActionManagement = () => {
                       <EmptyState
                         onGenerateActions={handleGenerateActions}
                         isGenerating={refreshing}
+                        canGenerate={isCompanyAdmin}
                       />
                     )}
                   </div>
@@ -762,6 +833,7 @@ const ActionManagement = () => {
                             onViewDetails={handleViewDetails}
                             onDelete={handleDeleteAction}
                             isUpdating={updatingActionId === action.id}
+                            canDelete={isCompanyAdmin}
                           />
                         ))}
                       </div>
@@ -789,6 +861,7 @@ const ActionManagement = () => {
                             onViewDetails={handleViewDetails}
                             onDelete={handleDeleteAction}
                             isUpdating={updatingActionId === action.id}
+                            canDelete={isCompanyAdmin}
                           />
                         ))}
                       </div>
@@ -843,19 +916,22 @@ const ActionManagement = () => {
                   </Badge>
                 </Col>
                 <Col md={6}>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => handleAssignToMe(selectedAction.id)}
-                    disabled={assigningActionId === selectedAction.id}
-                  >
-                    {assigningActionId === selectedAction.id ? (
-                      <Spinner animation="border" size="sm" className="me-1" />
-                    ) : (
-                      <MdPerson className="me-1" />
-                    )}
-                    Assign to Me
-                  </Button>
+                  {/* Assign to Me - Only show if user can assign (CompanyAdmin or actionManager with permission) */}
+                  {(isCompanyAdmin || canAssignAction(selectedAction)) && (
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => handleAssignToMe(selectedAction.id)}
+                      disabled={assigningActionId === selectedAction.id}
+                    >
+                      {assigningActionId === selectedAction.id ? (
+                        <Spinner animation="border" size="sm" className="me-1" />
+                      ) : (
+                        <MdPerson className="me-1" />
+                      )}
+                      Assign to Me
+                    </Button>
+                  )}
                 </Col>
               </Row>
 
@@ -867,17 +943,48 @@ const ActionManagement = () => {
                 </>
               )}
 
-              {selectedAction.feedback && (
-                <>
-                  <hr />
-                  <h6>Related Feedback</h6>
-                  <p>
-                    <strong>Feedback Count:</strong> {selectedAction.feedback.count ?? 0}<br />
-                    <strong>Sentiment:</strong> {selectedAction.feedback.sentiment || 'N/A'}<br />
-                    <strong>Avg Rating:</strong> {(selectedAction.feedback.avgRating ?? 0).toFixed(1)}
+              {/* Action Source Context (Read-Only) */}
+              <hr />
+              <h6>Action Source</h6>
+              <Row>
+                <Col md={6}>
+                  <p className="mb-2">
+                    <strong>Generated From:</strong>{' '}
+                    <SourceBadge source={selectedAction.source} />
                   </p>
-                </>
-              )}
+                  {selectedAction.metadata?.surveyId && (
+                    <p className="mb-2">
+                      <strong>Survey ID:</strong>{' '}
+                      <code className="small">{selectedAction.metadata.surveyId}</code>
+                    </p>
+                  )}
+                  {selectedAction.metadata?.responseId && (
+                    <p className="mb-2">
+                      <strong>Response ID:</strong>{' '}
+                      <code className="small">{selectedAction.metadata.responseId}</code>
+                    </p>
+                  )}
+                </Col>
+                <Col md={6}>
+                  {selectedAction.metadata?.sentiment && (
+                    <p className="mb-2">
+                      <strong>Original Sentiment:</strong>{' '}
+                      <SentimentBadge sentiment={selectedAction.metadata.sentiment} />
+                    </p>
+                  )}
+                  {selectedAction.metadata?.urgency && (
+                    <p className="mb-2">
+                      <strong>Urgency:</strong>{' '}
+                      <Badge bg="light" text="dark" className="text-capitalize">
+                        {selectedAction.metadata.urgency}
+                      </Badge>
+                    </p>
+                  )}
+                </Col>
+              </Row>
+              <p className="text-muted small mb-0">
+                <em>Analysis context is read-only and cannot be modified.</em>
+              </p>
             </div>
           )}
         </Modal.Body>

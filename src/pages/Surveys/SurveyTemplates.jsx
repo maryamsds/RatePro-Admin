@@ -26,9 +26,11 @@ import {
   MdPublish,
   MdSave,
   MdDelete,
+  MdBlock,
 } from "react-icons/md";
 import { FaUsers, FaClock, FaLanguage } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
+import { usePermissions } from "../../hooks/usePermissions";
 import Pagination from "../../components/Pagination/Pagination";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -38,6 +40,9 @@ import useDropdownOptions from "../../hooks/useDropdownOptions.js";
 const SurveyTemplates = ({ darkMode }) => {
   const navigate = useNavigate();
   const { setGlobalLoading, user } = useAuth();
+
+  // Permission-based access control (mirrors backend)
+  const { isSystemAdmin, isCompanyAdmin, hasPermission } = usePermissions();
 
   // State Management
   const [templates, setTemplates] = useState([]);
@@ -460,7 +465,7 @@ const SurveyTemplates = ({ darkMode }) => {
             </div>
 
             {/* Create Template Button - Show only for Admin */}
-            {user?.role === 'admin' && (
+            {isSystemAdmin && (
               <Button
                 variant="outline-primary"
                 className="d-flex align-items-center create-template-btn"
@@ -484,7 +489,7 @@ const SurveyTemplates = ({ darkMode }) => {
               <MdCategory className="me-1" size={14} />
               <span>{stats.categories} Categories</span>
             </div>
-            {user?.role === 'admin' && (
+            {isSystemAdmin && (
               <>
                 <div className="stat-badge">
                   <MdPublish className="me-1" size={14} />
@@ -726,27 +731,23 @@ const SurveyTemplates = ({ darkMode }) => {
 
                   {/* Template Actions */}
                   <div className="template-actions">
-                    <Button
-                      variant="primary"
-                      className="use-template-btn"
-                      onClick={() => handleUseTemplate(template)}
-                      disabled={
-                        // ✅ Agar admin hai aur template status draft hai to disabled
-                        (user?.role === 'admin' && template.status === 'draft') ||
-                        // ✅ Agar admin hai to directly disable karein 
-                        user?.role === 'admin'
-                      }
-                      title={
-                        user?.role === 'admin'
-                          ? "Admins cannot use templates. Create surveys directly instead."
-                          : "Use this template to create a survey"
-                      }
-                    >
-                      <MdAdd size={16} />
-                      <span>
-                        {user?.role === 'admin' ? 'Use Template' : 'Use Template'}
-                      </span>
-                    </Button>
+                    {/* Use Template - Hidden for SystemAdmin, permission-based for Members */}
+                    {!isSystemAdmin && (isCompanyAdmin || hasPermission('template:use')) && (
+                      <Button
+                        variant="primary"
+                        className="use-template-btn"
+                        onClick={() => handleUseTemplate(template)}
+                        disabled={template.status === 'draft'}
+                        title={
+                          template.status === 'draft'
+                            ? "Draft templates cannot be used"
+                            : "Use this template to create a survey"
+                        }
+                      >
+                        <MdAdd size={16} />
+                        <span>Use Template</span>
+                      </Button>
+                    )}
 
                     <Button
                       variant="outline-secondary"

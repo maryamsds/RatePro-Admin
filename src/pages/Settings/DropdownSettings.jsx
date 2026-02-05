@@ -61,6 +61,20 @@ const DROPDOWN_TYPES = [
         icon: MdPeople,
         color: "#6f42c1",
     },
+    {
+        key: "ticket_category",
+        label: "Ticket Categories",
+        description: "Support ticket categories for issue tracking",
+        icon: MdCategory,
+        color: "#dc3545",
+    },
+    {
+        key: "priority",
+        label: "Priority Levels",
+        description: "Priority levels for tickets and tasks",
+        icon: MdSettings,
+        color: "#fd7e14",
+    },
 ];
 
 const DropdownSettings = ({ darkMode }) => {

@@ -26,6 +26,7 @@ import { FaUsers, FaLightbulb, FaPalette } from 'react-icons/fa';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
+import useDropdownOptions from '../../hooks/useDropdownOptions';
 import Swal from 'sweetalert2';
 
 const SurveyBuilder = () => {
@@ -329,19 +330,13 @@ const SurveyBuilder = () => {
     }
   ];
 
-  const industries = [
-    { id: 'corporate', name: 'Corporate / HR', icon: MdBusiness },
-    { id: 'education', name: 'Education', icon: MdSchool },
-    { id: 'healthcare', name: 'Healthcare', icon: MdLocalHospital },
-    { id: 'hospitality', name: 'Hospitality & Tourism', icon: MdHotel },
-    { id: 'sports', name: 'Sports & Entertainment', icon: MdSports },
-    { id: 'banking', name: 'Banking & Financial', icon: MdAccountBalance },
-    { id: 'retail', name: 'Retail & E-Commerce', icon: MdShoppingCart },
-    { id: 'government', name: 'Government & Public', icon: MdLocationCity },
-    { id: 'construction', name: 'Construction & Real Estate', icon: MdConstruction },
-    { id: 'automotive', name: 'Automotive & Transport', icon: MdDirectionsCar },
-    { id: 'technology', name: 'Technology & Digital', icon: MdComputer }
-  ];
+  // Dynamic industries from Admin-managed dropdown settings
+  const { options: industryOptions, loading: industriesLoading } = useDropdownOptions('industry');
+  const industries = industryOptions.map(opt => ({
+    id: opt.key,
+    name: opt.label,
+    icon: MdBusiness // Default icon for all industries
+  }));
 
   const steps = [
     { id: 1, title: 'Survey Details', description: 'Basic information and questions' },

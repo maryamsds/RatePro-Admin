@@ -728,15 +728,15 @@ const SurveyList = ({ darkMode }) => {
     }
   };
 
-  // Toggle survey status
+  // Activate/Deactivate survey (using new permission-based endpoints)
   const toggleStatus = async (surveyId, currentStatus) => {
     try {
       setGlobalLoading(true);
-      const newStatus = currentStatus.toLowerCase() === 'active' ? 'inactive' : 'active';
+      const isActive = currentStatus.toLowerCase() === 'active';
+      const endpoint = isActive ? 'deactivate' : 'activate';
+      const newStatus = isActive ? 'inactive' : 'active';
 
-      await axiosInstance.put(`/surveys/toggle/${surveyId}`, {
-        status: newStatus
-      });
+      await axiosInstance.put(`/surveys/${surveyId}/${endpoint}`);
 
       // Optimistically update UI
       setSurveys(surveys.map(s =>
@@ -754,10 +754,13 @@ const SurveyList = ({ darkMode }) => {
       });
     } catch (err) {
       console.error('Error toggling status:', err);
+      const errorMessage = err.response?.status === 403
+        ? 'You do not have permission to perform this action'
+        : err.response?.data?.message || 'Failed to update survey status';
       Swal.fire({
         icon: 'error',
         title: 'Status Update Failed',
-        text: err.response?.data?.message || 'Failed to update survey status',
+        text: errorMessage,
         confirmButtonColor: '#dc3545'
       });
     } finally {
@@ -788,7 +791,9 @@ const SurveyList = ({ darkMode }) => {
       Swal.fire({
         icon: 'error',
         title: 'Delete Failed',
-        text: err.response?.data?.message || 'Failed to delete survey',
+        text: err.response?.status === 403
+          ? 'You do not have permission to delete this survey'
+          : err.response?.data?.message || 'Failed to delete survey',
         confirmButtonColor: '#dc3545'
       });
     } finally {
@@ -1047,25 +1052,25 @@ const SurveyList = ({ darkMode }) => {
 
                           {/* Analytics */}
                           {survey.status !== "draft" && (
-                          <Button
-                            variant="link"
-                            className="action-btn analytics me-2"
-                            onClick={() => handleAnalytics(survey._id)}
-                            title="View Analytics"
-                          >
-                            <MdBarChart size={20} />
-                          </Button>
+                            <Button
+                              variant="link"
+                              className="action-btn analytics me-2"
+                              onClick={() => handleAnalytics(survey._id)}
+                              title="View Analytics"
+                            >
+                              <MdBarChart size={20} />
+                            </Button>
                           )}
                           {/* Distribution */}
                           {survey.status !== "inactive" && survey.status !== "draft" && (
-                          <Button
-                            variant="link"
-                            className="action-btn distribution me-2"
-                            onClick={() => handleDistribution(survey._id)}
-                            title="Distribution & QR Codes"
-                          >
-                            <MdShare size={20} />
-                          </Button>
+                            <Button
+                              variant="link"
+                              className="action-btn distribution me-2"
+                              onClick={() => handleDistribution(survey._id)}
+                              title="Distribution & QR Codes"
+                            >
+                              <MdShare size={20} />
+                            </Button>
                           )}
                           {/* Delete Button — show only if NOT admin */}
                           {user?.role !== "admin" && (
@@ -1091,14 +1096,14 @@ const SurveyList = ({ darkMode }) => {
 
                           {/* Feedback */}
                           {survey.status !== "draft" && (
-                          <Button
-                            variant="link"
-                            className="action-btn feedback"
-                            onClick={() => handleFeedback(survey._id)}
-                            title="View Survey Feedback"
-                          >
-                            <MdFeedback size={20} />
-                          </Button>
+                            <Button
+                              variant="link"
+                              className="action-btn feedback"
+                              onClick={() => handleFeedback(survey._id)}
+                              title="View Survey Feedback"
+                            >
+                              <MdFeedback size={20} />
+                            </Button>
                           )}
                         </td>
                       </tr>
