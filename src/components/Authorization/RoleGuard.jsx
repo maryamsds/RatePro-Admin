@@ -47,7 +47,17 @@ const RoleGuard = ({
         const isDenied = deniedRoles.map(r => r.toLowerCase()).includes(userRole);
         if (isDenied) {
             console.warn(`[RoleGuard] Access denied for role '${userRole}' - explicitly blocked`);
-            return <Navigate to={getRedirectPath(userRole, redirectTo, scope)} replace />;
+            return (
+                <Navigate
+                    to="/unauthorized"
+                    replace
+                    state={{
+                        userRole: userRole ?? 'Unknown',
+                        requiredScope: scope ?? 'Restricted',
+                        redirectTo: getRedirectPath(userRole, redirectTo, scope),
+                    }}
+                />
+            );
         }
     }
 
@@ -56,7 +66,17 @@ const RoleGuard = ({
         const isAllowed = allowedRoles.map(r => r.toLowerCase()).includes(userRole);
         if (!isAllowed) {
             console.warn(`[RoleGuard] Access denied for role '${userRole}' - not in allowed list: [${allowedRoles.join(', ')}]`);
-            return <Navigate to={getRedirectPath(userRole, redirectTo, scope)} replace />;
+            return (
+                <Navigate
+                    to="/unauthorized"
+                    replace
+                    state={{
+                        userRole: userRole ?? 'Unknown',
+                        requiredScope: scope ?? 'Restricted',
+                        redirectTo: getRedirectPath(userRole, redirectTo, scope),
+                    }}
+                />
+            );
         }
     }
 

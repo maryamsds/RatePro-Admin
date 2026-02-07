@@ -36,7 +36,7 @@ export const getDashboardStats = async () => {
     getExecutiveDashboard(),
     getOperationalDashboard(),
   ]);
-  
+
   return {
     ...executive,
     ...operational,
@@ -76,13 +76,13 @@ export const getRealTimeStats = async () => {
  */
 export const getComprehensiveDashboard = async (params = {}) => {
   const { range = "30d" } = params;
-  
+
   const [tenantSummary, quickStats, alerts] = await Promise.allSettled([
     getTenantSummary({ range }),
     getQuickSummary(),
     getAlerts(),
   ]);
-  
+
   return {
     summary: tenantSummary.status === 'fulfilled' ? tenantSummary.value : null,
     realTime: quickStats.status === 'fulfilled' ? quickStats.value : null,
@@ -96,58 +96,105 @@ export const getComprehensiveDashboard = async (params = {}) => {
 
 /**
  * Transform executive dashboard response
+ * Maps backend structure to frontend expectations with fallbacks
+ * 
+ * Backend returns:
+ * {
+ *   customerSatisfactionIndex: { overall, trend, locations },
+ *   npsScore: { current, trend, promoters, passives, detractors },
+ *   responseRate: { current, trend, total, completed }
+ * }
+ * 
+ * Frontend expects:
+ * {
+ *   kpis: { totalSurveys, totalResponses, completionRate, avgResponseTime, ... },
+ *   trends: { responses: { labels, data } }
+ * }
  */
 const transformExecutiveDashboard = (data) => {
-  const metrics = data.metrics || data;
-  
-  return {
-    kpis: {
-      totalSurveys: metrics.totalSurveys || 0,
-      totalResponses: metrics.totalResponses || 0,
-      avgSatisfaction: metrics.averageRating || metrics.satisfactionIndex / 20 || 0,
-      satisfactionIndex: metrics.satisfactionIndex || 0,
-      npsScore: metrics.npsScore || calculateNpsFromTrend(metrics.npsTrend),
-      responseRate: metrics.responseRate || 0,
-      completionRate: metrics.completionRate || 0,
-      averageRating: metrics.averageRating || 0,
-      averageScore: metrics.averageScore || 0,
-    },
-    
-    trends: {
-      satisfaction: {
-        data: metrics.satisfactionTrend?.values || [],
-        labels: metrics.satisfactionTrend?.labels || generateWeekLabels(7),
-        change: metrics.satisfactionChange || 0,
-      },
-      nps: {
-        data: extractNpsTrendData(metrics.npsTrend),
-        labels: extractNpsTrendLabels(metrics.npsTrend) || generateWeekLabels(7),
-        change: metrics.npsChange || 0,
-      },
-      responses: {
-        data: metrics.responseTrend?.values || [],
-        labels: metrics.responseTrend?.labels || generateWeekLabels(7),
-        change: metrics.responseChange || 0,
-      },
-    },
-    
-    locations: metrics.locations || [],
-    
-    topComplaints: (metrics.topComplaints || []).map((c) => ({
-      issue: c.category || c.issue,
-      count: c.count,
-      trend: c.trend || "stable",
-      severity: c.severity || "medium",
-    })),
-    
-    topPraises: (metrics.topPraises || []).map((p) => ({
-      praise: p.category || p.praise,
-      count: p.count,
-      trend: p.trend || "stable",
-    })),
-    
-    updatedAt: metrics.updatedAt || new Date().toISOString(),
+  console.group("🔄 [Transform] Executive Dashboard");
+  console.log("Raw input:", data);
+
+  // Backend wraps response in { success, data } or { metrics } directly
+  const rawData = data?.data || data;
+
+  // Backend returns flat metrics object: { metrics: { totalSurveys, totalResponses, satisfactionIndex, ... } }
+  const metrics = rawData?.metrics || rawData;
+
+  console.log("📊 Extracted metrics:", metrics);
+
+  // ============================================================================
+  // KPIs Mapping - Extract directly from flat metrics object
+  // ============================================================================
+
+  const kpis = {
+    totalSurveys: metrics?.totalSurveys || 0,
+    totalResponses: metrics?.totalResponses || 0,
+    avgSatisfaction: metrics?.averageRating || 0,
+    satisfactionIndex: metrics?.satisfactionIndex || 0,
+    npsScore: metrics?.npsScore || 0,
+    responseRate: metrics?.responseRate || 0,
+    // Calculate completion rate from totalResponses if available
+    completionRate: metrics?.completionRate || (metrics?.totalResponses > 0 ? 100 : 0),
+    avgResponseTime: metrics?.avgResponseTime || "-- min",
+    averageRating: metrics?.averageRating || 0,
+    averageScore: metrics?.averageScore || 0,
   };
+
+  console.log("✅ Mapped KPIs:", kpis);
+
+  // ============================================================================
+  // Trends Mapping - Use metrics data with fallbacks
+  // ============================================================================
+
+  // Generate labels for weekly trend display
+  const trendLabels = generateWeekLabels(7);
+
+  // Get npsTrend array from metrics if available
+  const npsTrendData = metrics?.npsTrend || [];
+
+  const trends = {
+    satisfaction: {
+      // Use satisfactionIndex trend or generate placeholder
+      data: metrics?.satisfactionTrend || [metrics?.satisfactionIndex || 0],
+      labels: trendLabels,
+      change: 0,
+    },
+    nps: {
+      data: npsTrendData.length > 0 ? npsTrendData : [0, 0, 0],
+      labels: ["Detractors", "Passives", "Promoters"],
+      change: 0,
+    },
+    responses: {
+      // Show totalResponses as single data point for now
+      data: metrics?.totalResponses ? [metrics.totalResponses] : [],
+      labels: ["Total Responses"],
+      change: 0,
+    },
+  };
+
+  console.log("✅ Mapped Trends:", trends);
+
+  // ============================================================================
+  // Locations and Other Data
+  // ============================================================================
+
+  const result = {
+    kpis,
+    trends,
+    locations: metrics?.locations || [],
+    topComplaints: [],  // Not in current backend
+    topPraises: [],     // Not in current backend
+    updatedAt: rawData?.generatedAt || new Date().toISOString(),
+
+    // Preserve raw data for debugging
+    _raw: rawData,
+  };
+
+  console.log("✅ Final Transformed Result:", result);
+  console.groupEnd();
+
+  return result;
 };
 
 /**
@@ -160,13 +207,13 @@ const transformOperationalDashboard = (data) => ({
     info: data.infoAlerts || 0,
     total: data.openActionsCount || 0,
   },
-  
+
   slaMetrics: {
     averageResponseTime: data.slaAvgResponseTime || "N/A",
     onTimeResolution: data.onTimeResolution || 0,
     overdueActions: data.overdueActions || 0,
   },
-  
+
   recentNegativeFeedback: (data.recentNegativeFeedback || []).map((feedback) => ({
     id: feedback._id,
     surveyTitle: feedback.response?.survey?.title || "Unknown Survey",
@@ -176,15 +223,15 @@ const transformOperationalDashboard = (data) => ({
     categories: feedback.categories || [],
     priority: feedback.sentiment === "negative" ? "high" : "medium",
   })),
-  
+
   openActionsCount: data.openActionsCount || 0,
-  
+
   topComplaints: (data.topComplaints || []).map((c) => ({
     category: c.category || c._id,
     count: c.count,
     trend: c.trend || "stable",
   })),
-  
+
   topPraises: data.topPraises || [],
 });
 
@@ -229,7 +276,7 @@ const generateWeekLabels = (count) => {
  */
 const countAlertsByType = (feedbackArray, type) => {
   if (!Array.isArray(feedbackArray)) return 0;
-  
+
   if (type === "critical") {
     return feedbackArray.filter((f) => f.sentiment === "negative").length;
   }

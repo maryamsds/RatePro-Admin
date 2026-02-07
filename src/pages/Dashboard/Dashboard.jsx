@@ -101,68 +101,198 @@ const Dashboard = ({ darkMode }) => {
   };
 
   // Fetch dashboard data from API
+  // const fetchDashboardData = useCallback(async (showRefreshSpinner = false) => {
+  //   try {
+  //     if (showRefreshSpinner) setRefreshing(true);
+  //     else setLoading(true);
+  //     setError(null);
+
+  //     // Fetch dashboard stats and recent surveys in parallel
+  //     const [dashboardData, surveysData] = await Promise.all([
+  //       getExecutiveDashboard().catch(err => {
+  //         console.warn("Dashboard API error, using fallback:", err.message);
+  //         return null;
+  //       }),
+  //       listSurveys({ page: 1, limit: 10, sort: "-createdAt" }).catch(err => {
+  //         console.warn("Surveys API error:", err.message);
+  //         return { surveys: [], total: 0 };
+  //       }),
+  //     ]);
+
+  //     // Update stats from dashboard API
+  //     if (dashboardData) {
+  //       setStats({
+  //         totalSurveys: dashboardData.kpis?.totalSurveys || 0,
+  //         activeResponses: dashboardData.kpis?.totalResponses || 0,
+  //         completionRate: dashboardData.kpis?.completionRate || 0,
+  //         avgResponseTime: dashboardData.kpis?.avgResponseTime || "-- min",
+  //         npsScore: dashboardData.kpis?.npsScore || 0,
+  //         satisfactionIndex: dashboardData.kpis?.satisfactionIndex || 0,
+  //       });
+
+  //       // Set trend data for chart
+  //       if (dashboardData.trends?.responses) {
+  //         setTrendData({
+  //           labels: dashboardData.trends.responses.labels || [],
+  //           data: dashboardData.trends.responses.data || [],
+  //         });
+  //       }
+  //     }
+
+  //     // Update recent surveys
+  //     if (surveysData?.surveys) {
+  //       const transformedSurveys = surveysData.surveys.map((survey) => ({
+  //         id: survey.id || survey._id,
+  //         name: survey.title,
+  //         responses: survey.responseCount || 0,
+  //         status: survey.status === "active" ? "Active" :
+  //           survey.status === "completed" ? "Completed" :
+  //             survey.status === "draft" ? "Draft" :
+  //               survey.status === "paused" ? "Paused" : survey.status,
+  //         completion: survey.stats?.completionRate || 0,
+  //       }));
+  //       setRecentSurveys(transformedSurveys);
+  //       setPagination(prev => ({ ...prev, total: surveysData.total || transformedSurveys.length }));
+  //     }
+
+  //   } catch (err) {
+  //     console.error("Dashboard fetch error:", err);
+  //     setError("Failed to load dashboard data. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // }, []);
   const fetchDashboardData = useCallback(async (showRefreshSpinner = false) => {
+    console.time("Dashboard Fetch Time");
+
     try {
       if (showRefreshSpinner) setRefreshing(true);
       else setLoading(true);
       setError(null);
 
-      // Fetch dashboard stats and recent surveys in parallel
+      console.group("📡 Dashboard API Calls");
+
       const [dashboardData, surveysData] = await Promise.all([
-        getExecutiveDashboard().catch(err => {
-          console.warn("Dashboard API error, using fallback:", err.message);
-          return null;
-        }),
-        listSurveys({ page: 1, limit: 10, sort: "-createdAt" }).catch(err => {
-          console.warn("Surveys API error:", err.message);
-          return { surveys: [], total: 0 };
-        }),
+        getExecutiveDashboard()
+          .then(res => {
+            console.log("✅ Raw Dashboard Response:", res);
+            return res;
+          })
+          .catch(err => {
+            console.warn("❌ Dashboard API error, using fallback:", err.message);
+            return null;
+          }),
+
+        listSurveys({ page: 1, limit: 10, sort: "-createdAt" })
+          .then(res => {
+            console.log("✅ Raw Surveys Response:", res);
+            return res;
+          })
+          .catch(err => {
+            console.warn("❌ Surveys API error:", err.message);
+            return { surveys: [], total: 0 };
+          }),
       ]);
 
-      // Update stats from dashboard API
-      if (dashboardData) {
-        setStats({
-          totalSurveys: dashboardData.kpis?.totalSurveys || 0,
-          activeResponses: dashboardData.kpis?.totalResponses || 0,
-          completionRate: dashboardData.kpis?.completionRate || 0,
-          avgResponseTime: dashboardData.kpis?.avgResponseTime || "-- min",
-          npsScore: dashboardData.kpis?.npsScore || 0,
-          satisfactionIndex: dashboardData.kpis?.satisfactionIndex || 0,
-        });
+      console.groupEnd();
 
-        // Set trend data for chart
-        if (dashboardData.trends?.responses) {
-          setTrendData({
-            labels: dashboardData.trends.responses.labels || [],
-            data: dashboardData.trends.responses.data || [],
-          });
-        }
+      // ================= DASHBOARD DATA =================
+      console.group("📊 Dashboard KPI Mapping");
+
+      // Use survey list total as fallback for totalSurveys
+      const totalSurveysFromList = surveysData?.total || surveysData?.surveys?.length || 0;
+
+      // The dashboardService transform returns { kpis: {...}, trends: {...} }
+      // Use kpis from transform, with fallbacks to raw metrics if needed
+      const kpis = dashboardData?.kpis || {};
+      const rawMetrics = dashboardData?._raw?.metrics || {};
+
+      console.log("📊 Transformed KPIs:", kpis);
+      console.log("📊 Raw Metrics backup:", rawMetrics);
+
+      // Extract KPIs - prefer transformed kpis, fallback to raw metrics
+      const mappedStats = {
+        totalSurveys: kpis.totalSurveys || rawMetrics.totalSurveys || totalSurveysFromList,
+        activeResponses: kpis.totalResponses || rawMetrics.totalResponses || 0,
+        completionRate: kpis.completionRate || rawMetrics.completionRate || 0,
+        avgResponseTime: kpis.avgResponseTime || rawMetrics.avgResponseTime || "-- min",
+        npsScore: kpis.npsScore || rawMetrics.npsScore || 0,
+        satisfactionIndex: kpis.satisfactionIndex || rawMetrics.satisfactionIndex || 0,
+      };
+
+      console.log("📈 Final Mapped Stats:", mappedStats);
+      console.log("📊 Fallback used for totalSurveys:", !kpis.totalSurveys);
+      console.groupEnd();
+
+      setStats(mappedStats);
+
+      // ================= TREND DATA =================
+      console.group("📈 Trend Data Mapping");
+
+      if (dashboardData?.trends?.responses) {
+        const trendLabels = dashboardData.trends.responses.labels || [];
+        const trendDataValues = dashboardData.trends.responses.data || [];
+
+        console.log("Labels:", trendLabels);
+        console.log("Data:", trendDataValues);
+
+        setTrendData({
+          labels: trendLabels,
+          data: trendDataValues,
+        });
+      } else {
+        console.warn("⚠️ No trend data available, using fallback");
+        // Generate placeholder trend from survey responses
+        setTrendData({
+          labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+          data: [0, 0, 0, mappedStats.activeResponses],
+        });
       }
 
-      // Update recent surveys
+      console.groupEnd();
+
+      // ================= SURVEYS DATA =================
       if (surveysData?.surveys) {
+        console.group("📝 Recent Surveys Transformation");
+        console.log("Raw surveys count:", surveysData.surveys.length);
+
         const transformedSurveys = surveysData.surveys.map((survey) => ({
           id: survey.id || survey._id,
           name: survey.title,
-          responses: survey.responseCount || 0,
-          status: survey.status === "active" ? "Active" :
-            survey.status === "completed" ? "Completed" :
-              survey.status === "draft" ? "Draft" :
-                survey.status === "paused" ? "Paused" : survey.status,
+          // Backend returns totalResponses directly on survey object
+          responses: survey.totalResponses || 0,
+          // Backend returns completion rate in stats.completionRate
           completion: survey.stats?.completionRate || 0,
+          status:
+            survey.status === "active" ? "Active" :
+              survey.status === "completed" ? "Completed" :
+                survey.status === "draft" ? "Draft" :
+                  survey.status === "paused" ? "Paused" :
+                    survey.status === "published" ? "Active" :
+                      survey.status,
         }));
+
+        console.log("Transformed surveys:", transformedSurveys);
+        console.groupEnd();
+
         setRecentSurveys(transformedSurveys);
-        setPagination(prev => ({ ...prev, total: surveysData.total || transformedSurveys.length }));
+        setPagination(prev => ({
+          ...prev,
+          total: surveysData.total || transformedSurveys.length
+        }));
       }
 
     } catch (err) {
-      console.error("Dashboard fetch error:", err);
+      console.error("🔥 Dashboard fetch fatal error:", err);
       setError("Failed to load dashboard data. Please try again.");
     } finally {
       setLoading(false);
       setRefreshing(false);
+      console.timeEnd("Dashboard Fetch Time");
     }
   }, []);
+
 
   // Handle refresh button
   const handleRefresh = () => {

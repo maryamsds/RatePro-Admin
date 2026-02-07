@@ -87,6 +87,7 @@ import FullScreenLoader from "./components/Loader/FullScreenLoader"
 import ExecutiveDashboard from "./pages/Dashboard/ExecutiveDashboard"
 import PlatformDashboard from "./pages/Dashboard/PlatformDashboard"
 import Notifications from "./pages/Notifications/Notifications"
+import Unauthorized from "./pages/Unauthorized/Unauthorized"
 
 function App() {
   // const navigate = useNavigate();
@@ -135,6 +136,9 @@ function App() {
             <Route path="/thank-you" element={<ThankYou />} />
             <Route path="/thank-you/:surveyId" element={<CustomThankYou />} />
             <Route path="/support" element={<Support />} />
+
+            {/* Authorization Error Page - Outside protected routes */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* Protected Layout */}
             <Route

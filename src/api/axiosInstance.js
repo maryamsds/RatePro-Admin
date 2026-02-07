@@ -3,6 +3,7 @@
 // 📦 Axios Instance (Pro Version)
 // ========================================
 import axios from "axios";
+import { toast } from "react-toastify";
 
 // 🌐 Base Configuration
 export const axiosInstance = axios.create({
@@ -125,9 +126,13 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // ⚠️ Optional: Handle other statuses globally
+    // ⚠️ Handle 403 Forbidden - Show toast for API permission errors
     if (status === 403) {
       console.warn("🚫 Forbidden — User not authorized.");
+      toast.error(
+        message || "You don't have permission to perform this action.",
+        { toastId: 'forbidden-error' } // Prevent duplicate toasts
+      );
     }
 
     if (status === 500) {
@@ -249,35 +254,35 @@ export const emailTemplateAPI = {
 // ------------------- Notification APIs -------------------
 export const notificationAPI = {
   // Get current user's notifications with optional filters
-  getMyNotifications: (params = {}) => 
+  getMyNotifications: (params = {}) =>
     axiosInstance.get("/notifications", { params }),
-  
+
   // Get unread notification count
-  getUnreadCount: () => 
+  getUnreadCount: () =>
     axiosInstance.get("/notifications/unread/count"),
-  
+
   // Get a single notification by ID
-  getById: (id) => 
+  getById: (id) =>
     axiosInstance.get(`/notifications/${id}`),
-  
+
   // Mark a notification as read
-  markAsRead: (id) => 
+  markAsRead: (id) =>
     axiosInstance.patch(`/notifications/${id}/read`),
-  
+
   // Mark all notifications as read
-  markAllAsRead: () => 
+  markAllAsRead: () =>
     axiosInstance.patch("/notifications/read-all"),
-  
+
   // Archive a notification
-  archive: (id) => 
+  archive: (id) =>
     axiosInstance.patch(`/notifications/${id}/archive`),
-  
+
   // Delete a notification
-  delete: (id) => 
+  delete: (id) =>
     axiosInstance.delete(`/notifications/${id}`),
-  
+
   // Delete all notifications
-  deleteAll: () => 
+  deleteAll: () =>
     axiosInstance.delete("/notifications"),
 };
 
