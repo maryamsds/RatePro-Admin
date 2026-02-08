@@ -20,9 +20,9 @@ import {
   MdPeople,
   MdTrendingUp,
   MdAccessTime,
-  MdVisibility,
-  MdEdit,
-  MdMoreVert,
+  MdQuestionAnswer,
+  MdBarChart,
+  MdInfo,
   MdRefresh,
   MdDownload,
   MdAdd,
@@ -69,7 +69,7 @@ const Dashboard = ({ darkMode }) => {
     totalSurveys: 0,
     activeResponses: 0,
     completionRate: 0,
-    avgResponseTime: "-- min",
+    avgSatisfaction: 0,
     npsScore: 0,
     satisfactionIndex: 0,
   })
@@ -184,7 +184,8 @@ const Dashboard = ({ darkMode }) => {
             return null;
           }),
 
-        listSurveys({ page: 1, limit: 10, sort: "-createdAt" })
+        // Sort by lastResponseAt to show surveys with recent activity first
+        listSurveys({ page: 1, limit: 10, sort: "-lastResponseAt" })
           .then(res => {
             console.log("✅ Raw Surveys Response:", res);
             return res;
@@ -216,7 +217,7 @@ const Dashboard = ({ darkMode }) => {
         totalSurveys: kpis.totalSurveys || rawMetrics.totalSurveys || totalSurveysFromList,
         activeResponses: kpis.totalResponses || rawMetrics.totalResponses || 0,
         completionRate: kpis.completionRate || rawMetrics.completionRate || 0,
-        avgResponseTime: kpis.avgResponseTime || rawMetrics.avgResponseTime || "-- min",
+        avgSatisfaction: kpis.avgSatisfaction || rawMetrics.averageRating || 0,
         npsScore: kpis.npsScore || rawMetrics.npsScore || 0,
         satisfactionIndex: kpis.satisfactionIndex || rawMetrics.satisfactionIndex || 0,
       };
@@ -230,25 +231,28 @@ const Dashboard = ({ darkMode }) => {
       // ================= TREND DATA =================
       console.group("📈 Trend Data Mapping");
 
-      if (dashboardData?.trends?.responses) {
-        const trendLabels = dashboardData.trends.responses.labels || [];
-        const trendDataValues = dashboardData.trends.responses.data || [];
+      // Use satisfaction trend which has weekly data from backend
+      // (responses trend only has single total value)
+      if (dashboardData?.trends?.satisfaction) {
+        const trendLabels = dashboardData.trends.satisfaction.labels || [];
+        const trendDataValues = dashboardData.trends.satisfaction.data || [];
 
-        console.log("Labels:", trendLabels);
-        console.log("Data:", trendDataValues);
+        console.log("Satisfaction Trend Labels:", trendLabels);
+        console.log("Satisfaction Trend Data:", trendDataValues);
 
         setTrendData({
           labels: trendLabels,
           data: trendDataValues,
         });
       } else {
-        console.warn("⚠️ No trend data available, using fallback");
-        // Generate placeholder trend from survey responses
+        console.warn("⚠️ No satisfaction trend data available, using fallback");
+        // Generate placeholder trend
         setTrendData({
           labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-          data: [0, 0, 0, mappedStats.activeResponses],
+          data: [50, 55, 60, mappedStats.satisfactionIndex || 0],
         });
       }
+
 
       console.groupEnd();
 
@@ -260,8 +264,8 @@ const Dashboard = ({ darkMode }) => {
         const transformedSurveys = surveysData.surveys.map((survey) => ({
           id: survey.id || survey._id,
           name: survey.title,
-          // Backend returns totalResponses directly on survey object
-          responses: survey.totalResponses || 0,
+          // surveyService.transformSurvey already maps totalResponses → responseCount
+          responses: survey.responseCount || 0,
           // Backend returns completion rate in stats.completionRate
           completion: survey.stats?.completionRate || 0,
           status:
@@ -511,12 +515,12 @@ const Dashboard = ({ darkMode }) => {
               <div className="stats-card">
                 <div className="stats-card-header">
                   <div className="stats-icon icon-warning">
-                    <MdAccessTime />
+                    <MdTrendingUp />
                   </div>
                 </div>
                 <div className="stats-card-body">
-                  <h3>{stats.avgResponseTime}</h3>
-                  <p>Avg Response Time</p>
+                  <h3>{typeof stats.avgSatisfaction === 'number' ? stats.avgSatisfaction.toFixed(2) : stats.avgSatisfaction}</h3>
+                  <p>Avg Satisfaction</p>
                 </div>
               </div>
             </Col>
@@ -529,7 +533,7 @@ const Dashboard = ({ darkMode }) => {
                 <div className="chart-card">
                   <h5 className="d-flex align-items-center gap-2">
                     <MdShowChart size={20} />
-                    Response Trends
+                    Satisfaction Trends
                     <Button
                       variant="link"
                       onClick={ViewTrendsAnalytics}
@@ -587,7 +591,6 @@ const Dashboard = ({ darkMode }) => {
                               <th>Survey Name</th>
                               <th className="d-none d-md-table-cell">Responses</th>
                               <th>Status</th>
-                              <th className="d-none d-lg-table-cell">Progress</th>
                               <th className="text-center">Actions</th>
                             </tr>
                           </thead>
@@ -611,28 +614,17 @@ const Dashboard = ({ darkMode }) => {
                                     {survey.status}
                                   </span>
                                 </td>
-                                <td className="d-none d-lg-table-cell">
-                                  <div className="progress-container" style={{ width: '120px' }}>
-                                    <div className="progress-bar-wrapper">
-                                      <div
-                                        className="progress-bar-fill"
-                                        style={{ width: `${survey.completion}%` }}
-                                      ></div>
-                                    </div>
-                                    <span className="progress-text">{survey.completion}%</span>
-                                  </div>
-                                </td>
                                 <td className="text-center">
                                   <div className="d-flex gap-1 justify-content-center">
-                                    <Link to={`/app/surveys/${survey.id}`} className="action-button" title="View Survey">
-                                      <MdVisibility size={18} />
+                                    <Link to={`/app/surveys/responses/${survey.id}`} className="action-button" title="View Responses">
+                                      <MdQuestionAnswer size={18} />
                                     </Link>
-                                    <Link to={`/app/surveys/${survey.id}/edit`} className="action-button" title="Edit Survey">
-                                      <MdEdit size={18} />
+                                    <Link to={`/app/surveys/${survey.id}/analytics`} className="action-button" title="View Analytics">
+                                      <MdBarChart size={18} />
                                     </Link>
-                                    <button className="action-button" title="More Options">
-                                      <MdMoreVert size={18} />
-                                    </button>
+                                    <Link to={`/app/surveys/detail/${survey.id}`} className="action-button" title="Survey Details">
+                                      <MdInfo size={18} />
+                                    </Link>
                                   </div>
                                 </td>
                               </tr>

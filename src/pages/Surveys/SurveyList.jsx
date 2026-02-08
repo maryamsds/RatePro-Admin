@@ -1022,7 +1022,7 @@ const SurveyList = ({ darkMode }) => {
                             day: "numeric",
                           })}
                         </td>
-                        <td className="text-end">
+                        <td className="text-end d-flex justify-content-center align-items-center py-4">
                           <Button
                             variant="link"
                             className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
@@ -1136,35 +1136,13 @@ const SurveyList = ({ darkMode }) => {
         </div>
         <div className="survey-table-footer">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-            <div className="d-flex align-items-center gap-3 w-100 justify-content-between">
-              <small className="pagination-info">
-                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{" "}
-                {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} surveys
-              </small>
-              <Form.Select
-                size="sm"
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="per-page-select"
-              >
-                <option value="10">10 per page</option>
-                <option value="25">25 per page</option>
-                <option value="50">50 per page</option>
-                <option value="100">100 per page</option>
-              </Form.Select>
-            </div>
-            <div>
-              <Pagination
-                current={currentPage}
-                total={totalItems}
-                limit={itemsPerPage}
-                onChange={(page) => setCurrentPage(page)}
-                darkMode={darkMode}
-              />
-            </div>
+            <Pagination
+              current={currentPage}
+              total={totalItems}
+              limit={itemsPerPage}
+              onChange={(page) => setCurrentPage(page)}
+              darkMode={darkMode}
+            />
           </div>
         </div>
       </div>

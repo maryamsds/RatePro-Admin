@@ -11,7 +11,7 @@ import axiosInstance from "../axiosInstance";
  */
 export const listSurveys = async (params = {}) => {
   const { search = "", status, page = 1, limit = 10, sort = "-createdAt" } = params;
-  
+
   const queryParams = new URLSearchParams();
   if (search) queryParams.append("search", search);
   if (status) queryParams.append("status", status);
@@ -20,7 +20,7 @@ export const listSurveys = async (params = {}) => {
   queryParams.append("sort", sort);
 
   const response = await axiosInstance.get(`/surveys?${queryParams.toString()}`);
-  
+
   // Transform response for frontend
   return {
     surveys: response.data.surveys.map(transformSurvey),
@@ -151,7 +151,7 @@ export const setSurveyAudience = async (surveyId, audienceData) => {
  */
 export const getSurveyResponses = async (surveyId, params = {}) => {
   const { page = 1, limit = 20, sentiment, rating, search } = params;
-  
+
   const queryParams = new URLSearchParams();
   queryParams.append("page", page);
   queryParams.append("limit", limit);
@@ -160,7 +160,7 @@ export const getSurveyResponses = async (surveyId, params = {}) => {
   if (search) queryParams.append("search", search);
 
   const response = await axiosInstance.get(`/surveys/${surveyId}/responses?${queryParams.toString()}`);
-  
+
   return {
     responses: response.data.responses?.map(transformResponse) || [],
     total: response.data.total || 0,
@@ -214,6 +214,8 @@ export const getInviteQRCode = async (surveyId, inviteId) => {
 
 /**
  * Transform survey list item
+ * NOTE: Backend now writes to TOP-LEVEL totalResponses/lastResponseAt fields
+ * We read top-level first with nested analytics as fallback for backward compatibility
  */
 const transformSurvey = (survey) => ({
   id: survey._id,
@@ -223,14 +225,15 @@ const transformSurvey = (survey) => ({
   status: survey.status,
   isActive: survey.isActive,
   questionCount: survey.questions?.length || 0,
-  responseCount: survey.analytics?.totalResponses || survey.responseCount || 0,
+  // Read top-level totalResponses first (from new backend), fallback to nested analytics
+  responseCount: survey.totalResponses ?? survey.analytics?.totalResponses ?? 0,
   createdAt: survey.createdAt,
   updatedAt: survey.updatedAt,
   createdBy: survey.createdBy?.name || "Unknown",
   createdByEmail: survey.createdBy?.email,
   settings: survey.settings || {},
-  // Computed fields
-  lastResponseAt: survey.analytics?.lastResponseAt,
+  // Read top-level lastResponseAt first (from new backend), fallback to nested analytics
+  lastResponseAt: survey.lastResponseAt ?? survey.analytics?.lastResponseAt,
   npsScore: survey.analytics?.npsScore,
   avgRating: survey.analytics?.avgRating,
 });
@@ -279,23 +282,23 @@ const transformResponse = (response) => ({
  */
 const prepareFormData = (surveyData) => {
   const formData = new FormData();
-  
+
   // Handle file upload
   if (surveyData.logo instanceof File) {
     formData.append("logo", surveyData.logo);
   }
-  
+
   // Append other fields as JSON
   Object.keys(surveyData).forEach((key) => {
     if (key === "logo" && surveyData.logo instanceof File) return;
-    
+
     if (typeof surveyData[key] === "object" && surveyData[key] !== null) {
       formData.append(key, JSON.stringify(surveyData[key]));
     } else if (surveyData[key] !== undefined && surveyData[key] !== null) {
       formData.append(key, surveyData[key]);
     }
   });
-  
+
   return formData;
 };
 

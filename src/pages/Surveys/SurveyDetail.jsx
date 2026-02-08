@@ -66,10 +66,11 @@ const SurveyDetail = () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/surveys/${id}`);
-      console.log('response:', response.data.questions)
-      setSurvey(response.data);
+      // API returns { survey: {...} } - extract the survey object
+      const surveyData = response.data.survey || response.data;
+      console.log('Fetched survey:', surveyData);
+      setSurvey(surveyData);
       setError('');
-      console.log('Fetched survey:', response.data);
     } catch (err) {
       console.error('Error fetching survey:', err);
       setError(err.response?.data?.message || 'Failed to load survey details');
@@ -81,10 +82,13 @@ const SurveyDetail = () => {
   const fetchSurveyStats = async () => {
     try {
       const response = await axiosInstance.get(`/analytics/survey/${id}`);
-      console.log("Stats Response", response.da)
-      setStats(response.data.stats);
+      // Handle different response shapes: { stats: {...} } or direct stats object
+      const statsData = response.data?.stats || response.data || {};
+      console.log('Stats Response:', statsData);
+      setStats(prev => ({ ...prev, ...statsData }));
     } catch (err) {
       console.error('Error fetching stats:', err);
+      // Keep default stats on error
     }
   };
 
@@ -279,15 +283,18 @@ const SurveyDetail = () => {
 
                 {/* Action Buttons */}
                 <div className="d-flex flex-wrap gap-2">
-                  <OverlayTrigger overlay={<Tooltip>Edit Survey</Tooltip>}>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => navigate(`/app/surveys/builder/edit/${id}`)}
-                    >
-                      <MdEdit />
-                    </Button>
-                  </OverlayTrigger>
+                  {/* Edit button - only shown for draft surveys */}
+                  {survey.status === 'draft' && (
+                    <OverlayTrigger overlay={<Tooltip>Edit Survey</Tooltip>}>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => navigate(`/app/surveys/builder/edit/${id}`)}
+                      >
+                        <MdEdit />
+                      </Button>
+                    </OverlayTrigger>
+                  )}
 
                   <OverlayTrigger overlay={<Tooltip>Share Survey</Tooltip>}>
                     {survey.status !== "inactive" && survey.status !== "draft" ? (
@@ -320,7 +327,10 @@ const SurveyDetail = () => {
                   <FaEye size={24} />
                 </div>
                 <div>
-                  <h5 className="mb-0">{stats?.totalResponses}</h5>
+                  {/* Read from survey.totalResponses first, then stats, fallback to — */}
+                  <h5 className="mb-0">
+                    {survey?.totalResponses ?? stats?.totalResponses ?? '—'}
+                  </h5>
                   <small className="text-muted">Total Responses</small>
                 </div>
               </div>
@@ -336,9 +346,14 @@ const SurveyDetail = () => {
                   <FaStar size={24} />
                 </div>
                 <div>
-                  {/* <h5 className="mb-0">{stats?.avgRating ? stats.avgRating.toFixed(1) : 0}</h5> */}
-                  <h5 className="mb-0">{stats?.avgRating ? stats.avgRating.toFixed(1) : '0.0'}</h5>
-
+                  {/* Read from survey.averageRating (root level), then stats, fallback to — */}
+                  <h5 className="mb-0">
+                    {survey?.averageRating != null && survey?.averageRating > 0
+                      ? survey.averageRating.toFixed(1)
+                      : (stats?.avgRating != null && stats?.avgRating > 0
+                        ? stats.avgRating.toFixed(1)
+                        : '—')}
+                  </h5>
                   <small className="text-muted">Average Rating</small>
                 </div>
               </div>
@@ -354,8 +369,15 @@ const SurveyDetail = () => {
                   <MdTrendingUp size={24} />
                 </div>
                 <div>
-                  <h5 className="mb-0">{stats?.completionRate ?? 0}%</h5>
-                  <small className="text-muted">Completion Rate</small>
+                  {/* Average Score - read from survey.averageScore (root level) */}
+                  <h5 className="mb-0">
+                    {survey?.averageScore != null && survey?.averageScore > 0
+                      ? survey.averageScore.toFixed(1)
+                      : (stats?.completionRate != null && stats?.completionRate > 0
+                        ? `${stats.completionRate}%`
+                        : '—')}
+                  </h5>
+                  <small className="text-muted">Average Score</small>
                 </div>
               </div>
             </Card.Body>
@@ -370,7 +392,12 @@ const SurveyDetail = () => {
                   <FaChartLine size={24} />
                 </div>
                 <div>
-                  <h5 className="mb-0">{stats?.npsScore ?? 0}</h5>
+                  {/* NPS score - from stats API only, fallback to — */}
+                  <h5 className="mb-0">
+                    {stats?.npsScore != null && stats?.npsScore !== 0
+                      ? stats.npsScore
+                      : '—'}
+                  </h5>
                   <small className="text-muted">NPS Score</small>
                 </div>
               </div>
@@ -451,28 +478,30 @@ const SurveyDetail = () => {
                             <Card.Title className="mb-0">Survey Details</Card.Title>
                           </Card.Header>
                           <Card.Body>
-                            <div className="detail-item mb-3">
+                            <div className="detail-item mb-3 d-flex justify-content-between align-items-center">
                               <strong>Created:</strong>
                               <span className="ms-2">{new Date(survey?.createdAt).toLocaleDateString()}</span>
                             </div>
-                            <div className="detail-item mb-3">
+                            <div className="detail-item mb-3 d-flex justify-content-between align-items-center">
                               <strong>Last Updated:</strong>
                               <span className="ms-2">{new Date(survey?.updatedAt).toLocaleDateString()}</span>
                             </div>
-                            <div className="detail-item mb-3">
+                            <div className="detail-item mb-3 d-flex justify-content-between align-items-center">
                               <strong>Theme Color:</strong>
-                              <span
-                                className="ms-2 theme-color-preview"
-                                style={{
-                                  backgroundColor: survey?.themeColor,
-                                  display: 'inline-block',
-                                  width: '20px',
-                                  height: '20px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #dee2e6'
-                                }}
-                              ></span>
-                              <span className="ms-2">{survey?.themeColor}</span>
+                              <div>
+                                <span
+                                  className="ms-2 theme-color-preview"
+                                  style={{
+                                    backgroundColor: survey?.themeColor,
+                                    display: 'inline-block',
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #dee2e6'
+                                  }}
+                                ></span>
+                                <span className="ms-2">{survey?.themeColor}</span>
+                              </div>
                             </div>
                             {survey?.settings && (
                               <>

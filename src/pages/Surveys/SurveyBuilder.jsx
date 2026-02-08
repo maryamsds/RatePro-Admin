@@ -561,6 +561,22 @@ const SurveyBuilder = () => {
       if (response.data) {
         const surveyData = response.data.survey || response.data;
 
+        // ✅ EDIT GUARD: Only draft surveys can be edited
+        // If survey status is NOT draft, redirect to detail page with warning
+        if (surveyData.status && surveyData.status !== 'draft') {
+          console.warn(`[EditGuard] Survey ${surveyId} status is "${surveyData.status}" - editing not allowed`);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Survey Cannot Be Edited',
+            text: `This survey is "${surveyData.status}" and cannot be edited. Only draft surveys can be modified.`,
+            confirmButtonColor: 'var(--bs-primary)',
+            confirmButtonText: 'View Survey Details'
+          }).then(() => {
+            navigate(`/app/surveys/detail/${surveyId}`);
+          });
+          return; // Stop further processing
+        }
+
         // STEP 1: Restore Survey Form Data
         // Transform backend data to frontend format
         setSurvey({
