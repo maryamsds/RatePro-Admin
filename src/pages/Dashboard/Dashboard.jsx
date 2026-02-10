@@ -97,72 +97,10 @@ const Dashboard = ({ darkMode }) => {
   };
 
   const ViewRecentSurveys = () => {
-    navigate("/app/surveys/responses");
+    navigate("/app/surveys");
   };
 
   // Fetch dashboard data from API
-  // const fetchDashboardData = useCallback(async (showRefreshSpinner = false) => {
-  //   try {
-  //     if (showRefreshSpinner) setRefreshing(true);
-  //     else setLoading(true);
-  //     setError(null);
-
-  //     // Fetch dashboard stats and recent surveys in parallel
-  //     const [dashboardData, surveysData] = await Promise.all([
-  //       getExecutiveDashboard().catch(err => {
-  //         console.warn("Dashboard API error, using fallback:", err.message);
-  //         return null;
-  //       }),
-  //       listSurveys({ page: 1, limit: 10, sort: "-createdAt" }).catch(err => {
-  //         console.warn("Surveys API error:", err.message);
-  //         return { surveys: [], total: 0 };
-  //       }),
-  //     ]);
-
-  //     // Update stats from dashboard API
-  //     if (dashboardData) {
-  //       setStats({
-  //         totalSurveys: dashboardData.kpis?.totalSurveys || 0,
-  //         activeResponses: dashboardData.kpis?.totalResponses || 0,
-  //         completionRate: dashboardData.kpis?.completionRate || 0,
-  //         avgResponseTime: dashboardData.kpis?.avgResponseTime || "-- min",
-  //         npsScore: dashboardData.kpis?.npsScore || 0,
-  //         satisfactionIndex: dashboardData.kpis?.satisfactionIndex || 0,
-  //       });
-
-  //       // Set trend data for chart
-  //       if (dashboardData.trends?.responses) {
-  //         setTrendData({
-  //           labels: dashboardData.trends.responses.labels || [],
-  //           data: dashboardData.trends.responses.data || [],
-  //         });
-  //       }
-  //     }
-
-  //     // Update recent surveys
-  //     if (surveysData?.surveys) {
-  //       const transformedSurveys = surveysData.surveys.map((survey) => ({
-  //         id: survey.id || survey._id,
-  //         name: survey.title,
-  //         responses: survey.responseCount || 0,
-  //         status: survey.status === "active" ? "Active" :
-  //           survey.status === "completed" ? "Completed" :
-  //             survey.status === "draft" ? "Draft" :
-  //               survey.status === "paused" ? "Paused" : survey.status,
-  //         completion: survey.stats?.completionRate || 0,
-  //       }));
-  //       setRecentSurveys(transformedSurveys);
-  //       setPagination(prev => ({ ...prev, total: surveysData.total || transformedSurveys.length }));
-  //     }
-
-  //   } catch (err) {
-  //     console.error("Dashboard fetch error:", err);
-  //     setError("Failed to load dashboard data. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //     setRefreshing(false);
-  //   }
-  // }, []);
   const fetchDashboardData = useCallback(async (showRefreshSpinner = false) => {
     console.time("Dashboard Fetch Time");
 

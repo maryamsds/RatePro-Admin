@@ -80,6 +80,7 @@ import WhatsAppSettings from "./pages/Communication/WhatsAppSettings"
 import SMSSettings from "./pages/Communication/SMSSettings"
 import FeedbackAnalysis from "./pages/Analytics/FeedbackAnalysis"
 import ActionManagement from "./pages/Actions/ActionManagement"
+import ActionDetailPage from "./pages/Actions/ActionDetailPage"
 import { ToastContainer } from "react-toastify"
 import { useAuth } from "./context/AuthContext"
 import FullScreenLoader from "./components/Loader/FullScreenLoader"
@@ -237,6 +238,7 @@ function App() {
 
               {/* Actions - CompanyAdmin Only */}
               <Route path="actions" element={<TenantGuard><ActionManagement /></TenantGuard>} />
+              <Route path="actions/:id" element={<TenantGuard><ActionDetailPage /></TenantGuard>} />
 
               {/* Audiences - CompanyAdmin Only */}
               <Route path="audiences" element={<TenantGuard><AudiencesSegments /></TenantGuard>} />

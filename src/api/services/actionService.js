@@ -284,6 +284,121 @@ const transformFeedbackAnalysis = (data) => {
 };
 
 // ============================================================================
+// 📋 Action Plan Operations (NEW - Action Management Enhancement)
+// ============================================================================
+
+/**
+ * Get action plan for an action
+ * @param {string} actionId
+ * @returns {Promise<Object|null>}
+ */
+export const getActionPlan = async (actionId) => {
+  try {
+    const response = await axiosInstance.get(`/actions/${actionId}/plan`);
+    return response.data?.data || response.data;
+  } catch (error) {
+    if (error.response?.status === 404) return null;
+    throw error;
+  }
+};
+
+/**
+ * Create action plan for an action (starts in draft)
+ * @param {string} actionId
+ * @param {Object} planData
+ * @returns {Promise<Object>}
+ */
+export const createActionPlan = async (actionId, planData) => {
+  const response = await axiosInstance.post(`/actions/${actionId}/plan`, planData);
+  return response.data?.data || response.data;
+};
+
+/**
+ * Update action plan
+ * @param {string} planId
+ * @param {Object} planData
+ * @returns {Promise<Object>}
+ */
+export const updateActionPlan = async (planId, planData) => {
+  const response = await axiosInstance.put(`/action-plans/${planId}`, planData);
+  return response.data?.data || response.data;
+};
+
+/**
+ * Submit action plan for approval
+ * @param {string} planId
+ * @returns {Promise<Object>}
+ */
+export const submitActionPlanForApproval = async (planId) => {
+  const response = await axiosInstance.post(`/action-plans/${planId}/submit`);
+  return response.data?.data || response.data;
+};
+
+/**
+ * Confirm/approve action plan (human confirmation)
+ * @param {string} planId
+ * @returns {Promise<Object>}
+ */
+export const confirmActionPlan = async (planId) => {
+  const response = await axiosInstance.post(`/action-plans/${planId}/confirm`);
+  return response.data?.data || response.data;
+};
+
+/**
+ * Start action plan execution
+ * @param {string} planId
+ * @returns {Promise<Object>}
+ */
+export const startActionPlan = async (planId) => {
+  const response = await axiosInstance.post(`/action-plans/${planId}/start`);
+  return response.data?.data || response.data;
+};
+
+/**
+ * Complete action plan
+ * @param {string} planId
+ * @param {Object} data - { completionNotes }
+ * @returns {Promise<Object>}
+ */
+export const completeActionPlan = async (planId, data = {}) => {
+  const response = await axiosInstance.post(`/action-plans/${planId}/complete`, data);
+  return response.data?.data || response.data;
+};
+
+/**
+ * Get steps for an action plan
+ * @param {string} planId
+ * @returns {Promise<Object>}
+ */
+export const getActionPlanSteps = async (planId) => {
+  const response = await axiosInstance.get(`/action-plans/${planId}/steps`);
+  return response.data?.data || response.data;
+};
+
+/**
+ * Update step status
+ * @param {string} stepId
+ * @param {string} status - 'pending', 'in_progress', 'completed', 'skipped'
+ * @param {Object} data - { notes, skipReason }
+ * @returns {Promise<Object>}
+ */
+export const updateStepStatus = async (stepId, status, data = {}) => {
+  const response = await axiosInstance.put(`/action-steps/${stepId}/status`, { status, ...data });
+  return response.data?.data || response.data;
+};
+
+/**
+ * Add custom step to action plan
+ * @param {string} planId
+ * @param {Object} stepData
+ * @returns {Promise<Object>}
+ */
+export const addActionStep = async (planId, stepData) => {
+  const response = await axiosInstance.post(`/action-plans/${planId}/steps`, stepData);
+  return response.data?.data || response.data;
+};
+
+// ============================================================================
 // 📦 Default Export
 // ============================================================================
 export default {
@@ -303,5 +418,16 @@ export default {
   getActionsByPriority,
   getActionsByStatus,
   bulkUpdateActions,
+  // Action Plan
+  getActionPlan,
+  createActionPlan,
+  updateActionPlan,
+  submitActionPlanForApproval,
+  confirmActionPlan,
+  startActionPlan,
+  completeActionPlan,
+  getActionPlanSteps,
+  updateStepStatus,
+  addActionStep,
 };
 

@@ -6,7 +6,7 @@ import {
   Container, Row, Col, Card, Button, Badge, Tab, Tabs,
   Form, Modal, Alert, Spinner, Table, InputGroup,
   OverlayTrigger, Tooltip, Dropdown, ProgressBar,
-  Toast, ToastContainer, ListGroup
+  ListGroup
 } from 'react-bootstrap';
 import {
   MdAssignment, MdFlag, MdCheckCircle, MdWarning,
@@ -16,12 +16,13 @@ import {
   MdAssignmentLate, MdPriorityHigh, MdBusiness, MdGroup,
   MdComment, MdAttachment, MdTimer, MdSentimentSatisfied,
   MdSentimentDissatisfied, MdSentimentNeutral, MdInsights,
-  MdError, MdBlock
+  MdError, MdBlock, MdArrowForward, MdOpenInNew
 } from 'react-icons/md';
 import {
   FaClock, FaUsers, FaExclamationTriangle, FaChartLine,
   FaBuilding, FaMapMarkerAlt, FaStar, FaRegStar
 } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 
 // Service imports
@@ -142,128 +143,38 @@ const SentimentBadge = ({ sentiment }) => {
 };
 
 // ============================================================================
-// 📋 Action Card Component
+// 📊 Stats Cards Component (Redesigned)
 // ============================================================================
 
-const ActionCard = ({
-  action,
-  onStatusChange,
-  onViewDetails,
-  onDelete,
-  isUpdating,
-  canDelete = false // Permission-based delete visibility
-}) => {
-  const isOverdue = action.isOverdue || isActionOverdue(action);
+const StatsCards = ({ stats }) => {
+  const cards = [
+    { key: 'total', label: 'Total Actions', icon: MdAssignment, bg: 'primary', textColor: 'white' },
+    { key: 'pending', label: 'Pending', icon: MdSchedule, bg: 'warning', textColor: 'dark' },
+    { key: 'inProgress', label: 'In Progress', icon: MdTimer, bg: 'info', textColor: 'white' },
+    { key: 'completed', label: 'Completed', icon: MdCheckCircle, bg: 'success', textColor: 'white' },
+    { key: 'overdue', label: 'Overdue', icon: MdAssignmentLate, bg: 'danger', textColor: 'white' },
+    { key: 'highPriority', label: 'High Priority', icon: MdPriorityHigh, bg: 'dark', textColor: 'white' },
+  ];
 
   return (
-    <Card className={`action-item mb-3 border ${isOverdue ? 'border-danger' : ''}`}>
-      <Card.Body>
-        <Row className="align-items-start">
-          <Col lg={6}>
-            {/* Header: Priority + Source + Overdue */}
-            <div className="d-flex align-items-center gap-2 mb-2">
-              <PriorityBadge priority={action.priority} />
-              <SourceBadge source={action.source} />
-              {isOverdue && <Badge bg="danger" pill>Overdue</Badge>}
-            </div>
-
-            {/* Title + Description */}
-            <h6 className="mb-1 fw-bold">{action.title || 'Untitled Action'}</h6>
-            <p className="text-muted small mb-2">
-              {action.description || 'No description provided'}
-            </p>
-
-            {/* Context Badges: Sentiment + Department + Assignee */}
-            <div className="d-flex flex-wrap gap-2 mb-2">
-              {action.metadata?.sentiment && (
-                <SentimentBadge sentiment={action.metadata.sentiment} />
-              )}
-              <Badge bg="light" text="dark" className="d-flex align-items-center">
-                <MdBusiness className="me-1" />
-                {action.department || action.category || 'Unassigned'}
-              </Badge>
-              <Badge bg="light" text="dark" className="d-flex align-items-center">
-                <MdPerson className="me-1" />
-                {action.assigneeName || action.assignee?.name || 'Unassigned'}
-              </Badge>
-            </div>
-          </Col>
-
-          <Col lg={3}>
-            <div className="mb-2">
-              <StatusBadge status={action.status} />
-            </div>
-            <div className="small text-muted">
-              <div className="mb-1">
-                <FaClock className="me-1" />
-                Due: {action.dueDate ? formatDate(action.dueDate) : 'Not set'}
+    <Row className="g-3 mb-4">
+      {cards.map(({ key, label, icon: Icon, bg, textColor }) => (
+        <Col key={key} xl={2} lg={4} md={4} sm={6} xs={6}>
+          <Card className={`bg-${bg} text-${textColor} border-0 shadow-sm h-100`}>
+            <Card.Body className="d-flex align-items-center p-3">
+              <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 bg-white bg-opacity-25`}
+                style={{ width: 48, height: 48, minWidth: 48 }}>
+                <Icon size={24} />
               </div>
-              <div className="mb-1">
-                <MdSchedule className="me-1" />
-                Created: {action.createdAt ? formatDate(action.createdAt) : 'N/A'}
+              <div>
+                <div className="fw-bold fs-4 lh-1 mb-1">{stats[key] ?? 0}</div>
+                <div className="small opacity-75">{label}</div>
               </div>
-            </div>
-          </Col>
-
-          <Col lg={3} className="text-end">
-            <div className="d-flex flex-column gap-1">
-              {action.status === ACTION_STATUSES.PENDING && (
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  onClick={() => onStatusChange(action.id, ACTION_STATUSES.IN_PROGRESS)}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <Spinner animation="border" size="sm" className="me-1" />
-                  ) : (
-                    <MdTimer className="me-1" />
-                  )}
-                  Start
-                </Button>
-              )}
-
-              {action.status === ACTION_STATUSES.IN_PROGRESS && (
-                <Button
-                  variant="outline-success"
-                  size="sm"
-                  onClick={() => onStatusChange(action.id, ACTION_STATUSES.RESOLVED)}
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <Spinner animation="border" size="sm" className="me-1" />
-                  ) : (
-                    <MdCheckCircle className="me-1" />
-                  )}
-                  Complete
-                </Button>
-              )}
-
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={() => onViewDetails(action)}
-              >
-                <MdVisibility className="me-1" />
-                Details
-              </Button>
-
-              {/* Delete button only visible for CompanyAdmin */}
-              {canDelete && (
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  onClick={() => onDelete(action)}
-                >
-                  <MdDelete className="me-1" />
-                  Delete
-                </Button>
-              )}
-            </div>
-          </Col>
-        </Row>
-      </Card.Body>
-    </Card>
+            </Card.Body>
+          </Card>
+        </Col>
+      ))}
+    </Row>
   );
 };
 
@@ -315,47 +226,220 @@ const ErrorState = ({ error, onRetry }) => (
 );
 
 // ============================================================================
-// 📊 Stats Cards Component
+// 📋 Action Table Row Component
 // ============================================================================
 
-const StatsCards = ({ stats }) => {
-  const cards = [
-    { key: 'total', label: 'Total Actions', icon: MdAssignment, color: 'primary', value: stats.total },
-    { key: 'pending', label: 'Pending', icon: MdSchedule, color: 'warning', value: stats.pending },
-    { key: 'inProgress', label: 'In Progress', icon: MdTimer, color: 'info', value: stats.inProgress },
-    { key: 'completed', label: 'Completed', icon: MdCheckCircle, color: 'success', value: stats.completed },
-    { key: 'overdue', label: 'Overdue', icon: MdAssignmentLate, color: 'danger', value: stats.overdue },
-    { key: 'highPriority', label: 'High Priority', icon: MdPriorityHigh, color: 'danger', value: stats.highPriority },
-  ];
+const ActionTableRow = ({
+  action,
+  onStatusChange,
+  onViewDetails,
+  onDelete,
+  isUpdating,
+  canDelete = false
+}) => {
+  const isOverdue = action.isOverdue || isActionOverdue(action);
 
   return (
-    <Row className="mb-4">
-      {cards.map(({ key, label, icon: Icon, color, value }) => (
-        <Col key={key} lg={2} md={4} sm={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3 text-center">
-              <div className={`stats-icon bg-${color} bg-opacity-10 text-${color} rounded-circle p-3 mx-auto mb-2`}>
-                <Icon size={24} />
-              </div>
-              <h5 className="mb-0">{value ?? 0}</h5>
-              <small className="text-muted">{label}</small>
-            </Card.Body>
-          </Card>
-        </Col>
-      ))}
-    </Row>
+    <tr className={isOverdue ? 'table-danger' : ''}>
+      {/* Title + Description */}
+      <td style={{ minWidth: 280 }}>
+        <div className="d-flex align-items-start gap-2">
+          <div className="flex-grow-1">
+            <div
+              className="fw-semibold text-dark mb-1 text-decoration-none cursor-pointer"
+              role="button"
+              onClick={() => onViewDetails(action)}
+              style={{ cursor: 'pointer' }}
+            >
+              {action.title || 'Untitled Action'}
+            </div>
+            <p className="text-muted small mb-1 text-truncate" style={{ maxWidth: 320 }}>
+              {action.description || 'No description provided'}
+            </p>
+            <div className="d-flex flex-wrap gap-1">
+              <SourceBadge source={action.source} />
+              {action.metadata?.sentiment && (
+                <SentimentBadge sentiment={action.metadata.sentiment} />
+              )}
+              {isOverdue && <Badge bg="danger" pill className="small">Overdue</Badge>}
+            </div>
+          </div>
+        </div>
+      </td>
+
+      {/* Priority */}
+      <td className="align-middle">
+        <PriorityBadge priority={action.priority} />
+      </td>
+
+      {/* Status */}
+      <td className="align-middle">
+        <StatusBadge status={action.status} />
+      </td>
+
+      {/* Assignee */}
+      <td className="align-middle">
+        <div className="d-flex align-items-center gap-1 small">
+          <MdPerson size={16} className="text-muted" />
+          <span className="text-truncate" style={{ maxWidth: 120 }}>
+            {action.assigneeName || action.assignee?.name || 'Unassigned'}
+          </span>
+        </div>
+      </td>
+
+      {/* Department */}
+      <td className="align-middle">
+        <span className="small text-muted">
+          {action.department || action.category || '—'}
+        </span>
+      </td>
+
+      {/* Due Date */}
+      <td className="align-middle">
+        <span className={`small ${isOverdue ? 'text-danger fw-semibold' : 'text-muted'}`}>
+          {action.dueDate ? formatDate(action.dueDate) : '—'}
+        </span>
+      </td>
+
+      {/* Actions */}
+      <td className="align-middle text-end">
+        <div className="d-flex gap-1 justify-content-end">
+          {action.status === ACTION_STATUSES.PENDING && (
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={() => onStatusChange(action.id, ACTION_STATUSES.IN_PROGRESS)}
+              disabled={isUpdating}
+              title="Start"
+            >
+              {isUpdating ? (
+                <Spinner animation="border" size="sm" />
+              ) : (
+                <MdTimer size={16} />
+              )}
+            </Button>
+          )}
+
+          {action.status === ACTION_STATUSES.IN_PROGRESS && (
+            <Button
+              variant="outline-success"
+              size="sm"
+              onClick={() => onStatusChange(action.id, ACTION_STATUSES.RESOLVED)}
+              disabled={isUpdating}
+              title="Complete"
+            >
+              {isUpdating ? (
+                <Spinner animation="border" size="sm" />
+              ) : (
+                <MdCheckCircle size={16} />
+              )}
+            </Button>
+          )}
+
+          <Button
+            variant="outline-dark"
+            size="sm"
+            onClick={() => onViewDetails(action)}
+            title="View Details"
+          >
+            <MdArrowForward size={16} />
+          </Button>
+
+          {canDelete && (
+            <Button
+              variant="outline-danger"
+              size="sm"
+              onClick={() => onDelete(action)}
+              title="Delete"
+            >
+              <MdDelete size={16} />
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
   );
 };
 
 // ============================================================================
-// 🎛️ Filters Component
+// 📋 Action Table Component
 // ============================================================================
 
-const FiltersBar = ({ filters, setFilters, onClearFilters }) => (
-  <Card className="mb-4">
-    <Card.Body>
-      <Row className="align-items-center">
-        <Col lg={2} md={6} className="mb-2">
+const ActionTable = ({
+  actions,
+  onStatusChange,
+  onViewDetails,
+  onDelete,
+  updatingActionId,
+  canDelete,
+  onGenerateActions,
+  isGenerating,
+  canGenerate
+}) => {
+  if (actions.length === 0) {
+    return (
+      <EmptyState
+        onGenerateActions={onGenerateActions}
+        isGenerating={isGenerating}
+        canGenerate={canGenerate}
+      />
+    );
+  }
+
+  return (
+    <div className="table-responsive">
+      <Table hover className="align-middle mb-0">
+        <thead className="table-light">
+          <tr>
+            <th>Action</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assignee</th>
+            <th>Department</th>
+            <th>Due Date</th>
+            <th className="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {actions.map(action => (
+            <ActionTableRow
+              key={action.id || action._id}
+              action={action}
+              onStatusChange={onStatusChange}
+              onViewDetails={onViewDetails}
+              onDelete={onDelete}
+              isUpdating={updatingActionId === action.id}
+              canDelete={canDelete}
+            />
+          ))}
+        </tbody>
+      </Table>
+    </div>
+  );
+};
+
+// ============================================================================
+// 🎛️ Filters Component (Redesigned)
+// ============================================================================
+
+const FiltersBar = ({ filters, setFilters, onClearFilters, searchTerm, onSearchChange }) => (
+  <Card className="mb-4 border-0 shadow-sm">
+    <Card.Body className="py-3">
+      <Row className="g-2 align-items-center">
+        <Col lg={3} md={6}>
+          <InputGroup size="sm">
+            <InputGroup.Text className="bg-white">
+              <MdFilterList size={16} />
+            </InputGroup.Text>
+            <Form.Control
+              placeholder="Search actions..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+          </InputGroup>
+        </Col>
+
+        <Col lg={2} md={3} sm={6}>
           <Form.Select
             size="sm"
             value={filters.priority}
@@ -364,13 +448,13 @@ const FiltersBar = ({ filters, setFilters, onClearFilters }) => (
             <option value="all">All Priorities</option>
             {Object.values(ACTION_PRIORITIES).map(p => (
               <option key={p} value={p}>
-                {PRIORITY_CONFIG[p]?.label || p} Priority
+                {PRIORITY_CONFIG[p]?.label || p}
               </option>
             ))}
           </Form.Select>
         </Col>
 
-        <Col lg={2} md={6} className="mb-2">
+        <Col lg={2} md={3} sm={6}>
           <Form.Select
             size="sm"
             value={filters.status}
@@ -385,7 +469,7 @@ const FiltersBar = ({ filters, setFilters, onClearFilters }) => (
           </Form.Select>
         </Col>
 
-        <Col lg={2} md={6} className="mb-2">
+        <Col lg={2} md={3} sm={6}>
           <Form.Select
             size="sm"
             value={filters.department}
@@ -398,32 +482,16 @@ const FiltersBar = ({ filters, setFilters, onClearFilters }) => (
           </Form.Select>
         </Col>
 
-        <Col lg={2} md={6} className="mb-2">
-          <Form.Select
-            size="sm"
-            value={filters.dateRange}
-            onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-          >
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-          </Form.Select>
-        </Col>
-
-        <Col lg={4} className="mb-2">
+        <Col lg={3} md={3} sm={6}>
           <div className="d-flex gap-2">
             <Button
-              variant="outline-primary"
+              variant="outline-secondary"
               size="sm"
               onClick={onClearFilters}
+              className="d-flex align-items-center"
             >
-              <MdRefresh className="me-1" />
-              Clear Filters
-            </Button>
-            <Button variant="outline-secondary" size="sm">
-              <MdDownload className="me-1" />
-              Export
+              <MdRefresh size={16} className="me-1" />
+              Reset
             </Button>
           </div>
         </Col>
@@ -431,6 +499,34 @@ const FiltersBar = ({ filters, setFilters, onClearFilters }) => (
     </Card.Body>
   </Card>
 );
+
+// ============================================================================
+// Helper: Compute stats from the actions list as fallback
+// ============================================================================
+
+const computeStatsFromActions = (actions) => {
+  if (!Array.isArray(actions) || actions.length === 0) return { ...DEFAULT_STATS };
+
+  const stats = {
+    total: actions.length,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    overdue: 0,
+    highPriority: 0,
+  };
+
+  actions.forEach((a) => {
+    const status = a.status;
+    if (status === 'pending' || status === 'open') stats.pending++;
+    if (status === 'in-progress') stats.inProgress++;
+    if (status === 'resolved' || status === 'completed') stats.completed++;
+    if (a.isOverdue || isActionOverdue(a)) stats.overdue++;
+    if (a.priority === 'high') stats.highPriority++;
+  });
+
+  return stats;
+};
 
 // ============================================================================
 // 🏠 Main Component
@@ -466,9 +562,9 @@ const ActionManagement = () => {
   const [activeTab, setActiveTab] = useState(ACTION_TABS.ALL);
   const [updatingActionId, setUpdatingActionId] = useState(null);
   const [assigningActionId, setAssigningActionId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Modal States
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
 
@@ -477,11 +573,6 @@ const ActionManagement = () => {
 
   // Stats
   const [stats, setStats] = useState({ ...DEFAULT_STATS });
-
-  // Toast
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastVariant, setToastVariant] = useState('success');
 
   // ============================================================================
   // 📡 Data Fetching
@@ -496,28 +587,41 @@ const ActionManagement = () => {
       }
       setError('');
 
-      // Fetch actions and stats in parallel
-      const [actionsData, statsData] = await Promise.all([
-        listActions({
-          priority: filters.priority,
-          status: filters.status !== 'all' ? filters.status : undefined,
-          assignee: filters.assignee,
-          department: filters.department,
-          dateRange: filters.dateRange,
-          tab: activeTab,
-          page: 1,
-          limit: 50
-        }),
-        getActionStats({ period: '30' })
-      ]);
+      // Fetch actions first (always works for any role)
+      const actionsData = await listActions({
+        priority: filters.priority,
+        status: filters.status !== 'all' ? filters.status : undefined,
+        assignee: filters.assignee,
+        department: filters.department,
+        dateRange: filters.dateRange,
+        tab: activeTab,
+        page: 1,
+        limit: 50
+      });
 
-      setActions(actionsData.actions || []);
-      setStats(statsData || { ...DEFAULT_STATS });
+      const fetchedActions = actionsData.actions || [];
+      setActions(fetchedActions);
+
+      // Try to fetch stats from backend (companyAdmin only endpoint)
+      // Falls back to computing from actions list if the call fails
+      try {
+        const statsData = await getActionStats({ period: '30' });
+        // Validate that stats actually have data — if all zeros but we have actions, prefer computed
+        const backendTotal = statsData?.total || 0;
+        if (backendTotal > 0) {
+          setStats(statsData);
+        } else {
+          // Backend returned empty/zero stats — compute from actions
+          setStats(computeStatsFromActions(fetchedActions));
+        }
+      } catch (statsErr) {
+        console.warn('Stats endpoint failed, computing from actions list:', statsErr.message);
+        setStats(computeStatsFromActions(fetchedActions));
+      }
+
     } catch (err) {
       console.error('Error fetching actions:', err);
       setError(err.response?.data?.message || err.message || 'Failed to load actions');
-
-      // Keep previous stats on error
       setStats(prev => prev.total > 0 ? prev : { ...DEFAULT_STATS });
     } finally {
       setLoading(false);
@@ -534,21 +638,39 @@ const ActionManagement = () => {
   }, [fetchData]);
 
   // ============================================================================
-  // 🔄 Filter actions based on active tab
+  // 🔄 Filter actions based on active tab + search
   // ============================================================================
 
   const filteredActions = useMemo(() => {
     if (!Array.isArray(actions)) return [];
 
+    let result = actions;
+
+    // Tab filtering
     switch (activeTab) {
       case ACTION_TABS.HIGH_PRIORITY:
-        return actions.filter(a => a.priority === ACTION_PRIORITIES.HIGH);
+        result = result.filter(a => a.priority === ACTION_PRIORITIES.HIGH);
+        break;
       case ACTION_TABS.OVERDUE:
-        return actions.filter(a => a.isOverdue || isActionOverdue(a));
+        result = result.filter(a => a.isOverdue || isActionOverdue(a));
+        break;
       default:
-        return actions;
+        break;
     }
-  }, [actions, activeTab]);
+
+    // Search filtering (client-side text search)
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(a =>
+        (a.title || '').toLowerCase().includes(term) ||
+        (a.description || '').toLowerCase().includes(term) ||
+        (a.assigneeName || '').toLowerCase().includes(term) ||
+        (a.department || '').toLowerCase().includes(term)
+      );
+    }
+
+    return result;
+  }, [actions, activeTab, searchTerm]);
 
   // ============================================================================
   // 🎯 Action Handlers with Optimistic Updates
@@ -565,16 +687,17 @@ const ActionManagement = () => {
 
     try {
       await updateAction(actionId, { status: newStatus });
-      showSuccessToast(`Action ${newStatus === ACTION_STATUSES.RESOLVED ? 'completed' : 'started'} successfully!`);
+      toast.success(`Action ${newStatus === ACTION_STATUSES.RESOLVED ? 'completed' : 'started'} successfully!`);
 
-      // Refresh stats after status change
-      const statsData = await getActionStats({ period: '30' });
-      setStats(statsData || stats);
+      // Recompute stats from updated actions
+      const updated = previousActions.map(a =>
+        a.id === actionId ? { ...a, status: newStatus } : a
+      );
+      setStats(computeStatsFromActions(updated));
     } catch (error) {
       console.error('Error updating action status:', error);
-      // Revert optimistic update
       setActions(previousActions);
-      showErrorToast(error.response?.data?.message || 'Failed to update action status');
+      toast.error(error.response?.data?.message || 'Failed to update action status');
     } finally {
       setUpdatingActionId(null);
     }
@@ -596,36 +719,36 @@ const ActionManagement = () => {
 
     // Optimistic update
     const previousActions = [...actions];
-    setActions(prev => prev.filter(a => a.id !== action.id));
+    const updatedActions = actions.filter(a => a.id !== action.id);
+    setActions(updatedActions);
+    setStats(computeStatsFromActions(updatedActions));
 
     try {
       await deleteAction(action.id);
-      showSuccessToast('Action deleted successfully!');
-
-      // Refresh stats after delete
-      const statsData = await getActionStats({ period: '30' });
-      setStats(statsData || stats);
+      toast.success('Action deleted successfully!');
     } catch (error) {
       console.error('Error deleting action:', error);
-      // Revert optimistic update
       setActions(previousActions);
-      showErrorToast(error.response?.data?.message || 'Failed to delete action');
+      setStats(computeStatsFromActions(previousActions));
+      toast.error(error.response?.data?.message || 'Failed to delete action');
     }
   };
 
+  // ==========================================
+  // Navigate to ActionDetailPage (instead of modal)
+  // ==========================================
   const handleViewDetails = (action) => {
-    setSelectedAction(action);
-    setShowDetailModal(true);
+    const actionId = action.id || action._id;
+    navigate(`/app/actions/${actionId}`);
   };
 
   const handleAssignToMe = async (actionId) => {
     setAssigningActionId(actionId);
 
     try {
-      // Get current user ID from localStorage or auth context
       const userDataStr = localStorage.getItem('userData');
       if (!userDataStr) {
-        showErrorToast('Please log in to assign actions');
+        toast.error('Please log in to assign actions');
         return;
       }
 
@@ -633,14 +756,12 @@ const ActionManagement = () => {
       const currentUserId = userData._id || userData.id;
 
       if (!currentUserId) {
-        showErrorToast('Unable to get user ID');
+        toast.error('Unable to get user ID');
         return;
       }
 
-      // Call assign API
       await assignAction(actionId, { assignedTo: currentUserId });
 
-      // Optimistic update
       setActions(prev => prev.map(a =>
         a.id === actionId ? {
           ...a,
@@ -649,7 +770,6 @@ const ActionManagement = () => {
         } : a
       ));
 
-      // Update selected action if modal is open
       if (selectedAction && selectedAction.id === actionId) {
         setSelectedAction(prev => ({
           ...prev,
@@ -658,10 +778,10 @@ const ActionManagement = () => {
         }));
       }
 
-      showSuccessToast('Action assigned to you successfully!');
+      toast.success('Action assigned to you successfully!');
     } catch (error) {
       console.error('Error assigning action:', error);
-      showErrorToast(error.response?.data?.message || 'Failed to assign action');
+      toast.error(error.response?.data?.message || 'Failed to assign action');
     } finally {
       setAssigningActionId(null);
     }
@@ -671,33 +791,18 @@ const ActionManagement = () => {
     setRefreshing(true);
     try {
       await generateActionsFromFeedback({});
-      showSuccessToast('AI actions generated successfully!');
+      toast.success('AI actions generated successfully!');
       handleRefresh();
     } catch (error) {
       console.error('Error generating AI actions:', error);
-      showErrorToast(error.response?.data?.message || 'Failed to generate AI actions');
+      toast.error(error.response?.data?.message || 'Failed to generate AI actions');
       setRefreshing(false);
     }
   };
 
   const handleClearFilters = () => {
     setFilters({ ...DEFAULT_FILTERS });
-  };
-
-  // ============================================================================
-  // 🍞 Toast Functions
-  // ============================================================================
-
-  const showSuccessToast = (message) => {
-    setToastMessage(message);
-    setToastVariant('success');
-    setShowToast(true);
-  };
-
-  const showErrorToast = (message) => {
-    setToastMessage(message);
-    setToastVariant('danger');
-    setShowToast(true);
+    setSearchTerm('');
   };
 
   // ============================================================================
@@ -706,9 +811,9 @@ const ActionManagement = () => {
 
   if (loading) {
     return (
-      <Container fluid className="py-4">
+      <Container fluid className="py-5">
         <div className="text-center">
-          <Spinner animation="border" variant="primary" size="lg" />
+          <Spinner animation="border" variant="primary" />
           <p className="mt-3 text-muted">Loading action items...</p>
         </div>
       </Container>
@@ -720,53 +825,47 @@ const ActionManagement = () => {
   // ============================================================================
 
   return (
-    <Container fluid className="py-4">
-      {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="action-header shadow-sm">
-            <Card.Body className="p-4">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <div className="d-flex align-items-center mb-2">
-                    <MdAssignment className="me-3 text-primary" size={32} />
-                    <div>
-                      <h1 className="h3 mb-1 fw-bold">Action Management</h1>
-                      <p className="text-muted mb-0">AI-generated action items from survey feedback</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <Button
-                    variant="outline-primary"
-                    onClick={handleRefresh}
-                    disabled={refreshing}
-                  >
-                    {refreshing ? (
-                      <Spinner animation="border" size="sm" className="me-2" />
-                    ) : (
-                      <MdRefresh className="me-2" />
-                    )}
-                    {refreshing ? 'Refreshing...' : 'Refresh'}
-                  </Button>
-                  {/* Only CompanyAdmin can generate AI actions */}
-                  {isCompanyAdmin && (
-                    <Button
-                      variant="success"
-                      onClick={handleGenerateActions}
-                      disabled={refreshing}
-                    >
-                      <MdInsights className="me-2" />
-                      Generate AI Actions
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+    <Container fluid className="py-4 px-lg-4">
+      {/* Page Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="fw-bold mb-1 d-flex align-items-center gap-2">
+            <MdAssignment size={28} className="text-primary" />
+            Action Management
+          </h2>
+          <p className="text-muted mb-0 small">
+            Track and manage action items from survey feedback
+          </p>
+        </div>
+        <div className="d-flex gap-2">
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="d-flex align-items-center"
+          >
+            {refreshing ? (
+              <Spinner animation="border" size="sm" className="me-1" />
+            ) : (
+              <MdRefresh size={18} className="me-1" />
+            )}
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          {isCompanyAdmin && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleGenerateActions}
+              disabled={refreshing}
+              className="d-flex align-items-center"
+            >
+              <MdInsights size={18} className="me-1" />
+              Generate AI Actions
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Error State */}
       {error && <ErrorState error={error} onRetry={handleRefresh} />}
@@ -774,113 +873,65 @@ const ActionManagement = () => {
       {/* Stats Cards */}
       <StatsCards stats={stats} />
 
-      {/* Filters */}
+      {/* Filters Bar */}
       <FiltersBar
         filters={filters}
         setFilters={setFilters}
         onClearFilters={handleClearFilters}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
       />
 
-      {/* Action Items */}
-      <Row>
-        <Col>
-          <Card>
-            <Card.Body className="p-0">
-              <Tabs
-                activeKey={activeTab}
-                onSelect={(k) => setActiveTab(k)}
-                className="action-tabs"
-              >
-                <Tab eventKey={ACTION_TABS.ALL} title={
-                  <span><MdAssignment className="me-2" />All Actions ({stats.total})</span>
-                }>
-                  <div className="p-4">
-                    {filteredActions.length > 0 ? (
-                      <div className="actions-list">
-                        {filteredActions.map(action => (
-                          <ActionCard
-                            key={action.id || action._id}
-                            action={action}
-                            onStatusChange={handleStatusChange}
-                            onViewDetails={handleViewDetails}
-                            onDelete={handleDeleteAction}
-                            isUpdating={updatingActionId === action.id}
-                            canDelete={isCompanyAdmin}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState
-                        onGenerateActions={handleGenerateActions}
-                        isGenerating={refreshing}
-                        canGenerate={isCompanyAdmin}
-                      />
-                    )}
-                  </div>
-                </Tab>
+      {/* Tab Content */}
+      <Card className="border-0 shadow-sm">
+        <Card.Header className="bg-white border-bottom py-0">
+          <Tabs
+            activeKey={activeTab}
+            onSelect={(k) => setActiveTab(k)}
+            className="border-0"
+          >
+            <Tab eventKey={ACTION_TABS.ALL} title={
+              <span className="d-flex align-items-center gap-1">
+                <MdAssignment size={16} />
+                All <Badge bg="secondary" pill className="ms-1">{stats.total}</Badge>
+              </span>
+            } />
+            <Tab eventKey={ACTION_TABS.HIGH_PRIORITY} title={
+              <span className="d-flex align-items-center gap-1">
+                <MdPriorityHigh size={16} />
+                High Priority <Badge bg="danger" pill className="ms-1">{stats.highPriority}</Badge>
+              </span>
+            } />
+            <Tab eventKey={ACTION_TABS.OVERDUE} title={
+              <span className="d-flex align-items-center gap-1">
+                <MdAssignmentLate size={16} />
+                Overdue <Badge bg="warning" text="dark" pill className="ms-1">{stats.overdue}</Badge>
+              </span>
+            } />
+          </Tabs>
+        </Card.Header>
+        <Card.Body className="p-0">
+          <ActionTable
+            actions={filteredActions}
+            onStatusChange={handleStatusChange}
+            onViewDetails={handleViewDetails}
+            onDelete={handleDeleteAction}
+            updatingActionId={updatingActionId}
+            canDelete={isCompanyAdmin}
+            onGenerateActions={handleGenerateActions}
+            isGenerating={refreshing}
+            canGenerate={isCompanyAdmin}
+          />
+        </Card.Body>
+        {/* Results count footer */}
+        {filteredActions.length > 0 && (
+          <Card.Footer className="bg-white text-muted small py-2">
+            Showing {filteredActions.length} of {stats.total} actions
+          </Card.Footer>
+        )}
+      </Card>
 
-                <Tab eventKey={ACTION_TABS.HIGH_PRIORITY} title={
-                  <span><MdPriorityHigh className="me-2" />High Priority ({stats.highPriority})</span>
-                }>
-                  <div className="p-4">
-                    {filteredActions.length > 0 ? (
-                      <div className="actions-list">
-                        {filteredActions.map(action => (
-                          <ActionCard
-                            key={action.id || action._id}
-                            action={action}
-                            onStatusChange={handleStatusChange}
-                            onViewDetails={handleViewDetails}
-                            onDelete={handleDeleteAction}
-                            isUpdating={updatingActionId === action.id}
-                            canDelete={isCompanyAdmin}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-5">
-                        <MdPriorityHigh size={64} className="text-muted mb-3" />
-                        <h5>No High Priority Actions</h5>
-                        <p className="text-muted">Great! There are no high priority actions at the moment.</p>
-                      </div>
-                    )}
-                  </div>
-                </Tab>
-
-                <Tab eventKey={ACTION_TABS.OVERDUE} title={
-                  <span><MdAssignmentLate className="me-2" />Overdue ({stats.overdue})</span>
-                }>
-                  <div className="p-4">
-                    {filteredActions.length > 0 ? (
-                      <div className="actions-list">
-                        {filteredActions.map(action => (
-                          <ActionCard
-                            key={action.id || action._id}
-                            action={action}
-                            onStatusChange={handleStatusChange}
-                            onViewDetails={handleViewDetails}
-                            onDelete={handleDeleteAction}
-                            isUpdating={updatingActionId === action.id}
-                            canDelete={isCompanyAdmin}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-5">
-                        <MdCheckCircle size={64} className="text-success mb-3" />
-                        <h5>No Overdue Actions</h5>
-                        <p className="text-muted">Excellent! All actions are on track.</p>
-                      </div>
-                    )}
-                  </div>
-                </Tab>
-              </Tabs>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Detail Modal */}
+      {/* Detail Modal - keeping for quick preview but primary flow is navigate */}
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Action Details</Modal.Title>
@@ -916,7 +967,6 @@ const ActionManagement = () => {
                   </Badge>
                 </Col>
                 <Col md={6}>
-                  {/* Assign to Me - Only show if user can assign (CompanyAdmin or actionManager with permission) */}
                   {(isCompanyAdmin || canAssignAction(selectedAction)) && (
                     <Button
                       variant="outline-primary"
@@ -935,7 +985,6 @@ const ActionManagement = () => {
                 </Col>
               </Row>
 
-              {/* Assignment History Timeline */}
               {selectedAction.assignmentHistory && selectedAction.assignmentHistory.length > 0 && (
                 <>
                   <hr />
@@ -943,7 +992,6 @@ const ActionManagement = () => {
                 </>
               )}
 
-              {/* Action Source Context (Read-Only) */}
               <hr />
               <h6>Action Source</h6>
               <Row>
@@ -958,12 +1006,6 @@ const ActionManagement = () => {
                       <code className="small">{selectedAction.metadata.surveyId}</code>
                     </p>
                   )}
-                  {selectedAction.metadata?.responseId && (
-                    <p className="mb-2">
-                      <strong>Response ID:</strong>{' '}
-                      <code className="small">{selectedAction.metadata.responseId}</code>
-                    </p>
-                  )}
                 </Col>
                 <Col md={6}>
                   {selectedAction.metadata?.sentiment && (
@@ -972,43 +1014,29 @@ const ActionManagement = () => {
                       <SentimentBadge sentiment={selectedAction.metadata.sentiment} />
                     </p>
                   )}
-                  {selectedAction.metadata?.urgency && (
-                    <p className="mb-2">
-                      <strong>Urgency:</strong>{' '}
-                      <Badge bg="light" text="dark" className="text-capitalize">
-                        {selectedAction.metadata.urgency}
-                      </Badge>
-                    </p>
-                  )}
                 </Col>
               </Row>
-              <p className="text-muted small mb-0">
-                <em>Analysis context is read-only and cannot be modified.</em>
-              </p>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
+          {selectedAction && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowDetailModal(false);
+                handleViewDetails(selectedAction);
+              }}
+            >
+              <MdOpenInNew className="me-1" />
+              Open Full View
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
             Close
           </Button>
         </Modal.Footer>
       </Modal>
-
-      {/* Toast Notifications */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-          bg={toastVariant}
-        >
-          <Toast.Body className="text-white">
-            {toastMessage}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
     </Container>
   );
 };
