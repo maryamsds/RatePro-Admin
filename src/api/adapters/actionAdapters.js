@@ -170,6 +170,17 @@ export const transformAction = (action) => {
 
         // Tags
         tags: Array.isArray(action.tags) ? action.tags : [],
+
+        // Detail-page fields (passthrough — may be present on AI-generated or enriched actions)
+        problemStatement: action.problemStatement || null,
+        rootCause: action.rootCause || null,
+        trendData: action.trendData || null,
+        evidence: action.evidence || null,
+        priorityReason: action.priorityReason || null,
+        urgencyReason: action.urgencyReason || null,
+
+        // Raw assignedTo object (detail page uses .name / .email directly)
+        assignedTo: assignee && typeof assignee === 'object' ? assignee : null,
     };
 };
 

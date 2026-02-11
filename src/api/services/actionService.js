@@ -79,12 +79,15 @@ export const listActions = async (params = {}) => {
 
 /**
  * Get action by ID
+ * Backend returns: { success: true, data: action }
  * @param {string} actionId
  * @returns {Promise<Object>}
  */
 export const getActionById = async (actionId) => {
   const response = await axiosInstance.get(`/actions/${actionId}`);
-  return transformAction(response.data.action || response.data);
+  // Backend shape: { success: true, data: <action document> }
+  const raw = response.data?.data || response.data?.action || response.data;
+  return transformAction(raw);
 };
 
 /**
@@ -289,15 +292,31 @@ const transformFeedbackAnalysis = (data) => {
 
 /**
  * Get action plan for an action
+ * Returns { actionPlan, steps } or { actionPlan: null, steps: [] }
+ * Never throws for missing plans — handles both 200+null and legacy 404
  * @param {string} actionId
- * @returns {Promise<Object|null>}
+ * @returns {Promise<Object>}
  */
 export const getActionPlan = async (actionId) => {
   try {
     const response = await axiosInstance.get(`/actions/${actionId}/plan`);
-    return response.data?.data || response.data;
+    const data = response.data?.data || response.data;
+
+    // Backend now returns 200 with { actionPlan: null } when no plan exists
+    if (!data || data.actionPlan === null) {
+      return { actionPlan: null, steps: [] };
+    }
+
+    // Normalize: ensure consistent shape
+    return {
+      actionPlan: data.actionPlan || data,
+      steps: data.steps || [],
+    };
   } catch (error) {
-    if (error.response?.status === 404) return null;
+    // Backward compatibility: handle legacy 404 from older backend versions
+    if (error.response?.status === 404) {
+      return { actionPlan: null, steps: [] };
+    }
     throw error;
   }
 };

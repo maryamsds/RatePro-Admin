@@ -599,6 +599,8 @@ const ActionManagement = () => {
         limit: 50
       });
 
+      console.log(actionsData)
+
       const fetchedActions = actionsData.actions || [];
       setActions(fetchedActions);
 

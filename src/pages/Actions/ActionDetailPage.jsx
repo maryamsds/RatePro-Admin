@@ -288,26 +288,30 @@ const ActionDetailPage = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [error, setError] = useState(null);
 
-    // Fetch action and plan data
+    // Fetch action and plan data (independently)
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
 
+            // Step 1: Fetch the action itself — this is required
             const actionData = await getActionById(actionId);
             setAction(actionData);
 
+            // Step 2: Fetch plan — independent call, never blocks action display
+            // getActionPlan always returns { actionPlan, steps } — never throws for missing plans
             try {
-                const planData = await getActionPlan(actionId);
-                if (planData) {
-                    setPlan(planData.actionPlan || planData);
-                    setSteps(planData.steps || []);
-                }
+                const { actionPlan, steps: planSteps } = await getActionPlan(actionId);
+                setPlan(actionPlan);       // null if no plan exists (legacy actions)
+                setSteps(planSteps || []);
             } catch (planErr) {
-                // No plan exists yet — that's expected
-                console.log("No action plan found:", planErr.message);
+                // Defensive: should never reach here, but if it does, don't block the page
+                console.warn("Plan fetch failed (non-critical):", planErr.message);
+                setPlan(null);
+                setSteps([]);
             }
         } catch (err) {
+            // Only reaches here if getActionById fails — that IS a real error
             console.error("Failed to fetch action:", err);
             setError(err.message || "Failed to load action");
         } finally {
