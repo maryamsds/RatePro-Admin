@@ -26,12 +26,12 @@ import {
   ArcElement,
 } from 'chart.js';
 import {
-  getTenantSummary,
-  getQuickSummary,
   getAllTrends,
-  getAlerts,
-  getFlaggedResponses
 } from '../../api/services/analyticsService';
+import {
+  getExecutiveDashboard,
+  getOperationalDashboard
+} from '../../api/services/dashboardService';
 
 
 // Register Chart.js components
@@ -53,7 +53,6 @@ const AnalyticsDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     executive: {},
     operational: {},
-    aiInsights: {},
     trends: {},
     alerts: []
   });
@@ -72,229 +71,47 @@ const AnalyticsDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch multiple analytics endpoints using new API services
-      const [tenantSummaryRes, quickSummaryRes, trendsRes, alertsRes, flaggedRes] = await Promise.allSettled([
-        getTenantSummary({ range: dateRange }),
-        getQuickSummary(),
-        getAllTrends({ range: dateRange }),
-        getAlerts(),
-        getFlaggedResponses({ range: dateRange, limit: 10 })
+      // Fetch 3 dedicated analytics endpoints
+      const [executiveRes, operationalRes, trendsRes] = await Promise.allSettled([
+        getExecutiveDashboard({ range: dateRange }),
+        getOperationalDashboard({ range: dateRange }),
+        getAllTrends({ range: dateRange })
       ]);
 
-      // Process results - show empty states instead of mock data
-      const tenantData = tenantSummaryRes.status === 'fulfilled' ? tenantSummaryRes.value : null;
-      const quickData = quickSummaryRes.status === 'fulfilled' ? quickSummaryRes.value : {};
+      // Process results — use backend response directly, no reconstruction
+      const executiveData = executiveRes.status === 'fulfilled' ? executiveRes.value : null;
+      const operationalData = operationalRes.status === 'fulfilled' ? operationalRes.value : {};
       const trendsData = trendsRes.status === 'fulfilled' ? trendsRes.value : { satisfactionTrend: [], volumeTrend: [] };
-      const alertsData = alertsRes.status === 'fulfilled' ? alertsRes.value : [];
-      const flaggedData = flaggedRes.status === 'fulfilled' ? flaggedRes.value : { responses: [] };
 
-      // DEBUG: Log raw API responses
-      console.log('[AnalyticsDashboard] Raw API Responses:');
-      console.log('  tenantSummary:', tenantSummaryRes.status, tenantData);
-      console.log('  quickSummary:', quickSummaryRes.status, quickData);
-      console.log('  trends:', trendsRes.status, trendsData);
-      console.log('  alerts:', alertsRes.status, alertsData);
-      console.log('  flagged:', flaggedRes.status, flaggedData);
+      console.log('[AnalyticsDashboard] API Responses:', {
+        executive: executiveRes.status,
+        operational: operationalRes.status,
+        trends: trendsRes.status
+      });
 
-      // If tenant data failed, show error state
-      if (!tenantData) {
+      if (!executiveData) {
         setError('Failed to load dashboard data');
         setLoading(false);
         return;
       }
 
-      // Build executive data from tenant summary - using transformed data structure
-      const executiveData = {
-        customerSatisfactionIndex: {
-          overall: tenantData.overallSatisfaction || tenantData.sentiment?.avgRating || 0,
-          trend: tenantData.comparison?.ratingChange || 0,
-          locations: [],  // Not available in current API
-          services: []    // Not available in current API
-        },
-        npsScore: {
-          current: tenantData.overallNPS || 0,
-          trend: tenantData.comparison?.responseChange || 0,
-          promoters: 0,   // Need separate NPS breakdown API
-          detractors: 0,
-          passives: 0
-        },
-        responseRate: {
-          // Calculate response rate: if we have responses, show as percentage of active surveys
-          current: tenantData.totalResponses > 0 && tenantData.activeSurveys > 0
-            ? Math.round((tenantData.totalResponses / tenantData.activeSurveys) * 10)
-            : quickData.completionRateToday || 0,
-          trend: quickData.responsesChange || 0,
-          total: tenantData.totalResponses || 0,
-          completed: tenantData.totalResponses || 0
-        },
-        ...tenantData
-      };
-
-      // Build operational data
-      const operationalData = {
-        alerts: {
-          critical: alertsData.filter(a => a.type === 'critical').length,
-          warning: alertsData.filter(a => a.type === 'warning').length,
-          info: alertsData.filter(a => a.type === 'info').length
-        },
-        slaMetrics: {
-          averageResponseTime: 'N/A',
-          onTimeResolution: 0,
-          overdueActions: tenantData.actions?.overdue || 0
-        },
-        topComplaints: flaggedData.summary?.byReason || [],
-        topPraises: [],
-        quickStats: quickData
-      };
-
       setDashboardData({
         executive: executiveData,
         operational: operationalData,
         trends: trendsData,
-        alerts: alertsData || [],
-        aiInsights: null  // AI insights not implemented - removed mock data
+        alerts: operationalData.alerts ? [
+          ...(operationalData.alerts.critical > 0 ? [{ id: 'critical', type: 'critical', title: 'Critical Alerts', message: `${operationalData.alerts.critical} critical issues require attention`, timestamp: new Date(), action: 'Review high-priority actions' }] : []),
+          ...(operationalData.alerts.warning > 0 ? [{ id: 'warning', type: 'warning', title: 'Warnings', message: `${operationalData.alerts.warning} warnings detected`, timestamp: new Date(), action: 'Monitor and address' }] : []),
+          ...(operationalData.alerts.info > 0 ? [{ id: 'info', type: 'info', title: 'Information', message: `${operationalData.alerts.info} informational items`, timestamp: new Date(), action: 'Review when available' }] : [])
+        ] : []
       });
 
     } catch (error) {
       console.error('Dashboard data fetch error:', error);
-      // Show error state instead of mock data
       setError('Failed to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  // Mock data generators (for development/fallback)
-  const getMockExecutiveData = () => ({
-    customerSatisfactionIndex: {
-      overall: 4.2,
-      trend: 0.3,
-      locations: [
-        { name: 'Riyadh Office', score: 4.5, responses: 156 },
-        { name: 'Jeddah Branch', score: 4.1, responses: 98 },
-        { name: 'Dammam Center', score: 3.9, responses: 78 }
-      ],
-      services: [
-        { name: 'Customer Service', score: 4.4, responses: 245 },
-        { name: 'Product Quality', score: 4.2, responses: 189 },
-        { name: 'Delivery', score: 3.8, responses: 167 }
-      ]
-    },
-    npsScore: {
-      current: 42,
-      trend: 5,
-      promoters: 156,
-      detractors: 34,
-      passives: 98
-    },
-    responseRate: {
-      current: 68,
-      trend: -2,
-      total: 1245,
-      completed: 847
-    }
-  });
-
-  const getMockOperationalData = () => ({
-    alerts: {
-      critical: 3,
-      warning: 12,
-      info: 8
-    },
-    slaMetrics: {
-      averageResponseTime: '2.4 hours',
-      onTimeResolution: 87,
-      overdueActions: 15
-    },
-    topComplaints: [
-      { category: 'Service Speed', count: 45, trend: 'up' },
-      { category: 'Staff Behavior', count: 32, trend: 'down' },
-      { category: 'Product Quality', count: 28, trend: 'stable' },
-      { category: 'Pricing', count: 19, trend: 'up' },
-      { category: 'Facilities', count: 15, trend: 'down' }
-    ],
-    topPraises: [
-      { category: 'Friendly Staff', count: 89, trend: 'up' },
-      { category: 'Quick Service', count: 67, trend: 'stable' },
-      { category: 'Clean Environment', count: 54, trend: 'up' },
-      { category: 'Good Value', count: 43, trend: 'down' },
-      { category: 'Product Quality', count: 38, trend: 'up' }
-    ]
-  });
-
-  const getMockTrendsData = () => ({
-    satisfactionTrend: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      values: [4.1, 4.0, 4.2, 4.3, 4.1, 4.2]
-    },
-    volumeTrend: {
-      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-      surveys: [156, 189, 234, 198],
-      responses: [142, 167, 201, 178]
-    }
-  });
-
-  const getMockAlertsData = () => ({
-    alerts: [
-      {
-        id: 1,
-        type: 'critical',
-        title: 'NPS Drop Detected',
-        message: 'Customer satisfaction in Jeddah branch dropped 15% this week',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        action: 'Investigate service quality issues'
-      },
-      {
-        id: 2,
-        type: 'warning',
-        title: 'Response Rate Low',
-        message: 'Survey completion rate fell below 70% threshold',
-        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-        action: 'Review survey length and incentives'
-      },
-      {
-        id: 3,
-        type: 'info',
-        title: 'Peak Response Time',
-        message: 'Highest survey responses recorded between 2-4 PM',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        action: 'Optimize survey distribution timing'
-      }
-    ]
-  });
-
-  const getMockAIInsights = () => ({
-    predictions: [
-      {
-        metric: 'Customer Satisfaction',
-        prediction: 'If current service speed issues continue, NPS may drop by 12% in next month',
-        confidence: 85,
-        recommendation: 'Implement staff training program for faster service delivery'
-      },
-      {
-        metric: 'Response Rate',
-        prediction: 'Survey completion rate likely to improve with shorter questionnaires',
-        confidence: 72,
-        recommendation: 'Reduce average survey length from 8 to 6 questions'
-      }
-    ],
-    sentimentHeatmap: {
-      regions: [
-        { name: 'Riyadh', sentiment: 0.7, color: '#28a745' },
-        { name: 'Jeddah', sentiment: 0.4, color: '#ffc107' },
-        { name: 'Dammam', sentiment: 0.2, color: '#dc3545' }
-      ]
-    },
-    suggestedActions: [
-      'Focus on service speed improvement in Jeddah branch',
-      'Implement recognition program for friendly staff',
-      'Review pricing strategy based on customer feedback'
-    ]
-  });
-
-  const generateAIInsights = async (executive, operational) => {
-    // In production, this would call the AI insights API
-    return getMockAIInsights();
   };
 
   // Chart configurations
@@ -627,74 +444,7 @@ const AnalyticsDashboard = () => {
         </div>
       </div>
 
-      {/* AI Insights Report */}
-      <div className="ai-insights-section">
-        <div className="section-card">
-          <div className="section-header">
-            <div className="section-icon">
-              <MdInsights />
-            </div>
-            <h2 className="section-title">AI Insights Report - Predictive Analysis</h2>
-          </div>
-
-          <div className="insights-grid">
-            <div className="insights-main">
-              <div className="insights-header">
-                <div className="insights-icon">
-                  <MdBarChart />
-                </div>
-                <h3 className="insights-title">Predictive Insights</h3>
-              </div>
-              <div className="predictions-list">
-                {dashboardData.aiInsights?.predictions?.map((prediction, idx) => (
-                  <div key={idx} className={`prediction-card ${idx === 0 ? 'prediction-warning' : 'prediction-info'}`}>
-                    <div className="prediction-content">
-                      <div className="prediction-main">
-                        <h4 className="prediction-metric">{prediction.metric}</h4>
-                        <p className="prediction-text">{prediction.prediction}</p>
-                        <div className="prediction-recommendation">
-                          <MdInsights className="recommendation-icon" />
-                          <span className="recommendation-text">{prediction.recommendation}</span>
-                        </div>
-                      </div>
-                      <div className="prediction-confidence">
-                        <span className="confidence-badge">
-                          {prediction.confidence}% confidence
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="insights-sidebar">
-              <div className="sentiment-section">
-                <div className="sentiment-header">
-                  <div className="sentiment-icon">
-                    <MdLocationOn />
-                  </div>
-                  <h3 className="sentiment-title">Sentiment Heatmap</h3>
-                </div>
-                <div className="sentiment-regions">
-                  {dashboardData.aiInsights?.sentimentHeatmap?.regions?.map((region, idx) => (
-                    <div key={idx} className="sentiment-region">
-                      <span className="region-name">{region.name}</span>
-                      <div className="region-sentiment">
-                        <div
-                          className="sentiment-indicator"
-                          style={{ backgroundColor: region.color }}
-                        />
-                        <span className="sentiment-score">{Math.round(region.sentiment * 100)}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* AI Insights Section removed — was running entirely on mock data */}
 
       {/* Recent Alerts */}
       <div className="alerts-section">

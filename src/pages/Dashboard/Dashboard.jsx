@@ -183,11 +183,11 @@ const Dashboard = ({ darkMode }) => {
           data: trendDataValues,
         });
       } else {
-        console.warn("⚠️ No satisfaction trend data available, using fallback");
-        // Generate placeholder trend
+        console.warn("⚠️ No satisfaction trend data available");
+        // No fallback — show empty trend
         setTrendData({
-          labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-          data: [50, 55, 60, mappedStats.satisfactionIndex || 0],
+          labels: [],
+          data: [],
         });
       }
 
