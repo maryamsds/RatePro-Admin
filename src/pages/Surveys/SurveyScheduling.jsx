@@ -3,7 +3,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Form, Button, Table, Badge, Modal, Spinner, ProgressBar } from "react-bootstrap"
 import { MdSchedule, MdAdd, MdEdit, MdDelete, MdPlayArrow as MdPlay, MdPause, MdFilterList, MdViewList, MdViewModule, MdAccessTime, MdPeople, MdTrendingUp } from "react-icons/md"
 import { FaCalendarAlt, FaClock, FaUsers, FaChartLine } from "react-icons/fa"
 import Pagination from "../../components/Pagination/Pagination.jsx"
@@ -176,36 +175,33 @@ const SurveyScheduling = ({ darkMode }) => {
     switch (schedule.status) {
       case "scheduled":
         return (
-          <Button
-            variant="outline-success"
-            size="sm"
+          <button
+            className="p-1.5 rounded-lg text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
             onClick={() => handleStatusChange(schedule.id, "active")}
             title="Start Now"
           >
             <MdPlay />
-          </Button>
+          </button>
         )
       case "active":
         return (
-          <Button
-            variant="outline-warning"
-            size="sm"
+          <button
+            className="p-1.5 rounded-lg text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
             onClick={() => handleStatusChange(schedule.id, "paused")}
             title="Pause"
           >
             <MdPause />
-          </Button>
+          </button>
         )
       case "paused":
         return (
-          <Button
-            variant="outline-success"
-            size="sm"
+          <button
+            className="p-1.5 rounded-lg text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
             onClick={() => handleStatusChange(schedule.id, "active")}
             title="Resume"
           >
             <MdPlay />
-          </Button>
+          </button>
         )
       default:
         return null
@@ -218,18 +214,16 @@ const SurveyScheduling = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <Container fluid className="py-4">
+      <div className="py-4 px-4">
         <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
+          <span className="inline-block w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-3" />
           <p>Loading scheduled surveys...</p>
         </div>
-      </Container>
+      </div>
     )
   }
- 
-  
+
+
 
   // Get stats for dashboard
   const getStats = () => {
@@ -245,12 +239,12 @@ const SurveyScheduling = ({ darkMode }) => {
 
   return (
     <div className="survey-scheduling-container">
-      <Container fluid>
+      <div className="px-4 py-2">
         {/* Header Section */}
         <div className="scheduling-header">
-          <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
+          <div className="flex align-items-center justify-content-between flex-wrap mb-3">
             <div className="header-content">
-              <div className="d-flex align-items-center mb-2">
+              <div className="flex align-items-center mb-2">
                 <MdSchedule className="me-2" style={{ color: 'var(--primary-color, #1fdae4)' }} size={28} />
                 <h1 className="h4 mb-0 fw-bold">Survey Scheduling</h1>
               </div>
@@ -258,18 +252,16 @@ const SurveyScheduling = ({ darkMode }) => {
                 Schedule and manage automated survey campaigns
               </p>
             </div>
-            <Button 
-              variant="primary" 
-              className="schedule-btn"
+            <button
+              className="schedule-btn inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all"
               onClick={handleCreateSchedule}
-              size="sm"
             >
               <MdAdd className="me-1 me-sm-2" size={16} />
               <span className="d-none d-sm-inline">Schedule Survey</span>
               <span className="d-sm-none">Schedule</span>
-            </Button>
+            </button>
           </div>
-          
+
           {/* Stats Overview */}
           <div className="stats-overview">
             <div className="stat-card active">
@@ -299,7 +291,7 @@ const SurveyScheduling = ({ darkMode }) => {
                 <div className="stat-label">Completed</div>
               </div>
             </div>
-            <div className="stat-card responses d-none d-md-flex">
+            <div className="stat-card responses d-none d-mflex">
               <div className="stat-icon">
                 <FaUsers size={18} />
               </div>
@@ -313,38 +305,34 @@ const SurveyScheduling = ({ darkMode }) => {
 
         {/* Filters and View Toggle */}
         <div className="filters-section">
-          <div className="d-flex align-items-center justify-content-between flex-wrap">
+          <div className="flex align-items-center justify-content-between flex-wrap">
             <div className="filter-controls">
-              <Form.Select 
-                size="sm"
+              <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="status-filter"
+                className="status-filter px-3 py-1.5 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
               >
                 <option value="all">All Status</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
                 <option value="completed">Completed</option>
-              </Form.Select>
+              </select>
             </div>
-            
+
             <div className="view-controls d-none d-lg-flex">
-              <Button 
-                variant={viewMode === 'cards' ? 'primary' : 'outline-secondary'}
-                size="sm"
+              <button
+                className={`p-1.5 rounded-lg me-2 transition-colors ${viewMode === 'cards' ? 'bg-[var(--primary-color)] text-white' : 'border border-[var(--light-border)] dark:border-[var(--dark-border)]'}`}
                 onClick={() => setViewMode('cards')}
-                className="me-2"
               >
                 <MdViewModule size={16} />
-              </Button>
-              <Button 
-                variant={viewMode === 'table' ? 'primary' : 'outline-secondary'}
-                size="sm"
+              </button>
+              <button
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'table' ? 'bg-[var(--primary-color)] text-white' : 'border border-[var(--light-border)] dark:border-[var(--dark-border)]'}`}
                 onClick={() => setViewMode('table')}
               >
                 <MdViewList size={16} />
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -364,9 +352,14 @@ const SurveyScheduling = ({ darkMode }) => {
                       <p className="survey-id">ID: {schedule.surveyId}</p>
                     </div>
                     <div className="status-badge">
-                      <Badge bg={getStatusVariant(schedule.status)} className="status-pill">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${schedule.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                          schedule.status === 'scheduled' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            schedule.status === 'completed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                              schedule.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
                         {schedule.status}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
 
@@ -378,14 +371,14 @@ const SurveyScheduling = ({ darkMode }) => {
                         <FaCalendarAlt size={14} className="info-icon" />
                         <div className="info-content">
                           <div className="info-label">Start</div>
-                          <div className="info-value">{new Date(schedule.startDate).toLocaleDateString()} at {new Date(schedule.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                          <div className="info-value">{new Date(schedule.startDate).toLocaleDateString()} at {new Date(schedule.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                       </div>
                       <div className="info-row">
                         <FaClock size={14} className="info-icon" />
                         <div className="info-content">
                           <div className="info-label">End</div>
-                          <div className="info-value">{new Date(schedule.endDate).toLocaleDateString()} at {new Date(schedule.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                          <div className="info-value">{new Date(schedule.endDate).toLocaleDateString()} at {new Date(schedule.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                       </div>
                     </div>
@@ -394,7 +387,7 @@ const SurveyScheduling = ({ darkMode }) => {
                     <div className="metadata">
                       <div className="meta-item">
                         <span className="meta-label">Frequency:</span>
-                        <Badge bg="secondary" className="frequency-badge">{schedule.frequency}</Badge>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 frequency-badge">{schedule.frequency}</span>
                       </div>
                       <div className="meta-item">
                         <span className="meta-label">Target:</span>
@@ -413,10 +406,9 @@ const SurveyScheduling = ({ darkMode }) => {
                         )}
                       </div>
                       {schedule.maxResponses && (
-                        <ProgressBar 
-                          now={Math.min((schedule.responses / schedule.maxResponses) * 100, 100)}
-                          className="custom-progress"
-                        />
+                        <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden custom-progress">
+                          <div className="h-full bg-[var(--primary-color)] rounded-full" style={{ width: `${Math.min((schedule.responses / schedule.maxResponses) * 100, 100)}%` }} />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -424,33 +416,29 @@ const SurveyScheduling = ({ darkMode }) => {
                   {/* Card Actions */}
                   <div className="card-actions">
                     {getStatusActions(schedule)}
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
+                    <button
+                      className="action-btn p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       onClick={() => handleEditSchedule(schedule)}
-                      className="action-btn"
                     >
                       <MdEdit size={16} />
                       <span className="btn-text">Edit</span>
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
+                    </button>
+                    <button
+                      className="action-btn p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       onClick={() => handleDeleteSchedule(schedule.id)}
-                      className="action-btn"
                     >
                       <MdDelete size={16} />
                       <span className="btn-text">Delete</span>
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ))}
           </div>
         ) : (
           /* Table View - Desktop Only */
-          <Card className="table-card">
+          <div className="table-card card border-0 shadow-sm rounded-xl overflow-hidden">
             <div className="table-responsive">
-              <Table hover className="surveys-table">
+              <table className="surveys-table w-full">
                 <thead>
                   <tr>
                     <th>Survey</th>
@@ -484,10 +472,15 @@ const SurveyScheduling = ({ darkMode }) => {
                           </div>
                         </td>
                         <td>
-                          <Badge bg="secondary">{schedule.frequency}</Badge>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{schedule.frequency}</span>
                         </td>
                         <td>
-                          <Badge bg={getStatusVariant(schedule.status)}>{schedule.status}</Badge>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${schedule.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              schedule.status === 'scheduled' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                schedule.status === 'completed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                  schedule.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                    'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                            }`}>{schedule.status}</span>
                         </td>
                         <td>
                           <div className="progress-cell">
@@ -495,41 +488,38 @@ const SurveyScheduling = ({ darkMode }) => {
                               {schedule.responses} / {schedule.maxResponses || "∞"}
                             </div>
                             {schedule.maxResponses && (
-                              <ProgressBar 
-                                now={Math.min((schedule.responses / schedule.maxResponses) * 100, 100)}
-                                className="table-progress"
-                              />
+                              <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden table-progress">
+                                <div className="h-full bg-[var(--primary-color)] rounded-full" style={{ width: `${Math.min((schedule.responses / schedule.maxResponses) * 100, 100)}%` }} />
+                              </div>
                             )}
                           </div>
                         </td>
                         <td>{schedule.targetAudience}</td>
                         <td>
-                          <div className="table-actions">
+                          <div className="table-actions flex items-center justify-center gap-1">
                             {getStatusActions(schedule)}
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
+                            <button
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                               onClick={() => handleEditSchedule(schedule)}
                               title="Edit"
                             >
                               <MdEdit />
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
+                            </button>
+                            <button
+                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                               onClick={() => handleDeleteSchedule(schedule.id)}
                               title="Delete"
                             >
                               <MdDelete />
-                            </Button>
+                            </button>
                           </div>
                         </td>
                       </tr>
                     ))}
                 </tbody>
-              </Table>
+              </table>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Pagination */}
@@ -544,164 +534,165 @@ const SurveyScheduling = ({ darkMode }) => {
         </div>
 
         {/* Schedule Modal */}
-        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" className="schedule-modal">
-          <Modal.Header closeButton className="modal-header-custom">
-            <Modal.Title>
-              <MdSchedule className="me-2" />
-              {editingSchedule ? "Edit Schedule" : "Schedule Survey"}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="modal-body-custom">
-          <Form>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Survey</Form.Label>
-                  <Form.Select
-                    value={formData.surveyId}
-                    onChange={(e) => setFormData({ ...formData, surveyId: e.target.value })}
-                    required
-                  >
-                    <option value="">Select a survey</option>
-                    <option value="survey-1">Customer Satisfaction Survey</option>
-                    <option value="survey-2">Product Feedback Survey</option>
-                    <option value="survey-3">Employee Engagement Survey</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Title</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Schedule title"
-                    required
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Start Date & Time</Form.Label>
-                  <Form.Control
-                    type="datetime-local"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>End Date & Time</Form.Label>
-                  <Form.Control
-                    type="datetime-local"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Timezone</Form.Label>
-                  <Form.Select
-                    value={formData.timezone}
-                    onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                  >
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">Eastern Time</option>
-                    <option value="America/Chicago">Central Time</option>
-                    <option value="America/Denver">Mountain Time</option>
-                    <option value="America/Los_Angeles">Pacific Time</option>
-                    <option value="Europe/London">London</option>
-                    <option value="Europe/Paris">Paris</option>
-                    <option value="Asia/Tokyo">Tokyo</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Frequency</Form.Label>
-                  <Form.Select
-                    value={formData.frequency}
-                    onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
-                  >
-                    <option value="once">One Time</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Max Responses</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={formData.maxResponses}
-                    onChange={(e) => setFormData({ ...formData, maxResponses: e.target.value })}
-                    placeholder="Leave empty for unlimited"
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Target Audience</Form.Label>
-              <Form.Control
-                type="text"
-                value={formData.targetAudience}
-                onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
-                placeholder="e.g., All Customers, Team Members, Beta Users"
-              />
-            </Form.Group>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    label="Enable reminders"
-                    checked={formData.reminderEnabled}
-                    onChange={(e) => setFormData({ ...formData, reminderEnabled: e.target.checked })}
-                  />
-                </Form.Group>
-              </Col>
-              {formData.reminderEnabled && (
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Reminder (days before end)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      min="1"
-                      max="30"
-                      value={formData.reminderDays}
-                      onChange={(e) => setFormData({ ...formData, reminderDays: Number.parseInt(e.target.value) })}
+        {showModal && (
+          <div className="fixed inset-0 z-[1050] flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setShowModal(false)} />
+            <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto schedule-modal">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] modal-header-custom">
+                <h5 className="font-semibold flex items-center gap-2 m-0">
+                  <MdSchedule />
+                  {editingSchedule ? "Edit Schedule" : "Schedule Survey"}
+                </h5>
+                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl">&times;</button>
+              </div>
+              {/* Body */}
+              <div className="px-6 py-4 modal-body-custom space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Survey</label>
+                    <select
+                      value={formData.surveyId}
+                      onChange={(e) => setFormData({ ...formData, surveyId: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    >
+                      <option value="">Select a survey</option>
+                      <option value="survey-1">Customer Satisfaction Survey</option>
+                      <option value="survey-2">Product Feedback Survey</option>
+                      <option value="survey-3">Employee Engagement Survey</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Schedule title"
+                      required
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
                     />
-                  </Form.Group>
-                </Col>
-              )}
-            </Row>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSaveSchedule}>
-            {editingSchedule ? "Update Schedule" : "Create Schedule"}
-          </Button>
-        </Modal.Footer>
-        </Modal>
-      </Container>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Start Date & Time</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">End Date & Time</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      required
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Timezone</label>
+                    <select
+                      value={formData.timezone}
+                      onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    >
+                      <option value="UTC">UTC</option>
+                      <option value="America/New_York">Eastern Time</option>
+                      <option value="America/Chicago">Central Time</option>
+                      <option value="America/Denver">Mountain Time</option>
+                      <option value="America/Los_Angeles">Pacific Time</option>
+                      <option value="Europe/London">London</option>
+                      <option value="Europe/Paris">Paris</option>
+                      <option value="Asia/Tokyo">Tokyo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Frequency</label>
+                    <select
+                      value={formData.frequency}
+                      onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    >
+                      <option value="once">One Time</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Max Responses</label>
+                    <input
+                      type="number"
+                      value={formData.maxResponses}
+                      onChange={(e) => setFormData({ ...formData, maxResponses: e.target.value })}
+                      placeholder="Leave empty for unlimited"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Target Audience</label>
+                  <input
+                    type="text"
+                    value={formData.targetAudience}
+                    onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+                    placeholder="e.g., All Customers, Team Members, Beta Users"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.reminderEnabled}
+                        onChange={(e) => setFormData({ ...formData, reminderEnabled: e.target.checked })}
+                        className="w-4 h-4 accent-[var(--primary-color)]"
+                      />
+                      <span className="text-sm">Enable reminders</span>
+                    </label>
+                  </div>
+                  {formData.reminderEnabled && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Reminder (days before end)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={formData.reminderDays}
+                        onChange={(e) => setFormData({ ...formData, reminderDays: Number.parseInt(e.target.value) })}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Footer */}
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <button className="px-4 py-2 rounded-lg text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-gray-50 dark:hover:bg-gray-700 transition-all" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button className="px-4 py-2 rounded-lg text-sm bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all" onClick={handleSaveSchedule}>
+                  {editingSchedule ? "Update Schedule" : "Create Schedule"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

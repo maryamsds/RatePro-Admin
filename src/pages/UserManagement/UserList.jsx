@@ -3,19 +3,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Link } from "react-router-dom"
-import {
-  Container,
-  Row,
-  Col,
-  Table,
-  Badge,
-  Button,
-  InputGroup,
-  Form,
-  Card,
-  Spinner,
-  Modal,
-} from "react-bootstrap"
+// react-bootstrap removed — using native HTML + Bootstrap 5 classes
 import {
   MdEdit,
   MdDelete,
@@ -153,13 +141,13 @@ const UserList = ({ darkMode }) => {
 
       setUsers(processedUsers)
       setPagination((prev) => ({ ...prev, page: currentPage, total }))
-      
+
       // Calculate stats
       const activeUsers = processedUsers.filter(u => u.isActive).length
       const verifiedUsers = processedUsers.filter(u => u.isVerified).length
       const admins = processedUsers.filter(u => u.role === 'companyAdmin').length
       const members = processedUsers.filter(u => u.role === 'member').length
-      
+
       setStats({
         total: processedUsers.length,
         active: activeUsers,
@@ -425,195 +413,208 @@ const UserList = ({ darkMode }) => {
   }
 
   return (
-    <div className="user-list-container">
+    <div className="p-6">
       {/* Header Section */}
-      <div className="user-list-header">
-        <div className="header-content">
-          <div className="header-left">
-            <div className="page-title-section">
-              <MdGroup className="page-icon" />
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-start gap-3">
+              <MdGroup className="w-8 h-8 text-[var(--primary-color)] mt-1" />
               <div>
-                <h1 className="page-title">User Management</h1>
-                <p className="page-subtitle">Manage users, roles, and permissions</p>
+                <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">User Management</h1>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">Manage users, roles, and permissions</p>
               </div>
             </div>
           </div>
-          
-          <div className="header-actions">
-            <Button 
-              variant="outline-secondary" 
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-2"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="refresh-btn"
             >
               <MdRefresh className={refreshing ? 'spinning' : ''} />
-            </Button>
-            
+            </button>
+
             {(currentUser?.role === "companyAdmin" || memberCanUpload) && (
-              <Button
-                variant="outline-primary"
+              <button
+                type="button"
+                className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white flex items-center gap-2"
                 onClick={handleShow}
                 disabled={!memberCanUpdate}
-                className="import-btn"
               >
-                <MdUpload className="me-2" /> Import
-              </Button>
+                <MdUpload /> Import
+              </button>
             )}
-            
+
             {(currentUser?.role === "companyAdmin" || memberCanCreate) && (
-              <Button as={Link} to="/app/users/form" variant="primary" className="create-btn">
-                <MdAdd className="me-2" /> Create User
-              </Button>
+              <Link to="/app/users/form" className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
+                <MdAdd /> Create User
+              </Link>
             )}
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="stats-section">
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon total">
-              <MdGroup />
-            </div>
-            <div className="stat-content">
-              <div className="stat-number">{stats.total}</div>
-              <div className="stat-label">Total Users</div>
-            </div>
-          </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon active">
-              <MdCheckCircle />
-            </div>
-            <div className="stat-content">
-              <div className="stat-number">{stats.active}</div>
-              <div className="stat-label">Active Users</div>
+      <div className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                <MdGroup className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.total}</div>
+                <div className="text-sm text-[var(--text-secondary)]">Total Users</div>
+              </div>
             </div>
           </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon verified">
-              <MdVerified />
-            </div>
-            <div className="stat-content">
-              <div className="stat-number">{stats.verified}</div>
-              <div className="stat-label">Verified Users</div>
+
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                <MdCheckCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.active}</div>
+                <div className="text-sm text-[var(--text-secondary)]">Active Users</div>
+              </div>
             </div>
           </div>
-          
-          <div className="stat-card">
-            <div className="stat-icon admins">
-              <MdPerson />
+
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                <MdVerified className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.verified}</div>
+                <div className="text-sm text-[var(--text-secondary)]">Verified Users</div>
+              </div>
             </div>
-            <div className="stat-content">
-              <div className="stat-number">{stats.admins + stats.members}</div>
-              <div className="stat-label">All Roles</div>
+          </div>
+
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400">
+                <MdPerson className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.admins + stats.members}</div>
+                <div className="text-sm text-[var(--text-secondary)]">All Roles</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="search-filter-section">
-        <div className="search-filter-top">
-          <div className="search-bar">
-            <div className="search-input-group">
-              <MdSearch className="search-icon" />
-              <Form.Control
-                type="text"
-                placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+        <div className="mb-4">
+          <div className="relative">
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search users by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 pl-10 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+            />
           </div>
         </div>
-        
-        <div className={`filters-row ${showFilters ? 'show' : ''} d-md-grid`}>
-          <div className="filter-group">
-            <label className="filter-label">Role</label>
-            <Form.Select name="role" value={filters.role} onChange={handleFilterChange} size="sm">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Role</label>
+            <select 
+              name="role" 
+              value={filters.role} 
+              onChange={handleFilterChange}
+              className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+            >
               <option value="">All Roles</option>
               <option value="companyAdmin">Company Admin</option>
               <option value="member">Member</option>
-            </Form.Select>
+            </select>
           </div>
-          
-          <div className="filter-group">
-            <label className="filter-label">Status</label>
-            <Form.Select name="status" value={filters.status} onChange={handleFilterChange} size="sm">
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Status</label>
+            <select 
+              name="status" 
+              value={filters.status} 
+              onChange={handleFilterChange}
+              className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+            >
               <option value="">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
-            </Form.Select>
+            </select>
           </div>
         </div>
       </div>
-      <br/>
 
       {/* Users Content */}
-      <div className="users-content">
+      <div>
         {loading ? (
-          <div className="loading-state">
-            <Spinner animation="border" variant="primary" />
-            <p>Loading users...</p>
+          <div className="flex flex-col justify-center items-center min-h-[400px] gap-4">
+            <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-[var(--text-secondary)]">Loading users...</p>
           </div>
         ) : (
           <>
             {/* Mobile Cards View */}
-            <div className={`users-cards d-lg-none ${viewMode === 'cards' ? 'd-block' : 'd-none'}`}>
+            <div className="lg:hidden grid grid-cols-1 gap-4 mb-6">
               {users.map((user, index) => (
-                <div key={user._id} className="user-card">
-                  <div className="user-card-header">
-                    <div className="user-info">
-                      <div className="user-avatar">
-                        {user.avatar?.url ? (
-                          <img src={user.avatar.url} alt={user.name} />
-                        ) : (
-                          <span>{user.name?.charAt(0)}</span>
-                        )}
+                <div key={user._id} className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:shadow-lg transition-shadow">
+                  <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] flex items-center justify-center text-white font-semibold">
+                          {user.avatar?.url ? (
+                            <img src={user.avatar.url} alt={user.name} className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            <span>{user.name?.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div>
+                          <h6 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">{user.name}</h6>
+                          <p className="text-sm text-[var(--text-secondary)]">{user.email}</p>
+                        </div>
                       </div>
-                      <div className="user-details">
-                        <h6 className="user-name">{user.name}</h6>
-                        <p className="user-email">{user.email}</p>
+
+                      <div className="flex flex-col gap-1">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[var(--info-light)] text-[var(--info-color)]">
+                          {capitalize(user.role)}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.status === "Active" ? "bg-[var(--success-light)] text-[var(--success-color)]" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+                          {user.status}
+                        </span>
                       </div>
                     </div>
-                    
-                    <div className="user-status-badges">
-                      <Badge bg={getRoleVariant(user.role)} className="role-badge">
-                        {capitalize(user.role)}
-                      </Badge>
-                      <Badge bg={user.status === "Active" ? "success" : "secondary"} className="status-badge">
-                        {user.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="user-card-body">
-                    <div className="user-meta">
+
+                    <div className="space-y-2">
                       {currentUser.role === "admin" && (
-                        <div className="meta-item">
-                          <span className="meta-label">Company:</span>
-                          <span className="meta-value">{user.tenant?.name || "-"}</span>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[var(--text-secondary)]">Company:</span>
+                          <span className="text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">{user.tenant?.name || "-"}</span>
                         </div>
                       )}
-                      <div className="meta-item">
-                        <span className="meta-label">Email Status:</span>
-                        <Badge bg={user.isVerified ? "success" : "secondary"} size="sm">
-                          {user.isVerified ? <><MdVerified className="me-1" />Verified</> : "Not Verified"}
-                        </Badge>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[var(--text-secondary)]">Email Status:</span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.isVerified ? "bg-[var(--success-light)] text-[var(--success-color)]" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+                          {user.isVerified ? <><MdVerified className="mr-1" />Verified</> : "Not Verified"}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="user-card-actions">
-                    <Button 
-                      as={Link} 
-                      to={`/app/users/${user._id}/edit`} 
-                      size="sm" 
-                      variant="outline-primary"
+
+                  <div className="p-4 flex flex-wrap gap-2">
+                    <Link
+                      to={`/app/users/${user._id}/edit`}
+                      className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white flex items-center gap-1"
                       onClick={(e) => {
                         if (!memberCanUpdate) {
                           e.preventDefault();
@@ -622,11 +623,11 @@ const UserList = ({ darkMode }) => {
                       }}
                     >
                       <MdEdit />
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant={user.isActive ? "outline-success" : "outline-secondary"}
+                    </Link>
+
+                    <button
+                      type="button"
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${user.isActive ? "text-[var(--success-color)]" : "text-gray-400"}`}
                       onClick={() => {
                         if (!memberCanToggle || user._id === currentUserId || user.role === "admin") {
                           handleNoPermission("toggle this user");
@@ -635,12 +636,12 @@ const UserList = ({ darkMode }) => {
                         }
                       }}
                     >
-                      {user.isActive ? <MdToggleOn /> : <MdToggleOff />}
-                    </Button>
-                    
-                    <Button
-                      variant="outline-info"
-                      size="sm"
+                      {user.isActive ? <MdToggleOn className="w-5 h-5" /> : <MdToggleOff className="w-5 h-5" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white flex items-center gap-1"
                       onClick={() => {
                         if (!memberCanNotify) {
                           handleNoPermission("send notifications");
@@ -650,16 +651,122 @@ const UserList = ({ darkMode }) => {
                       }}
                     >
                       <MdEmail />
-                    </Button>
-                    
-                    <div className="dropdown">
-                      <Button variant="outline-secondary" size="sm" data-bs-toggle="dropdown">
-                        <MdMoreVert />
-                      </Button>
-                      <ul className="dropdown-menu">
-                        <li>
-                          <button 
-                            className="dropdown-item" 
+                    </button>
+
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-1"
+                      onClick={() => {
+                        if (!memberCanExport) {
+                          handleNoPermission("export users");
+                        } else {
+                          handleExport(user._id);
+                        }
+                      }}
+                    >
+                      <MdPictureAsPdf /> Export
+                    </button>
+
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-1"
+                      onClick={() => {
+                        if (!memberCanDelete || user._id === currentUserId || user.role === "admin") {
+                          handleNoPermission("delete this user");
+                        } else {
+                          handleDeleteUser(user._id);
+                        }
+                      }}
+                    >
+                      <MdDelete />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+              <table className="min-w-full border-collapse">
+                <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">User</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Role</th>
+                    {currentUser.role === "admin" && <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Company</th>}
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Email Status</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, index) => (
+                    <tr key={user._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors">
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-color)] to-[var(--primary-hover)] flex items-center justify-center text-white font-semibold">
+                            {user.avatar?.url ? (
+                              <img src={user.avatar.url} alt={user.name} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                              <span>{user.name?.charAt(0)}</span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{user.name}</div>
+                            <div className="text-xs text-[var(--text-secondary)]">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[var(--info-light)] text-[var(--info-color)]">
+                          {capitalize(user.role)}
+                        </span>
+                      </td>
+                      {currentUser.role === "admin" && (
+                        <td className="px-4 py-3 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{user.tenant?.name || "-"}</td>
+                      )}
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.status === "Active" ? "bg-[var(--success-light)] text-[var(--success-color)]" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+                          {user.status === "Active" ? <MdCheckCircle className="mr-1" /> : <MdCancel className="mr-1" />}
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${user.isVerified ? "bg-[var(--success-light)] text-[var(--success-color)]" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"}`}>
+                          {user.isVerified ? <><MdVerified className="mr-1" />Verified</> : "Unverified"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center justify-center gap-2">
+                          <Link
+                            to={`/app/users/${user._id}/edit`}
+                            className="p-2 rounded-md transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                            onClick={(e) => {
+                              if (!memberCanUpdate) {
+                                e.preventDefault();
+                                handleNoPermission("update users");
+                              }
+                            }}
+                          >
+                            <MdEdit />
+                          </Link>
+
+                          <button
+                            type="button"
+                            className={`p-2 rounded-md transition-colors ${user.isActive ? "text-[var(--success-color)]" : "text-gray-400"}`}
+                            onClick={() => {
+                              if (!memberCanToggle || user._id === currentUserId || user.role === "admin") {
+                                handleNoPermission("toggle this user");
+                              } else {
+                                handleToggleActive(user._id, user.isActive);
+                              }
+                            }}
+                          >
+                            {user.isActive ? <MdToggleOn className="w-5 h-5" /> : <MdToggleOff className="w-5 h-5" />}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="p-2 rounded-md transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
                             onClick={() => {
                               if (!memberCanExport) {
                                 handleNoPermission("export users");
@@ -668,13 +775,26 @@ const UserList = ({ darkMode }) => {
                               }
                             }}
                           >
-                            <MdPictureAsPdf className="me-2" /> Export PDF
+                            <MdPictureAsPdf />
                           </button>
-                        </li>
-                        <li><hr className="dropdown-divider" /></li>
-                        <li>
-                          <button 
-                            className="dropdown-item text-danger"
+
+                          <button
+                            type="button"
+                            className="p-2 rounded-md transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white"
+                            onClick={() => {
+                              if (!memberCanNotify) {
+                                handleNoPermission("send notifications");
+                              } else {
+                                handleOpenEmailModal(user._id, user.email);
+                              }
+                            }}
+                          >
+                            <MdEmail />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="p-2 rounded-md transition-colors border border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                             onClick={() => {
                               if (!memberCanDelete || user._id === currentUserId || user.role === "admin") {
                                 handleNoPermission("delete this user");
@@ -683,152 +803,20 @@ const UserList = ({ darkMode }) => {
                               }
                             }}
                           >
-                            <MdDelete className="me-2" /> Delete User
+                            <MdDelete />
                           </button>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Desktop Table View */}
-            <div className="users-table d-none d-lg-block">
-              <div className="table-responsive">
-                <Table hover className="modern-table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Role</th>
-                      {currentUser.role === "admin" && <th>Company</th>}
-                      <th>Status</th>
-                      <th>Email Status</th>
-                      <th className="text-center">Actions</th>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user, index) => (
-                      <tr key={user._id}>
-                        <td>
-                          <div className="user-info-cell">
-                            <div className="user-avatar">
-                              {user.avatar?.url ? (
-                                <img src={user.avatar.url} alt={user.name} />
-                              ) : (
-                                <span>{user.name?.charAt(0)}</span>
-                              )}
-                            </div>
-                            <div className="user-details">
-                              <div className="user-name">{user.name}</div>
-                              <div className="user-email">{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <Badge bg={getRoleVariant(user.role)} className="role-badge">
-                            {capitalize(user.role)}
-                          </Badge>
-                        </td>
-                        {currentUser.role === "admin" && (
-                          <td className="company-cell">{user.tenant?.name || "-"}</td>
-                        )}
-                        <td>
-                          <Badge bg={user.status === "Active" ? "success" : "secondary"} className="status-badge">
-                            {user.status === "Active" ? <MdCheckCircle className="me-1" /> : <MdCancel className="me-1" />}
-                            {user.status}
-                          </Badge>
-                        </td>
-                        <td>
-                          <Badge bg={user.isVerified ? "success" : "secondary"} className="verification-badge">
-                            {user.isVerified ? <><MdVerified className="me-1" />Verified</> : "Unverified"}
-                          </Badge>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <Button 
-                              as={Link} 
-                              to={`/app/users/${user._id}/edit`} 
-                              size="sm" 
-                              variant="outline-primary"
-                              onClick={(e) => {
-                                if (!memberCanUpdate) {
-                                  e.preventDefault();
-                                  handleNoPermission("update users");
-                                }
-                              }}
-                            >
-                              <MdEdit />
-                            </Button>
-                            
-                            <Button
-                              size="sm"
-                              variant={user.isActive ? "outline-success" : "outline-secondary"}
-                              onClick={() => {
-                                if (!memberCanToggle || user._id === currentUserId || user.role === "admin") {
-                                  handleNoPermission("toggle this user");
-                                } else {
-                                  handleToggleActive(user._id, user.isActive);
-                                }
-                              }}
-                            >
-                              {user.isActive ? <MdToggleOn /> : <MdToggleOff />}
-                            </Button>
-                            
-                            <Button 
-                              variant="outline-secondary" 
-                              size="sm"
-                              onClick={() => {
-                                if (!memberCanExport) {
-                                  handleNoPermission("export users");
-                                } else {
-                                  handleExport(user._id);
-                                }
-                              }}
-                            >
-                              <MdPictureAsPdf />
-                            </Button>
-                            
-                            <Button
-                              variant="outline-info"
-                              size="sm"
-                              onClick={() => {
-                                if (!memberCanNotify) {
-                                  handleNoPermission("send notifications");
-                                } else {
-                                  handleOpenEmailModal(user._id, user.email);
-                                }
-                              }}
-                            >
-                              <MdEmail />
-                            </Button>
-                            
-                            <Button
-                              size="sm"
-                              variant="outline-danger"
-                              onClick={() => {
-                                if (!memberCanDelete || user._id === currentUserId || user.role === "admin") {
-                                  handleNoPermission("delete this user");
-                                } else {
-                                  handleDeleteUser(user._id);
-                                }
-                              }}
-                            >
-                              <MdDelete />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            
+
             {/* Pagination */}
             {users.length > 0 && (
-              <div className="pagination-section">
-                <div className="pagination-info">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="text-sm text-[var(--text-secondary)]">
                   <span>
                     Showing {(pagination.page - 1) * pagination.limit + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} users
                   </span>
@@ -842,12 +830,12 @@ const UserList = ({ darkMode }) => {
                 />
               </div>
             )}
-            
+
             {users.length === 0 && (
-              <div className="empty-state">
-                <MdPerson className="empty-icon" />
-                <h5>No users found</h5>
-                <p>Try adjusting your search or filter criteria</p>
+              <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <MdPerson className="w-16 h-16 text-[var(--text-secondary)]" />
+                <h5 className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">No users found</h5>
+                <p className="text-[var(--text-secondary)]">Try adjusting your search or filter criteria</p>
               </div>
             )}
           </>
@@ -865,45 +853,66 @@ const UserList = ({ darkMode }) => {
         sending={sending}
       />
 
-      <Modal show={show} onHide={handleClose} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Import Contacts</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <p className="text-center">Upload a .xlsx or .xls file with your contacts</p>
-          <input
-            className="w-100 border"
-            type="file"
-            accept=".xlsx,.xls"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-          />
-          <small className="text-muted">
-            File should include columns: Name, Email, Phone, Company, Segment
-          </small>
-          {(currentUser?.role === "companyAdmin" || memberCanDownload) && (
-            <div className="mt-3">
-              <a
-                href="/downloads/user-sample.xlsx"
-                download="user-sample.xlsx"
-                className="btn btn-outline-secondary"
+      {show && (
+        <div className="fixed inset-0 bg-black/50 z-[1040]" onClick={handleClose} />
+      )}
+      {show && (
+        <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4" tabIndex={-1}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg shadow-xl border border-[var(--light-border)] dark:border-[var(--dark-border)] w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Import Contacts</h5>
+              <button 
+                type="button" 
+                className="p-2 rounded-md hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors text-[var(--light-text)] dark:text-[var(--dark-text)]" 
+                onClick={handleClose}
               >
-                📥 Download Template
-              </a>
+                <MdClose />
+              </button>
             </div>
-          )}
-        </Modal.Body>
-
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button variant="success" onClick={() => handleFileUpload(file)} disabled={!file}>
-            Import Contacts
-          </Button>
-        </Modal.Footer>
-      </Modal>
+            <div className="p-6 space-y-4">
+              <p className="text-center text-[var(--text-secondary)]">Upload a .xlsx or .xls file with your contacts</p>
+              <input
+                className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                type="file"
+                accept=".xlsx,.xls"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+              />
+              <small className="block text-xs text-[var(--text-secondary)]">
+                File should include columns: Name, Email, Phone, Company, Segment
+              </small>
+              {(currentUser?.role === "companyAdmin" || memberCanDownload) && (
+                <div>
+                  <a
+                    href="/downloads/user-sample.xlsx"
+                    download="user-sample.xlsx"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
+                  >
+                    📥 Download Template
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button 
+                type="button" 
+                className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]" 
+                onClick={handleClose}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" 
+                onClick={() => handleFileUpload(file)} 
+                disabled={!file}
+              >
+                Import Contacts
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,12 +2,7 @@
 "use client"
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Container, Row, Col, Card, Button, Badge, Tab, Tabs,
-  Form, Modal, Alert, Spinner, Table, InputGroup,
-  OverlayTrigger, Tooltip, ProgressBar,
-  Pagination, Toast, ToastContainer
-} from 'react-bootstrap';
+
 import {
   MdFilterList, MdDownload, MdVisibility, MdDelete,
   MdAnalytics, MdSentimentSatisfied, MdSentimentDissatisfied,
@@ -105,7 +100,7 @@ const SurveyResponses = () => {
   const fetchData = useCallback(async () => {
     try {
       setError('');
-      
+
       // Fetch survey details
       const surveyData = await getSurveyById(id);
       setSurvey(surveyData);
@@ -200,14 +195,14 @@ const SurveyResponses = () => {
     try {
       setExporting(true);
       const blob = await exportSurveyReport(id, format);
-      
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `${survey?.title || 'survey'}_responses.${format}`;
       link.click();
       window.URL.revokeObjectURL(url);
-      
+
       showSuccessToast(`${format.toUpperCase()} report downloaded successfully!`);
       setShowExportModal(false);
     } catch (err) {
@@ -219,42 +214,45 @@ const SurveyResponses = () => {
 
   // Utility Functions
   const getRatingStars = (rating, maxRating = 5) => {
-    if (!rating && rating !== 0) return <span className="text-muted">N/A</span>;
+    if (!rating && rating !== 0) return <span className="text-[var(--text-secondary)]">N/A</span>;
     const stars = [];
     for (let i = 1; i <= maxRating; i++) {
       stars.push(
-        i <= rating ? 
-        <FaStar key={i} className="text-warning" /> : 
-        <FaRegStar key={i} className="text-muted" />
+        i <= rating ?
+          <FaStar key={i} className="text-yellow-500" /> :
+          <FaRegStar key={i} className="text-[var(--text-secondary)]" />
       );
     }
     return stars;
   };
 
+  const badgeColors = {
+    success: 'bg-green-100 text-green-800',
+    danger: 'bg-red-100 text-red-800',
+    warning: 'bg-yellow-100 text-yellow-800',
+    info: 'bg-blue-100 text-blue-800',
+    secondary: 'bg-gray-100 text-gray-800',
+    primary: 'bg-[var(--primary-color)]/10 text-[var(--primary-color)]'
+  };
+
   const getScoreBadge = (score) => {
-    if (!score && score !== 0) return <Badge bg="secondary">N/A</Badge>;
+    if (!score && score !== 0) return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.secondary}`}>N/A</span>;
     let variant = 'success';
     if (score < 40) variant = 'danger';
     else if (score < 70) variant = 'warning';
-    return <Badge bg={variant}>{score}/100</Badge>;
+    return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors[variant]}`}>{score}/100</span>;
   };
 
   const getPriorityBadge = (priority) => {
-    const variants = {
-      high: 'danger',
-      medium: 'warning',
-      low: 'success'
-    };
-    return <Badge bg={variants[priority] || 'secondary'}>{priority?.toUpperCase() || 'N/A'}</Badge>;
+    const variants = { high: 'danger', medium: 'warning', low: 'success' };
+    const v = variants[priority] || 'secondary';
+    return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors[v]}`}>{priority?.toUpperCase() || 'N/A'}</span>;
   };
 
   const getStatusBadge = (status) => {
-    const variants = {
-      submitted: 'success',
-      partial: 'warning',
-      pending: 'info'
-    };
-    return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
+    const variants = { submitted: 'success', partial: 'warning', pending: 'info' };
+    const v = variants[status] || 'secondary';
+    return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors[v]}`}>{status}</span>;
   };
 
   const formatDate = (dateString) => {
@@ -331,709 +329,516 @@ const SurveyResponses = () => {
   // Loading State
   if (loading && !responses.length) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" size="lg" />
-          <p className="mt-3 text-muted">Loading survey responses...</p>
+      <div className="w-full py-4">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--primary-color)] mx-auto"></div>
+          <p className="mt-3 text-[var(--text-secondary)]">Loading survey responses...</p>
         </div>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <Container fluid className="py-4">
+    <div className="w-full py-4">
       {/* Error Alert */}
       {error && (
-        <Alert variant="danger" dismissible onClose={() => setError('')} className="mb-4">
-          <MdWarning className="me-2" />
-          {error}
-          <Button variant="outline-danger" size="sm" className="ms-3" onClick={handleRefresh}>
-            Retry
-          </Button>
-        </Alert>
+        <div className="flex items-center justify-between p-4 mb-4 bg-[var(--danger-light)] text-[var(--danger-color)] border border-[var(--danger-color)]/30 rounded-md">
+          <div className="flex items-center">
+            <MdWarning className="mr-2" />
+            {error}
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="px-3 py-1 text-sm border border-[var(--danger-color)]/50 text-[var(--danger-color)] rounded-md hover:bg-[var(--danger-color)]/10 transition-colors" onClick={handleRefresh}>Retry</button>
+            <button className="text-[var(--danger-color)]/60 hover:text-[var(--danger-color)]" onClick={() => setError('')}>&times;</button>
+          </div>
+        </div>
       )}
 
       {/* Header Section */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="shadow-sm border-0">
-            <Card.Body className="p-4">
-              <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                <div>
-                  <Button
-                    variant="link"
-                    className="p-0 mb-2 text-decoration-none"
-                    onClick={() => navigate(`/app/surveys/${id}`)}
-                  >
-                    <MdArrowBack className="me-1" />
-                    Back to Survey Details
-                  </Button>
-                  <h1 className="h3 mb-1 fw-bold">
-                    <MdQuestionAnswer className="me-2 text-primary" />
-                    Survey Responses
-                  </h1>
-                  <p className="text-muted mb-2">{survey?.title || 'Loading...'}</p>
-                  <div className="d-flex align-items-center flex-wrap gap-2">
-                    <Badge bg="primary" className="d-flex align-items-center">
-                      <FaUsers className="me-1" />
-                      {totalResponses} Responses
-                    </Badge>
-                    {analytics.averageRating > 0 && (
-                      <Badge bg="success" className="d-flex align-items-center">
-                        <FaStar className="me-1" />
-                        {analytics.averageRating.toFixed(1)} Avg Rating
-                      </Badge>
-                    )}
-                    {analytics.npsScore !== 0 && (
-                      <Badge bg={analytics.npsScore >= 0 ? 'info' : 'warning'} className="d-flex align-items-center">
-                        <MdTrendingUp className="me-1" />
-                        NPS: {analytics.npsScore}
-                      </Badge>
-                    )}
-                    {analytics.completionRate > 0 && (
-                      <Badge bg="secondary" className="d-flex align-items-center">
-                        <MdCheckCircle className="me-1" />
-                        {analytics.completionRate}% Completion
-                      </Badge>
-                    )}
+      <div className="mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex justify-between items-start flex-wrap gap-3">
+            <div>
+              <button className="flex items-center text-[var(--primary-color)] hover:underline mb-2 p-0 bg-transparent border-0" onClick={() => navigate(`/app/surveys/${id}`)}>
+                <MdArrowBack className="mr-1" />
+                Back to Survey Details
+              </button>
+              <h1 className="text-xl font-bold mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                <MdQuestionAnswer className="mr-2 text-[var(--primary-color)] inline" />
+                Survey Responses
+              </h1>
+              <p className="text-[var(--text-secondary)] mb-2">{survey?.title || 'Loading...'}</p>
+              <div className="flex items-center flex-wrap gap-2">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.primary}`}>
+                  <FaUsers className="mr-1" /> {totalResponses} Responses
+                </span>
+                {analytics.averageRating > 0 && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.success}`}>
+                    <FaStar className="mr-1" /> {analytics.averageRating.toFixed(1)} Avg Rating
+                  </span>
+                )}
+                {analytics.npsScore !== 0 && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${analytics.npsScore >= 0 ? badgeColors.info : badgeColors.warning}`}>
+                    <MdTrendingUp className="mr-1" /> NPS: {analytics.npsScore}
+                  </span>
+                )}
+                {analytics.completionRate > 0 && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.secondary}`}>
+                    <MdCheckCircle className="mr-1" /> {analytics.completionRate}% Completion
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center" onClick={() => setShowFilterModal(true)}>
+                <MdFilterList className="mr-1" /> Filters
+              </button>
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:opacity-80 flex items-center" onClick={() => setShowExportModal(true)}>
+                <MdDownload className="mr-1" /> Export
+              </button>
+              <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center disabled:opacity-50" onClick={handleRefresh} disabled={refreshing}>
+                {refreshing ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--primary-color)] mr-1"></div>
+                ) : (
+                  <MdRefresh className="mr-1" />
+                )}
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        {/* Tab Navigation */}
+        <div className="flex gap-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] px-3 pt-3">
+          {[
+            { key: 'responses', icon: <MdVisibility className="mr-1" />, label: `Responses (${totalResponses})` },
+            { key: 'analytics', icon: <MdAnalytics className="mr-1" />, label: 'Analytics' },
+            { key: 'actions', icon: <MdAssignment className="mr-1" />, label: `Actions (${actionItems.length})` }
+          ].map(tab => (
+            <button key={tab.key} className={`flex items-center px-4 py-3 border-b-2 transition-colors ${activeTab === tab.key ? 'border-[var(--primary-color)] text-[var(--primary-color)] font-medium' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)]'}`} onClick={() => setActiveTab(tab.key)}>
+              {tab.icon}{tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Responses Tab */}
+        {activeTab === 'responses' && (
+          <div className="p-4">
+            {/* Search and Quick Filters */}
+            <div className="flex flex-wrap gap-3 mb-4">
+              <div className="flex items-center border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md overflow-hidden flex-1 min-w-[250px] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                <span className="px-3 text-[var(--text-secondary)]"><MdSearch /></span>
+                <input type="text" placeholder="Search by review text..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="flex-1 px-2 py-2 bg-transparent border-0 outline-none text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none" />
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)} className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                  <option value="all">All Ratings</option>
+                  <option value="5">5 Stars</option>
+                  <option value="4">4 Stars</option>
+                  <option value="3">3 Stars</option>
+                  <option value="2">2 Stars</option>
+                  <option value="1">1 Star</option>
+                </select>
+                <select value={anonymousFilter} onChange={(e) => setAnonymousFilter(e.target.value)} className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                  <option value="all">All Respondents</option>
+                  <option value="true">Anonymous Only</option>
+                  <option value="false">Identified Only</option>
+                </select>
+                <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">Last 7 Days</option>
+                  <option value="month">Last 30 Days</option>
+                  <option value="quarter">Last 90 Days</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Responses Table */}
+            {responses.length > 0 ? (
+              <>
+                <div className="overflow-x-auto rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <table className="min-w-full border-collapse">
+                    <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">ID</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Submitted</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Respondent</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Rating</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Score</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {responses.map((response) => (
+                        <tr key={response._id || response.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors">
+                          <td className="px-4 py-3 text-sm">
+                            <code className="text-[var(--primary-color)]">#{(response._id || response.id)?.slice(-6)}</code>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex items-center">
+                              <MdAccessTime className="text-[var(--text-secondary)] mr-1" />
+                              <div>
+                                <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{new Date(response.submittedAt || response.createdAt).toLocaleDateString()}</div>
+                                <small className="text-[var(--text-secondary)]">{new Date(response.submittedAt || response.createdAt).toLocaleTimeString()}</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {response.isAnonymous ? (
+                              <span className="flex items-center text-[var(--text-secondary)]"><MdPublic className="mr-1" /> Anonymous</span>
+                            ) : (
+                              <span className="flex items-center text-[var(--light-text)] dark:text-[var(--dark-text)]"><MdPerson className="mr-1 text-[var(--primary-color)]" /> {response.user?.name || response.user?.email || response.respondent || 'User'}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex items-center">
+                              {getRatingStars(response.rating)}
+                              {response.rating && <span className="ml-2 text-sm text-[var(--text-secondary)]">({response.rating})</span>}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm">{getScoreBadge(response.score)}</td>
+                          <td className="px-4 py-3 text-sm">{getStatusBadge(response.status || 'submitted')}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex gap-1">
+                              <button title="View Details" className="p-1.5 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-md hover:bg-[var(--primary-color)] hover:text-white transition-colors" onClick={() => { setSelectedResponse(response); setShowResponseModal(true); }}>
+                                <MdVisibility />
+                              </button>
+                              {response.score && response.score < 50 && (
+                                <button title="Low score - needs attention" className="p-1.5 border border-yellow-500 text-yellow-600 rounded-md hover:bg-yellow-500 hover:text-white transition-colors">
+                                  <MdFlag />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-between items-center mt-4 flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <small className="text-[var(--text-secondary)]">
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to{" "}
+                      {Math.min(currentPage * itemsPerPage, totalResponses)} of {totalResponses}
+                    </small>
+                    <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(1); }} className="px-2 py-1 text-sm rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                      <option value="10">10 / page</option>
+                      <option value="20">20 / page</option>
+                      <option value="50">50 / page</option>
+                      <option value="100">100 / page</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-1">
+                    <button className="px-3 py-1 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] disabled:opacity-50" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>&laquo;</button>
+                    <button className="px-3 py-1 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] disabled:opacity-50" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>&lsaquo;</button>
+                    {[...Array(Math.min(5, totalPages))].map((_, index) => {
+                      const page = Math.max(1, currentPage - 2) + index;
+                      if (page <= totalPages) {
+                        return (
+                          <button key={page} className={`px-3 py-1 border rounded-md text-sm ${page === currentPage ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]'}`} onClick={() => setCurrentPage(page)}>
+                            {page}
+                          </button>
+                        );
+                      }
+                      return null;
+                    })}
+                    <button className="px-3 py-1 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] disabled:opacity-50" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>&rsaquo;</button>
+                    <button className="px-3 py-1 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] disabled:opacity-50" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>&raquo;</button>
                   </div>
                 </div>
-                <div className="d-flex gap-2 flex-wrap">
-                  <Button
-                    variant="outline-primary"
-                    onClick={() => setShowFilterModal(true)}
-                  >
-                    <MdFilterList className="me-1" />
-                    Filters
-                  </Button>
-                  <Button
-                    variant="outline-success"
-                    onClick={() => setShowExportModal(true)}
-                  >
-                    <MdDownload className="me-1" />
-                    Export
-                  </Button>
-                  <Button
-                    variant="outline-secondary"
-                    onClick={handleRefresh}
-                    disabled={refreshing}
-                  >
-                    {refreshing ? (
-                      <Spinner animation="border" size="sm" className="me-1" />
-                    ) : (
-                      <MdRefresh className="me-1" />
-                    )}
-                    Refresh
-                  </Button>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <MdQuestionAnswer size={64} className="text-[var(--text-secondary)] mb-3 mx-auto" />
+                <h5 className="text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium mb-2">No Responses Found</h5>
+                <p className="text-[var(--text-secondary)]">
+                  {searchTerm || ratingFilter !== 'all' || dateFilter !== 'all'
+                    ? 'Try adjusting your filters to see more results.'
+                    : 'No responses have been submitted for this survey yet.'}
+                </p>
+                {(searchTerm || ratingFilter !== 'all' || dateFilter !== 'all') && (
+                  <button className="mt-3 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]" onClick={() => { setSearchTerm(''); setRatingFilter('all'); setDateFilter('all'); setAnonymousFilter('all'); }}>
+                    Clear Filters
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-center">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-2 mx-auto">
+                  <FaUsers size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.totalResponses}</h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-0">Total Responses</p>
+              </div>
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-center">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-2 mx-auto">
+                  <FaStar size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.averageRating?.toFixed(1) || 'N/A'}</h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-0">Average Rating</p>
+              </div>
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-center">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 mb-2 mx-auto">
+                  <MdTrendingUp size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.averageScore?.toFixed(0) || 'N/A'}</h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-0">Average Score</p>
+              </div>
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-center">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 mb-2 mx-auto">
+                  <FaChartLine size={24} />
+                </div>
+                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.npsScore || 'N/A'}</h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-0">NPS Score</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <h6 className="mb-0 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Response Trend</h6>
+                </div>
+                <div className="p-4">
+                  {analytics.responsesByDate?.length > 0 ? (
+                    <Line data={responsesTrendData} options={{ responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }} />
+                  ) : (
+                    <div className="text-center py-12 text-[var(--text-secondary)]">
+                      <MdAnalytics size={48} className="mb-2 mx-auto" />
+                      <p>No trend data available</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <h6 className="mb-0 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Rating Distribution</h6>
+                </div>
+                <div className="p-4">
+                  <Bar data={ratingData} options={{ responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-      {/* Main Content */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="p-0">
-              <Tabs
-                activeKey={activeTab}
-                onSelect={setActiveTab}
-                className="px-3 pt-3"
-              >
-                {/* Responses Tab */}
-                <Tab 
-                  eventKey="responses" 
-                  title={<span><MdVisibility className="me-1" />Responses ({totalResponses})</span>}
-                >
-                  <div className="p-4">
-                    {/* Search and Quick Filters */}
-                    <Row className="mb-4">
-                      <Col lg={5}>
-                        <InputGroup>
-                          <InputGroup.Text><MdSearch /></InputGroup.Text>
-                          <Form.Control
-                            type="text"
-                            placeholder="Search by review text..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                          />
-                        </InputGroup>
-                      </Col>
-                      <Col lg={7}>
-                        <div className="d-flex gap-2 flex-wrap">
-                          <Form.Select
-                            value={ratingFilter}
-                            onChange={(e) => setRatingFilter(e.target.value)}
-                            style={{ width: 'auto' }}
-                          >
-                            <option value="all">All Ratings</option>
-                            <option value="5">5 Stars</option>
-                            <option value="4">4 Stars</option>
-                            <option value="3">3 Stars</option>
-                            <option value="2">2 Stars</option>
-                            <option value="1">1 Star</option>
-                          </Form.Select>
-                          <Form.Select
-                            value={anonymousFilter}
-                            onChange={(e) => setAnonymousFilter(e.target.value)}
-                            style={{ width: 'auto' }}
-                          >
-                            <option value="all">All Respondents</option>
-                            <option value="true">Anonymous Only</option>
-                            <option value="false">Identified Only</option>
-                          </Form.Select>
-                          <Form.Select
-                            value={dateFilter}
-                            onChange={(e) => setDateFilter(e.target.value)}
-                            style={{ width: 'auto' }}
-                          >
-                            <option value="all">All Time</option>
-                            <option value="today">Today</option>
-                            <option value="week">Last 7 Days</option>
-                            <option value="month">Last 30 Days</option>
-                            <option value="quarter">Last 90 Days</option>
-                          </Form.Select>
-                        </div>
-                      </Col>
-                    </Row>
-
-                    {/* Responses Table */}
-                    {responses.length > 0 ? (
-                      <>
-                        <div className="table-responsive">
-                          <Table hover className="align-middle">
-                            <thead className="table-light">
-                              <tr>
-                                <th>ID</th>
-                                <th>Submitted</th>
-                                <th>Respondent</th>
-                                <th>Rating</th>
-                                <th>Score</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {responses.map((response) => (
-                                <tr key={response._id || response.id}>
-                                  <td>
-                                    <code className="text-primary">
-                                      #{(response._id || response.id)?.slice(-6)}
-                                    </code>
-                                  </td>
-                                  <td>
-                                    <div className="d-flex align-items-center">
-                                      <MdAccessTime className="text-muted me-1" />
-                                      <div>
-                                        <div className="small">
-                                          {new Date(response.submittedAt || response.createdAt).toLocaleDateString()}
-                                        </div>
-                                        <small className="text-muted">
-                                          {new Date(response.submittedAt || response.createdAt).toLocaleTimeString()}
-                                        </small>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td>
-                                    {response.isAnonymous ? (
-                                      <span className="d-flex align-items-center text-muted">
-                                        <MdPublic className="me-1" />
-                                        Anonymous
-                                      </span>
-                                    ) : (
-                                      <span className="d-flex align-items-center">
-                                        <MdPerson className="me-1 text-primary" />
-                                        {response.user?.name || response.user?.email || response.respondent || 'User'}
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td>
-                                    <div className="d-flex align-items-center">
-                                      {getRatingStars(response.rating)}
-                                      {response.rating && (
-                                        <span className="ms-2 small text-muted">({response.rating})</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    {getScoreBadge(response.score)}
-                                  </td>
-                                  <td>
-                                    {getStatusBadge(response.status || 'submitted')}
-                                  </td>
-                                  <td>
-                                    <div className="d-flex gap-1">
-                                      <OverlayTrigger overlay={<Tooltip>View Details</Tooltip>}>
-                                        <Button
-                                          variant="outline-primary"
-                                          size="sm"
-                                          onClick={() => {
-                                            setSelectedResponse(response);
-                                            setShowResponseModal(true);
-                                          }}
-                                        >
-                                          <MdVisibility />
-                                        </Button>
-                                      </OverlayTrigger>
-                                      {response.score && response.score < 50 && (
-                                        <OverlayTrigger overlay={<Tooltip>Low score - needs attention</Tooltip>}>
-                                          <Button variant="outline-warning" size="sm">
-                                            <MdFlag />
-                                          </Button>
-                                        </OverlayTrigger>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </Table>
-                        </div>
-
-                        {/* Pagination */}
-                        <div className="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3">
-                          <div className="d-flex align-items-center gap-3">
-                            <small className="text-muted">
-                              Showing {((currentPage - 1) * itemsPerPage) + 1} to{" "}
-                              {Math.min(currentPage * itemsPerPage, totalResponses)} of {totalResponses}
-                            </small>
-                            <Form.Select
-                              size="sm"
-                              value={itemsPerPage}
-                              onChange={(e) => {
-                                setItemsPerPage(parseInt(e.target.value));
-                                setCurrentPage(1);
-                              }}
-                              style={{ width: 'auto' }}
-                            >
-                              <option value="10">10 / page</option>
-                              <option value="20">20 / page</option>
-                              <option value="50">50 / page</option>
-                              <option value="100">100 / page</option>
-                            </Form.Select>
-                          </div>
-                          
-                          <Pagination className="mb-0">
-                            <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
-                            <Pagination.Prev onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} />
-                            
-                            {[...Array(Math.min(5, totalPages))].map((_, index) => {
-                              const page = Math.max(1, currentPage - 2) + index;
-                              if (page <= totalPages) {
-                                return (
-                                  <Pagination.Item
-                                    key={page}
-                                    active={page === currentPage}
-                                    onClick={() => setCurrentPage(page)}
-                                  >
-                                    {page}
-                                  </Pagination.Item>
-                                );
-                              }
-                              return null;
-                            })}
-                            
-                            <Pagination.Next onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} />
-                            <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
-                          </Pagination>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-5">
-                        <MdQuestionAnswer size={64} className="text-muted mb-3" />
-                        <h5>No Responses Found</h5>
-                        <p className="text-muted">
-                          {searchTerm || ratingFilter !== 'all' || dateFilter !== 'all' 
-                            ? 'Try adjusting your filters to see more results.'
-                            : 'No responses have been submitted for this survey yet.'}
-                        </p>
-                        {(searchTerm || ratingFilter !== 'all' || dateFilter !== 'all') && (
-                          <Button 
-                            variant="outline-primary"
-                            onClick={() => {
-                              setSearchTerm('');
-                              setRatingFilter('all');
-                              setDateFilter('all');
-                              setAnonymousFilter('all');
-                            }}
-                          >
-                            Clear Filters
-                          </Button>
-                        )}
+        {/* Action Items Tab */}
+        {activeTab === 'actions' && (
+          <div className="p-4">
+            {actionItems.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {actionItems.map(action => (
+                  <div key={action._id || action.id} className={`border-l-4 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] p-4 ${action.priority === 'high' ? 'border-l-[var(--danger-color)]' : action.priority === 'medium' ? 'border-l-yellow-500' : 'border-l-[var(--success-color)]'}`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex gap-2">
+                        {getPriorityBadge(action.priority)}
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.secondary}`}>{action.status}</span>
                       </div>
+                      <small className="text-[var(--text-secondary)]">{formatDate(action.createdAt)}</small>
+                    </div>
+                    <h6 className="mb-2 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{action.title}</h6>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">{action.description}</p>
+                    {action.assignedTo && (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.info}`}>
+                        Assigned: {action.assignedTo?.name || action.assignedTo}
+                      </span>
                     )}
                   </div>
-                </Tab>
-
-                {/* Analytics Tab */}
-                <Tab 
-                  eventKey="analytics" 
-                  title={<span><MdAnalytics className="me-1" />Analytics</span>}
-                >
-                  <div className="p-4">
-                    <Row>
-                      {/* Summary Cards */}
-                      <Col lg={3} md={6} className="mb-4">
-                        <Card className="h-100 border-0 bg-primary bg-opacity-10">
-                          <Card.Body className="text-center">
-                            <FaUsers size={32} className="text-primary mb-2" />
-                            <h3 className="mb-1">{analytics.totalResponses}</h3>
-                            <p className="text-muted mb-0 small">Total Responses</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      <Col lg={3} md={6} className="mb-4">
-                        <Card className="h-100 border-0 bg-success bg-opacity-10">
-                          <Card.Body className="text-center">
-                            <FaStar size={32} className="text-success mb-2" />
-                            <h3 className="mb-1">{analytics.averageRating?.toFixed(1) || 'N/A'}</h3>
-                            <p className="text-muted mb-0 small">Average Rating</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      <Col lg={3} md={6} className="mb-4">
-                        <Card className="h-100 border-0 bg-info bg-opacity-10">
-                          <Card.Body className="text-center">
-                            <MdTrendingUp size={32} className="text-info mb-2" />
-                            <h3 className="mb-1">{analytics.averageScore?.toFixed(0) || 'N/A'}</h3>
-                            <p className="text-muted mb-0 small">Average Score</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      <Col lg={3} md={6} className="mb-4">
-                        <Card className="h-100 border-0 bg-warning bg-opacity-10">
-                          <Card.Body className="text-center">
-                            <FaChartLine size={32} className="text-warning mb-2" />
-                            <h3 className="mb-1">{analytics.npsScore || 'N/A'}</h3>
-                            <p className="text-muted mb-0 small">NPS Score</p>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-
-                    <Row>
-                      {/* Response Trend Chart */}
-                      <Col lg={8} className="mb-4">
-                        <Card className="h-100">
-                          <Card.Header className="bg-transparent">
-                            <h6 className="mb-0">Response Trend</h6>
-                          </Card.Header>
-                          <Card.Body>
-                            {analytics.responsesByDate?.length > 0 ? (
-                              <Line 
-                                data={responsesTrendData} 
-                                options={{
-                                  responsive: true,
-                                  maintainAspectRatio: true,
-                                  plugins: { legend: { display: false } },
-                                  scales: { y: { beginAtZero: true } }
-                                }} 
-                              />
-                            ) : (
-                              <div className="text-center py-5 text-muted">
-                                <MdAnalytics size={48} className="mb-2" />
-                                <p>No trend data available</p>
-                              </div>
-                            )}
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      {/* Rating Distribution */}
-                      <Col lg={4} className="mb-4">
-                        <Card className="h-100">
-                          <Card.Header className="bg-transparent">
-                            <h6 className="mb-0">Rating Distribution</h6>
-                          </Card.Header>
-                          <Card.Body>
-                            <Bar 
-                              data={ratingData} 
-                              options={{
-                                responsive: true,
-                                maintainAspectRatio: true,
-                                plugins: { legend: { display: false } },
-                                scales: { y: { beginAtZero: true } }
-                              }} 
-                            />
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-                  </div>
-                </Tab>
-
-                {/* Action Items Tab */}
-                <Tab 
-                  eventKey="actions" 
-                  title={<span><MdAssignment className="me-1" />Actions ({actionItems.length})</span>}
-                >
-                  <div className="p-4">
-                    {actionItems.length > 0 ? (
-                      <Row>
-                        {actionItems.map(action => (
-                          <Col lg={6} key={action._id || action.id} className="mb-3">
-                            <Card className={`border-start border-4 ${
-                              action.priority === 'high' ? 'border-danger' : 
-                              action.priority === 'medium' ? 'border-warning' : 'border-success'
-                            }`}>
-                              <Card.Body>
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  <div>
-                                    {getPriorityBadge(action.priority)}
-                                    <Badge bg="secondary" className="ms-2">{action.status}</Badge>
-                                  </div>
-                                  <small className="text-muted">
-                                    {formatDate(action.createdAt)}
-                                  </small>
-                                </div>
-                                <h6 className="mb-2">{action.title}</h6>
-                                <p className="text-muted small mb-2">{action.description}</p>
-                                {action.assignedTo && (
-                                  <Badge bg="info">
-                                    Assigned: {action.assignedTo?.name || action.assignedTo}
-                                  </Badge>
-                                )}
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        ))}
-                      </Row>
-                    ) : (
-                      <div className="text-center py-5">
-                        <MdAssignment size={64} className="text-muted mb-3" />
-                        <h5>No Action Items</h5>
-                        <p className="text-muted">No actions have been generated for this survey yet.</p>
-                        <Button 
-                          variant="outline-primary"
-                          onClick={() => navigate(`/app/surveys/${id}/actions`)}
-                        >
-                          View All Actions
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </Tab>
-              </Tabs>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <MdAssignment size={64} className="text-[var(--text-secondary)] mb-3 mx-auto" />
+                <h5 className="text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium mb-2">No Action Items</h5>
+                <p className="text-[var(--text-secondary)] mb-3">No actions have been generated for this survey yet.</p>
+                <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]" onClick={() => navigate(`/app/surveys/${id}/actions`)}>
+                  View All Actions
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Response Detail Modal */}
-      <Modal show={showResponseModal} onHide={() => setShowResponseModal(false)} size="lg" centered>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            Response Details <code className="ms-2">#{(selectedResponse?._id || selectedResponse?.id)?.slice(-6)}</code>
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedResponse && (
-            <div>
-              {/* Response Meta */}
-              <Row className="mb-4">
-                <Col md={6}>
-                  <div className="mb-3">
-                    <strong className="text-muted d-block small mb-1">Submitted</strong>
-                    <span>{formatDate(selectedResponse.submittedAt || selectedResponse.createdAt)}</span>
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <div className="mb-3">
-                    <strong className="text-muted d-block small mb-1">Respondent</strong>
-                    <span>
-                      {selectedResponse.isAnonymous 
-                        ? 'Anonymous' 
-                        : selectedResponse.user?.name || selectedResponse.user?.email || 'Unknown'}
-                    </span>
-                  </div>
-                </Col>
-                <Col md={4}>
-                  <div className="mb-3">
-                    <strong className="text-muted d-block small mb-1">Rating</strong>
-                    <div>{getRatingStars(selectedResponse.rating)} {selectedResponse.rating && `(${selectedResponse.rating}/5)`}</div>
-                  </div>
-                </Col>
-                <Col md={4}>
-                  <div className="mb-3">
-                    <strong className="text-muted d-block small mb-1">Score</strong>
-                    {getScoreBadge(selectedResponse.score)}
-                  </div>
-                </Col>
-                <Col md={4}>
-                  <div className="mb-3">
-                    <strong className="text-muted d-block small mb-1">Status</strong>
-                    {getStatusBadge(selectedResponse.status || 'submitted')}
-                  </div>
-                </Col>
-              </Row>
-
-              {/* Review Text */}
-              {selectedResponse.review && (
-                <div className="mb-4">
-                  <strong className="text-muted d-block small mb-1">Review</strong>
-                  <Card className="bg-light border-0">
-                    <Card.Body>
-                      <p className="mb-0">{selectedResponse.review}</p>
-                    </Card.Body>
-                  </Card>
-                </div>
-              )}
-
-              <hr />
-
-              {/* Answers */}
-              <h6 className="mb-3">Answers</h6>
-              {selectedResponse.answers?.length > 0 ? (
-                selectedResponse.answers.map((answer, index) => (
-                  <Card key={index} className="mb-2 border-0 bg-light">
-                    <Card.Body className="py-3">
-                      <strong className="d-block mb-2">
-                        Q{index + 1}: {getQuestionText(answer.questionId)}
-                      </strong>
-                      <div className="ps-3">
-                        {typeof answer.answer === 'object' ? (
-                          <pre className="mb-0 small">{JSON.stringify(answer.answer, null, 2)}</pre>
-                        ) : (
-                          <p className="mb-0">{answer.answer || 'No answer provided'}</p>
-                        )}
-                        {answer.media?.length > 0 && (
-                          <div className="mt-2">
-                            <small className="text-muted">Attachments: {answer.media.length} file(s)</small>
-                          </div>
-                        )}
+      {showResponseModal && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowResponseModal(false)}>
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-3xl w-full max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">Response Details <code className="ml-2 text-[var(--primary-color)]">#{(selectedResponse?._id || selectedResponse?.id)?.slice(-6)}</code></h5>
+                <button className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] text-xl" onClick={() => setShowResponseModal(false)}>&times;</button>
+              </div>
+              <div className="p-4">
+                {selectedResponse && (
+                  <div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <strong className="text-[var(--text-secondary)] block text-sm mb-1">Submitted</strong>
+                        <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">{formatDate(selectedResponse.submittedAt || selectedResponse.createdAt)}</span>
                       </div>
-                    </Card.Body>
-                  </Card>
-                ))
-              ) : (
-                <p className="text-muted">No individual answers recorded.</p>
-              )}
+                      <div>
+                        <strong className="text-[var(--text-secondary)] block text-sm mb-1">Respondent</strong>
+                        <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">{selectedResponse.isAnonymous ? 'Anonymous' : selectedResponse.user?.name || selectedResponse.user?.email || 'Unknown'}</span>
+                      </div>
+                      <div>
+                        <strong className="text-[var(--text-secondary)] block text-sm mb-1">Rating</strong>
+                        <div>{getRatingStars(selectedResponse.rating)} {selectedResponse.rating && `(${selectedResponse.rating}/5)`}</div>
+                      </div>
+                      <div>
+                        <strong className="text-[var(--text-secondary)] block text-sm mb-1">Score</strong>
+                        {getScoreBadge(selectedResponse.score)}
+                      </div>
+                    </div>
 
-              {/* IP Address (if available) */}
-              {selectedResponse.ip && (
-                <div className="mt-3 pt-3 border-top">
-                  <small className="text-muted">
-                    <MdLocationOn className="me-1" />
-                    IP: {selectedResponse.ip}
-                  </small>
-                </div>
-              )}
+                    {selectedResponse.review && (
+                      <div className="mb-4">
+                        <strong className="text-[var(--text-secondary)] block text-sm mb-1">Review</strong>
+                        <div className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md p-3">
+                          <p className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">{selectedResponse.review}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <hr className="border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+
+                    <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">Answers</h6>
+                    {selectedResponse.answers?.length > 0 ? (
+                      selectedResponse.answers.map((answer, index) => (
+                        <div key={index} className="mb-2 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md p-3">
+                          <strong className="block mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Q{index + 1}: {getQuestionText(answer.questionId)}</strong>
+                          <div className="pl-3">
+                            {typeof answer.answer === 'object' ? (
+                              <pre className="mb-0 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{JSON.stringify(answer.answer, null, 2)}</pre>
+                            ) : (
+                              <p className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">{answer.answer || 'No answer provided'}</p>
+                            )}
+                            {answer.media?.length > 0 && (
+                              <div className="mt-2">
+                                <small className="text-[var(--text-secondary)]">Attachments: {answer.media.length} file(s)</small>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[var(--text-secondary)]">No individual answers recorded.</p>
+                    )}
+
+                    {selectedResponse.ip && (
+                      <div className="mt-3 pt-3 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <small className="text-[var(--text-secondary)]">
+                          <MdLocationOn className="mr-1 inline" />
+                          IP: {selectedResponse.ip}
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end p-4 pt-0">
+                <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]" onClick={() => setShowResponseModal(false)}>Close</button>
+              </div>
             </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowResponseModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          </div>
+        </div>
+      )}
 
       {/* Filter Modal */}
-      <Modal show={showFilterModal} onHide={() => setShowFilterModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Advanced Filters</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Date Range</Form.Label>
-              <Form.Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">Last 7 Days</option>
-                <option value="month">Last 30 Days</option>
-                <option value="quarter">Last 90 Days</option>
-              </Form.Select>
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Rating</Form.Label>
-              <Form.Select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
-                <option value="all">All Ratings</option>
-                <option value="5">5 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="3">3 Stars</option>
-                <option value="2">2 Stars</option>
-                <option value="1">1 Star</option>
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Respondent Type</Form.Label>
-              <Form.Select value={anonymousFilter} onChange={(e) => setAnonymousFilter(e.target.value)}>
-                <option value="all">All Respondents</option>
-                <option value="true">Anonymous Only</option>
-                <option value="false">Identified Only</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button 
-            variant="outline-secondary" 
-            onClick={() => {
-              setDateFilter('all');
-              setRatingFilter('all');
-              setAnonymousFilter('all');
-            }}
-          >
-            Reset
-          </Button>
-          <Button variant="primary" onClick={() => setShowFilterModal(false)}>
-            Apply Filters
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {showFilterModal && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowFilterModal(false)}>
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-3xl w-full max-h-[90vh] overflow-auto" style={{maxWidth: '28rem'}} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">Advanced Filters</h5>
+                <button className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] text-xl" onClick={() => setShowFilterModal(false)}>&times;</button>
+              </div>
+              <div className="p-4">
+                <div className="mb-3">
+                  <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Date Range</label>
+                  <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">Last 7 Days</option>
+                    <option value="month">Last 30 Days</option>
+                    <option value="quarter">Last 90 Days</option>
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Rating</label>
+                  <select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)} className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                    <option value="all">All Ratings</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                  </select>
+                </div>
+                <div className="mb-3">
+                  <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Respondent Type</label>
+                  <select value={anonymousFilter} onChange={(e) => setAnonymousFilter(e.target.value)} className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                    <option value="all">All Respondents</option>
+                    <option value="true">Anonymous Only</option>
+                    <option value="false">Identified Only</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 p-4 pt-0">
+                <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]" onClick={() => { setDateFilter('all'); setRatingFilter('all'); setAnonymousFilter('all'); }}>Reset</button>
+                <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]" onClick={() => setShowFilterModal(false)}>Apply Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Export Modal */}
-      <Modal show={showExportModal} onHide={() => setShowExportModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Export Responses</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="d-grid gap-3">
-            <Button 
-              variant="outline-danger" 
-              onClick={() => handleExport('pdf')}
-              disabled={exporting}
-            >
-              {exporting ? <Spinner size="sm" className="me-2" /> : <MdDownload className="me-2" />}
-              Export as PDF Report
-            </Button>
-            <Button 
-              variant="outline-success" 
-              onClick={() => handleExport('csv')}
-              disabled={exporting}
-            >
-              {exporting ? <Spinner size="sm" className="me-2" /> : <MdDownload className="me-2" />}
-              Export as CSV Data
-            </Button>
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowExportModal(false)}>
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-3xl w-full max-h-[90vh] overflow-auto" style={{maxWidth: '28rem'}} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">Export Responses</h5>
+                <button className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] text-xl" onClick={() => setShowExportModal(false)}>&times;</button>
+              </div>
+              <div className="p-4 flex flex-col gap-3">
+                <button className="flex items-center justify-center w-full px-4 py-3 rounded-md font-medium transition-colors bg-[var(--danger-color)] text-white hover:opacity-80 disabled:opacity-50" onClick={() => handleExport('pdf')} disabled={exporting}>
+                  {exporting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> : <MdDownload className="mr-2" />}
+                  Export as PDF Report
+                </button>
+                <button className="flex items-center justify-center w-full px-4 py-3 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:opacity-80 disabled:opacity-50" onClick={() => handleExport('csv')} disabled={exporting}>
+                  {exporting ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> : <MdDownload className="mr-2" />}
+                  Export as CSV Data
+                </button>
+              </div>
+            </div>
           </div>
-        </Modal.Body>
-      </Modal>
+        </div>
+      )}
 
-      {/* Toast Notifications */}
-      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-        <Toast
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-          bg={toastVariant}
-        >
-          <Toast.Body className="text-white">
-            {toastVariant === 'success' && <MdCheckCircle className="me-2" />}
-            {toastVariant === 'danger' && <MdWarning className="me-2" />}
-            {toastMessage}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
-    </Container>
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 right-4 z-[9999] p-4 rounded-md shadow-lg text-white flex items-center gap-2" style={{ backgroundColor: toastVariant === 'success' ? 'var(--success-color)' : 'var(--danger-color)' }}>
+          {toastVariant === 'success' && <MdCheckCircle />}
+          {toastVariant === 'danger' && <MdWarning />}
+          {toastMessage}
+          <button className="ml-3 text-white/80 hover:text-white" onClick={() => setShowToast(false)}>&times;</button>
+        </div>
+      )}
+    </div>
   );
 };
 

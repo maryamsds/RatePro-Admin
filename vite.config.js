@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react"
 
 export default defineConfig({
   plugins: [react()],
-  base:'/',
+  base: '/',
   build: {
     outDir: "dist",
     sourcemap: false,
@@ -11,7 +11,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ["react", "react-dom"],
-          bootstrap: ["bootstrap", "react-bootstrap"],
           router: ["react-router-dom"],
         },
       },
@@ -25,6 +24,6 @@ export default defineConfig({
     strictPort: true,
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "react-router-dom", "bootstrap", "react-bootstrap"],
+    include: ["react", "react-dom", "react-router-dom"],
   },
 })

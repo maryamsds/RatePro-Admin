@@ -7,7 +7,7 @@
 // ============================================================================
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Container, Card, Button, Badge } from 'react-bootstrap';
+// react-bootstrap removed — using native HTML + Tailwind CSS
 import { MdBlock, MdHome, MdArrowBack, MdSupport } from 'react-icons/md';
 import { useAuth } from '../../context/AuthContext';
 
@@ -71,75 +71,63 @@ const Unauthorized = () => {
     };
 
     return (
-        <Container
-            fluid
-            className="d-flex align-items-center justify-content-center"
-            style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}
-        >
-            <Card className="shadow-lg border-0" style={{ maxWidth: '480px', width: '100%' }}>
-                <Card.Body className="text-center p-5">
-                    {/* Icon */}
-                    <div
-                        className="mx-auto mb-4 d-flex align-items-center justify-content-center"
-                        style={{
-                            width: '80px',
-                            height: '80px',
-                            borderRadius: '50%',
-                            backgroundColor: '#fee2e2',
-                        }}
+        <div className="min-h-screen flex items-center justify-center bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] p-6">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg p-8 border border-[var(--light-border)] dark:border-[var(--dark-border)] max-w-md w-full text-center">
+                {/* Icon */}
+                <div className="w-20 h-20 rounded-full bg-[var(--danger-color)]/10 dark:bg-[var(--danger-color)]/20 flex items-center justify-center mx-auto mb-6">
+                    <MdBlock className="text-5xl text-[var(--danger-color)]" />
+                </div>
+
+                {/* Title */}
+                <h1 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-3">
+                    403 - Unauthorized
+                </h1>
+                <p className="text-[var(--text-secondary)] mb-6">
+                    You don't have permission to access this page or perform this action.
+                </p>
+
+                {/* Role Information */}
+                <div className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md p-4 mb-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm text-[var(--text-secondary)]">Your Role:</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                            {displayRole}
+                        </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm text-[var(--text-secondary)]">Required:</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--primary-color)]/10 dark:bg-[var(--primary-color)]/20 text-[var(--primary-color)]">
+                            {displayRequired}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 justify-center flex-wrap mb-6">
+                    <button
+                        type="button"
+                        onClick={handleGoBack}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
                     >
-                        <MdBlock size={40} className="text-danger" />
-                    </div>
+                        <MdArrowBack size={18} />
+                        Go Back
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleGoHome}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-medium bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] transition-colors"
+                    >
+                        <MdHome size={18} />
+                        Go to Home
+                    </button>
+                </div>
 
-                    {/* Title */}
-                    <h2 className="fw-bold text-dark mb-2">Access Denied</h2>
-                    <p className="text-muted mb-4">
-                        You don't have permission to access this page or perform this action.
-                    </p>
-
-                    {/* Role Information */}
-                    <div className="bg-light rounded p-3 mb-4">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                            <span className="text-muted small">Your Role:</span>
-                            <Badge bg="secondary" className="px-3 py-2">
-                                {displayRole}
-                            </Badge>
-                        </div>
-                        <div className="d-flex justify-content-between align-items-center">
-                            <span className="text-muted small">Required:</span>
-                            <Badge bg="primary" className="px-3 py-2">
-                                {displayRequired}
-                            </Badge>
-                        </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="d-flex gap-2 justify-content-center flex-wrap">
-                        <Button
-                            variant="outline-secondary"
-                            onClick={handleGoBack}
-                            className="d-flex align-items-center gap-2"
-                        >
-                            <MdArrowBack size={18} />
-                            Go Back
-                        </Button>
-                        <Button
-                            variant="primary"
-                            onClick={handleGoHome}
-                            className="d-flex align-items-center gap-2"
-                        >
-                            <MdHome size={18} />
-                            Go to Home
-                        </Button>
-                    </div>
-
-                    {/* Help Text */}
-                    <p className="text-muted small mt-4 mb-0">
-                        If you believe this is an error, please contact your administrator.
-                    </p>
-                </Card.Body>
-            </Card>
-        </Container>
+                {/* Help Text */}
+                <p className="text-sm text-[var(--text-secondary)]">
+                    If you believe this is an error, please contact your administrator.
+                </p>
+            </div>
+        </div>
     );
 };
 

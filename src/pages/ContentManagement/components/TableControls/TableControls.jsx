@@ -1,8 +1,17 @@
-// src/components/TableControls/TableControls.jsx
+// src/components/TableControls/TableControls.jsx (ContentManagement copy)
 "use client"
 
-import { Form, InputGroup, Button } from "react-bootstrap"
 import { MdSearch, MdFilterList, MdRefresh } from "react-icons/md"
+
+const inputClass = `w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                    bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]
+                    focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
+                    transition-all duration-200 text-sm`
+
+const btnClass = `inline-flex items-center gap-1 px-3 py-2 text-sm rounded-lg
+                  border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                  text-[var(--light-text)] dark:text-[var(--dark-text)]
+                  hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200`
 
 const TableControls = ({
   searchTerm,
@@ -17,25 +26,25 @@ const TableControls = ({
 }) => {
   return (
     <div className={`mb-4 ${className}`}>
-      <div className="d-flex flex-column flex-md-row gap-3">
-        <InputGroup className="flex-grow-1">
-          <InputGroup.Text className={darkMode ? "bg-dark border-dark text-light" : ""}>
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex-1 relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--secondary-color)]">
             <MdSearch />
-          </InputGroup.Text>
-          <Form.Control
+          </span>
+          <input
             type="text"
             placeholder={placeholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={darkMode ? "bg-dark border-dark text-light" : ""}
+            className={`${inputClass} pl-9`}
           />
-        </InputGroup>
+        </div>
 
         {filterOptions && (
-          <Form.Select
+          <select
             value={selectedFilter}
             onChange={(e) => setSelectedFilter(e.target.value)}
-            className={`flex-grow-1 ${darkMode ? "bg-dark border-dark text-light" : ""}`}
+            className={`${inputClass} appearance-auto`}
             style={{ minWidth: '150px' }}
           >
             <option value="all">All</option>
@@ -44,25 +53,18 @@ const TableControls = ({
                 {option.label}
               </option>
             ))}
-          </Form.Select>
+          </select>
         )}
 
-        <Button 
-          variant="outline-secondary" 
-          onClick={onRefresh}
-          className={darkMode ? "text-light" : ""}
-        >
-          <MdRefresh className="me-1" />
+        <button onClick={onRefresh} className={btnClass}>
+          <MdRefresh />
           Refresh
-        </Button>
+        </button>
 
-        <Button 
-          variant="outline-secondary" 
-          className={darkMode ? "text-light" : ""}
-        >
-          <MdFilterList className="me-1" />
+        <button className={btnClass}>
+          <MdFilterList />
           More Filters
-        </Button>
+        </button>
       </div>
     </div>
   )

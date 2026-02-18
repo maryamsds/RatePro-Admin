@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  Container, Row, Col, Card, Button, Badge, Form,
-  InputGroup, Modal, Spinner, Alert, Tabs, Tab,
-  OverlayTrigger, Tooltip, ListGroup, Table,
-  Accordion, Offcanvas
-} from 'react-bootstrap';
+
 import {
   MdQrCode, MdShare, MdEmail, MdSms, MdLink,
   MdDownload, MdPrint, MdContentCopy, MdSettings,
@@ -211,30 +206,30 @@ const SurveyDistribution = () => {
     link.href = canvas.toDataURL(`image/${format}`);
     link.click();
   };
- 
- const printQR = () => {
-  const qrContainer = document.getElementById("qr-preview");
-  if (!qrContainer) return console.error("QR preview not found!");
 
-  const cloned = qrContainer.cloneNode(true);
+  const printQR = () => {
+    const qrContainer = document.getElementById("qr-preview");
+    if (!qrContainer) return console.error("QR preview not found!");
 
-  // Replace CSS vars with actual values (just like download fix)
-  const computedBg = getComputedStyle(document.documentElement)
-    .getPropertyValue("--primary-color")
-    .trim() || "#1fdae4";
+    const cloned = qrContainer.cloneNode(true);
 
-  cloned.querySelectorAll("*").forEach((el) => {
-    if (el.getAttribute("fill") === "var(--primary-color)") {
-      el.setAttribute("fill", computedBg);
-    }
-  });
+    // Replace CSS vars with actual values (just like download fix)
+    const computedBg = getComputedStyle(document.documentElement)
+      .getPropertyValue("--primary-color")
+      .trim() || "#1fdae4";
 
-  const qrHTML = cloned.innerHTML;
-  const title = survey?.title || "Survey QR Code";
-  const customText = qrSettings?.customText || "";
+    cloned.querySelectorAll("*").forEach((el) => {
+      if (el.getAttribute("fill") === "var(--primary-color)") {
+        el.setAttribute("fill", computedBg);
+      }
+    });
 
-  const printWindow = window.open("", "", "width=700,height=900");
-  printWindow.document.write(`
+    const qrHTML = cloned.innerHTML;
+    const title = survey?.title || "Survey QR Code";
+    const customText = qrSettings?.customText || "";
+
+    const printWindow = window.open("", "", "width=700,height=900");
+    printWindow.document.write(`
     <html>
       <head>
         <title>${title}</title>
@@ -278,10 +273,10 @@ const SurveyDistribution = () => {
     </html>
   `);
 
-  printWindow.document.close();
-  printWindow.onload = () => setTimeout(() => printWindow.print(), 500);
-};
- 
+    printWindow.document.close();
+    printWindow.onload = () => setTimeout(() => printWindow.print(), 500);
+  };
+
 
   // Copy survey link
   const copyLink = (url) => {
@@ -384,897 +379,662 @@ const SurveyDistribution = () => {
 
   if (loading) {
     return (
-      <Container fluid className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-        <Spinner animation="border" variant="primary" />
-      </Container>
+      <div className="w-full flex justify-center items-center" style={{ minHeight: '400px' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary-color)]"></div>
+      </div>
     );
   }
 
   if (!survey) {
     return (
-      <Container fluid>
-        <Alert variant="danger">
+      <div className="w-full">
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-md">
           Survey not found. Please check the survey ID and try again.
-        </Alert>
-      </Container>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container fluid className="survey-distribution">
+    <div className="w-full">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-start">
-            <div>
-              <div className="d-flex align-items-center mb-2">
-                <MdShare className="me-2 text-primary" size={32} />
-                <h1 className="h3 mb-0 fw-bold">Survey Distribution</h1>
-              </div>
-              <p className="text-muted mb-2">
-                Distribute "{survey.title}" across multiple channels
-              </p>
-
-              {/* Survey Stats */}
-              <div className="d-flex gap-3">
-                <Badge bg="primary" className="d-flex align-items-center">
-                  <FaEye className="me-1" size={12} />
-                  {survey.responseCount} Responses
-                </Badge>
-                <Badge bg={survey.isActive ? 'success' : 'secondary'} className="d-flex align-items-center">
-                  {survey.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              </div>
+      <div className="mb-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center mb-2">
+              <MdShare className="mr-2 text-[var(--primary-color)]" size={32} />
+              <h1 className="text-xl font-bold mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Distribution</h1>
             </div>
+            <p className="text-[var(--text-secondary)] mb-2">
+              Distribute "{survey.title}" across multiple channels
+            </p>
 
-            <div className="d-flex gap-2">
-              <Button
-                variant="outline-secondary"
-                onClick={() => navigate(`/app/surveys/detail/${id}`)}
-                className="d-flex align-items-center"
-              >
-                <MdVisibility className="me-2" />
-                View Survey
-              </Button>
-              <Button
-                variant="outline-info"
-                onClick={() => navigate(`/app/surveys/${id}/analytics`)}
-                className="d-flex align-items-center"
-              >
-                <MdAnalytics className="me-2" />
-                Analytics
-              </Button>
+            {/* Survey Stats */}
+            <div className="flex gap-3">
+              <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--primary-light)] text-[var(--primary-color)]">
+                <FaEye className="mr-1" size={12} />
+                {survey.responseCount} Responses
+              </span>
+              <span className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${survey.isActive ? 'bg-[var(--success-light)] text-[var(--success-color)]' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
+                {survey.isActive ? 'Active' : 'Inactive'}
+              </span>
             </div>
           </div>
-        </Col>
-      </Row>
+
+          <div className="flex gap-2">
+            <button
+              className="flex items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-card)] dark:hover:bg-[var(--dark-card)]"
+              onClick={() => navigate(`/app/surveys/detail/${id}`)}
+            >
+              <MdVisibility className="mr-2" />
+              View Survey
+            </button>
+            <button
+              className="flex items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white"
+              onClick={() => navigate(`/app/surveys/${id}/analytics`)}
+            >
+              <MdAnalytics className="mr-2" />
+              Analytics
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Distribution Channels Overview */}
-      <Row className="mb-4">
-        <Col>
-          <h5 className="mb-3 fw-semibold">Distribution Channels</h5>
-          <Row>
-            {distributionChannels.map(channel => (
-              <Col lg={2} md={4} sm={6} key={channel.id} className="mb-3">
-                <Card
-                  className="distribution-channel-card h-100 cursor-pointer"
-                  onClick={() => setActiveTab(channel.id)}
-                  style={{ borderColor: activeTab === channel.id ? channel.color : '' }}
-                >
-                  <Card.Body className="text-center p-3">
-                    <channel.icon
-                      size={32}
-                      className="mb-2"
-                      style={{ color: channel.color }}
-                    />
-                    <h6 className="mb-1">{channel.name}</h6>
-                    <p className="text-muted small mb-2">{channel.description}</p>
-                    {/* <Badge
-                      bg="light"
-                      text="dark"
-                      className="small"
-                    >
-                      {survey?.distributionStats[channel.id] || 0} sent
-                    </Badge> */}
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Col>
-      </Row>
+      <div className="mb-6">
+        <h5 className="mb-3 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Distribution Channels</h5>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {distributionChannels.map(channel => (
+            <div
+              key={channel.id}
+              className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] p-4 cursor-pointer hover:shadow-lg transition-all"
+              onClick={() => setActiveTab(channel.id)}
+              style={{ borderColor: activeTab === channel.id ? channel.color : undefined }}
+            >
+              <div className="text-center">
+                <channel.icon
+                  size={32}
+                  className="mb-2 mx-auto"
+                  style={{ color: channel.color }}
+                />
+                <h6 className="mb-1 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{channel.name}</h6>
+                <p className="text-xs text-[var(--text-secondary)]">{channel.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* Main Distribution Tabs */}
-      <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-4">
-        {/* QR Code Tab */}
-        <Tab eventKey="qr" title={
-          <span className="d-flex align-items-center">
-            <MdQrCode className="me-2" />
-            QR Codes
-          </span>
-        }>
-          <Row>
-            <Col lg={8}>
-              <Card className="mb-4">
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <strong>QR Code Generator</strong>
-                  <div className="d-flex gap-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => setShowCustomizeModal(true)}
-                    >
-                      <MdSettings className="me-1" />
-                      Customize
-                    </Button>
-                    <Button
-                      variant="outline-success"
-                      size="sm"
-                      onClick={() => downloadQR('png')}
-                    >
-                      <MdDownload className="me-1" />
-                      Download PNG
-                    </Button>
-                    <Button
-                      variant="outline-info"
-                      size="sm"
-                      onClick={printQR}
-                    >
-                      <MdPrint className="me-1" />
-                      Print
-                    </Button>
-                  </div>
-                </Card.Header>
-                <Card.Body>
-                  <Row>
-                    <Col md={6}>
-                      <div
-                        id="qr-preview"
-                        className="text-center p-4 rounded"
-                      >
-                        {qrSettings.includeTitle && <h5 className="mb-2">{survey.title}</h5>}
-                        <p className="text-muted mb-3">{qrSettings.customText}</p>
+      {/* Main Distribution Tab Navigation */}
+      <div className="flex gap-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] mb-4">
+        {[
+          { key: 'qr', icon: <MdQrCode className="mr-2" />, label: 'QR Codes' },
+          { key: 'link', icon: <MdLink className="mr-2" />, label: 'Direct Links' },
+          { key: 'email', icon: <MdEmail className="mr-2" />, label: 'Email Campaign' },
+          { key: 'sms', icon: <FaWhatsapp className="mr-2" />, label: 'SMS/WhatsApp' },
+          { key: 'social', icon: <MdShare className="mr-2" />, label: 'Social Media' },
+          { key: 'embed', icon: <MdWeb className="mr-2" />, label: 'Website Embed' },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            className={`flex items-center px-4 py-3 border-b-2 transition-colors ${activeTab === tab.key
+              ? 'border-[var(--primary-color)] text-[var(--primary-color)] font-medium'
+              : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--primary-color)]'
+              }`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            {tab.icon}{tab.label}
+          </button>
+        ))}
+      </div>
 
-                        <div
-                          style={{
-                            display: 'inline-block',
-                            position: 'relative',
-                            backgroundColor: '#1fdae4',
-                            padding: '16px',
-                            borderRadius: '12px'
-                          }}
-                        >
-                          <QRCodeSVG
-                            value={survey.url}
-                            size={qrSettings.size}
-                            bgColor="var(--primary-color)"
-                            fgColor={qrSettings.foregroundColor}
-                            level={qrSettings.errorCorrectionLevel}
-                            includeMargin={false}
-                            imageSettings={{
-                              src: logo,
-                              x: undefined,
-                              y: undefined,
-                              height: 60,
-                              width: 60,
-                              excavate: true,
-                            }}
-                          />
-                        </div>
-                        <p className="small text-muted mt-2">
-                          Scan with your phone camera
-                        </p>
+      {/* QR Code Tab */}
+      {activeTab === 'qr' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
+            <div className="mb-4 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="flex justify-between items-center p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">QR Code Generator</strong>
+                <div className="flex gap-2">
+                  <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white" onClick={() => setShowCustomizeModal(true)}>
+                    <MdSettings className="mr-1 inline" /> Customize
+                  </button>
+                  <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white" onClick={() => downloadQR('png')}>
+                    <MdDownload className="mr-1 inline" /> Download PNG
+                  </button>
+                  <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white" onClick={printQR}>
+                    <MdPrint className="mr-1 inline" /> Print
+                  </button>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div id="qr-preview" className="text-center p-4 rounded-md">
+                      {qrSettings.includeTitle && <h5 className="mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">{survey.title}</h5>}
+                      <p className="text-[var(--text-secondary)] mb-3">{qrSettings.customText}</p>
+                      <div style={{ display: 'inline-block', position: 'relative', backgroundColor: '#1fdae4', padding: '16px', borderRadius: '12px' }}>
+                        <QRCodeSVG
+                          value={survey.url}
+                          size={qrSettings.size}
+                          bgColor="var(--primary-color)"
+                          fgColor={qrSettings.foregroundColor}
+                          level={qrSettings.errorCorrectionLevel}
+                          includeMargin={false}
+                          imageSettings={{ src: logo, x: undefined, y: undefined, height: 60, width: 60, excavate: true }}
+                        />
                       </div>
-                    </Col>
-                    <Col md={6}>
-                      <h6 className="mb-3">Physical Location Suggestions</h6>
-                      <Accordion>
-                        {locationTypes.map(location => (
-                          <Accordion.Item eventKey={location.id} key={location.id}>
-                            <Accordion.Header>
-                              <location.icon className="me-2" />
-                              {location.name}
-                            </Accordion.Header>
-                            <Accordion.Body>
-                              <div className="d-flex flex-wrap gap-2">
-                                {location.suggestions.map(suggestion => (
-                                  <Badge
-                                    key={suggestion}
-                                    bg="primary"
-                                    className="cursor-pointer"
-                                    onClick={() => {
-                                      setQrSettings(prev => ({
-                                        ...prev,
-                                        customText: `Scan to share feedback about our ${suggestion.toLowerCase()}`
-                                      }));
-                                    }}
-                                  >
-                                    {suggestion}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </Accordion.Body>
-                          </Accordion.Item>
-                        ))}
-                      </Accordion>
-                    </Col>
-                  </Row>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col lg={4}>
-              <Card className="mb-4">
-                <Card.Header><strong>QR Code Formats</strong></Card.Header>
-                <Card.Body>
-                  <div className="d-grid gap-2">
-                    <Button
-                      variant="outline-primary"
-                      onClick={() => downloadQR('png')}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      <span>PNG Image</span>
-                      <MdDownload />
-                    </Button>
-                    <Button
-                      variant="outline-primary"
-                      onClick={() => downloadQR('jpg')}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      <span>JPEG Image</span>
-                      <MdDownload />
-                    </Button>
-                    <Button
-                      variant="outline-primary"
-                      onClick={() => downloadQR('svg')}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      <span>SVG Vector</span>
-                      <MdDownload />
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      onClick={printQR}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      <span>Print Ready</span>
-                      <MdPrint />
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-
-              <Card>
-                <Card.Header><strong>Quick Actions</strong></Card.Header>
-                <Card.Body>
-                  <div className="d-grid gap-2">
-                    <Button
-                      variant="primary"
-                      onClick={() => copyLink(survey.url)}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      <span>Copy Survey Link</span>
-                      <MdContentCopy />
-                    </Button>
-                    <Button
-                      variant="info"
-                      onClick={() => window.open(survey.url, '_blank')}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      <span>Preview Survey</span>
-                      <MdVisibility />
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Tab>
-
-        {/* Direct Links Tab */}
-        <Tab eventKey="link" title={
-          <span className="d-flex align-items-center">
-            <MdLink className="me-2" />
-            Direct Links
-          </span>
-        }>
-          <Card>
-            <Card.Header><strong>Survey Links</strong></Card.Header>
-            <Card.Body>
-              <Row>
-                <Col lg={8}>
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Full Survey URL</Form.Label>
-                    <InputGroup>
-                      <Form.Control
-                        type="text"
-                        value={survey.url}
-                        readOnly
-                      />
-                      <Button
-                        variant="outline-primary"
-                        onClick={() => copyLink(survey.url)}
-                      >
-                        <MdContentCopy />
-                      </Button>
-                    </InputGroup>
-                  </Form.Group>
-
-                  {/* <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Short URL</Form.Label>
-                    <InputGroup>
-                      <Form.Control
-                        type="text"
-                        value={survey.shortUrl}
-                        readOnly
-                      />
-                      <Button
-                        variant="outline-success"
-                        onClick={() => copyLink(survey.shortUrl)}
-                      >
-                        <MdContentCopy />
-                      </Button>
-                    </InputGroup>
-                  </Form.Group> */}
-
-                  <Alert variant="info" className="d-flex align-items-start">
-                    <FaLightbulb className="me-2 mt-1" />
-                    <div>
-                      <strong>Pro Tips:</strong>
-                      <ul className="mb-0 mt-1">
-                        <li>Use short URLs for SMS and social media</li>
-                        <li>Full URLs work better for email campaigns</li>
-                        <li>Add UTM parameters for tracking sources</li>
-                      </ul>
+                      <p className="text-sm text-[var(--text-secondary)] mt-2">Scan with your phone camera</p>
                     </div>
-                  </Alert>
-                </Col>
+                  </div>
+                  <div>
+                    <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Physical Location Suggestions</h6>
+                    {locationTypes.map(location => (
+                      <details key={location.id} className="mb-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+                        <summary className="flex items-center gap-2 p-3 cursor-pointer hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          <location.icon className="mr-2" />
+                          {location.name}
+                        </summary>
+                        <div className="p-3 pt-0">
+                          <div className="flex flex-wrap gap-2">
+                            {location.suggestions.map(suggestion => (
+                              <span
+                                key={suggestion}
+                                className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--primary-light)] text-[var(--primary-color)] cursor-pointer hover:opacity-80"
+                                onClick={() => {
+                                  setQrSettings(prev => ({
+                                    ...prev,
+                                    customText: `Scan to share feedback about our ${suggestion.toLowerCase()}`
+                                  }));
+                                }}
+                              >
+                                {suggestion}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                <Col lg={4}>
-                  <Card className="bg-light">
-                    <Card.Header className="bg-transparent">
-                      <strong>Link Statistics</strong>
-                    </Card.Header>
-                    <Card.Body>
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Total Clicks:</span>
-                        <strong>1,247</strong>
-                      </div>
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Unique Visitors:</span>
-                        <strong>892</strong>
-                      </div>
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Conversion Rate:</span>
-                        <strong>67%</strong>
-                      </div>
-                      <div className="d-flex justify-content-between">
-                        <span>Avg. Time:</span>
-                        <strong>3:24</strong>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Tab>
+          <div className="lg:col-span-4">
+            <div className="mb-4 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]"><strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">QR Code Formats</strong></div>
+              <div className="p-6">
+                <div className="grid gap-2">
+                  <button className="w-full flex justify-between items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white" onClick={() => downloadQR('png')}>
+                    <span>PNG Image</span> <MdDownload />
+                  </button>
+                  <button className="w-full flex justify-between items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white" onClick={() => downloadQR('jpg')}>
+                    <span>JPEG Image</span> <MdDownload />
+                  </button>
+                  <button className="w-full flex justify-between items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white" onClick={() => downloadQR('svg')}>
+                    <span>SVG Vector</span> <MdDownload />
+                  </button>
+                  <button className="w-full flex justify-between items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]" onClick={printQR}>
+                    <span>Print Ready</span> <MdPrint />
+                  </button>
+                </div>
+              </div>
+            </div>
 
-        {/* Email Campaign Tab */}
-        <Tab eventKey="email" title={
-          <span className="d-flex align-items-center">
-            <MdEmail className="me-2" />
-            Email Campaign
-          </span>
-        }>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <strong>Email Campaign Setup</strong>
-              <Button
-                variant="primary"
-                onClick={() => setShowEmailModal(true)}
-                className="d-flex align-items-center"
-              >
-                <MdEmail className="me-2" />
-                Create Campaign
-              </Button>
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                <Col lg={6}>
-                  <h6 className="mb-3">Email Templates</h6>
-                  <ListGroup>
-                    <ListGroup.Item className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <strong>Customer Feedback Request</strong>
-                        <p className="text-muted small mb-0">Professional template for customer surveys</p>
-                      </div>
-                      <Button variant="outline-primary" size="sm">Use Template</Button>
-                    </ListGroup.Item>
-                    <ListGroup.Item className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <strong>Employee Engagement</strong>
-                        <p className="text-muted small mb-0">Internal survey template for employees</p>
-                      </div>
-                      <Button variant="outline-primary" size="sm">Use Template</Button>
-                    </ListGroup.Item>
-                    <ListGroup.Item className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <strong>Event Feedback</strong>
-                        <p className="text-muted small mb-0">Post-event survey invitation</p>
-                      </div>
-                      <Button variant="outline-primary" size="sm">Use Template</Button>
-                    </ListGroup.Item>
-                  </ListGroup>
-                </Col>
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]"><strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Quick Actions</strong></div>
+              <div className="p-6">
+                <div className="grid gap-2">
+                  <button className="w-full flex justify-between items-center px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]" onClick={() => copyLink(survey.url)}>
+                    <span>Copy Survey Link</span> <MdContentCopy />
+                  </button>
+                  <button className="w-full flex justify-between items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white" onClick={() => window.open(survey.url, '_blank')}>
+                    <span>Preview Survey</span> <MdVisibility />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-                <Col lg={6}>
-                  <h6 className="mb-3">Campaign History</h6>
-                  <Table responsive>
+      {/* Direct Links Tab */}
+      {activeTab === 'link' && (
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]"><strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Links</strong></div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-8">
+                <div className="mb-3">
+                  <label className="block mb-1 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Full Survey URL</label>
+                  <div className="flex">
+                    <input type="text" value={survey.url} readOnly className="flex-1 px-3 py-2 rounded-l-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+                    <button className="px-4 py-2 rounded-r-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white" onClick={() => copyLink(survey.url)}>
+                      <MdContentCopy />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Commented out short URL section preserved */}
+
+                <div className="p-4 bg-[var(--info-light)] border border-[var(--info-color)]/30 rounded-md flex items-start">
+                  <FaLightbulb className="mr-2 mt-1 text-[var(--info-color)]" />
+                  <div>
+                    <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Pro Tips:</strong>
+                    <ul className="mb-0 mt-1 ml-4 list-disc text-[var(--text-secondary)]">
+                      <li>Use short URLs for SMS and social media</li>
+                      <li>Full URLs work better for email campaigns</li>
+                      <li>Add UTM parameters for tracking sources</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-4">
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]"><strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Link Statistics</strong></div>
+                  <div className="p-6">
+                    <div className="flex justify-between mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>Total Clicks:</span><strong>1,247</strong></div>
+                    <div className="flex justify-between mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>Unique Visitors:</span><strong>892</strong></div>
+                    <div className="flex justify-between mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>Conversion Rate:</span><strong>67%</strong></div>
+                    <div className="flex justify-between text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>Avg. Time:</span><strong>3:24</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Campaign Tab */}
+      {activeTab === 'email' && (
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex justify-between items-center p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Email Campaign Setup</strong>
+            <button className="flex items-center px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]" onClick={() => setShowEmailModal(true)}>
+              <MdEmail className="mr-2" /> Create Campaign
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Email Templates</h6>
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md divide-y divide-[var(--light-border)] dark:divide-[var(--dark-border)]">
+                  <div className="flex justify-between items-center p-4">
+                    <div>
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Customer Feedback Request</strong>
+                      <p className="text-[var(--text-secondary)] text-sm mb-0">Professional template for customer surveys</p>
+                    </div>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white">Use Template</button>
+                  </div>
+                  <div className="flex justify-between items-center p-4">
+                    <div>
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Employee Engagement</strong>
+                      <p className="text-[var(--text-secondary)] text-sm mb-0">Internal survey template for employees</p>
+                    </div>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white">Use Template</button>
+                  </div>
+                  <div className="flex justify-between items-center p-4">
+                    <div>
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Event Feedback</strong>
+                      <p className="text-[var(--text-secondary)] text-sm mb-0">Post-event survey invitation</p>
+                    </div>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white">Use Template</button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Campaign History</h6>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
                     <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Recipients</th>
-                        <th>Sent</th>
-                        <th>Opened</th>
-                        <th>Clicked</th>
+                      <tr className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <th className="text-left p-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Date</th>
+                        <th className="text-left p-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Recipients</th>
+                        <th className="text-left p-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Sent</th>
+                        <th className="text-left p-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Opened</th>
+                        <th className="text-left p-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Clicked</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>Oct 1, 2025</td>
-                        <td>250</td>
-                        <td>248</td>
-                        <td>176 (71%)</td>
-                        <td>89 (36%)</td>
+                      <tr className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <td className="p-2 text-[var(--text-secondary)]">Oct 1, 2025</td><td className="p-2 text-[var(--text-secondary)]">250</td><td className="p-2 text-[var(--text-secondary)]">248</td><td className="p-2 text-[var(--text-secondary)]">176 (71%)</td><td className="p-2 text-[var(--text-secondary)]">89 (36%)</td>
                       </tr>
-                      <tr>
-                        <td>Sep 28, 2025</td>
-                        <td>180</td>
-                        <td>180</td>
-                        <td>125 (69%)</td>
-                        <td>67 (37%)</td>
+                      <tr className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <td className="p-2 text-[var(--text-secondary)]">Sep 28, 2025</td><td className="p-2 text-[var(--text-secondary)]">180</td><td className="p-2 text-[var(--text-secondary)]">180</td><td className="p-2 text-[var(--text-secondary)]">125 (69%)</td><td className="p-2 text-[var(--text-secondary)]">67 (37%)</td>
                       </tr>
-                      <tr>
-                        <td>Sep 25, 2025</td>
-                        <td>320</td>
-                        <td>318</td>
-                        <td>234 (74%)</td>
-                        <td>112 (35%)</td>
+                      <tr className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <td className="p-2 text-[var(--text-secondary)]">Sep 25, 2025</td><td className="p-2 text-[var(--text-secondary)]">320</td><td className="p-2 text-[var(--text-secondary)]">318</td><td className="p-2 text-[var(--text-secondary)]">234 (74%)</td><td className="p-2 text-[var(--text-secondary)]">112 (35%)</td>
                       </tr>
                     </tbody>
-                  </Table>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Tab>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* SMS/WhatsApp Tab */}
-        <Tab eventKey="sms" title={
-          <span className="d-flex align-items-center">
-            <FaWhatsapp className="me-2" />
-            SMS/WhatsApp
-          </span>
-        }>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <strong>Mobile Messaging Campaign</strong>
-              <Button
-                variant="success"
-                onClick={() => setShowSMSModal(true)}
-                className="d-flex align-items-center"
-              >
-                <MdSms className="me-2" />
-                Send SMS Campaign
-              </Button>
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                <Col lg={6}>
-                  <h6 className="mb-3">Message Templates</h6>
-                  <Card className="mb-3 border">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <strong>Customer Feedback SMS</strong>
-                        <Badge bg="success">160 chars</Badge>
-                      </div>
-                      <p className="text-muted small mb-2">
-                        "Hi! We hope you enjoyed your recent visit. Please share your feedback: [SURVEY_LINK]. Takes 2 minutes. Thank you!"
-                      </p>
-                      <Button variant="outline-primary" size="sm">Use Template</Button>
-                    </Card.Body>
-                  </Card>
-
-                  <Card className="mb-3 border">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <strong>WhatsApp Survey</strong>
-                        <Badge bg="success">140 chars</Badge>
-                      </div>
-                      <p className="text-muted small mb-2">
-                        "🙏 Help us improve! Share your experience: [SURVEY_LINK] Quick 2-min survey. Your feedback matters!"
-                      </p>
-                      <Button variant="outline-success" size="sm">Use Template</Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-
-                <Col lg={6}>
-                  <h6 className="mb-3">Messaging Platforms</h6>
-                  <Row>
-                    <Col sm={6} className="mb-3">
-                      <Card className="text-center p-3 border">
-                        <MdSms size={32} className="text-primary mb-2" />
-                        <h6>SMS</h6>
-                        <p className="text-muted small mb-2">Direct text messages</p>
-                        <Button variant="outline-primary" size="sm">Configure</Button>
-                      </Card>
-                    </Col>
-                    <Col sm={6} className="mb-3">
-                      <Card className="text-center p-3 border">
-                        <FaWhatsapp size={32} className="text-success mb-2" />
-                        <h6>WhatsApp</h6>
-                        <p className="text-muted small mb-2">WhatsApp Business</p>
-                        <Button variant="outline-success" size="sm">Configure</Button>
-                      </Card>
-                    </Col>
-                  </Row>
-
-                  <Alert variant="warning" className="small">
-                    <strong>Note:</strong> Ensure you have proper consent before sending marketing messages.
-                    Follow local regulations (GDPR, CCPA) for message marketing.
-                  </Alert>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Tab>
-
-        {/* Social Media Tab */}
-        <Tab eventKey="social" title={
-          <span className="d-flex align-items-center">
-            <MdShare className="me-2" />
-            Social Media
-          </span>
-        }>
-          <Card>
-            <Card.Header><strong>Social Media Distribution</strong></Card.Header>
-            <Card.Body>
-              <Row>
-                <Col lg={8}>
-                  <h6 className="mb-3">Share on Social Platforms</h6>
-                  <Row>
-                    {[
-                      { platform: 'facebook', name: 'Facebook', icon: FaFacebook, color: '#1877f2' },
-                      { platform: 'twitter', name: 'Twitter', icon: FaTwitter, color: '#1da1f2' },
-                      { platform: 'linkedin', name: 'LinkedIn', icon: FaLinkedin, color: '#0077b5' },
-                      { platform: 'whatsapp', name: 'WhatsApp', icon: FaWhatsapp, color: '#25d366' },
-                      { platform: 'telegram', name: 'Telegram', icon: FaTelegram, color: '#0088cc' },
-                      { platform: 'instagram', name: 'Instagram', icon: FaInstagram, color: '#e1306c' }
-                    ].map(social => (
-                      <Col md={4} sm={6} key={social.platform} className="mb-3">
-                        <Card
-                          className="social-share-card text-center cursor-pointer h-100"
-                          onClick={() => shareOnSocial(social.platform)}
-                        >
-                          <Card.Body className="p-3">
-                            <social.icon
-                              size={32}
-                              className="mb-2"
-                              style={{ color: social.color }}
-                            />
-                            <h6 className="mb-1">{social.name}</h6>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              style={{ borderColor: social.color, color: social.color }}
-                            >
-                              Share Survey
-                            </Button>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    ))}
-                  </Row>
-                </Col>
-
-                <Col lg={4}>
-                  <Card className="bg-light">
-                    <Card.Header className="bg-transparent">
-                      <strong>Social Sharing Tips</strong>
-                    </Card.Header>
-                    <Card.Body>
-                      <ul className="small mb-0">
-                        <li>Use engaging visuals with your survey link</li>
-                        <li>Add relevant hashtags to increase reach</li>
-                        <li>Post during peak engagement hours</li>
-                        <li>Consider offering incentives for participation</li>
-                        <li>Tag relevant accounts or locations</li>
-                        <li>Use Stories for temporary campaigns</li>
-                      </ul>
-                    </Card.Body>
-                  </Card>
-
-                  <Card className="mt-3">
-                    <Card.Header><strong>Social Stats</strong></Card.Header>
-                    <Card.Body>
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Facebook Shares:</span>
-                        <strong>24</strong>
-                      </div>
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Twitter Clicks:</span>
-                        <strong>18</strong>
-                      </div>
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>LinkedIn Views:</span>
-                        <strong>35</strong>
-                      </div>
-                      <div className="d-flex justify-content-between">
-                        <span>WhatsApp Forwards:</span>
-                        <strong>12</strong>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Tab>
-
-        {/* Website Embed Tab */}
-        <Tab eventKey="embed" title={
-          <span className="d-flex align-items-center">
-            <MdWeb className="me-2" />
-            Website Embed
-          </span>
-        }>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <strong>Website Integration</strong>
-              <Button
-                variant="info"
-                onClick={() => alert('Embed modal coming soon!')}
-                className="d-flex align-items-center"
-              >
-                <MdCode className="me-2" />
-                Get Embed Code
-              </Button>
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                <Col lg={6}>
-                  <h6 className="mb-3">Embed Options</h6>
-
-                  <Card className="mb-3 border">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <strong>iFrame Embed</strong>
-                        <Badge bg="primary">Recommended</Badge>
-                      </div>
-                      <p className="text-muted small mb-2">
-                        Full survey embedded in your webpage with responsive design
-                      </p>
-                      <Button variant="outline-primary" size="sm">Get Code</Button>
-                    </Card.Body>
-                  </Card>
-
-                  <Card className="mb-3 border">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <strong>Modal Popup</strong>
-                        <Badge bg="success">High Engagement</Badge>
-                      </div>
-                      <p className="text-muted small mb-2">
-                        Survey opens in a modal overlay when user clicks a button
-                      </p>
-                      <Button variant="outline-success" size="sm">Get Code</Button>
-                    </Card.Body>
-                  </Card>
-
-                  <Card className="mb-3 border">
-                    <Card.Body>
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <strong>Floating Widget</strong>
-                        <Badge bg="info">Non-intrusive</Badge>
-                      </div>
-                      <p className="text-muted small mb-2">
-                        Small floating button that expands to show survey
-                      </p>
-                      <Button variant="outline-info" size="sm">Get Code</Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-
-                <Col lg={6}>
-                  <h6 className="mb-3">Integration Preview</h6>
-                  <div className="embed-preview p-3 border rounded bg-light">
-                    <div className="d-flex justify-content-between align-items-center mb-3 p-2 bg-white border rounded">
-                      <span className="small">🌐 yourwebsite.com</span>
-                      <div className="d-flex gap-1">
-                        <div className="rounded-circle bg-danger" style={{ width: '8px', height: '8px' }}></div>
-                        <div className="rounded-circle bg-warning" style={{ width: '8px', height: '8px' }}></div>
-                        <div className="rounded-circle bg-success" style={{ width: '8px', height: '8px' }}></div>
-                      </div>
+      {/* SMS/WhatsApp Tab */}
+      {activeTab === 'sms' && (
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex justify-between items-center p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Mobile Messaging Campaign</strong>
+            <button className="flex items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white" onClick={() => setShowSMSModal(true)}>
+              <MdSms className="mr-2" /> Send SMS Campaign
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Message Templates</h6>
+                <div className="mb-3 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Customer Feedback SMS</strong>
+                      <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--success-light)] text-[var(--success-color)]">160 chars</span>
                     </div>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">
+                      "Hi! We hope you enjoyed your recent visit. Please share your feedback: [SURVEY_LINK]. Takes 2 minutes. Thank you!"
+                    </p>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white">Use Template</button>
+                  </div>
+                </div>
 
-                    <div className="p-3 bg-white border rounded">
-                      <h6>Your Website Content</h6>
-                      <p className="text-muted small mb-3">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <div className="mb-3 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">WhatsApp Survey</strong>
+                      <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--success-light)] text-[var(--success-color)]">140 chars</span>
+                    </div>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">
+                      "🙏 Help us improve! Share your experience: [SURVEY_LINK] Quick 2-min survey. Your feedback matters!"
+                    </p>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white">Use Template</button>
+                  </div>
+                </div>
+              </div>
 
-                      <div className="p-3 border rounded">
-                        <div className="text-center">
-                          <h6 className="text-primary">{survey.title}</h6>
-                          <p className="small text-muted">{survey.description}</p>
-                          <Button size="sm" variant="primary">Start Survey</Button>
-                        </div>
+              <div>
+                <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Messaging Platforms</h6>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-4 bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md">
+                    <MdSms size={32} className="text-[var(--primary-color)] mb-2 mx-auto" />
+                    <h6 className="text-[var(--light-text)] dark:text-[var(--dark-text)]">SMS</h6>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">Direct text messages</p>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white">Configure</button>
+                  </div>
+                  <div className="text-center p-4 bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md">
+                    <FaWhatsapp size={32} className="mb-2 mx-auto" style={{ color: '#25d366' }} />
+                    <h6 className="text-[var(--light-text)] dark:text-[var(--dark-text)]">WhatsApp</h6>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">WhatsApp Business</p>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white">Configure</button>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Note:</strong> Ensure you have proper consent before sending marketing messages.
+                  Follow local regulations (GDPR, CCPA) for message marketing.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Social Media Tab */}
+      {activeTab === 'social' && (
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]"><strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Social Media Distribution</strong></div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-8">
+                <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Share on Social Platforms</h6>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    { platform: 'facebook', name: 'Facebook', icon: FaFacebook, color: '#1877f2' },
+                    { platform: 'twitter', name: 'Twitter', icon: FaTwitter, color: '#1da1f2' },
+                    { platform: 'linkedin', name: 'LinkedIn', icon: FaLinkedin, color: '#0077b5' },
+                    { platform: 'whatsapp', name: 'WhatsApp', icon: FaWhatsapp, color: '#25d366' },
+                    { platform: 'telegram', name: 'Telegram', icon: FaTelegram, color: '#0088cc' },
+                    { platform: 'instagram', name: 'Instagram', icon: FaInstagram, color: '#e1306c' }
+                  ].map(social => (
+                    <div
+                      key={social.platform}
+                      className="text-center cursor-pointer bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md p-4 hover:shadow-lg transition-all"
+                      onClick={() => shareOnSocial(social.platform)}
+                    >
+                      <social.icon size={32} className="mb-2 mx-auto" style={{ color: social.color }} />
+                      <h6 className="mb-1 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{social.name}</h6>
+                      <button
+                        className="px-4 py-2 rounded-md font-medium transition-colors border text-sm"
+                        style={{ borderColor: social.color, color: social.color }}
+                      >
+                        Share Survey
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="lg:col-span-4">
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]"><strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Social Sharing Tips</strong></div>
+                  <div className="p-6">
+                    <ul className="text-sm mb-0 ml-4 list-disc text-[var(--text-secondary)]">
+                      <li>Use engaging visuals with your survey link</li>
+                      <li>Add relevant hashtags to increase reach</li>
+                      <li>Post during peak engagement hours</li>
+                      <li>Consider offering incentives for participation</li>
+                      <li>Tag relevant accounts or locations</li>
+                      <li>Use Stories for temporary campaigns</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-3 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]"><strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Social Stats</strong></div>
+                  <div className="p-6">
+                    <div className="flex justify-between mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>Facebook Shares:</span><strong>24</strong></div>
+                    <div className="flex justify-between mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>Twitter Clicks:</span><strong>18</strong></div>
+                    <div className="flex justify-between mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>LinkedIn Views:</span><strong>35</strong></div>
+                    <div className="flex justify-between text-[var(--light-text)] dark:text-[var(--dark-text)]"><span>WhatsApp Forwards:</span><strong>12</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Website Embed Tab */}
+      {activeTab === 'embed' && (
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex justify-between items-center p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Website Integration</strong>
+            <button className="flex items-center px-4 py-2 rounded-md font-medium transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white" onClick={() => alert('Embed modal coming soon!')}>
+              <MdCode className="mr-2" /> Get Embed Code
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Embed Options</h6>
+
+                <div className="mb-3 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">iFrame Embed</strong>
+                      <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--primary-light)] text-[var(--primary-color)]">Recommended</span>
+                    </div>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">Full survey embedded in your webpage with responsive design</p>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white">Get Code</button>
+                  </div>
+                </div>
+
+                <div className="mb-3 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Modal Popup</strong>
+                      <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--success-light)] text-[var(--success-color)]">High Engagement</span>
+                    </div>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">Survey opens in a modal overlay when user clicks a button</p>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white">Get Code</button>
+                  </div>
+                </div>
+
+                <div className="mb-3 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Floating Widget</strong>
+                      <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[var(--info-light)] text-[var(--info-color)]">Non-intrusive</span>
+                    </div>
+                    <p className="text-[var(--text-secondary)] text-sm mb-2">Small floating button that expands to show survey</p>
+                    <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white">Get Code</button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Integration Preview</h6>
+                <div className="p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                  <div className="flex justify-between items-center mb-3 p-2 bg-white dark:bg-gray-800 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md">
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">🌐 yourwebsite.com</span>
+                    <div className="flex gap-1">
+                      <div className="rounded-full bg-red-500" style={{ width: '8px', height: '8px' }}></div>
+                      <div className="rounded-full bg-yellow-500" style={{ width: '8px', height: '8px' }}></div>
+                      <div className="rounded-full bg-green-500" style={{ width: '8px', height: '8px' }}></div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-white dark:bg-gray-800 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md">
+                    <h6 className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Your Website Content</h6>
+                    <p className="text-[var(--text-secondary)] text-sm mb-3">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    <div className="p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md">
+                      <div className="text-center">
+                        <h6 className="text-[var(--primary-color)]">{survey.title}</h6>
+                        <p className="text-sm text-[var(--text-secondary)]">{survey.description}</p>
+                        <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]">Start Survey</button>
                       </div>
                     </div>
                   </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Tab>
-      </Tabs>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Email Campaign Modal */}
-      <Modal show={showEmailModal} onHide={() => setShowEmailModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Create Email Campaign</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Email Subject</Form.Label>
-            <Form.Control
-              type="text"
-              value={emailSettings.subject}
-              onChange={(e) => setEmailSettings({ ...emailSettings, subject: e.target.value })}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Message Content</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={4}
-              value={emailSettings.message}
-              onChange={(e) => setEmailSettings({ ...emailSettings, message: e.target.value })}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Recipients (comma-separated emails)</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={emailSettings.recipients}
-              onChange={(e) => setEmailSettings({ ...emailSettings, recipients: e.target.value })}
-              placeholder="email1@example.com, email2@example.com, ..."
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEmailModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={sendEmailCampaign}>
-            Send Campaign
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowEmailModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Create Email Campaign</h5>
+              <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl" onClick={() => setShowEmailModal(false)}>&times;</button>
+            </div>
+            <div className="p-6">
+              <div className="mb-3">
+                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Email Subject</label>
+                <input type="text" value={emailSettings.subject} onChange={(e) => setEmailSettings({ ...emailSettings, subject: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Message Content</label>
+                <textarea rows={4} value={emailSettings.message} onChange={(e) => setEmailSettings({ ...emailSettings, message: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Recipients (comma-separated emails)</label>
+                <textarea rows={3} value={emailSettings.recipients} onChange={(e) => setEmailSettings({ ...emailSettings, recipients: e.target.value })} placeholder="email1@example.com, email2@example.com, ..." className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => setShowEmailModal(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]" onClick={sendEmailCampaign}>Send Campaign</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SMS Campaign Modal */}
-      <Modal show={showSMSModal} onHide={() => setShowSMSModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Send SMS Campaign</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>SMS Message</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={smsSettings.message}
-              onChange={(e) => setSmsSettings({ ...smsSettings, message: e.target.value })}
-              maxLength={160}
-            />
-            <Form.Text className="text-muted">
-              {smsSettings.message.length}/160 characters
-            </Form.Text>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Recipients (comma-separated phone numbers)</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={smsSettings.recipients}
-              onChange={(e) => setSmsSettings({ ...smsSettings, recipients: e.target.value })}
-              placeholder="+1234567890, +0987654321, ..."
-            />
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowSMSModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="success" onClick={sendSMSCampaign}>
-            Send SMS Campaign
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {showSMSModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowSMSModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Send SMS Campaign</h5>
+              <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl" onClick={() => setShowSMSModal(false)}>&times;</button>
+            </div>
+            <div className="p-6">
+              <div className="mb-3">
+                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">SMS Message</label>
+                <textarea rows={3} value={smsSettings.message} onChange={(e) => setSmsSettings({ ...smsSettings, message: e.target.value })} maxLength={160} className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+                <span className="text-sm text-[var(--text-secondary)]">{smsSettings.message.length}/160 characters</span>
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Recipients (comma-separated phone numbers)</label>
+                <textarea rows={3} value={smsSettings.recipients} onChange={(e) => setSmsSettings({ ...smsSettings, recipients: e.target.value })} placeholder="+1234567890, +0987654321, ..." className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => setShowSMSModal(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white" onClick={sendSMSCampaign}>Send SMS Campaign</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* QR Customize Modal */}
-      <Modal show={showCustomizeModal} onHide={() => setShowCustomizeModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Customize QR Code</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Size</Form.Label>
-                <Form.Range
-                  min="128"
-                  max="512"
-                  value={qrSettings.size}
-                  onChange={(e) => setQrSettings({ ...qrSettings, size: parseInt(e.target.value) })}
-                />
-                <Form.Text>{qrSettings.size}px</Form.Text>
-              </Form.Group>
+      {showCustomizeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCustomizeModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Customize QR Code</h5>
+              <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl" onClick={() => setShowCustomizeModal(false)}>&times;</button>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="mb-3">
+                    <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Size</label>
+                    <input type="range" min="128" max="512" value={qrSettings.size} onChange={(e) => setQrSettings({ ...qrSettings, size: parseInt(e.target.value) })} className="w-full" />
+                    <span className="text-sm text-[var(--text-secondary)]">{qrSettings.size}px</span>
+                  </div>
+                  <div className="mb-3">
+                    <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Custom Text</label>
+                    <input type="text" value={qrSettings.customText} onChange={(e) => setQrSettings({ ...qrSettings, customText: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-3">
+                    <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Background Color</label>
+                    <input type="color" value={qrSettings.backgroundColor} onChange={(e) => setQrSettings({ ...qrSettings, backgroundColor: e.target.value })} className="w-full h-10 p-1 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+                  </div>
+                  <div className="mb-3">
+                    <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Foreground Color</label>
+                    <input type="color" value={qrSettings.foregroundColor} onChange={(e) => setQrSettings({ ...qrSettings, foregroundColor: e.target.value })} className="w-full h-10 p-1 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+                  </div>
+                </div>
+              </div>
 
-              <Form.Group className="mb-3">
-                <Form.Label>Custom Text</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={qrSettings.customText}
-                  onChange={(e) => setQrSettings({ ...qrSettings, customText: e.target.value })}
+              <div className="text-center mt-3">
+                <QRCodeSVG
+                  value={survey.url}
+                  size={128}
+                  bgColor={qrSettings.backgroundColor}
+                  fgColor={qrSettings.foregroundColor}
+                  level={qrSettings.errorCorrectionLevel}
                 />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Background Color</Form.Label>
-                <Form.Control
-                  type="color"
-                  value={qrSettings.backgroundColor}
-                  onChange={(e) => setQrSettings({ ...qrSettings, backgroundColor: e.target.value })}
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Foreground Color</Form.Label>
-                <Form.Control
-                  type="color"
-                  value={qrSettings.foregroundColor}
-                  onChange={(e) => setQrSettings({ ...qrSettings, foregroundColor: e.target.value })}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <div className="text-center mt-3">
-            <QRCodeSVG
-              value={survey.url}
-              size={128}
-              bgColor={qrSettings.backgroundColor}
-              fgColor={qrSettings.foregroundColor}
-              level={qrSettings.errorCorrectionLevel}
-            />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => setShowCustomizeModal(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]" onClick={() => setShowCustomizeModal(false)}>Apply Changes</button>
+            </div>
           </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCustomizeModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={() => setShowCustomizeModal(false)}>
-            Apply Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+        </div>
+      )}
+    </div>
   );
 };
 

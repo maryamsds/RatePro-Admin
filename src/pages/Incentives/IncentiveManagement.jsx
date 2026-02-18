@@ -2,8 +2,7 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Modal, Dropdown } from "react-bootstrap"
+import { useState, useEffect, useRef } from "react"
 import {
   MdCampaign,
   MdAdd,
@@ -31,6 +30,18 @@ const IncentiveManagement = ({ darkMode }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedIncentive, setSelectedIncentive] = useState(null)
   const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [openDropdownId, setOpenDropdownId] = useState(null)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpenDropdownId(null)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   useEffect(() => {
     setTimeout(() => {
@@ -163,17 +174,17 @@ const IncentiveManagement = ({ darkMode }) => {
   }, [])
 
   const getStatusBadge = (status) => {
-    const variants = {
-      Active: "success",
-      Completed: "primary",
-      Paused: "warning",
-      Draft: "secondary",
-      Scheduled: "info",
+    const colors = {
+      Active: "bg-green-100 text-green-800",
+      Completed: "bg-blue-100 text-blue-800",
+      Paused: "bg-yellow-100 text-yellow-800",
+      Draft: "bg-gray-100 text-gray-800",
+      Scheduled: "bg-cyan-100 text-cyan-800",
     }
     return (
-      <Badge bg={variants[status] || "secondary"} className="badge-enhanced">
+      <span className={`badge-enhanced px-2 py-1 rounded text-xs font-medium ${colors[status] || "bg-gray-100 text-gray-800"}`}>
         {status}
-      </Badge>
+      </span>
     )
   }
 
@@ -194,6 +205,7 @@ const IncentiveManagement = ({ darkMode }) => {
   const handleDelete = (incentive) => {
     setSelectedIncentive(incentive)
     setShowDeleteModal(true)
+    setOpenDropdownId(null)
   }
 
   const confirmDelete = () => {
@@ -204,7 +216,7 @@ const IncentiveManagement = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container d-flex justify-content-center align-items-center" style={{ height: "50vh" }}>
+      <div className="loading-container flex justify-content-center align-items-center" style={{ height: "50vh" }}>
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -213,57 +225,49 @@ const IncentiveManagement = ({ darkMode }) => {
   }
 
   return (
-    <Container fluid className="incentive-management-container py-4 fade-in">
+    <div className="incentive-management-container py-4 fade-in px-3">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center flex-wrap">
-            <div className="d-flex align-items-center">
-              <MdCampaign size={32} className="text-primary me-3" />
-              <div>
-                <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Incentive Management</h2>
-                <p className="text-muted mb-0">Create and manage incentive campaigns for survey participation</p>
-              </div>
-            </div>
-            <div className="d-flex gap-2 mt-2 mt-md-0">
-              <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
-              <Button variant="primary" size="sm" className="btn-enhanced">
-                <MdAdd className="me-1" />
-                Create Campaign
-              </Button>
+      <div className="mb-4">
+        <div className="flex justify-content-between align-items-center flex-wrap">
+          <div className="flex align-items-center">
+            <MdCampaign size={32} className="text-primary me-3" />
+            <div>
+              <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Incentive Management</h2>
+              <p className="text-muted mb-0">Create and manage incentive campaigns for survey participation</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="flex gap-2 mt-2 mt-md-0">
+            <button className="btn btn-outline-primary btn-sm btn-enhanced">
+              <MdRefresh className="me-1" />
+              Refresh
+            </button>
+            <button className="btn btn-primary btn-sm btn-enhanced">
+              <MdAdd className="me-1" />
+              Create Campaign
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--primary-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
+      <div className="row mb-4">
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--primary-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
                 <div className="flex-grow-1">
                   <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Campaigns</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>{incentives.length}</div>
                 </div>
                 <MdCampaign size={24} style={{ color: "var(--primary-color)" }} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--success-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--success-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
                 <div className="flex-grow-1">
                   <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Active Campaigns</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
@@ -272,16 +276,13 @@ const IncentiveManagement = ({ darkMode }) => {
                 </div>
                 <MdTrendingUp size={24} style={{ color: "var(--success-color)" }} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--info-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--info-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
                 <div className="flex-grow-1">
                   <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Participants</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
@@ -290,16 +291,13 @@ const IncentiveManagement = ({ darkMode }) => {
                 </div>
                 <MdPeople size={24} style={{ color: "var(--info-color)" }} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--warning-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--warning-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
                 <div className="flex-grow-1">
                   <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Budget</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
@@ -308,218 +306,226 @@ const IncentiveManagement = ({ darkMode }) => {
                 </div>
                 <MdAttachMoney size={24} style={{ color: "var(--warning-color)" }} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="py-3">
-              <Row className="align-items-center">
-                <Col md={6} lg={4} className="mb-2 mb-md-0">
-                  <InputGroup className="form-enhanced">
-                    <InputGroup.Text>
-                      <MdSearch />
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search campaigns..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
-                </Col>
-                <Col md={3} lg={2} className="mb-2 mb-md-0">
-                  <Form.Select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="form-enhanced"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="paused">Paused</option>
-                    <option value="draft">Draft</option>
-                    <option value="scheduled">Scheduled</option>
-                  </Form.Select>
-                </Col>
-                <Col md={3} lg={2}>
-                  <Button variant="outline-secondary" className="w-100 btn-enhanced">
-                    <MdFilterList className="me-1" />
-                    More Filters
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="mb-4">
+        <div className="border-0 shadow-sm card-enhanced card">
+          <div className="card-body py-3">
+            <div className="row align-items-center">
+              <div className="col-md-6 col-lg-4 mb-2 mb-md-0">
+                <div className="input-group form-enhanced">
+                  <span className="input-group-text">
+                    <MdSearch />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search campaigns..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="col-md-3 col-lg-2 mb-2 mb-md-0">
+                <select
+                  className="form-select form-enhanced"
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="paused">Paused</option>
+                  <option value="draft">Draft</option>
+                  <option value="scheduled">Scheduled</option>
+                </select>
+              </div>
+              <div className="col-md-3 col-lg-2">
+                <button className="btn btn-outline-secondary w-100 btn-enhanced">
+                  <MdFilterList className="me-1" />
+                  More Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Incentives Table */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0 table-enhanced" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th className="border-0 py-3 px-4">
-                        <div className="d-flex align-items-center">
-                          <MdCampaign className="me-2" size={16} />
-                          Campaign Details
+      <div className="border-0 shadow-sm card-enhanced card">
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table mb-0 table-enhanced table-hover">
+              <thead className="table-light">
+                <tr>
+                  <th className="border-0 py-3 px-4">
+                    <div className="flex align-items-center">
+                      <MdCampaign className="me-2" size={16} />
+                      Campaign Details
+                    </div>
+                  </th>
+                  <th className="border-0 py-3">Status</th>
+                  <th className="border-0 py-3">
+                    <div className="flex align-items-center">
+                      <MdPeople className="me-2" size={16} />
+                      Participants
+                    </div>
+                  </th>
+                  <th className="border-0 py-3">
+                    <div className="flex align-items-center">
+                      <MdAttachMoney className="me-2" size={16} />
+                      Budget
+                    </div>
+                  </th>
+                  <th className="border-0 py-3">Completion Rate</th>
+                  <th className="border-0 py-3">
+                    <div className="flex align-items-center">
+                      <MdSchedule className="me-2" size={16} />
+                      Duration
+                    </div>
+                  </th>
+                  <th className="border-0 py-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentIncentives.map((incentive) => (
+                  <tr key={incentive.id}>
+                    <td className="py-3 px-4 border-0">
+                      <div>
+                        <div className={`fw-medium mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
+                          {incentive.name}
                         </div>
-                      </th>
-                      <th className="border-0 py-3">Status</th>
-                      <th className="border-0 py-3">
-                        <div className="d-flex align-items-center">
-                          <MdPeople className="me-2" size={16} />
-                          Participants
+                        <div className="small text-muted mb-1">{incentive.description}</div>
+                        <div className="flex gap-2">
+                          <span className="badge-enhanced small px-2 py-1 rounded bg-gray-100 text-gray-800">
+                            {incentive.type}
+                          </span>
+                          <span className="badge-enhanced small px-2 py-1 rounded bg-cyan-100 text-cyan-800">
+                            {incentive.reward}
+                          </span>
                         </div>
-                      </th>
-                      <th className="border-0 py-3">
-                        <div className="d-flex align-items-center">
-                          <MdAttachMoney className="me-2" size={16} />
-                          Budget
+                      </div>
+                    </td>
+                    <td className="py-3 border-0">{getStatusBadge(incentive.status)}</td>
+                    <td className="py-3 border-0">
+                      <span className={darkMode ? "text-white" : "text-dark"}>{incentive.participants}</span>
+                      <div className="small text-muted">{incentive.targetAudience}</div>
+                    </td>
+                    <td className="py-3 border-0">
+                      <div className={darkMode ? "text-white" : "text-dark"}>
+                        ${incentive.budget.toLocaleString()}
+                      </div>
+                      <div className="small text-muted">Spent: ${incentive.spent.toLocaleString()}</div>
+                    </td>
+                    <td className="py-3 border-0">
+                      <div className="flex align-items-center">
+                        <div className="progress me-2" style={{ width: "60px", height: "6px" }}>
+                          <div
+                            className="progress-bar bg-primary"
+                            style={{ width: `${incentive.completionRate}%` }}
+                          ></div>
                         </div>
-                      </th>
-                      <th className="border-0 py-3">Completion Rate</th>
-                      <th className="border-0 py-3">
-                        <div className="d-flex align-items-center">
-                          <MdSchedule className="me-2" size={16} />
-                          Duration
-                        </div>
-                      </th>
-                      <th className="border-0 py-3 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentIncentives.map((incentive) => (
-                      <tr key={incentive.id}>
-                        <td className="py-3 px-4 border-0">
-                          <div>
-                            <div className={`fw-medium mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
-                              {incentive.name}
-                            </div>
-                            <div className="small text-muted mb-1">{incentive.description}</div>
-                            <div className="d-flex gap-2">
-                              <Badge bg="light" text="dark" className="badge-enhanced small">
-                                {incentive.type}
-                              </Badge>
-                              <Badge bg="info" className="badge-enhanced small">
-                                {incentive.reward}
-                              </Badge>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 border-0">{getStatusBadge(incentive.status)}</td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{incentive.participants}</span>
-                          <div className="small text-muted">{incentive.targetAudience}</div>
-                        </td>
-                        <td className="py-3 border-0">
-                          <div className={darkMode ? "text-white" : "text-dark"}>
-                            ${incentive.budget.toLocaleString()}
-                          </div>
-                          <div className="small text-muted">Spent: ${incentive.spent.toLocaleString()}</div>
-                        </td>
-                        <td className="py-3 border-0">
-                          <div className="d-flex align-items-center">
-                            <div className="progress me-2" style={{ width: "60px", height: "6px" }}>
-                              <div
-                                className="progress-bar bg-primary"
-                                style={{ width: `${incentive.completionRate}%` }}
-                              ></div>
-                            </div>
-                            <span className={`small ${darkMode ? "text-white" : "text-dark"}`}>
-                              {incentive.completionRate}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 border-0">
-                          <div className={darkMode ? "text-white" : "text-dark"}>{incentive.startDate}</div>
-                          <div className="small text-muted">to {incentive.endDate}</div>
-                        </td>
-                        <td className="py-3 text-center border-0">
-                          <Dropdown align="end">
-                            <Dropdown.Toggle
-                              variant="link"
-                              className="p-0 border-0"
-                              style={{ color: darkMode ? "var(--dark-text)" : "var(--light-text)" }}
+                        <span className={`small ${darkMode ? "text-white" : "text-dark"}`}>
+                          {incentive.completionRate}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 border-0">
+                      <div className={darkMode ? "text-white" : "text-dark"}>{incentive.startDate}</div>
+                      <div className="small text-muted">to {incentive.endDate}</div>
+                    </td>
+                    <td className="py-3 text-center border-0">
+                      <div className="position-relative d-inline-block" ref={openDropdownId === incentive.id ? dropdownRef : null}>
+                        <button
+                          className="btn btn-link p-0 border-0"
+                          style={{ color: darkMode ? "var(--dark-text)" : "var(--light-text)" }}
+                          onClick={() => setOpenDropdownId(openDropdownId === incentive.id ? null : incentive.id)}
+                        >
+                          <MdMoreVert />
+                        </button>
+                        {openDropdownId === incentive.id && (
+                          <div
+                            className="position-absolute end-0 bg-white shadow rounded border py-1"
+                            style={{ zIndex: 1050, minWidth: "180px", top: "100%" }}
+                          >
+                            <button className="dropdown-item flex align-items-center px-3 py-2" onClick={() => setOpenDropdownId(null)}>
+                              <MdVisibility className="me-2" />
+                              View Details
+                            </button>
+                            <button className="dropdown-item flex align-items-center px-3 py-2" onClick={() => setOpenDropdownId(null)}>
+                              <MdEdit className="me-2" />
+                              Edit Campaign
+                            </button>
+                            {incentive.status === "Active" ? (
+                              <button className="dropdown-item flex align-items-center px-3 py-2" onClick={() => setOpenDropdownId(null)}>
+                                <MdPause className="me-2" />
+                                Pause Campaign
+                              </button>
+                            ) : (
+                              <button className="dropdown-item flex align-items-center px-3 py-2" onClick={() => setOpenDropdownId(null)}>
+                                <MdPlayArrow className="me-2" />
+                                Resume Campaign
+                              </button>
+                            )}
+                            <hr className="my-1" />
+                            <button
+                              className="dropdown-item flex align-items-center px-3 py-2 text-danger"
+                              onClick={() => handleDelete(incentive)}
                             >
-                              <MdMoreVert />
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdVisibility className="me-2" />
-                                View Details
-                              </Dropdown.Item>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdEdit className="me-2" />
-                                Edit Campaign
-                              </Dropdown.Item>
-                              {incentive.status === "Active" ? (
-                                <Dropdown.Item className="d-flex align-items-center">
-                                  <MdPause className="me-2" />
-                                  Pause Campaign
-                                </Dropdown.Item>
-                              ) : (
-                                <Dropdown.Item className="d-flex align-items-center">
-                                  <MdPlayArrow className="me-2" />
-                                  Resume Campaign
-                                </Dropdown.Item>
-                              )}
-                              <Dropdown.Divider />
-                              <Dropdown.Item
-                                className="d-flex align-items-center text-danger"
-                                onClick={() => handleDelete(incentive)}
-                              >
-                                <MdDelete className="me-2" />
-                                Delete
-                              </Dropdown.Item>
-                            </Dropdown.Menu>
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-              <div className="p-3 border-top">
-                <Pagination
-                  current={pagination.page}
-                  total={filteredIncentives.length}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                  darkMode={darkMode}
-                />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                              <MdDelete className="me-2" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-3 border-top">
+            <Pagination
+              current={pagination.page}
+              total={filteredIncentives.length}
+              limit={pagination.limit}
+              onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+              darkMode={darkMode}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered className="modal-enhanced">
-        <Modal.Header closeButton>
-          <Modal.Title className={darkMode ? "text-white" : "text-dark"}>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete "{selectedIncentive?.name}"? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="btn-enhanced">
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete} className="btn-enhanced">
-            Delete Campaign
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {showDeleteModal && (
+        <div className="modal-enhanced">
+          <div className="modal-backdrop fade show" style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1040 }} onClick={() => setShowDeleteModal(false)}></div>
+          <div style={{ position: "fixed", inset: 0, zIndex: 1050, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div className={`modal-content rounded shadow ${darkMode ? "bg-dark text-white" : "bg-white"}`} style={{ maxWidth: "500px", width: "90%" }}>
+              <div className="modal-header border-bottom p-3 flex justify-content-between align-items-center">
+                <h5 className={`modal-title mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Confirm Delete</h5>
+                <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+              </div>
+              <div className="modal-body p-3">
+                Are you sure you want to delete "{selectedIncentive?.name}"? This action cannot be undone.
+              </div>
+              <div className="modal-footer border-top p-3 flex justify-content-end gap-2">
+                <button className="btn btn-secondary btn-enhanced" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-danger btn-enhanced" onClick={confirmDelete}>
+                  Delete Campaign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

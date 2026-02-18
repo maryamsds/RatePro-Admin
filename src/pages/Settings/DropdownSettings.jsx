@@ -3,21 +3,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
-    Container,
-    Row,
-    Col,
-    Card,
-    Button,
-    Form,
-    Table,
-    Badge,
-    Modal,
-    Spinner,
-    Alert,
-    Nav,
-    Tab,
-} from "react-bootstrap";
-import {
     MdSettings,
     MdAdd,
     MdEdit,
@@ -287,292 +272,395 @@ const DropdownSettings = ({ darkMode }) => {
     const TypeIcon = currentType?.icon || MdSettings;
 
     return (
-        <Container fluid className="py-4">
+        <div className="w-full py-6 px-4">
             {/* Page Header */}
-            <Row className="mb-4">
-                <Col>
-                    <div className="d-flex align-items-center gap-3">
-                        <div
-                            className="d-flex align-items-center justify-content-center rounded"
-                            style={{
-                                width: 48,
-                                height: 48,
-                                backgroundColor: "rgba(31, 218, 228, 0.1)",
-                            }}
-                        >
-                            <MdSettings size={24} style={{ color: "#1fdae4" }} />
-                        </div>
-                        <div>
-                            <h2 className="mb-0">Dropdown Settings</h2>
-                            <p className="text-muted mb-0">
-                                Manage configurable dropdown options for your organization
-                            </p>
-                        </div>
+            <div className="mb-6">
+                <div className="flex items-center gap-3">
+                    <div
+                        className="flex items-center justify-center rounded-md bg-[var(--primary-light)]"
+                        style={{ width: 48, height: 48 }}
+                    >
+                        <MdSettings size={24} className="text-[var(--primary-color)]" />
                     </div>
-                </Col>
-            </Row>
+                    <div>
+                        <h2 className="text-2xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                            Dropdown Settings
+                        </h2>
+                        <p className="text-[var(--text-secondary)] text-sm mb-0">
+                            Manage configurable dropdown options for your organization
+                        </p>
+                    </div>
+                </div>
+            </div>
 
             {/* Tabs and Content */}
-            <Card className={darkMode ? "bg-dark text-light" : ""}>
-                <Card.Body>
-                    <Tab.Container activeKey={activeTab} onSelect={handleTabChange}>
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <div className="p-6">
+                    <div>
                         {/* Tab Navigation */}
-                        <Nav variant="tabs" className="mb-4">
+                        <div className="flex flex-wrap gap-2 mb-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
                             {DROPDOWN_TYPES.map((type) => (
-                                <Nav.Item key={type.key}>
-                                    <Nav.Link
-                                        eventKey={type.key}
-                                        className="d-flex align-items-center gap-2"
-                                    >
-                                        <type.icon size={18} />
-                                        <span>{type.label}</span>
-                                        {typeCounts[type.key] > 0 && (
-                                            <Badge bg="secondary" pill>
-                                                {typeCounts[type.key]}
-                                            </Badge>
-                                        )}
-                                    </Nav.Link>
-                                </Nav.Item>
+                                <button
+                                    key={type.key}
+                                    type="button"
+                                    className={`flex items-center gap-2 px-4 py-2 -mb-px border-b-2 font-medium transition-colors ${
+                                        activeTab === type.key
+                                            ? "border-[var(--primary-color)] text-[var(--primary-color)]"
+                                            : "border-transparent text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] hover:border-[var(--light-border)] dark:hover:border-[var(--dark-border)]"
+                                    }`}
+                                    onClick={() => handleTabChange(type.key)}
+                                >
+                                    <type.icon size={18} />
+                                    <span>{type.label}</span>
+                                    {typeCounts[type.key] > 0 && (
+                                        <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--text-secondary)] text-white">
+                                            {typeCounts[type.key]}
+                                        </span>
+                                    )}
+                                </button>
                             ))}
-                        </Nav>
+                        </div>
 
                         {/* Tab Content */}
-                        <Tab.Content>
+                        <div>
                             {/* Header with description and add button */}
-                            <div className="d-flex justify-content-between align-items-center mb-3">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
                                 <div>
-                                    <p className="text-muted mb-0">{currentType?.description}</p>
+                                    <p className="text-[var(--text-secondary)] mb-0">{currentType?.description}</p>
                                 </div>
-                                <div className="d-flex gap-2">
-                                    <Button
-                                        variant="outline-secondary"
-                                        size="sm"
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]"
                                         onClick={fetchOptions}
                                     >
-                                        <MdRefresh className="me-1" /> Refresh
-                                    </Button>
-                                    <Button variant="primary" size="sm" onClick={handleAddNew}>
-                                        <MdAdd className="me-1" /> Add Option
-                                    </Button>
+                                        <MdRefresh size={16} />
+                                        Refresh
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
+                                        onClick={handleAddNew}
+                                    >
+                                        <MdAdd size={16} />
+                                        Add Option
+                                    </button>
                                 </div>
                             </div>
 
                             {/* Error Alert */}
                             {error && (
-                                <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                                    {error}
-                                </Alert>
+                                <div className="mb-4 p-4 rounded-md bg-[var(--danger-light)] border border-[var(--danger-color)] flex items-start justify-between">
+                                    <span className="text-[var(--danger-color)] text-sm">{error}</span>
+                                    <button
+                                        type="button"
+                                        className="text-[var(--danger-color)] hover:text-[var(--danger-color)] ml-2"
+                                        onClick={() => setError(null)}
+                                    >
+                                        <MdClose size={18} />
+                                    </button>
+                                </div>
                             )}
 
                             {/* Loading State */}
                             {loading ? (
-                                <div className="text-center py-5">
-                                    <Spinner animation="border" variant="primary" />
-                                    <p className="mt-2 text-muted">Loading options...</p>
+                                <div className="text-center py-12">
+                                    <div className="inline-block w-10 h-10 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+                                    <p className="mt-3 text-[var(--text-secondary)] text-sm">Loading options...</p>
                                 </div>
                             ) : options.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <TypeIcon size={48} className="text-muted mb-3" />
-                                    <p className="text-muted">No options configured yet.</p>
-                                    <Button variant="primary" onClick={handleAddNew}>
-                                        <MdAdd className="me-1" /> Add First Option
-                                    </Button>
+                                <div className="text-center py-12">
+                                    <TypeIcon size={48} className="text-[var(--text-secondary)] mb-3 mx-auto" />
+                                    <p className="text-[var(--text-secondary)] mb-4">No options configured yet.</p>
+                                    <button
+                                        type="button"
+                                        className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
+                                        onClick={handleAddNew}
+                                    >
+                                        <MdAdd className="inline mr-1" size={16} />
+                                        Add First Option
+                                    </button>
                                 </div>
                             ) : (
                                 /* Options Table */
-                                <Table hover responsive className={darkMode ? "table-dark" : ""}>
-                                    <thead>
-                                        <tr>
-                                            <th style={{ width: 50 }}>#</th>
-                                            <th>Label</th>
-                                            <th>Key</th>
-                                            <th>Color</th>
-                                            <th>Type</th>
-                                            <th style={{ width: 120 }}>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {options.map((option, index) => (
-                                            <tr key={option._id || index}>
-                                                <td>{index + 1}</td>
-                                                <td>
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        <div
-                                                            style={{
-                                                                width: 12,
-                                                                height: 12,
-                                                                borderRadius: "50%",
-                                                                backgroundColor: option.color || "#6c757d",
-                                                            }}
-                                                        />
-                                                        <span className="fw-medium">{option.label}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <code className="small">{option.key}</code>
-                                                </td>
-                                                <td>
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        <input
-                                                            type="color"
-                                                            value={option.color || "#6c757d"}
-                                                            disabled
-                                                            style={{ width: 24, height: 24, border: "none", padding: 0 }}
-                                                        />
-                                                        <span className="small text-muted">{option.color}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {option.isDefault ? (
-                                                        <Badge bg="info">System Default</Badge>
-                                                    ) : option.tenant ? (
-                                                        <Badge bg="success">Custom</Badge>
-                                                    ) : (
-                                                        <Badge bg="secondary">Global</Badge>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <div className="d-flex gap-1">
-                                                        <Button
-                                                            variant="outline-primary"
-                                                            size="sm"
-                                                            onClick={() => handleEdit(option)}
-                                                            title="Edit"
-                                                        >
-                                                            <MdEdit />
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline-danger"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(option)}
-                                                            disabled={option.isDefault}
-                                                            title={option.isDefault ? "Cannot delete default" : "Delete"}
-                                                        >
-                                                            <MdDelete />
-                                                        </Button>
-                                                    </div>
-                                                </td>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full border-collapse">
+                                        <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                            <tr>
+                                                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold text-sm" style={{ width: 50 }}>
+                                                    #
+                                                </th>
+                                                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold text-sm">
+                                                    Label
+                                                </th>
+                                                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold text-sm">
+                                                    Key
+                                                </th>
+                                                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold text-sm">
+                                                    Color
+                                                </th>
+                                                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold text-sm">
+                                                    Type
+                                                </th>
+                                                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold text-sm" style={{ width: 120 }}>
+                                                    Actions
+                                                </th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
+                                        </thead>
+                                        <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+                                            {options.map((option, index) => (
+                                                <tr
+                                                    key={option._id || index}
+                                                    className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
+                                                >
+                                                    <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm">
+                                                        {index + 1}
+                                                    </td>
+                                                    <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                                        <div className="flex items-center gap-2">
+                                                            <div
+                                                                className="rounded-full"
+                                                                style={{
+                                                                    width: 12,
+                                                                    height: 12,
+                                                                    backgroundColor: option.color || "#6c757d",
+                                                                }}
+                                                            />
+                                                            <span className="font-medium text-sm">{option.label}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <code className="text-xs px-2 py-1 rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--primary-color)]">
+                                                            {option.key}
+                                                        </code>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="color"
+                                                                value={option.color || "#6c757d"}
+                                                                disabled
+                                                                className="w-6 h-6 border-0 rounded cursor-not-allowed"
+                                                            />
+                                                            <span className="text-xs text-[var(--text-secondary)]">{option.color}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        {option.isDefault ? (
+                                                            <span className="px-2 py-1 text-xs rounded bg-[var(--info-light)] text-[var(--info-color)] font-medium">
+                                                                System Default
+                                                            </span>
+                                                        ) : option.tenant ? (
+                                                            <span className="px-2 py-1 text-xs rounded bg-[var(--success-light)] text-[var(--success-color)] font-medium">
+                                                                Custom
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-1 text-xs rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--text-secondary)] font-medium">
+                                                                Global
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex gap-1">
+                                                            <button
+                                                                type="button"
+                                                                className="p-2 rounded-md transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-light)]"
+                                                                onClick={() => handleEdit(option)}
+                                                                title="Edit"
+                                                            >
+                                                                <MdEdit size={16} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className={`p-2 rounded-md transition-colors border ${
+                                                                    option.isDefault
+                                                                        ? "border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--text-secondary)] cursor-not-allowed opacity-50"
+                                                                        : "border-[var(--danger-color)] text-[var(--danger-color)] hover:bg-[var(--danger-light)]"
+                                                                }`}
+                                                                onClick={() => handleDelete(option)}
+                                                                disabled={option.isDefault}
+                                                                title={option.isDefault ? "Cannot delete default" : "Delete"}
+                                                            >
+                                                                <MdDelete size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             )}
-                        </Tab.Content>
-                    </Tab.Container>
-                </Card.Body>
-            </Card>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* Add/Edit Modal */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>
-                        {modalMode === "add" ? "Add New Option" : "Edit Option"}
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {currentOption && (
-                        <Form>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Label *</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="label"
-                                    value={currentOption.label}
-                                    onChange={handleLabelChange}
-                                    placeholder="e.g., Healthcare"
-                                    required
-                                />
-                                <Form.Text className="text-muted">
-                                    Display name shown in dropdowns
-                                </Form.Text>
-                            </Form.Group>
+            {showModal && (
+                <>
+                    {/* Modal Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                        onClick={() => setShowModal(false)}
+                    />
+                    {/* Modal Dialog */}
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg w-full max-w-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                    {modalMode === "add" ? "Add New Option" : "Edit Option"}
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors"
+                                    onClick={() => setShowModal(false)}
+                                >
+                                    <MdClose size={24} />
+                                </button>
+                            </div>
 
-                            <Form.Group className="mb-3">
-                                <Form.Label>Key *</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="key"
-                                    value={currentOption.key}
-                                    onChange={(e) => {
-                                        setCurrentOption((prev) => ({
-                                            ...prev,
-                                            key: e.target.value.toLowerCase().replace(/\s+/g, "_"),
-                                            keyEdited: true,
-                                        }));
-                                    }}
-                                    placeholder="e.g., healthcare"
-                                    disabled={modalMode === "edit"} // Can't change key after creation
-                                    required
-                                />
-                                <Form.Text className="text-muted">
-                                    Unique identifier (lowercase, no spaces)
-                                </Form.Text>
-                            </Form.Group>
+                            {/* Modal Body */}
+                            <div className="p-4">
+                                {currentOption && (
+                                    <form>
+                                        {/* Label Field */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                                Label *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                                                name="label"
+                                                value={currentOption.label}
+                                                onChange={handleLabelChange}
+                                                placeholder="e.g., Healthcare"
+                                                required
+                                            />
+                                            <div className="mt-1 text-xs text-[var(--text-secondary)]">
+                                                Display name shown in dropdowns
+                                            </div>
+                                        </div>
 
-                            <Form.Group className="mb-3">
-                                <Form.Label>Description</Form.Label>
-                                <Form.Control
-                                    as="textarea"
-                                    rows={2}
-                                    name="description"
-                                    value={currentOption.description || ""}
-                                    onChange={handleInputChange}
-                                    placeholder="Optional description"
-                                />
-                            </Form.Group>
+                                        {/* Key Field */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                                Key *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                name="key"
+                                                value={currentOption.key}
+                                                onChange={(e) => {
+                                                    setCurrentOption((prev) => ({
+                                                        ...prev,
+                                                        key: e.target.value.toLowerCase().replace(/\s+/g, "_"),
+                                                        keyEdited: true,
+                                                    }));
+                                                }}
+                                                placeholder="e.g., healthcare"
+                                                disabled={modalMode === "edit"}
+                                                required
+                                            />
+                                            <div className="mt-1 text-xs text-[var(--text-secondary)]">
+                                                Unique identifier (lowercase, no spaces)
+                                            </div>
+                                        </div>
 
-                            <Form.Group className="mb-3">
-                                <Form.Label>Color</Form.Label>
-                                <div className="d-flex align-items-center gap-2">
-                                    <Form.Control
-                                        type="color"
-                                        name="color"
-                                        value={currentOption.color || "#6c757d"}
-                                        onChange={handleInputChange}
-                                        style={{ width: 50, height: 38 }}
-                                    />
-                                    <Form.Control
-                                        type="text"
-                                        name="color"
-                                        value={currentOption.color || "#6c757d"}
-                                        onChange={handleInputChange}
-                                        placeholder="#000000"
-                                        style={{ width: 100 }}
-                                    />
-                                </div>
-                            </Form.Group>
+                                        {/* Description Field */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                                Description
+                                            </label>
+                                            <textarea
+                                                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] resize-none"
+                                                rows={2}
+                                                name="description"
+                                                value={currentOption.description || ""}
+                                                onChange={handleInputChange}
+                                                placeholder="Optional description"
+                                            />
+                                        </div>
 
-                            <Form.Group className="mb-3">
-                                <Form.Label>Sort Order</Form.Label>
-                                <Form.Control
-                                    type="number"
-                                    name="sortOrder"
-                                    value={currentOption.sortOrder || 0}
-                                    onChange={handleInputChange}
-                                    min={0}
-                                />
-                            </Form.Group>
-                        </Form>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowModal(false)}>
-                        <MdClose className="me-1" /> Cancel
-                    </Button>
-                    <Button variant="primary" onClick={handleSave} disabled={saving}>
-                        {saving ? (
-                            <>
-                                <Spinner size="sm" className="me-1" /> Saving...
-                            </>
-                        ) : (
-                            <>
-                                <MdSave className="me-1" /> {modalMode === "add" ? "Add" : "Save"}
-                            </>
-                        )}
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-        </Container>
+                                        {/* Color Field */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                                Color
+                                            </label>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="color"
+                                                    className="w-12 h-10 rounded border border-[var(--light-border)] dark:border-[var(--dark-border)] cursor-pointer"
+                                                    name="color"
+                                                    value={currentOption.color || "#6c757d"}
+                                                    onChange={handleInputChange}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    className="flex-1 px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                                                    name="color"
+                                                    value={currentOption.color || "#6c757d"}
+                                                    onChange={handleInputChange}
+                                                    placeholder="#000000"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Sort Order Field */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                                Sort Order
+                                            </label>
+                                            <input
+                                                type="number"
+                                                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                                                name="sortOrder"
+                                                value={currentOption.sortOrder || 0}
+                                                onChange={handleInputChange}
+                                                min={0}
+                                            />
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <button
+                                    type="button"
+                                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--text-secondary)] text-white hover:opacity-90"
+                                    onClick={() => setShowModal(false)}
+                                >
+                                    <MdClose className="inline mr-1" size={16} />
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                >
+                                    {saving ? (
+                                        <>
+                                            <span className="inline-block w-4 h-4 mr-1 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <MdSave className="inline mr-1" size={16} />
+                                            {modalMode === "add" ? "Add" : "Save"}
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
     );
 };
 

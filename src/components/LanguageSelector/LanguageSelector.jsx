@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { Dropdown } from "react-bootstrap"
+import { useState, useRef, useEffect } from "react"
 import { MdLanguage } from "react-icons/md"
 
 const LanguageSelector = ({ darkMode }) => {
   const [currentLanguage, setCurrentLanguage] = useState("en")
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef(null)
 
   const languages = [
     { code: "en", name: "English", flag: "🇺🇸" },
@@ -20,43 +21,58 @@ const LanguageSelector = ({ darkMode }) => {
 
   const changeLanguage = (langCode) => {
     setCurrentLanguage(langCode)
+    setIsOpen(false)
     console.log("Language changed to:", langCode)
   }
 
-  return (
-    <Dropdown align="end">
-      <Dropdown.Toggle
-        variant="link"
-        className="d-flex align-items-center p-2 text-decoration-none"
-        style={{ color: "inherit", border: "none" }}
-      >
-        <MdLanguage className="me-1" size={20} />
-        <span className="d-none d-lg-inline me-1">{currentLang?.flag}</span>
-        <span className="d-none d-xl-inline">{currentLang?.name}</span>
-      </Dropdown.Toggle>
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
-      <Dropdown.Menu
-        style={{
-          backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
-          borderColor: darkMode ? "var(--dark-border)" : "var(--light-border)",
-          marginTop: "0.5rem",
-          minWidth: "180px",
-        }}
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 p-2 bg-transparent border-0 cursor-pointer
+                   text-[var(--light-text)] dark:text-[var(--dark-text)] hover:opacity-80 transition-opacity"
       >
-        <Dropdown.Header style={{ color: darkMode ? "#fff" : "#000" }}>Select Language</Dropdown.Header>
-        {languages.map((lang) => (
-          <Dropdown.Item
-            key={lang.code}
-            onClick={() => changeLanguage(lang.code)}
-            className={`d-flex align-items-center ${currentLanguage === lang.code ? "active" : ""}`}
-            style={{ color: darkMode ? "#fff" : "#000" }}
-          >
-            <span className="me-2">{lang.flag}</span>
-            <span>{lang.name}</span>
-          </Dropdown.Item>
-        ))}
-      </Dropdown.Menu>
-    </Dropdown>
+        <MdLanguage size={20} />
+        <span className="hidden lg:inline">{currentLang?.flag}</span>
+        <span className="hidden xl:inline">{currentLang?.name}</span>
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute right-0 mt-1 min-w-[180px] rounded-lg shadow-lg border z-50
+                     bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                     border-[var(--light-border)] dark:border-[var(--dark-border)]"
+        >
+          <div className="px-3 py-2 text-xs font-semibold text-[var(--secondary-color)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            Select Language
+          </div>
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => changeLanguage(lang.code)}
+              className={`w-full text-left flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-0
+                         text-[var(--light-text)] dark:text-[var(--dark-text)]
+                         hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                         ${currentLanguage === lang.code ? "bg-[var(--primary-color)]/10 font-medium" : "bg-transparent"}`}
+            >
+              <span>{lang.flag}</span>
+              <span>{lang.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 

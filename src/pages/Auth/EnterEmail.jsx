@@ -1,96 +1,16 @@
-// // src\pages\Auth\EnterEmail.jsx
-
-// "use client"
-
-// import { useState } from "react"
-// import { useNavigate } from "react-router-dom"
-// import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap"
-// import { MdEmail } from "react-icons/md"
-
-// const EnterEmail = () => {
-//   const [email, setEmail] = useState("")
-//   const [loading, setLoading] = useState(false)
-//   const [message, setMessage] = useState("")
-//   const navigate = useNavigate()
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault()
-//     setLoading(true)
-
-//     try {
-//       // Simulate API call
-//       await new Promise((resolve) => setTimeout(resolve, 1000))
-//       setMessage("Survey invitation sent to your email!")
-
-//       // Redirect after 2 seconds
-//       setTimeout(() => {
-//         navigate("/thank-you")
-//       }, 2000)
-//     } catch (error) {
-//       setMessage("Failed to send invitation. Please try again.")
-//     } finally {
-//       setLoading(false)
-//     }
-//   }
-
-//   return (
-//     <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-//       <Row className="w-100 justify-content-center">
-//         <Col xs={12} sm={8} md={6} lg={4}>
-//           <Card className="shadow-lg border-0">
-//             <Card.Body className="p-4">
-//               <div className="text-center mb-4">
-//                 <div
-//                   className="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-3"
-//                   style={{ width: "60px", height: "60px" }}
-//                 >
-//                   <MdEmail className="text-white" size={30} />
-//                 </div>
-//                 <h1 className="h3 text-primary fw-bold mb-2">Rate Pro</h1>
-//                 <p className="text-muted">Enter your email to receive survey invitation</p>
-//               </div>
-
-//               {message && (
-//                 <Alert variant={message.includes("sent") ? "success" : "danger"} className="text-center">
-//                   {message}
-//                 </Alert>
-//               )}
-
-//               <Form onSubmit={handleSubmit}>
-//                 <Form.Group className="mb-3">
-//                   <Form.Label>Email Address</Form.Label>
-//                   <Form.Control
-//                     type="email"
-//                     value={email}
-//                     onChange={(e) => setEmail(e.target.value)}
-//                     placeholder="Enter your email address"
-//                     required
-//                   />
-//                 </Form.Group>
-
-//                 <Button type="submit" variant="primary" className="w-100 mb-3" disabled={loading}>
-//                   {loading ? "Sending..." : "Send Survey Invitation"}
-//                 </Button>
-//               </Form>
-
-//               <div className="text-center">
-//                 <p className="mb-0 small text-muted">You will receive an email with a link to complete the survey</p>
-//               </div>
-//             </Card.Body>
-//           </Card>
-//         </Col>
-//       </Row>
-//     </Container>
-//   )
-// }
-
-// export default EnterEmail
+// src\pages\Auth\EnterEmail.jsx
 import { useState } from "react";
-import { Form, Button, Alert } from "react-bootstrap";
 import { FaEnvelopeOpenText } from "react-icons/fa";
 import AuthLayout from "../../layouts/AuthLayout";
-import Swal from "sweetalert2"
+import Swal from "sweetalert2";
 import { forgotPassword } from "../../api/axiosInstance";
+
+const inputClass = `w-full px-3 py-2.5 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                    bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]
+                    focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
+                    transition-all duration-200 text-base`
+
+const labelClass = "block text-sm font-medium mb-1.5 text-[var(--light-text)] dark:text-[var(--dark-text)]"
 
 const EnterEmail = ({ onOTPSent }) => {
   const [email, setEmail] = useState("");
@@ -102,11 +22,11 @@ const EnterEmail = ({ onOTPSent }) => {
     setLoading(true);
     try {
       const res = await forgotPassword({ email });
-      Swal.fire("✅ OTP Sent", res.data.message || "Check your email", "success")
-      onOTPSent(email)
+      Swal.fire("✅ OTP Sent", res.data.message || "Check your email", "success");
+      onOTPSent(email);
     } catch (err) {
       setError("Failed to send OTP. Please try again.");
-      Swal.fire("❌ Failed", err.response?.data?.message || "Something went wrong", "error")
+      Swal.fire("❌ Failed", err.response?.data?.message || "Something went wrong", "error");
     } finally {
       setLoading(false);
     }
@@ -118,34 +38,45 @@ const EnterEmail = ({ onOTPSent }) => {
       subtitle="Enter your email to receive a reset code"
       icon={<FaEnvelopeOpenText className="text-white" size={28} />}
     >
-      {error && <Alert variant="danger">{error}</Alert>}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+          {error}
+        </div>
+      )}
 
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>Email Address</Form.Label>
-          <Form.Control
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className={labelClass}>Email Address</label>
+          <input
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className={inputClass}
           />
-        </Form.Group>
+        </div>
 
-        <Button type="submit" variant="primary" className="w-100" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2.5 text-base font-medium rounded-lg
+                     bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white
+                     transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
+                     focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2"
+        >
           {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Sending...
-            </>
+            </span>
           ) : (
             "Send OTP"
           )}
-        </Button>
-      </Form>
+        </button>
+      </form>
     </AuthLayout>
   );
 };
 
 export default EnterEmail;
-

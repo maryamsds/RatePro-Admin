@@ -4,7 +4,6 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { Container, Row, Col, Card, Form, Button, InputGroup, Alert, Tab, Nav } from "react-bootstrap"
 import { MdShare, MdLink, MdQrCode, MdEmail, MdContentCopy, MdDownload, MdSecurity } from "react-icons/md"
 
 const SurveySharing = () => {
@@ -12,6 +11,7 @@ const SurveySharing = () => {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [survey, setSurvey] = useState(null)
+  const [activeTab, setActiveTab] = useState("link")
   const [shareSettings, setShareSettings] = useState({
     isPublic: true,
     requirePassword: false,
@@ -24,7 +24,6 @@ const SurveySharing = () => {
   })
 
   useEffect(() => {
-    // Simulate loading survey data
     setTimeout(() => {
       setSurvey({
         id: id,
@@ -43,7 +42,6 @@ const SurveySharing = () => {
   }
 
   const generateQRCode = () => {
-    // In a real app, you would generate an actual QR code
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(survey.url)}`
     return qrCodeUrl
   }
@@ -64,407 +62,289 @@ const SurveySharing = () => {
     alert("Share settings saved successfully!")
   }
 
+  const tabs = [
+    { key: "link", label: "Direct Link", icon: MdLink },
+    { key: "qr", label: "QR Code", icon: MdQrCode },
+    { key: "embed", label: "Embed Code", icon: MdShare },
+    { key: "email", label: "Email Invitation", icon: MdEmail },
+  ]
+
   if (loading) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p>Loading sharing options...</p>
+      <div className="p-6">
+        <div className="text-center py-12">
+          <span className="inline-block w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-[var(--secondary-color)]">Loading sharing options...</p>
         </div>
-      </Container>
+      </div>
     )
   }
 
   return (
-    <Container fluid className="py-4">
+    <div className="p-6">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">Share Survey</h1>
-              <p className="text-muted mb-0">{survey.title}</p>
-            </div>
-            <Button variant="primary" onClick={saveSettings}>
-              <MdSecurity className="me-2" />
-              Save Settings
-            </Button>
-          </div>
-        </Col>
-      </Row>
+      <div className="flex justify-between items-center flex-wrap gap-3 mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Share Survey</h1>
+          <p className="text-[var(--secondary-color)] text-sm">{survey.title}</p>
+        </div>
+        <button onClick={saveSettings} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all duration-200">
+          <MdSecurity size={16} />
+          Save Settings
+        </button>
+      </div>
 
       {copied && (
-        <Alert variant="success" className="mb-4">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm">
           Link copied to clipboard!
-        </Alert>
+        </div>
       )}
 
-      <Row>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sharing Options */}
-        <Col lg={8}>
-          <Tab.Container defaultActiveKey="link">
-            <Card className="border-0 shadow-sm">
-              <Card.Header className="bg-transparent">
-                <Nav variant="tabs" className="border-0">
-                  <Nav.Item>
-                    <Nav.Link eventKey="link" className="d-flex align-items-center">
-                      <MdLink className="me-2" />
-                      Direct Link
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="qr" className="d-flex align-items-center">
-                      <MdQrCode className="me-2" />
-                      QR Code
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="embed" className="d-flex align-items-center">
-                      <MdShare className="me-2" />
-                      Embed Code
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="email" className="d-flex align-items-center">
-                      <MdEmail className="me-2" />
-                      Email Invitation
-                    </Nav.Link>
-                  </Nav.Item>
-                </Nav>
-              </Card.Header>
+        <div className="lg:col-span-2">
+          <div className="card border-0 shadow-sm rounded-xl overflow-hidden">
+            {/* Tabs */}
+            <div className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent px-4">
+              <div className="flex gap-1 -mb-px overflow-x-auto">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-200
+                      ${activeTab === tab.key
+                        ? "border-[var(--primary-color)] text-[var(--primary-color)]"
+                        : "border-transparent text-[var(--secondary-color)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)]"
+                      }`}
+                  >
+                    <tab.icon size={16} />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <Card.Body>
-                <Tab.Content>
-                  {/* Direct Link Tab */}
-                  <Tab.Pane eventKey="link">
-                    <div className="mb-4">
-                      <h5>Survey Link</h5>
-                      <p className="text-muted">Share this link with your audience to collect responses</p>
+            <div className="p-6">
+              {/* Direct Link Tab */}
+              {activeTab === "link" && (
+                <div>
+                  <div className="mb-6">
+                    <h5 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Survey Link</h5>
+                    <p className="text-[var(--secondary-color)] text-sm mb-3">Share this link with your audience to collect responses</p>
 
-                      <InputGroup className="mb-3">
-                        <Form.Control type="text" value={survey.url} readOnly className="font-monospace" />
-                        <Button variant="outline-primary" onClick={() => copyToClipboard(survey.url)}>
-                          <MdContentCopy />
-                        </Button>
-                      </InputGroup>
-
-                      <div className="d-flex gap-2">
-                        <Button variant="primary" href={survey.url} target="_blank">
-                          Open Survey
-                        </Button>
-                        <Button variant="outline-secondary" onClick={() => copyToClipboard(survey.url)}>
-                          Copy Link
-                        </Button>
-                      </div>
+                    <div className="flex mb-3">
+                      <input type="text" value={survey.url} readOnly className="flex-1 px-3 py-2 rounded-l-lg border border-r-0 border-[var(--light-border)] dark:border-[var(--dark-border)] bg-gray-50 dark:bg-gray-800 text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm font-mono" />
+                      <button onClick={() => copyToClipboard(survey.url)} className="px-3 py-2 rounded-r-lg border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10 transition-all">
+                        <MdContentCopy />
+                      </button>
                     </div>
 
-                    <div>
-                      <h6>Social Media Sharing</h6>
-                      <div className="d-flex gap-2">
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(survey.url)}`}
-                          target="_blank"
-                        >
-                          Facebook
-                        </Button>
-                        <Button
-                          variant="outline-info"
-                          size="sm"
-                          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(survey.url)}&text=Please take our survey`}
-                          target="_blank"
-                        >
-                          Twitter
-                        </Button>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(survey.url)}`}
-                          target="_blank"
-                        >
-                          LinkedIn
-                        </Button>
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          href={`https://wa.me/?text=${encodeURIComponent(`Please take our survey: ${survey.url}`)}`}
-                          target="_blank"
-                        >
-                          WhatsApp
-                        </Button>
-                      </div>
+                    <div className="flex gap-2">
+                      <a href={survey.url} target="_blank" rel="noreferrer" className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all no-underline">Open Survey</a>
+                      <button onClick={() => copyToClipboard(survey.url)} className="px-4 py-2 rounded-lg text-sm font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">Copy Link</button>
                     </div>
-                  </Tab.Pane>
+                  </div>
 
-                  {/* QR Code Tab */}
-                  <Tab.Pane eventKey="qr">
-                    <div className="text-center">
-                      <h5>QR Code</h5>
-                      <p className="text-muted">Let users scan this QR code to access your survey</p>
-
-                      <div className="mb-4">
-                        <img
-                          src={generateQRCode() || "/placeholder.svg"}
-                          alt="Survey QR Code"
-                          className="border rounded"
-                          style={{ maxWidth: "200px" }}
-                        />
-                      </div>
-
-                      <div className="d-flex justify-content-center gap-2">
-                        <Button variant="primary" onClick={downloadQRCode}>
-                          <MdDownload className="me-2" />
-                          Download QR Code
-                        </Button>
-                        <Button variant="outline-secondary" onClick={() => copyToClipboard(survey.url)}>
-                          <MdContentCopy className="me-2" />
-                          Copy Link
-                        </Button>
-                      </div>
-
-                      <div className="mt-4">
-                        <h6>QR Code Usage Tips</h6>
-                        <ul className="text-start text-muted small">
-                          <li>Print on business cards, flyers, or posters</li>
-                          <li>Display on digital screens or presentations</li>
-                          <li>Include in email signatures</li>
-                          <li>Add to product packaging</li>
-                        </ul>
-                      </div>
+                  <div>
+                    <h6 className="font-semibold text-sm mb-2">Social Media Sharing</h6>
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(survey.url)}`, color: "text-blue-600 border-blue-300 hover:bg-blue-50" },
+                        { label: "Twitter", href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(survey.url)}&text=Please take our survey`, color: "text-sky-500 border-sky-300 hover:bg-sky-50" },
+                        { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(survey.url)}`, color: "text-green-600 border-green-300 hover:bg-green-50" },
+                        { label: "WhatsApp", href: `https://wa.me/?text=${encodeURIComponent(`Please take our survey: ${survey.url}`)}`, color: "text-green-500 border-green-300 hover:bg-green-50" },
+                      ].map((item) => (
+                        <a key={item.label} href={item.href} target="_blank" rel="noreferrer" className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${item.color} transition-all no-underline`}>
+                          {item.label}
+                        </a>
+                      ))}
                     </div>
-                  </Tab.Pane>
+                  </div>
+                </div>
+              )}
 
-                  {/* Embed Code Tab */}
-                  <Tab.Pane eventKey="embed">
-                    <div>
-                      <h5>Embed Survey</h5>
-                      <p className="text-muted">Embed this survey directly into your website</p>
+              {/* QR Code Tab */}
+              {activeTab === "qr" && (
+                <div className="text-center">
+                  <h5 className="font-semibold mb-1">QR Code</h5>
+                  <p className="text-[var(--secondary-color)] text-sm mb-4">Let users scan this QR code to access your survey</p>
+                  <div className="mb-4">
+                    <img src={generateQRCode() || "/placeholder.svg"} alt="Survey QR Code" className="border rounded-lg mx-auto" style={{ maxWidth: "200px" }} />
+                  </div>
+                  <div className="flex justify-center gap-2 mb-6">
+                    <button onClick={downloadQRCode} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all">
+                      <MdDownload size={16} /> Download QR Code
+                    </button>
+                    <button onClick={() => copyToClipboard(survey.url)} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+                      <MdContentCopy size={16} /> Copy Link
+                    </button>
+                  </div>
+                  <div>
+                    <h6 className="font-semibold text-sm mb-2">QR Code Usage Tips</h6>
+                    <ul className="text-left text-[var(--secondary-color)] text-sm list-disc pl-5 space-y-1">
+                      <li>Print on business cards, flyers, or posters</li>
+                      <li>Display on digital screens or presentations</li>
+                      <li>Include in email signatures</li>
+                      <li>Add to product packaging</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
 
-                      <Form.Group className="mb-3">
-                        <Form.Label>Iframe Embed Code</Form.Label>
-                        <Form.Control
-                          as="textarea"
-                          rows={4}
-                          value={survey.embedCode}
-                          readOnly
-                          className="font-monospace"
-                        />
-                        <Form.Text className="text-muted">Copy and paste this code into your website's HTML</Form.Text>
-                      </Form.Group>
-
-                      <div className="d-flex gap-2 mb-4">
-                        <Button variant="primary" onClick={() => copyToClipboard(survey.embedCode)}>
-                          <MdContentCopy className="me-2" />
-                          Copy Embed Code
-                        </Button>
-                      </div>
-
+              {/* Embed Code Tab */}
+              {activeTab === "embed" && (
+                <div>
+                  <h5 className="font-semibold mb-1">Embed Survey</h5>
+                  <p className="text-[var(--secondary-color)] text-sm mb-4">Embed this survey directly into your website</p>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Iframe Embed Code</label>
+                    <textarea rows={4} value={survey.embedCode} readOnly className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-gray-50 dark:bg-gray-800 text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm font-mono" />
+                    <small className="text-[var(--secondary-color)] text-xs">Copy and paste this code into your website's HTML</small>
+                  </div>
+                  <div className="flex gap-2 mb-6">
+                    <button onClick={() => copyToClipboard(survey.embedCode)} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all">
+                      <MdContentCopy size={16} /> Copy Embed Code
+                    </button>
+                  </div>
+                  <div>
+                    <h6 className="font-semibold text-sm mb-3">Customization Options</h6>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                       <div>
-                        <h6>Customization Options</h6>
-                        <Row>
-                          <Col md={6}>
-                            <Form.Group className="mb-3">
-                              <Form.Label>Width</Form.Label>
-                              <Form.Control type="text" defaultValue="100%" />
-                            </Form.Group>
-                          </Col>
-                          <Col md={6}>
-                            <Form.Group className="mb-3">
-                              <Form.Label>Height</Form.Label>
-                              <Form.Control type="text" defaultValue="600px" />
-                            </Form.Group>
-                          </Col>
-                        </Row>
-                        <Form.Group className="mb-3">
-                          <Form.Check type="checkbox" label="Remove border" defaultChecked />
-                        </Form.Group>
+                        <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Width</label>
+                        <input type="text" defaultValue="100%" className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Height</label>
+                        <input type="text" defaultValue="600px" className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm" />
                       </div>
                     </div>
-                  </Tab.Pane>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" defaultChecked className="w-4 h-4 accent-[var(--primary-color)]" />
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">Remove border</span>
+                    </label>
+                  </div>
+                </div>
+              )}
 
-                  {/* Email Invitation Tab */}
-                  <Tab.Pane eventKey="email">
-                    <div>
-                      <h5>Email Invitation</h5>
-                      <p className="text-muted">Send survey invitations via email</p>
-
-                      <Form>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Email Template</Form.Label>
-                          <Form.Select>
-                            <option>Default Invitation</option>
-                            <option>Friendly Reminder</option>
-                            <option>Professional Request</option>
-                            <option>Custom Template</option>
-                          </Form.Select>
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Subject Line</Form.Label>
-                          <Form.Control type="text" defaultValue="We'd love your feedback - Quick Survey" />
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Email Content</Form.Label>
-                          <Form.Control
-                            as="textarea"
-                            rows={6}
-                            defaultValue={`Hi there,
-
-We hope you're doing well! We'd love to hear your thoughts and feedback to help us improve our services.
-
-Could you please take a few minutes to complete our survey? It should only take about 3-5 minutes of your time.
-
-[Survey Link]
-
-Thank you for your time and valuable feedback!
-
-Best regards,
-The Rate Pro Team`}
-                          />
-                        </Form.Group>
-
-                        <Form.Group className="mb-3">
-                          <Form.Label>Recipients</Form.Label>
-                          <Form.Control
-                            as="textarea"
-                            rows={3}
-                            placeholder="Enter email addresses separated by commas or upload a CSV file"
-                          />
-                        </Form.Group>
-
-                        <div className="d-flex gap-2">
-                          <Button variant="primary">
-                            <MdEmail className="me-2" />
-                            Send Invitations
-                          </Button>
-                          <Button variant="outline-secondary">Upload CSV</Button>
-                          <Button variant="outline-info">Preview Email</Button>
-                        </div>
-                      </Form>
+              {/* Email Invitation Tab */}
+              {activeTab === "email" && (
+                <div>
+                  <h5 className="font-semibold mb-1">Email Invitation</h5>
+                  <p className="text-[var(--secondary-color)] text-sm mb-4">Send survey invitations via email</p>
+                  <form>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Email Template</label>
+                      <select className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm">
+                        <option>Default Invitation</option>
+                        <option>Friendly Reminder</option>
+                        <option>Professional Request</option>
+                        <option>Custom Template</option>
+                      </select>
                     </div>
-                  </Tab.Pane>
-                </Tab.Content>
-              </Card.Body>
-            </Card>
-          </Tab.Container>
-        </Col>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Subject Line</label>
+                      <input type="text" defaultValue="We'd love your feedback - Quick Survey" className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm" />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Email Content</label>
+                      <textarea
+                        rows={6}
+                        defaultValue={`Hi there,\n\nWe hope you're doing well! We'd love to hear your thoughts and feedback to help us improve our services.\n\nCould you please take a few minutes to complete our survey? It should only take about 3-5 minutes of your time.\n\n[Survey Link]\n\nThank you for your time and valuable feedback!\n\nBest regards,\nThe Rate Pro Team`}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm resize-y"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Recipients</label>
+                      <textarea rows={3} placeholder="Enter email addresses separated by commas or upload a CSV file" className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm resize-y" />
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all">
+                        <MdEmail size={16} /> Send Invitations
+                      </button>
+                      <button type="button" className="px-4 py-2 rounded-lg text-sm font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">Upload CSV</button>
+                      <button type="button" className="px-4 py-2 rounded-lg text-sm font-medium border border-sky-300 text-sky-600 hover:bg-sky-50 transition-all">Preview Email</button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Share Settings */}
-        <Col lg={4}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header>
-              <h6 className="mb-0">Share Settings</h6>
-            </Card.Header>
-            <Card.Body>
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    label="Make survey public"
-                    checked={shareSettings.isPublic}
-                    onChange={(e) => handleSettingChange("isPublic", e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">Anyone with the link can access the survey</Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    label="Require password"
-                    checked={shareSettings.requirePassword}
-                    onChange={(e) => handleSettingChange("requirePassword", e.target.checked)}
-                  />
-                  {shareSettings.requirePassword && (
-                    <Form.Control
+        <div className="space-y-4">
+          <div className="card border-0 shadow-sm rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h6 className="font-semibold text-sm m-0">Share Settings</h6>
+            </div>
+            <div className="p-4 space-y-4">
+              {[
+                { field: "isPublic", label: "Make survey public", hint: "Anyone with the link can access the survey" },
+                { field: "requirePassword", label: "Require password" },
+                { field: "allowAnonymous", label: "Allow anonymous responses" },
+                { field: "requireRegistration", label: "Require user registration" },
+                { field: "allowMultipleResponses", label: "Allow multiple responses per user" },
+              ].map((item) => (
+                <div key={item.field}>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={shareSettings[item.field]}
+                        onChange={(e) => handleSettingChange(item.field, e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-300 dark:bg-gray-600 rounded-full peer-checked:bg-[var(--primary-color)] transition-colors" />
+                      <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
+                    </div>
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{item.label}</span>
+                  </label>
+                  {item.hint && <small className="text-[var(--secondary-color)] text-xs ml-12 block mt-0.5">{item.hint}</small>}
+                  {item.field === "requirePassword" && shareSettings.requirePassword && (
+                    <input
                       type="password"
                       placeholder="Enter password"
                       value={shareSettings.password}
                       onChange={(e) => handleSettingChange("password", e.target.value)}
-                      className="mt-2"
+                      className="w-full mt-2 px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
                     />
                   )}
-                </Form.Group>
+                </div>
+              ))}
 
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    label="Allow anonymous responses"
-                    checked={shareSettings.allowAnonymous}
-                    onChange={(e) => handleSettingChange("allowAnonymous", e.target.checked)}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    label="Require user registration"
-                    checked={shareSettings.requireRegistration}
-                    onChange={(e) => handleSettingChange("requireRegistration", e.target.checked)}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Check
-                    type="switch"
-                    label="Allow multiple responses per user"
-                    checked={shareSettings.allowMultipleResponses}
-                    onChange={(e) => handleSettingChange("allowMultipleResponses", e.target.checked)}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Maximum responses</Form.Label>
-                  <Form.Control
-                    type="number"
-                    placeholder="Leave empty for unlimited"
-                    value={shareSettings.maxResponses}
-                    onChange={(e) => handleSettingChange("maxResponses", e.target.value)}
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Expiry date</Form.Label>
-                  <Form.Control
-                    type="datetime-local"
-                    value={shareSettings.expiryDate}
-                    onChange={(e) => handleSettingChange("expiryDate", e.target.value)}
-                  />
-                </Form.Group>
-              </Form>
-            </Card.Body>
-          </Card>
+              <div>
+                <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Maximum responses</label>
+                <input type="number" placeholder="Leave empty for unlimited" value={shareSettings.maxResponses} onChange={(e) => handleSettingChange("maxResponses", e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Expiry date</label>
+                <input type="datetime-local" value={shareSettings.expiryDate} onChange={(e) => handleSettingChange("expiryDate", e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm" />
+              </div>
+            </div>
+          </div>
 
           {/* Survey Statistics */}
-          <Card className="border-0 shadow-sm mt-4">
-            <Card.Header>
-              <h6 className="mb-0">Survey Statistics</h6>
-            </Card.Header>
-            <Card.Body>
-              <div className="d-flex justify-content-between mb-2">
-                <span>Total Views:</span>
-                <strong>1,234</strong>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>Responses:</span>
-                <strong>456</strong>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span>Completion Rate:</span>
-                <strong>87%</strong>
-              </div>
-              <div className="d-flex justify-content-between">
-                <span>Last Response:</span>
-                <strong>2 hours ago</strong>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+          <div className="card border-0 shadow-sm rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h6 className="font-semibold text-sm m-0">Survey Statistics</h6>
+            </div>
+            <div className="p-4 space-y-2">
+              {[
+                { label: "Total Views:", value: "1,234" },
+                { label: "Responses:", value: "456" },
+                { label: "Completion Rate:", value: "87%" },
+                { label: "Last Response:", value: "2 hours ago" },
+              ].map((stat) => (
+                <div key={stat.label} className="flex justify-between text-sm">
+                  <span className="text-[var(--secondary-color)]">{stat.label}</span>
+                  <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">{stat.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

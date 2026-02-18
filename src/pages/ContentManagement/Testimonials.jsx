@@ -167,7 +167,7 @@ const Testimonial = ({ darkMode }) => {
   // Render star rating
   const renderStars = (rating) => {
     return (
-      <div className="d-flex">
+      <div className="flex">
         {[...Array(5)].map((_, i) => (
           <MdStar
             key={i}

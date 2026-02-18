@@ -1,18 +1,6 @@
-import React, { useState, useEffect } from "react";
+// SurveyTemplates.jsx
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Container,
-  Row,
-  Col,
-  Button,
-  Badge,
-  Form,
-  InputGroup,
-  Modal,
-  Spinner,
-  Offcanvas,
-  Dropdown,
-} from "react-bootstrap";
 import {
   MdDescription,
   MdAdd,
@@ -57,6 +45,7 @@ const SurveyTemplates = ({ darkMode }) => {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   // Pagination State
   const [pagination, setPagination] = useState({
@@ -89,23 +78,29 @@ const SurveyTemplates = ({ darkMode }) => {
     const config = statusConfig[status] || statusConfig.draft;
     const StatusIcon = config.icon;
 
+    const variantColors = {
+      warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      success: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      secondary: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+    };
+
     return (
-      <Badge bg={config.variant} className="d-flex align-items-center gap-1">
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${variantColors[config.variant] || variantColors.secondary}`}>
         <StatusIcon size={12} />
         {config.label}
-      </Badge>
+      </span>
     );
   };
 
   // ✅ STATUS FILTER COMPONENT 
   const StatusFilter = ({ value, onChange }) => (
-    <Form.Select value={value} onChange={onChange} size="sm">
+    <select value={value} onChange={onChange} className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm">
       <option value="all">All Status</option>
       <option value="draft">Draft</option>
       <option value="published">Published</option>
       <option value="active">Active</option>
       <option value="archived">Archived</option>
-    </Form.Select>
+    </select>
   );
 
   // ✅ TOGGLE TEMPLATE STATUS FUNCTION - Fixed
@@ -413,15 +408,14 @@ const SurveyTemplates = ({ darkMode }) => {
     const category = categories.find((cat) => cat.id === categoryId);
 
     if (!category) {
-      return <Badge bg="secondary">{categoryId || "General"}</Badge>;
+      return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{categoryId || "General"}</span>;
     }
 
     const categoryColor = category.color || "#6c757d";
 
     return (
-      <Badge
-        bg="light"
-        text="dark"
+      <span
+        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
         style={{
           backgroundColor: `${categoryColor}20`,
           color: categoryColor,
@@ -429,7 +423,7 @@ const SurveyTemplates = ({ darkMode }) => {
         }}
       >
         {category.name}
-      </Badge>
+      </span>
     );
   };
 
@@ -444,21 +438,21 @@ const SurveyTemplates = ({ darkMode }) => {
   };
 
   return (
-    <div className="survey-templates-container">
-      <Container fluid>
+    <div className="min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+      <div className="px-4 py-2">
         {/* Header Section */}
-        <div className="templates-header">
-          <div className="d-flex align-items-center justify-content-between flex-wrap mb-3">
-            <div className="header-content">
-              <div className="d-flex align-items-center mb-2">
+        <div className="mb-6">
+          <div className="flex items-center justify-between flex-wrap mb-3">
+            <div>
+              <div className="flex items-center mb-2">
                 <MdDescription
-                  className="me-2"
+                  className="mr-2"
                   style={{ color: "var(--primary-color, #1fdae4)" }}
                   size={28}
                 />
-                <h1 className="h4 mb-0 fw-bold">Survey Templates</h1>
+                <h1 className="text-2xl font-bold mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Templates</h1>
               </div>
-              <p className="text-muted mb-0 d-none d-sm-block">
+              <p className="text-[var(--light-muted)] dark:text-[var(--dark-muted)] mb-0 hidden sm:block">
                 Choose from {stats.total} professional templates across{" "}
                 {stats.categories} industries
               </p>
@@ -466,37 +460,35 @@ const SurveyTemplates = ({ darkMode }) => {
 
             {/* Create Template Button - Show only for Admin */}
             {isSystemAdmin && (
-              <Button
-                variant="outline-primary"
-                className="d-flex align-items-center create-template-btn"
+              <button
+                className="inline-flex items-center gap-1 px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
                 onClick={handleCreateTemplate}
-                size="sm"
               >
-                <MdAdd className="me-1 me-sm-2" size={16} />
-                <span className="d-none d-sm-inline">Create Template</span>
-                <span className="d-sm-none">Create</span>
-              </Button>
+                <MdAdd className="mr-1 sm:mr-2" size={16} />
+                <span className="hidden sm:inline">Create Template</span>
+                <span className="sm:hidden">Create</span>
+              </button>
             )}
           </div>
 
           {/* Quick Stats */}
-          <div className="stats-container d-flex gap-2 flex-wrap mb-3">
-            <div className="stat-badge">
-              <MdStar className="me-1" size={14} />
+          <div className="flex gap-2 flex-wrap mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <MdStar className="mr-1" size={14} />
               <span>{stats.total} Templates</span>
             </div>
-            <div className="stat-badge">
-              <MdCategory className="me-1" size={14} />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <MdCategory className="mr-1" size={14} />
               <span>{stats.categories} Categories</span>
             </div>
             {isSystemAdmin && (
               <>
-                <div className="stat-badge">
-                  <MdPublish className="me-1" size={14} />
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <MdPublish className="mr-1" size={14} />
                   <span>{stats.published} Published</span>
                 </div>
-                <div className="stat-badge">
-                  <MdSave className="me-1" size={14} />
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm font-medium border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <MdSave className="mr-1" size={14} />
                   <span>{stats.draft} Draft</span>
                 </div>
               </>
@@ -505,68 +497,65 @@ const SurveyTemplates = ({ darkMode }) => {
         </div>
 
         {/* Search and Filters */}
-        <div className="search-filters-section">
+        <div className="mb-6">
           {/* Search Bar */}
-          <div className="search-container mb-3">
-            <InputGroup className="search-input-group">
-              <InputGroup.Text>
+          <div className="mb-3">
+            <div className="relative flex">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--secondary-color)]">
                 <MdSearch size={18} />
-              </InputGroup.Text>
-              <Form.Control
+              </span>
+              <input
                 type="text"
                 placeholder="Search templates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
+                className="flex-1 pl-10 pr-3 py-2 rounded-l-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
               />
               {/* Mobile Filter Button */}
-              <Button
-                variant="outline-secondary"
-                className="d-lg-none filter-toggle-btn"
+              <button
+                className="lg:hidden px-3 py-2 rounded-r-md border border-l-0 border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
                 onClick={() => setShowMobileFilters(true)}
               >
                 <MdFilterList size={18} />
                 <span className="ms-1">Filter</span>
-              </Button>
-            </InputGroup>
+              </button>
+            </div>
           </div>
 
           {/* Desktop Filters */}
-          <div className="d-none d-lg-flex filters-row align-items-center gap-3">
-            <div className="filter-group">
-              <label className="filter-label">Category</label>
-              <Form.Select
+          <div className="hidden lg:flex items-center gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Category</label>
+              <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="filter-select"
-                size="sm"
+                className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
               >
                 {categoryOptions.map((category) => (
                   <option key={category.value} value={category.value}>
                     {category.label}
                   </option>
                 ))}
-              </Form.Select>
+              </select>
             </div>
 
-            <div className="filter-group">
-              <label className="filter-label">Language</label>
-              <Form.Select
+            <div>
+              <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Language</label>
+              <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="filter-select"
-                size="sm"
+                className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
               >
                 <option value="all">All Languages</option>
                 <option value="english">English</option>
                 <option value="arabic">Arabic</option>
-              </Form.Select>
+              </select>
             </div>
 
             {/* ✅ NEW: Status Filter - Show only for Admin */}
             {user?.role === 'admin' && (
-              <div className="filter-group">
-                <label className="filter-label">Status</label>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Status</label>
                 <StatusFilter
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
@@ -574,129 +563,132 @@ const SurveyTemplates = ({ darkMode }) => {
               </div>
             )}
 
-            <div className="filter-group">
-              <label className="filter-label">Sort by</label>
-              <Form.Select
+            <div>
+              <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Sort by</label>
+              <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="filter-select"
-                size="sm"
+                className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
               >
                 <option value="popular">Most Popular</option>
                 <option value="rating">Highest Rated</option>
                 <option value="newest">Newest</option>
                 <option value="alphabetical">A-Z</option>
-              </Form.Select>
+              </select>
             </div>
           </div>
         </div>
 
         {/* Results Summary */}
         {(searchTerm || selectedCategory !== "all" || selectedLanguage !== "all" || selectedStatus !== "all") && (
-          <div className="results-summary d-flex align-items-center justify-content-between flex-wrap mb-3">
-            <div className="results-info">
-              <span className="results-count">{templates.length}</span>
-              <span className="text-muted ms-1">
+          <div className="flex items-center justify-between flex-wrap mb-3 p-3 rounded-md bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div>
+              <span className="font-semibold text-[var(--primary-color)]">{templates.length}</span>
+              <span className="text-[var(--light-muted)] dark:text-[var(--dark-muted)] ml-1">
                 of {pagination.total} templates
               </span>
               {searchTerm && (
-                <span className="text-muted d-none d-sm-inline">
+                <span className="text-[var(--light-muted)] dark:text-[var(--dark-muted)] hidden sm:inline">
                   for "{searchTerm}"
                 </span>
               )}
             </div>
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              className="clear-filters-btn"
+            <button
+              className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white text-sm"
               onClick={handleClearFilters}
             >
-              <span className="d-none d-sm-inline">Clear Filters</span>
-              <span className="d-sm-none">Clear</span>
-            </Button>
+              <span className="hidden sm:inline">Clear Filters</span>
+              <span className="sm:hidden">Clear</span>
+            </button>
           </div>
         )}
 
         {/* ✅ TEMPLATES GRID - ONLY Backend Database Data */}
         {!loading && templates.length > 0 && (
-          <div className="templates-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {templates.map((template) => (
-              <div key={template._id} className="template-card-wrapper">
-                <div className="template-card">
+              <div key={template._id}>
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md hover:shadow-lg p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] transition-all cursor-pointer h-full flex flex-col">
                   {/* Template Header */}
-                  <div className="template-header d-flex justify-content-between align-items-start">
-                    <div className="template-badges">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex flex-wrap gap-1">
                       {getCategoryBadge(template.category)}
                       {/* ✅ NEW: Status Badge */}
                       {user?.role === 'admin' && (
                         <StatusBadge status={template.status} />
                       )}
                       {template.usageCount > 1000 && (
-                        <div className="template-badge popular">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
                           <MdStar size={12} />
                           <span>Popular</span>
-                        </div>
+                        </span>
                       )}
                       {template.isPremium && (
-                        <div className="template-badge premium">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
                           <span>Premium</span>
-                        </div>
+                        </span>
                       )}
                     </div>
 
                     {/* ✅ NEW: Admin Actions Dropdown - Edit Option Hide for Admin */}
                     {user?.role === 'admin' && (
-                      <Dropdown className="template-actions-dropdown">
-                        <Dropdown.Toggle variant="light" size="sm" className="p-1">
+                      <div className="template-actions-dropdown relative">
+                        <button
+                          onClick={() => setOpenDropdownId(openDropdownId === template._id ? null : template._id)}
+                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
                           <MdMoreVert size={16} />
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          {/* ✅ EDIT OPTION - Hide for Admin */}
-                          {user?.role == 'admin' && (
-                            <Dropdown.Item onClick={() => handleEditTemplate(template)}>
-                              <MdEdit className="me-2" />
-                              Edit Template
-                            </Dropdown.Item>
-                          )}
-                          <Dropdown.Item
-                            onClick={() => toggleTemplateStatus(template._id, template.status)}
-                          >
-                            {template.status === 'draft' ? (
-                              <>
-                                <MdPublish className="me-2" />
-                                Publish
-                              </>
-                            ) : (
-                              <>
-                                <MdSave className="me-2" />
-                                Move to Draft
-                              </>
+                        </button>
+                        {openDropdownId === template._id && (
+                          <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] z-50 py-1">
+                            {/* ✅ EDIT OPTION - Hide for Admin */}
+                            {user?.role == 'admin' && (
+                              <button onClick={() => { setOpenDropdownId(null); handleEditTemplate(template) }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <MdEdit className="me-2" />
+                                Edit Template
+                              </button>
                             )}
-                          </Dropdown.Item>
-                          <Dropdown.Item
-                            onClick={() => handleDeleteTemplate(template._id)}>
-                            <>
+                            <button
+                              onClick={() => { setOpenDropdownId(null); toggleTemplateStatus(template._id, template.status) }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              {template.status === 'draft' ? (
+                                <>
+                                  <MdPublish className="me-2" />
+                                  Publish
+                                </>
+                              ) : (
+                                <>
+                                  <MdSave className="me-2" />
+                                  Move to Draft
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => { setOpenDropdownId(null); handleDeleteTemplate(template._id) }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
                               <MdDelete className="me-2" />
                               Delete
-                            </>
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 
                   {/* Template Content - Direct from Database */}
-                  <div className="template-content">
-                    <h5 className="template-title">{template.name}</h5>
-                    <p className="template-description">
+                  <div className="mb-3 flex-grow">
+                    <h5 className="text-lg font-semibold mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">{template.name}</h5>
+                    <p className="text-sm text-[var(--light-muted)] dark:text-[var(--dark-muted)] line-clamp-2">
                       {template.description}
                     </p>
                   </div>
 
                   {/* Template Stats - Direct from Database */}
-                  <div className="template-stats">
-                    <div className="stats-row">
-                      <div className="stat-item">
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1 text-xs text-[var(--light-muted)] dark:text-[var(--dark-muted)]">
                         <FaUsers size={12} />
                         <span>
                           {template.usageCount > 1000
@@ -704,22 +696,22 @@ const SurveyTemplates = ({ darkMode }) => {
                             : template.usageCount}
                         </span>
                       </div>
-                      <div className="stat-item">
+                      <div className="flex items-center gap-1 text-xs text-[var(--light-muted)] dark:text-[var(--dark-muted)]">
                         <FaClock size={12} />
                         <span>{template.estimatedTime}</span>
                       </div>
-                      <div className="stat-item">
+                      <div className="flex items-center gap-1 text-xs text-[var(--light-muted)] dark:text-[var(--dark-muted)]">
                         <MdDescription size={12} />
                         <span>{template.questions?.length || 0} Q</span>
                       </div>
-                      <div className="stat-item">
+                      <div className="flex items-center gap-1 text-xs text-[var(--light-muted)] dark:text-[var(--dark-muted)]">
                         <MdStar size={12} />
                         <span>{template.rating}</span>
                       </div>
                     </div>
 
                     {/* Language Support - Direct from Database */}
-                    <div className="template-languages">
+                    <div className="flex items-center gap-1 text-xs text-[var(--light-muted)] dark:text-[var(--dark-muted)]">
                       <FaLanguage size={12} />
                       <span>
                         {Array.isArray(template.language)
@@ -730,12 +722,11 @@ const SurveyTemplates = ({ darkMode }) => {
                   </div>
 
                   {/* Template Actions */}
-                  <div className="template-actions">
+                  <div className="flex gap-2 mt-auto pt-3 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
                     {/* Use Template - Hidden for SystemAdmin, permission-based for Members */}
                     {!isSystemAdmin && (isCompanyAdmin || hasPermission('template:use')) && (
-                      <Button
-                        variant="primary"
-                        className="use-template-btn"
+                      <button
+                        className="flex-1 px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] inline-flex items-center justify-center gap-1 text-sm"
                         onClick={() => handleUseTemplate(template)}
                         disabled={template.status === 'draft'}
                         title={
@@ -743,19 +734,19 @@ const SurveyTemplates = ({ darkMode }) => {
                             ? "Draft templates cannot be used"
                             : "Use this template to create a survey"
                         }
+                        style={template.status === 'draft' ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                       >
                         <MdAdd size={16} />
                         <span>Use Template</span>
-                      </Button>
+                      </button>
                     )}
 
-                    <Button
-                      variant="outline-secondary"
-                      className="preview-btn"
+                    <button
+                      className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-50 dark:hover:bg-gray-800"
                       onClick={() => handlePreviewTemplate(template)}
                     >
                       <MdVisibility size={16} />
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -765,7 +756,7 @@ const SurveyTemplates = ({ darkMode }) => {
 
         {/* Pagination - Only show if we have multiple pages */}
         {!loading && pagination.pages > 1 && (
-          <div className="pagination-container">
+          <div className="mt-6">
             <Pagination
               current={pagination.page}
               total={pagination.total}
@@ -777,100 +768,99 @@ const SurveyTemplates = ({ darkMode }) => {
         )}
 
         {/* Mobile Filters Drawer */}
-        <Offcanvas
-          show={showMobileFilters}
-          onHide={() => setShowMobileFilters(false)}
-          placement="end"
-          className="mobile-filters-drawer"
-        >
-          <Offcanvas.Header closeButton>
-            <Offcanvas.Title>
-              <MdFilterList className="me-2" />
-              Filter Templates
-            </Offcanvas.Title>
-          </Offcanvas.Header>
-          <Offcanvas.Body>
-            <div className="mobile-filters">
-              <div className="filter-section">
-                <label className="filter-label">Category</label>
-                <Form.Select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="filter-select mb-3"
-                >
-                  {categoryOptions.map((category) => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </Form.Select>
+        {showMobileFilters && (
+          <div className="fixed inset-0 z-[1050]">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setShowMobileFilters(false)} />
+            <div className="fixed top-0 right-0 h-full w-80 bg-[var(--light-card)] dark:bg-[var(--dark-card)] shadow-xl overflow-y-auto">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="font-semibold flex items-center gap-2 m-0">
+                  <MdFilterList />
+                  Filter Templates
+                </h5>
+                <button onClick={() => setShowMobileFilters(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl">&times;</button>
               </div>
+              <div className="p-4">
+                <div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Category</label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    >
+                      {categoryOptions.map((category) => (
+                        <option key={category.value} value={category.value}>
+                          {category.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="filter-section">
-                <label className="filter-label">Language</label>
-                <Form.Select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="filter-select mb-3"
-                >
-                  <option value="all">All Languages</option>
-                  <option value="english">English</option>
-                  <option value="arabic">Arabic</option>
-                </Form.Select>
-              </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Language</label>
+                    <select
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    >
+                      <option value="all">All Languages</option>
+                      <option value="english">English</option>
+                      <option value="arabic">Arabic</option>
+                    </select>
+                  </div>
 
-              {/* ✅ NEW: Status Filter in Mobile - Show only for Admin */}
-              {user?.role === 'admin' && (
-                <div className="filter-section">
-                  <label className="filter-label">Status</label>
-                  <StatusFilter
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                  />
+                  {/* ✅ NEW: Status Filter in Mobile - Show only for Admin */}
+                  {user?.role === 'admin' && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Status</label>
+                      <StatusFilter
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Sort by</label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm"
+                    >
+                      <option value="popular">Most Popular</option>
+                      <option value="rating">Highest Rated</option>
+                      <option value="newest">Newest</option>
+                      <option value="alphabetical">A-Z</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <button
+                      className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white text-sm"
+                      onClick={() => {
+                        handleClearFilters();
+                        setShowMobileFilters(false);
+                      }}
+                    >
+                      Clear All Filters
+                    </button>
+                    <button
+                      className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] text-sm"
+                      onClick={() => setShowMobileFilters(false)}
+                    >
+                      Apply Filters
+                    </button>
+                  </div>
                 </div>
-              )}
-
-              <div className="filter-section">
-                <label className="filter-label">Sort by</label>
-                <Form.Select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="filter-select mb-3"
-                >
-                  <option value="popular">Most Popular</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="newest">Newest</option>
-                  <option value="alphabetical">A-Z</option>
-                </Form.Select>
-              </div>
-
-              <div className="filter-actions">
-                <Button
-                  variant="outline-secondary"
-                  className="w-100 mb-2"
-                  onClick={() => {
-                    handleClearFilters();
-                    setShowMobileFilters(false);
-                  }}
-                >
-                  Clear All Filters
-                </Button>
-                <Button
-                  variant="primary"
-                  className="w-100"
-                  onClick={() => setShowMobileFilters(false)}
-                >
-                  Apply Filters
-                </Button>
               </div>
             </div>
-          </Offcanvas.Body>
-        </Offcanvas>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" />
+          <div className="text-center py-12">
+            <span className="inline-block w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-3" />
             <div className="mt-3">
               <h5>Loading Templates from Database...</h5>
               <p className="text-muted">Fetching real templates from backend</p>
@@ -880,8 +870,8 @@ const SurveyTemplates = ({ darkMode }) => {
 
         {/* No Results - When database is empty or no matches */}
         {!loading && templates.length === 0 && (
-          <Row>
-            <Col>
+          <div>
+            <div>
               <div className="text-center py-5">
                 <MdSearch size={64} className="text-muted mb-3" />
                 <h5>No templates found</h5>
@@ -890,169 +880,161 @@ const SurveyTemplates = ({ darkMode }) => {
                     ? `No templates match your search criteria. Try different filters.`
                     : "No templates available in the database. Please run the seeder or create templates."}
                 </p>
-                <Button variant="outline-primary" onClick={handleClearFilters}>
-                  <MdFilterList className="me-2" />
+                <button className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white text-sm" onClick={handleClearFilters}>
+                  <MdFilterList />
                   Show All Templates
-                </Button>
+                </button>
               </div>
-            </Col>
-          </Row>
+            </div>
+          </div>
         )}
 
         {/* Template Preview Modal */}
-        <Modal
-          show={showPreviewModal}
-          onHide={() => setShowPreviewModal(false)}
-          size="lg"
-          centered
-        >
-          <Modal.Header closeButton>
-            <Modal.Title className="d-flex align-items-center">
-              <MdVisibility className="me-2" />
-              Template Preview - {selectedTemplate?.name}
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {selectedTemplate && (
-              <div>
-                <div className="mb-4">
-                  <div className="d-flex align-items-center mb-3">
-                    {getCategoryBadge(selectedTemplate.category)}
-                    {/* ✅ NEW: Status Badge in Preview */}
-                    {user?.role === 'admin' && (
-                      <StatusBadge status={selectedTemplate.status} />
-                    )}
-                    <h4 className="ms-3 mb-0 text">{selectedTemplate.name}</h4>
-                  </div>
-                  <p className="text-muted">{selectedTemplate.description}</p>
-                </div>
+        {showPreviewModal && (
+          <div className="fixed inset-0 z-[1050] flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setShowPreviewModal(false)} />
+            <div className="relative bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="font-semibold flex items-center gap-2 m-0">
+                  <MdVisibility />
+                  Template Preview - {selectedTemplate?.name}
+                </h5>
+                <button onClick={() => setShowPreviewModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl">&times;</button>
+              </div>
+              {/* Body */}
+              <div className="px-6 py-4">
+                {selectedTemplate && (
+                  <div>
+                    <div className="mb-4">
+                      <div className="flex items-center mb-3 gap-2">
+                        {getCategoryBadge(selectedTemplate.category)}
+                        {/* ✅ NEW: Status Badge in Preview */}
+                        {user?.role === 'admin' && (
+                          <StatusBadge status={selectedTemplate.status} />
+                        )}
+                        <h4 className="ml-3 mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">{selectedTemplate.name}</h4>
+                      </div>
+                      <p className="text-[var(--light-muted)] dark:text-[var(--dark-muted)]">{selectedTemplate.description}</p>
+                    </div>
 
-                <Row className="mb-4">
-                  <Col md={3}>
-                    <div className="text-center p-3 bg-light rounded">
-                      <MdDescription size={24} className="text-primary mb-2" />
-                      <div className="fw-semibold text">
-                        {selectedTemplate.questions?.length || 0}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                      <div className="text-center p-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md">
+                        <MdDescription size={24} className="text-[var(--primary-color)] mb-2 mx-auto" />
+                        <div className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {selectedTemplate.questions?.length || 0}
+                        </div>
+                        <small className="text-[var(--light-muted)] dark:text-[var(--dark-muted)]">Questions</small>
                       </div>
-                      <small className="text-muted">Questions</small>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="text-center p-3 bg-light rounded">
-                      <FaClock size={20} className="text-success mb-2" />
-                      <div className="fw-semibold text">
-                        {selectedTemplate.estimatedTime}
+                      <div className="text-center p-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md">
+                        <FaClock size={20} className="text-green-500 mb-2 mx-auto" />
+                        <div className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {selectedTemplate.estimatedTime}
+                        </div>
+                        <small className="text-[var(--light-muted)] dark:text-[var(--dark-muted)]">Duration</small>
                       </div>
-                      <small className="text-muted">Duration</small>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="text-center p-3 bg-light rounded">
-                      <MdStar size={24} className="text-warning mb-2" />
-                      <div className="fw-semibold text">
-                        {selectedTemplate.rating}/5.0
+                      <div className="text-center p-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md">
+                        <MdStar size={24} className="text-yellow-500 mb-2 mx-auto" />
+                        <div className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {selectedTemplate.rating}/5.0
+                        </div>
+                        <small className="text-[var(--light-muted)] dark:text-[var(--dark-muted)]">Rating</small>
                       </div>
-                      <small className="text-muted">Rating</small>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="text-center p-3 bg-light rounded">
-                      <FaUsers size={20} className="text-info mb-2" />
-                      <div className="fw-semibold text">
-                        {selectedTemplate.usageCount?.toLocaleString()}
+                      <div className="text-center p-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md">
+                        <FaUsers size={20} className="text-blue-500 mb-2 mx-auto" />
+                        <div className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {selectedTemplate.usageCount?.toLocaleString()}
+                        </div>
+                        <small className="text-[var(--light-muted)] dark:text-[var(--dark-muted)]">Used</small>
                       </div>
-                      <small className="text-muted">Used</small>
                     </div>
-                  </Col>
-                </Row>
 
-                <div className="mb-4">
-                  <h6 className="mb-3 text">Sample Questions Preview:</h6>
-                  <div className="bg-light p-3 rounded text">
-                    {(
-                      selectedTemplate.sampleQuestions ||
-                      selectedTemplate.questions?.slice(0, 3) ||
-                      []
-                    ).map((question, index) => (
-                      <div key={index} className="mb-3">
-                        <strong>
-                          {index + 1}. {question.questionText}
-                        </strong>
-                        <p className="mb-0 text-muted small">
-                          Type: {question.type} {question.required && "(Required)"}
-                        </p>
-                        {question.options && question.options.length > 0 && (
-                          <p className="mb-0 text-muted small">
-                            Options: {question.options.join(", ")}
-                          </p>
+                    <div className="mb-4">
+                      <h6 className="mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Sample Questions Preview:</h6>
+                      <div className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] p-3 rounded-md">
+                        {(
+                          selectedTemplate.sampleQuestions ||
+                          selectedTemplate.questions?.slice(0, 3) ||
+                          []
+                        ).map((question, index) => (
+                          <div key={index} className="mb-3">
+                            <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                              {index + 1}. {question.questionText}
+                            </strong>
+                            <p className="mb-0 text-[var(--light-muted)] dark:text-[var(--dark-muted)] text-sm">
+                              Type: {question.type} {question.required && "(Required)"}
+                            </p>
+                            {question.options && question.options.length > 0 && (
+                              <p className="mb-0 text-[var(--light-muted)] dark:text-[var(--dark-muted)] text-sm">
+                                Options: {question.options.join(", ")}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                        {selectedTemplate.questions?.length > 3 && (
+                          <div className="mt-3 text-center">
+                            <small className="text-[var(--light-muted)] dark:text-[var(--dark-muted)]">
+                              ... and {selectedTemplate.questions.length - 3} more questions
+                            </small>
+                          </div>
                         )}
                       </div>
-                    ))}
-                    {selectedTemplate.questions?.length > 3 && (
-                      <div className="mt-3 text-center">
-                        <small className="text-muted">
-                          ... and {selectedTemplate.questions.length - 3} more questions
-                        </small>
+                    </div>
+
+                    <div>
+                      <h6 className="mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Available Languages:</h6>
+                      <div className="flex gap-2">
+                        {Array.isArray(selectedTemplate.language) ? (
+                          selectedTemplate.language.map((lang, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                            >
+                              <FaLanguage size={12} />
+                              {lang}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">English</span>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <h6 className="mb-2 text">Available Languages:</h6>
-                  <div className="d-flex gap-2">
-                    {Array.isArray(selectedTemplate.language) ? (
-                      selectedTemplate.language.map((lang, index) => (
-                        <Badge
-                          key={index}
-                          bg="secondary"
-                          className="d-flex align-items-center"
-                        >
-                          <FaLanguage className="me-1" size={12} />
-                          {lang}
-                        </Badge>
-                      ))
-                    ) : (
-                      <Badge bg="secondary">English</Badge>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
-            )}
-          </Modal.Body>
+              {/* Footer */}
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <button
+                  className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
+                  onClick={() => setShowPreviewModal(false)}
+                >
+                  Close
+                </button>
 
-          <Modal.Footer>
-            <Button
-              variant="secondary"
-              onClick={() => setShowPreviewModal(false)}
-            >
-              Close
-            </Button>
-
-            {user?.role === 'admin' ? (
-              <Button
-                variant="primary"
-                disabled
-                style={{ cursor: 'none', opacity: 0.6 }}
-              >
-                <MdAdd className="me-2" />
-                Use Template
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setShowPreviewModal(false);
-                  handleUseTemplate(selectedTemplate);
-                }}
-              >
-                <MdAdd className="me-2" />
-                Use This Template
-              </Button>
-            )}
-          </Modal.Footer>
-        </Modal>
-      </Container>
+                {user?.role === 'admin' ? (
+                  <button
+                    className="px-4 py-2 rounded-md font-medium bg-[var(--primary-color)] text-white inline-flex items-center gap-2 text-sm"
+                    disabled
+                    style={{ cursor: 'none', opacity: 0.6 }}
+                  >
+                    <MdAdd /> Use Template
+                  </button>
+                ) : (
+                  <button
+                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] inline-flex items-center gap-2 text-sm"
+                    onClick={() => {
+                      setShowPreviewModal(false);
+                      handleUseTemplate(selectedTemplate);
+                    }}
+                  >
+                    <MdAdd /> Use This Template
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

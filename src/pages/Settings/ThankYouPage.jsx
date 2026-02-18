@@ -3,7 +3,6 @@
 "use client"
 
 import { useState } from "react"
-import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap"
 import { MdCheck, MdSave } from "react-icons/md"
 
 const ThankYouPage = () => {
@@ -18,7 +17,6 @@ const ThankYouPage = () => {
   const [saved, setSaved] = useState(false)
 
   const handleSave = () => {
-    // Save logic here
     console.log("Thank You page settings saved:", settings)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
@@ -29,173 +27,170 @@ const ThankYouPage = () => {
   }
 
   return (
-    <Container fluid className="min-vh-100 py-4">
-      <Row className="justify-content-center">
-        <Col xs={12} lg={8}>
+    <div className="w-full min-h-screen py-6 px-4 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+      <div className="flex justify-center">
+        <div className="w-full max-w-5xl">
           {/* Header */}
-          <div className="text-center mb-4">
-            <h1 className="h3 text-primary fw-bold mb-2">Thank You Page</h1>
-            <p className="text-muted">Customize the thank you page that users see after completing a survey</p>
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-[var(--primary-color)] mb-2">Thank You Page</h1>
+            <p className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Customize the thank you page that users see after completing a survey</p>
           </div>
 
           {saved && (
-            <Alert variant="success" className="d-flex align-items-center mb-4">
-              <MdCheck className="me-2" />
-              Thank you page settings saved successfully!
-            </Alert>
+            <div className="flex items-center gap-2 p-4 mb-6 bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--success-color)] rounded-md text-[var(--success-color)]">
+              <MdCheck size={20} />
+              <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Thank you page settings saved successfully!</span>
+            </div>
           )}
 
-          <Row>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Settings Form */}
-            <Col lg={6}>
-              <Card className="mb-4 border-0 shadow-sm">
-                <Card.Header>
-                  <h5 className="mb-0">Page Settings</h5>
-                </Card.Header>
-                <Card.Body>
-                  <Form>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Page Title</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={settings.title}
-                        onChange={(e) => handleChange("title", e.target.value)}
-                        placeholder="Enter page title"
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Thank You Message</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={4}
-                        value={settings.message}
-                        onChange={(e) => handleChange("message", e.target.value)}
-                        placeholder="Enter thank you message"
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Redirect URL (Optional)</Form.Label>
-                      <Form.Control
-                        type="url"
-                        value={settings.redirectUrl}
-                        onChange={(e) => handleChange("redirectUrl", e.target.value)}
-                        placeholder="https://example.com"
-                      />
-                      <Form.Text className="text-muted">
-                        Leave empty to show the thank you page without redirect
-                      </Form.Text>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Redirect Delay (seconds)</Form.Label>
-                      <Form.Control
-                        type="number"
-                        min="0"
-                        max="60"
-                        value={settings.redirectDelay}
-                        onChange={(e) => handleChange("redirectDelay", Number.parseInt(e.target.value))}
-                        disabled={!settings.redirectUrl}
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="checkbox"
-                        label="Show social sharing buttons"
-                        checked={settings.showSocialShare}
-                        onChange={(e) => handleChange("showSocialShare", e.target.checked)}
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Custom CSS (Optional)</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={4}
-                        value={settings.customCss}
-                        onChange={(e) => handleChange("customCss", e.target.value)}
-                        placeholder="/* Custom CSS styles */"
-                        className="font-monospace"
-                      />
-                    </Form.Group>
-
-                    <Button variant="primary" onClick={handleSave} className="w-100">
-                      <MdSave className="me-2" />
-                      Save Settings
-                    </Button>
-                  </Form>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            {/* Preview */}
-            <Col lg={6}>
-              <Card className="border-0 shadow-sm">
-                <Card.Header>
-                  <h5 className="mb-0">Preview</h5>
-                </Card.Header>
-                <Card.Body>
-                  <div
-                    className="p-4 border rounded"
-                    style={{
-                      minHeight: "400px",
-                    }}
-                  >
-                    <div className="text-center">
-                      <div
-                        className="rounded-circle bg-success d-flex align-items-center justify-content-center mx-auto mb-3"
-                        style={{ width: "60px", height: "60px" }}
-                      >
-                        <MdCheck className="text-white" size={30} />
-                      </div>
-
-                      <h2 className="h4 mb-3">{settings.title}</h2>
-                      <p className="text-muted mb-4">{settings.message}</p>
-
-                      {settings.showSocialShare && (
-                        <div className="mb-4">
-                          <p className="small text-muted mb-2">Share this survey:</p>
-                          <div className="d-flex justify-content-center gap-2">
-                            <Button variant="outline-primary" size="sm">
-                              Facebook
-                            </Button>
-                            <Button variant="outline-info" size="sm">
-                              Twitter
-                            </Button>
-                            <Button variant="outline-success" size="sm">
-                              WhatsApp
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {settings.redirectUrl && (
-                        <div className="mt-4">
-                          <p className="small text-muted">
-                            Redirecting to {settings.redirectUrl} in {settings.redirectDelay} seconds...
-                          </p>
-                          <div className="progress" style={{ height: "4px" }}>
-                            <div className="progress-bar bg-primary" style={{ width: "60%" }} role="progressbar" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="font-semibold text-lg text-[var(--light-text)] dark:text-[var(--dark-text)] m-0">Page Settings</h5>
+              </div>
+              <div className="p-6">
+                <form>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Page Title</label>
+                    <input
+                      type="text"
+                      value={settings.title}
+                      onChange={(e) => handleChange("title", e.target.value)}
+                      placeholder="Enter page title"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
+                    />
                   </div>
 
-                  {settings.customCss && (
-                    <div className="mt-3">
-                      <small className="text-muted">Custom CSS will be applied to the actual page</small>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Thank You Message</label>
+                    <textarea
+                      rows={4}
+                      value={settings.message}
+                      onChange={(e) => handleChange("message", e.target.value)}
+                      placeholder="Enter thank you message"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors resize-y"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Redirect URL (Optional)</label>
+                    <input
+                      type="url"
+                      value={settings.redirectUrl}
+                      onChange={(e) => handleChange("redirectUrl", e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
+                    />
+                    <small className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 mt-1 block">
+                      Leave empty to show the thank you page without redirect
+                    </small>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Redirect Delay (seconds)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="60"
+                      value={settings.redirectDelay}
+                      onChange={(e) => handleChange("redirectDelay", Number.parseInt(e.target.value))}
+                      disabled={!settings.redirectUrl}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.showSocialShare}
+                        onChange={(e) => handleChange("showSocialShare", e.target.checked)}
+                        className="w-4 h-4 rounded border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)] bg-[var(--light-card)] dark:bg-[var(--dark-card)]"
+                      />
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">Show social sharing buttons</span>
+                    </label>
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Custom CSS (Optional)</label>
+                    <textarea
+                      rows={4}
+                      value={settings.customCss}
+                      onChange={(e) => handleChange("customCss", e.target.value)}
+                      placeholder="/* Custom CSS styles */"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors font-mono text-sm resize-y"
+                    />
+                  </div>
+
+                  <button 
+                    type="button" 
+                    onClick={handleSave} 
+                    className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] inline-flex items-center justify-center gap-2"
+                  >
+                    <MdSave size={18} />
+                    Save Settings
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="font-semibold text-lg text-[var(--light-text)] dark:text-[var(--dark-text)] m-0">Preview</h5>
+              </div>
+              <div className="p-6">
+                <div className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]" style={{ minHeight: "400px" }}>
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-[var(--success-color)] flex items-center justify-center mx-auto mb-4">
+                      <MdCheck className="text-white" size={32} />
                     </div>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Col>
-      </Row>
-    </Container>
+
+                    <h2 className="text-xl font-semibold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{settings.title}</h2>
+                    <p className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-6">{settings.message}</p>
+
+                    {settings.showSocialShare && (
+                      <div className="mb-6">
+                        <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-3">Share this survey:</p>
+                        <div className="flex justify-center gap-3">
+                          <button className="px-4 py-2 text-sm rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]">
+                            Facebook
+                          </button>
+                          <button className="px-4 py-2 text-sm rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]">
+                            Twitter
+                          </button>
+                          <button className="px-4 py-2 text-sm rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]">
+                            WhatsApp
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {settings.redirectUrl && (
+                      <div className="mt-6">
+                        <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-3">
+                          Redirecting to {settings.redirectUrl} in {settings.redirectDelay} seconds...
+                        </p>
+                        <div className="w-full bg-[var(--light-border)] dark:bg-[var(--dark-border)] rounded-full h-2 overflow-hidden">
+                          <div className="h-2 rounded-full bg-[var(--primary-color)] transition-all" style={{ width: "60%" }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {settings.customCss && (
+                  <div className="mt-4">
+                    <small className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60">Custom CSS will be applied to the actual page</small>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

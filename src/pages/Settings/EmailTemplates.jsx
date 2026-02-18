@@ -382,34 +382,15 @@ const EmailTemplates = () => {
   });
 
   return (
-    <div className="email-templates">
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-        }}
-      >
-        <h1>Email Templates</h1>
+    <div className="px-6 py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+          Email Templates
+        </h1>
         <button
-          className="btn btn-primary"
           onClick={handleNewTemplate}
           disabled={loading}
-          style={{
-            padding: "10px 16px",
-            border: "none",
-            borderRadius: "4px",
-            backgroundColor: "#007bff",
-            color: "white",
-            cursor: loading ? "not-allowed" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
+          className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           <MdAdd /> Create Template
         </button>
@@ -417,224 +398,92 @@ const EmailTemplates = () => {
 
       {/* Success/Error Messages */}
       {error && (
-        <div
-          className="alert alert-danger"
-          style={{
-            padding: "12px 16px",
-            marginBottom: "1rem",
-            border: "1px solid #e74c3c",
-            borderRadius: "4px",
-            backgroundColor: "#f8d7da",
-            color: "#721c24",
-          }}
-        >
+        <div className="px-4 py-3 mb-4 rounded-md border border-red-500 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400">
           <strong>Error:</strong> {error}
         </div>
       )}
 
       {success && (
-        <div
-          className="alert alert-success"
-          style={{
-            padding: "12px 16px",
-            marginBottom: "1rem",
-            border: "1px solid #27ae60",
-            borderRadius: "4px",
-            backgroundColor: "#d4edda",
-            color: "#155724",
-          }}
-        >
+        <div className="px-4 py-3 mb-4 rounded-md border border-[var(--success-color)] bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
           <strong>Success:</strong> {success}
         </div>
       )}
 
       {/* Search and Filters */}
-      <div
-        className="card"
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: "8px",
-          marginBottom: "2rem",
-        }}
-      >
-        <div
-          className="card-header"
-          style={{
-            padding: "1rem 1.5rem",
-            // backgroundColor: "#f8f9fa",
-            borderBottom: "1px solid #ddd",
-          }}
-        >
-          <h4 style={{ margin: 0 }}>Search & Filters</h4>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md mb-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="px-6 py-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <h4 className="m-0 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+            Search & Filters
+          </h4>
         </div>
-        <div className="card-body" style={{ padding: "1.5rem" }}>
-          <div
-            className="row"
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              margin: "0 -10px",
-              alignItems: "end",
-            }}
-          >
-            <div
-              className="col-md-4"
-              style={{
-                flex: "0 0 33.33%",
-                padding: "0 10px",
-                maxWidth: "33.33%",
-              }}
-            >
-              <div className="form-group" style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Search Templates
-                </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px 8px 40px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      fontSize: "14px",
-                    }}
-                    placeholder="Search by name, subject, or type..."
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    disabled={loading}
-                  />
-                  <MdSearch
-                    style={{
-                      position: "absolute",
-                      left: "12px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      color: "#6c757d",
-                    }}
-                  />
-                </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                Search Templates
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                  placeholder="Search by name, subject, or type..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  disabled={loading}
+                />
+                <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
               </div>
             </div>
 
-            <div
-              className="col-md-4"
-              style={{
-                flex: "0 0 33.33%",
-                padding: "0 10px",
-                maxWidth: "33.33%",
-              }}
-            >
-              <div className="form-group" style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Status
-                </label>
-                <select
-                  className="form-control"
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    fontSize: "14px",
-                  }}
-                  value={statusFilter}
-                  onChange={handleStatusFilter}
-                  disabled={loading}
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
+            <div>
+              <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                Status
+              </label>
+              <select
+                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                value={statusFilter}
+                onChange={handleStatusFilter}
+                disabled={loading}
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
             </div>
 
-            <div
-              className="col-md-4"
-              style={{
-                flex: "0 0 33.33%",
-                padding: "0 10px",
-                maxWidth: "33.33%",
-              }}
-            >
-              <div className="form-group" style={{ marginBottom: "1rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Type
-                </label>
-                <select
-                  className="form-control"
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    fontSize: "14px",
-                  }}
-                  value={typeFilter}
-                  onChange={handleTypeFilter}
-                  disabled={loading}
-                >
-                  <option value="all">All Types</option>
-                  {templateTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                Type
+              </label>
+              <select
+                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                value={typeFilter}
+                onChange={handleTypeFilter}
+                disabled={loading}
+              >
+                <option value="all">All Types</option>
+                {templateTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "0.5rem",
-            }}
-          >
-            <small
-              className="text-muted"
-              style={{ color: "#6c757d", fontSize: "0.875rem" }}
-            >
+          <div className="flex justify-between items-center mt-4">
+            <small className="text-[var(--text-secondary)] text-sm">
               Showing {filteredTemplates.length} of {templates.length} templates
             </small>
 
             {(searchTerm || statusFilter !== "all" || typeFilter !== "all") && (
               <button
-                className="btn btn-sm btn-outline-secondary"
                 onClick={() => {
                   setSearchTerm("");
                   setStatusFilter("all");
                   setTypeFilter("all");
                 }}
-                style={{
-                  padding: "4px 12px",
-                  fontSize: "0.875rem",
-                  border: "1px solid #6c757d",
-                  borderRadius: "4px",
-                  color: "#6c757d",
-                  cursor: "pointer",
-                }}
+                className="px-3 py-1 text-sm rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--text-secondary)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
               >
                 Clear Filters
               </button>
@@ -644,660 +493,254 @@ const EmailTemplates = () => {
       </div>
 
       {/* Templates List */}
-      <div className="templates-list">
-        <div
-          className="card"
-          style={{ border: "1px solid #ddd", borderRadius: "8px" }}
-        >
-          <div
-            className="card-header"
-            style={{
-              padding: "1rem 1.5rem",
-              // backgroundColor: "#f8f9fa",
-              borderBottom: "1px solid #ddd",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: "1.25rem" }}>
-              📧 Templates List
-              <span
-                style={{
-                  fontSize: "0.875rem",
-                  fontWeight: "normal",
-                  marginLeft: "10px",
-                  color: "#6c757d",
-                }}
-              >
-                ({filteredTemplates.length} of {templates.length})
-              </span>
-            </h3>
-          </div>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="px-6 py-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <h3 className="m-0 text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+            📧 Templates List
+            <span className="text-sm font-normal ml-2 text-[var(--text-secondary)]">
+              ({filteredTemplates.length} of {templates.length})
+            </span>
+          </h3>
+        </div>
 
-          <div className="card-body" style={{ padding: "1.5rem" }}>
-            {loading && templates.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "3rem",
-                  color: "#6c757d",
-                }}
-              >
-                <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⏳</div>
-                <p>Loading templates...</p>
+        <div className="p-6">
+          {loading && templates.length === 0 ? (
+            <div className="text-center py-12 text-[var(--text-secondary)]">
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
               </div>
-            ) : templates.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "3rem",
-                  color: "#6c757d",
+              <p>Loading templates...</p>
+            </div>
+          ) : templates.length === 0 ? (
+            <div className="text-center py-12 text-[var(--text-secondary)]">
+              <div className="text-4xl mb-4">📭</div>
+              <p>No templates found.</p>
+              <p className="text-sm mt-2">
+                Create your first template using the "Create Template" button above.
+              </p>
+            </div>
+          ) : filteredTemplates.length === 0 ? (
+            <div className="text-center py-12 text-[var(--text-secondary)]">
+              <div className="text-4xl mb-4">🔍</div>
+              <p>No templates match your search criteria.</p>
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                  setTypeFilter("all");
                 }}
+                className="mt-4 px-4 py-2 rounded-md bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] transition-colors"
               >
-                <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>📭</div>
-                <p>No templates found.</p>
-                <p style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>
-                  Create your first template using the "Create Template" button
-                  above.
-                </p>
-              </div>
-            ) : filteredTemplates.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "3rem",
-                  color: "#6c757d",
-                }}
-              >
-                <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🔍</div>
-                <p>No templates match your search criteria.</p>
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("all");
-                    setTypeFilter("all");
-                  }}
-                  style={{
-                    marginTop: "1rem",
-                    padding: "8px 16px",
-                    border: "1px solid #007bff",
-                    borderRadius: "4px",
-                    backgroundColor: "#007bff",
-                    color: "white",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Clear Filters
-                </button>
-              </div>
-            ) : (
-              <div className="table-responsive">
-                <table
-                  className="table table-striped"
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: "14px",
-                  }}
-                >
-                  <thead>
-                    <tr style={{ backgroundColor: "#f8f9fa" }}>
-                      <th
-                        style={{
-                          padding: "12px",
-                          textAlign: "left",
-                          borderBottom: "2px solid #dee2e6",
-                          fontWeight: "600",
-                        }}
-                      >
-                        Name
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px",
-                          textAlign: "left",
-                          borderBottom: "2px solid #dee2e6",
-                          fontWeight: "600",
-                        }}
-                      >
-                        Type
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px",
-                          textAlign: "left",
-                          borderBottom: "2px solid #dee2e6",
-                          fontWeight: "600",
-                        }}
-                      >
-                        Subject
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px",
-                          textAlign: "left",
-                          borderBottom: "2px solid #dee2e6",
-                          fontWeight: "600",
-                        }}
-                      >
-                        Status
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px",
-                          textAlign: "left",
-                          borderBottom: "2px solid #dee2e6",
-                          fontWeight: "600",
-                        }}
-                      >
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTemplates.map((template) => (
-                      <tr
-                        key={template._id}
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          transition: "background-color 0.2s",
-                        }}
-                        // onMouseOver={(e) =>
-                        // (e.target.parentElement.style.backgroundColor =
-                        //   "#f8f9fa")
-                        // }
-                        onMouseOut={(e) =>
-                        (e.target.parentElement.style.backgroundColor =
-                          "transparent")
-                        }
-                      >
-                        <td style={{ padding: "12px", verticalAlign: "top" }}>
-                          <div>
-                            <strong
-                              style={{
-                                fontSize: "14px",
-                                display: "block",
-                                marginBottom: "4px",
-                              }}
-                            >
-                              {template.name}
-                            </strong>
-                            {template.description && (
-                              <small
-                                className="text-muted"
-                                style={{
-                                  color: "#6c757d",
-                                  fontSize: "0.75rem",
-                                  lineHeight: "1.3",
-                                }}
-                              >
-                                {template.description}
-                              </small>
-                            )}
-                          </div>
-                        </td>
-                        <td style={{ padding: "12px", verticalAlign: "top" }}>
-                          <code
-                            style={{
-                              padding: "4px 8px",
-                              backgroundColor: "#e9ecef",
-                              borderRadius: "4px",
-                              fontSize: "0.75rem",
-                              color: "#e83e8c",
-                              fontFamily: "monospace",
-                            }}
-                          >
-                            {template.type}
-                          </code>
-                        </td>
-                        <td
-                          style={{
-                            padding: "12px",
-                            verticalAlign: "top",
-                            fontSize: "14px",
-                          }}
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                    <th className="px-3 py-3 text-left font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] border-b-2 border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      Name
+                    </th>
+                    <th className="px-3 py-3 text-left font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] border-b-2 border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      Type
+                    </th>
+                    <th className="px-3 py-3 text-left font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] border-b-2 border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      Subject
+                    </th>
+                    <th className="px-3 py-3 text-left font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] border-b-2 border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      Status
+                    </th>
+                    <th className="px-3 py-3 text-left font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] border-b-2 border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTemplates.map((template) => (
+                    <tr
+                      key={template._id}
+                      className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
+                    >
+                      <td className="px-3 py-3 align-top">
+                        <div>
+                          <strong className="text-sm block mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                            {template.name}
+                          </strong>
+                          {template.description && (
+                            <small className="text-[var(--text-secondary)] text-xs leading-tight">
+                              {template.description}
+                            </small>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <code className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 rounded text-xs text-purple-600 dark:text-purple-400 font-mono">
+                          {template.type}
+                        </code>
+                      </td>
+                      <td className="px-3 py-3 align-top text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                        {template.subject}
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${
+                            template.isActive
+                              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                          }`}
                         >
-                          {template.subject}
-                        </td>
-                        <td style={{ padding: "12px", verticalAlign: "top" }}>
-                          <span
-                            className={`badge ${template.isActive
-                              ? "badge-success"
-                              : "badge-secondary"
-                              }`}
-                            style={{
-                              padding: "6px 12px",
-                              borderRadius: "12px",
-                              fontSize: "0.75rem",
-                              fontWeight: "500",
-                              backgroundColor: template.isActive
-                                ? "#28a745"
-                                : "#6c757d",
-                              color: "white",
-                              display: "inline-block",
-                            }}
+                          {template.isActive ? "✅ Active" : "❌ Inactive"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => handleEdit(template)}
+                            disabled={loading}
+                            title="Edit Template"
+                            className="p-1.5 rounded border border-blue-500 text-blue-500 hover:bg-blue-500/10 dark:hover:bg-blue-500/20 transition-colors disabled:opacity-50"
                           >
-                            {template.isActive ? "✅ Active" : "❌ Inactive"}
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px", verticalAlign: "top" }}>
-                          <div
-                            className="btn-group"
-                            style={{
-                              display: "flex",
-                              gap: "6px",
-                              flexWrap: "wrap",
-                            }}
+                            <MdEdit size={14} />
+                          </button>
+                          <button
+                            onClick={() => handlePreview(template)}
+                            disabled={loading}
+                            title="Preview Template"
+                            className="p-1.5 rounded border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)]/10 dark:hover:bg-[var(--info-color)]/20 transition-colors disabled:opacity-50"
                           >
-                            <button
-                              className="btn btn-sm btn-outline-primary"
-                              style={{
-                                padding: "6px 8px",
-                                border: "1px solid #007bff",
-                                borderRadius: "4px",
-                                // backgroundColor: "transparent",
-                                color: "#007bff",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                transition: "all 0.2s",
-                              }}
-                              onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#007bff1a")
-                              }
-                              onMouseOut={(e) =>
-                                (e.target.style.backgroundColor = "transparent")
-                              }
-                              onClick={() => handleEdit(template)}
-                              disabled={loading}
-                              title="Edit Template"
-                            >
-                              <MdEdit size={14} />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-info"
-                              style={{
-                                padding: "6px 8px",
-                                border: "1px solid #17a2b8",
-                                borderRadius: "4px",
-                                // backgroundColor: "transparent",
-                                color: "#17a2b8",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                transition: "all 0.2s",
-                              }}
-                              onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#0c72811a")
-                              }
-                              onMouseOut={(e) =>
-                                (e.target.style.backgroundColor = "transparent")
-                              }
-                              onClick={() => handlePreview(template)}
-                              disabled={loading}
-                              title="Preview Template"
-                            >
-                              <MdPreview size={14} />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-secondary"
-                              style={{
-                                padding: "6px 8px",
-                                border: "1px solid #6c757d",
-                                borderRadius: "4px",
-                                // backgroundColor: "transparent",
-                                color: "#6c757d",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                transition: "all 0.2s",
-                              }}
-                              onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#6c757d1a")
-                              }
-                              onMouseOut={(e) =>
-                                (e.target.style.backgroundColor = "transparent")
-                              }
-                              onClick={() => handleDuplicate(template)}
-                              disabled={loading}
-                              title="Duplicate Template"
-                            >
-                              <MdContentCopy size={14} />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-warning"
-                              style={{
-                                padding: "6px 8px",
-                                border: "1px solid #ffc107",
-                                borderRadius: "4px",
-                                // backgroundColor: "transparent",
-                                color: "#ffc107",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                transition: "all 0.2s",
-                              }}
-                              onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#ffc1071a")
-                              }
-                              onMouseOut={(e) =>
-                                (e.target.style.backgroundColor = "transparent")
-                              }
-                              onClick={() =>
-                                handleToggleStatus(
-                                  template._id,
-                                  template.isActive
-                                )
-                              }
-                              disabled={loading}
-                              title={
-                                template.isActive ? "Deactivate" : "Activate"
-                              }
-                            >
-                              {template.isActive ? (
-                                <MdToggleOn size={16} />
-                              ) : (
-                                <MdToggleOff size={16} />
-                              )}
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              style={{
-                                padding: "6px 8px",
-                                border: "1px solid #dc3545",
-                                borderRadius: "4px",
-                                // backgroundColor: "transparent",
-                                color: "#dc3545",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                transition: "all 0.2s",
-                              }}
-                              onMouseOver={(e) =>
-                                (e.target.style.backgroundColor = "#dc35451a")
-                              }
-                              onMouseOut={(e) =>
-                                (e.target.style.backgroundColor = "transparent")
-                              }
-                              onClick={() => handleDelete(template._id)}
-                              disabled={loading}
-                              title="Delete Template"
-                            >
-                              <MdDelete size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                            <MdPreview size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDuplicate(template)}
+                            disabled={loading}
+                            title="Duplicate Template"
+                            className="p-1.5 rounded border border-gray-500 text-gray-500 hover:bg-gray-500/10 dark:hover:bg-gray-500/20 transition-colors disabled:opacity-50"
+                          >
+                            <MdContentCopy size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(template._id, template.isActive)}
+                            disabled={loading}
+                            title={template.isActive ? "Deactivate" : "Activate"}
+                            className="p-1.5 rounded border border-[var(--warning-color)] text-[var(--warning-color)] hover:bg-[var(--warning-color)]/10 dark:hover:bg-[var(--warning-color)]/20 transition-colors disabled:opacity-50"
+                          >
+                            {template.isActive ? <MdToggleOn size={16} /> : <MdToggleOff size={16} />}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(template._id)}
+                            disabled={loading}
+                            title="Delete Template"
+                            className="p-1.5 rounded border border-red-500 text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                          >
+                            <MdDelete size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Template Creation/Edit Modal */}
       {showTemplateModal && (
-        <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "white",
-              borderRadius: "8px",
-              maxWidth: "90%",
-              maxHeight: "90%",
-              overflow: "auto",
-              width: "800px",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-              top: "50px",
-              transform: "translateY(0)",
-            }}
-          >
-            {/* <div
-              className="modal-header"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "1.5rem",
-                borderBottom: "2px solid #dee2e6",
-                backgroundColor: "#f8f9fa",
-                borderTopLeftRadius: "8px",
-                borderTopRightRadius: "8px",
-              }}
-            >
-              <h3 style={{ margin: 0, color: "#333", fontSize: "1.5rem" }}>
-                {editingId
-                  ? "✏️ Edit Email Template"
-                  : "📧 Create New Email Template"}
-                {currentTemplate.name && (
-                  <span
-                    style={{
-                      display: "block",
-                      fontSize: "1rem",
-                      color: "#6c757d",
-                      marginTop: "4px",
-                      fontWeight: "normal",
-                    }}
-                  >
-                    Template: {currentTemplate.name}
-                  </span>
-                )}
-              </h3>
-              <button
-                onClick={closeModal}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "1.5rem",
-                  cursor: "pointer",
-                  color: "#6c757d",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  transition: "all 0.2s",
-                  width: "32px",
-                  height: "32px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                // onMouseOver={(e) =>
-                //   (e.target.style.backgroundColor = "#f8f9fa")
-                // }
-                onMouseOut={(e) =>
-                  (e.target.style.backgroundColor = "transparent")
-                }
-                title="Close Modal"
-              >
-                <MdClose size={20} />
-              </button>
-            </div> */}
-
-            <div className="modal-body" style={{ padding: "1.5rem" }}>
-              <div className="d-flex justify-content-end w-100">
-              <button
-                onClick={closeModal}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "1.5rem",
-                  cursor: "pointer",
-                  color: "#fff",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  transition: "all 0.2s",
-                  width: "32px",
-                  height: "32px",
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.color = "#da1616ff")
-                }
-                // onMouseOut={(e) =>
-                //   (e.target.style.color = "transparent")
-                // }
-                title="Close Modal"
-              >
-                <MdClose size={20} />
-              </button>
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[1000] overflow-auto">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg max-w-[90%] max-h-[90%] overflow-auto w-[800px] shadow-2xl my-12">
+            <div className="p-6">
+              <div className="flex justify-end w-full mb-4">
+                <button
+                  onClick={closeModal}
+                  className="p-1 rounded text-[var(--light-text)] dark:text-[var(--dark-text)] hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  title="Close Modal"
+                >
+                  <MdClose size={20} />
+                </button>
               </div>
               <form onSubmit={handleSave}>
-                <div
-                  className="row"
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    margin: "0 -10px",
-                  }}
-                >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Template Name */}
-                  <div
-                    className="col-md-6 text"
-                    style={{
-                      flex: "0 0 50%",
-                      padding: "0 10px",
-                      maxWidth: "50%",
-                    }}
-                  >
-                    <div
-                      className="form-group"
-                      style={{ marginBottom: "1rem" }}
-                    >
-                      <label
-                        style={{
-                          display: "block",
-                          marginBottom: "0.5rem",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Template Name *
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #ddd",
-                          borderRadius: "4px",
-                          fontSize: "14px",
-                        }}
-                        value={currentTemplate.name}
-                        onChange={(e) => {
-                          setCurrentTemplate({
-                            ...currentTemplate,
-                            name: e.target.value,
-                          });
-                        }}
-                        required
-                        disabled={loading}
-                        placeholder="Enter template name (e.g., User Registration)"
-                      />
-                    </div>
+                  <div>
+                    <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                      Template Name *
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                      value={currentTemplate.name}
+                      onChange={(e) => {
+                        setCurrentTemplate({
+                          ...currentTemplate,
+                          name: e.target.value,
+                        });
+                      }}
+                      required
+                      disabled={loading}
+                      placeholder="Enter template name (e.g., User Registration)"
+                    />
                   </div>
 
                   {/* Template Type */}
-                  <div
-                    className="col-md-6 text"
-                    style={{
-                      flex: "0 0 50%",
-                      padding: "0 10px",
-                      maxWidth: "50%",
-                    }}
-                  >
-                    <div
-                      className="form-group"
-                      style={{ marginBottom: "1rem" }}
-                    >
-                      <label
-                        style={{
-                          display: "block",
-                          marginBottom: "0.5rem",
-                          fontWeight: "bold",
+                  <div>
+                    <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                      Template Type *
+                    </label>
+                    {!editingId && (
+                      <select
+                        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                        value={isCustomType ? '' : currentTemplate.type}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'custom') {
+                            setIsCustomType(true);
+                            setCurrentTemplate({ ...currentTemplate, type: '' });
+                          } else {
+                            setIsCustomType(false);
+                            setCurrentTemplate({ ...currentTemplate, type: val });
+                          }
                         }}
+                        disabled={loading || editingId}
                       >
-                        Template Type *
-                      </label>
-                      {!editingId && (
-                        <select
-                          className="form-control"
-                          value={isCustomType ? '' : currentTemplate.type}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === 'custom') {
-                              setIsCustomType(true);
-                              setCurrentTemplate({ ...currentTemplate, type: '' });
-                            } else {
-                              setIsCustomType(false);
-                              setCurrentTemplate({ ...currentTemplate, type: val });
-                            }
-                          }}
-                          disabled={loading || editingId}
-                        >
-                          <option value="">Select Type</option>
-                          {availableTemplateTypes.map(t => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
-                          ))}
-                          <option value="custom">+ Add Custom Type</option>
-                        </select>
-                      )}
+                        <option value="">Select Type</option>
+                        {availableTemplateTypes.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                        <option value="custom">+ Add Custom Type</option>
+                      </select>
+                    )}
 
-                      {(isCustomType || editingId) && (
-                        <input
-                          type="text"
-                          className="form-control"
-                          style={{ marginTop: editingId ? 0 : '8px' }}
-                          value={currentTemplate.type}
-                          onChange={(e) => setCurrentTemplate({ ...currentTemplate, type: e.target.value })}
-                          placeholder="e.g., birthday_wish, invoice_reminder"
-                          required
-                          disabled={loading}
-                        />
-                      )}
+                    {(isCustomType || editingId) && (
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                        style={{ marginTop: editingId ? 0 : '8px' }}
+                        value={currentTemplate.type}
+                        onChange={(e) => setCurrentTemplate({ ...currentTemplate, type: e.target.value })}
+                        placeholder="e.g., birthday_wish, invoice_reminder"
+                        required
+                        disabled={loading}
+                      />
+                    )}
 
-                      {editingId && (
-                        <small className="text-muted">
-                          Type cannot be changed after creation
-                        </small>
-                      )}
-                    </div>
+                    {editingId && (
+                      <small className="text-[var(--text-secondary)] text-xs">
+                        Type cannot be changed after creation
+                      </small>
+                    )}
                   </div>
                 </div>
 
                 {/* Subject */}
-                <div className="form-group text" style={{ marginBottom: "1rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      fontWeight: "bold",
-                    }}
-                  >
+                <div className="mt-4">
+                  <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                     Email Subject *
                   </label>
                   <input
                     type="text"
-                    className="form-control"
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      fontSize: "14px",
-                    }}
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     value={currentTemplate.subject}
                     onChange={(e) => {
                       setCurrentTemplate({
@@ -1312,27 +755,12 @@ const EmailTemplates = () => {
                 </div>
 
                 {/* Description */}
-                <div className="form-group text" style={{ marginBottom: "1rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      fontWeight: "bold",
-                    }}
-                  >
+                <div className="mt-4">
+                  <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                     Description (Optional)
                   </label>
                   <textarea
-                    className="form-control"
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      minHeight: "80px",
-                      fontSize: "14px",
-                      resize: "vertical",
-                    }}
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] resize-y"
                     value={currentTemplate.description}
                     onChange={(e) => {
                       setCurrentTemplate({
@@ -1347,22 +775,13 @@ const EmailTemplates = () => {
                 </div>
 
                 {/* Body */}
-                <div className="form-group text" style={{ marginBottom: "1rem" }}>
-                  <label>Email Body (HTML) *</label>
+                <div className="mt-4">
+                  <label className="block mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    Email Body (HTML) *
+                  </label>
                   <textarea
                     name="body"
-                    className="form-control"
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                      minHeight: "100px",
-                      fontFamily: "monospace",
-                      fontSize: "14px",
-                      resize: "vertical",
-                      lineHeight: "1.5",
-                    }}
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] font-mono resize-y"
                     value={currentTemplate.body}
                     onChange={(e) => {
                       setCurrentTemplate({
@@ -1375,18 +794,18 @@ const EmailTemplates = () => {
                     disabled={loading}
                     placeholder={`Enter your email template body in HTML format. You can use variables like {userName}, {companyName}, etc.`}
                   />
-                  <div className="variables mt-3">
-                    <p style={{ marginBottom: "0.5rem", fontWeight: "bold" }}>
+                  <div className="mt-3">
+                    <p className="mb-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                       Available Variables {currentTemplate.type ? `for "${currentTemplate.type}"` : ''}
                     </p>
 
                     {getRelevantVariables().length > 0 ? (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      <div className="flex flex-wrap gap-2">
                         {relevantVars.map(variable => (
                           <button
                             key={variable.key}
                             type="button"
-                            className="btn btn-sm btn-outline-primary"
+                            className="px-3 py-1 text-sm rounded border border-blue-500 text-blue-500 hover:bg-blue-500/10 dark:hover:bg-blue-500/20 transition-colors"
                             onClick={() => handleAddVariableToBody(variable.key)}
                             title={variable.description}
                           >
@@ -1395,7 +814,7 @@ const EmailTemplates = () => {
                         ))}
                       </div>
                     ) : (
-                      <p style={{ color: "#aaa", fontStyle: "italic", fontSize: "14px" }}>
+                      <p className="text-[var(--text-secondary)] italic text-sm">
                         {currentTemplate.type
                           ? `No specific variables defined for "${currentTemplate.type}". You can use any variable.`
                           : "Select a template type to see relevant variables."
@@ -1406,74 +825,20 @@ const EmailTemplates = () => {
                 </div>
 
                 {/* Form Actions */}
-                <div
-                  className="form-actions"
-                  style={{
-                    display: "flex",
-                    gap: "12px",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                    borderTop: "1px solid #eee",
-                    // paddingTop: "1.5rem",
-                  }}
-                >
+                <div className="flex gap-3 items-center justify-end border-t border-[var(--light-border)] dark:border-[var(--dark-border)] pt-6 mt-6">
                   <button
                     type="button"
-                    className="btn btn-secondary"
                     onClick={closeModal}
                     disabled={loading}
-                    style={{
-                      padding: "10px 20px",
-                      border: "1px solid #6c757d",
-                      borderRadius: "4px",
-                      // backgroundColor: "transparent",
-                      color: "#6c757d",
-                      cursor: loading ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseOver={(e) =>
-                      !loading &&
-                      ((e.target.style.backgroundColor = "#6c757d"),
-                        (e.target.style.color = "white"))
-                    }
-                    onMouseOut={(e) =>
-                      !loading &&
-                      ((e.target.style.backgroundColor = "transparent"),
-                        (e.target.style.color = "#6c757d"))
-                    }
+                    className="px-5 py-2 rounded-md font-medium transition-colors border border-gray-500 text-gray-500 hover:bg-gray-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <MdCancel size={16} />
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary"
                     disabled={loading}
-                    style={{
-                      padding: "10px 20px",
-                      border: "none",
-                      borderRadius: "4px",
-                      backgroundColor: "#007bff",
-                      color: "white",
-                      cursor: loading ? "not-allowed" : "pointer",
-                      opacity: loading ? 0.6 : 1,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseOver={(e) =>
-                      !loading && (e.target.style.backgroundColor = "#0056b3")
-                    }
-                    onMouseOut={(e) =>
-                      !loading && (e.target.style.backgroundColor = "#007bff")
-                    }
+                    className="px-5 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <MdSave size={16} />
                     {loading
@@ -1491,117 +856,36 @@ const EmailTemplates = () => {
 
       {/* Preview Modal */}
       {previewTemplate && (
-        <div
-          className="modal-backdrop"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "white",
-              padding: "2rem",
-              borderRadius: "8px",
-              maxWidth: "90%",
-              maxHeight: "90%",
-              overflow: "auto",
-              width: "700px",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-              top: "50px",
-              transform: "translateY(0)"
-            }}
-          >
-            <div
-              className="modal-header"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1.5rem",
-                borderBottom: "2px solid #dee2e6",
-                paddingBottom: "1rem",
-              }}
-            >
-              <h3 style={{ margin: 0, color: "#333" }}>
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[1000] overflow-auto">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg p-8 max-w-[90%] max-h-[90%] overflow-auto w-[700px] shadow-2xl my-12">
+            <div className="flex justify-between items-center mb-6 border-b-2 border-[var(--light-border)] dark:border-[var(--dark-border)] pb-4">
+              <h3 className="m-0 text-[var(--light-text)] dark:text-[var(--dark-text)] text-xl font-semibold">
                 👁️ Preview: {previewTemplate.name}
               </h3>
               <button
                 onClick={handleClosePreview}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "1.5rem",
-                  cursor: "pointer",
-                  color: "#6c757d",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  transition: "all 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#f8f9fa")
-                }
-                onMouseOut={(e) =>
-                  (e.target.style.backgroundColor = "transparent")
-                }
+                className="p-1 rounded text-[var(--text-secondary)] hover:text-red-500 dark:hover:text-red-400 hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-all"
                 title="Close Preview"
               >
-                ×
+                <MdClose size={24} />
               </button>
             </div>
-            <div className="modal-body">
-              <div style={{ marginBottom: "1.5rem" }}>
-                <strong
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    color: "#495057",
-                  }}
-                >
+            <div>
+              <div className="mb-6">
+                <strong className="block mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                   📫 Subject:
                 </strong>
-                <div
-                  style={{
-                    padding: "12px",
-                    backgroundColor: "#f8f9fa",
-                    border: "1px solid #dee2e6",
-                    borderRadius: "4px",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                  }}
-                >
+                <div className="px-3 py-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                   {previewTemplate.subject}
                 </div>
               </div>
 
-              <div >
-                <strong
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    color: "#495057",
-                  }}
-                >
+              <div>
+                <strong className="block mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                   📝 Body:
                 </strong>
                 <div
-                  style={{
-                    padding: "1rem",
-                    backgroundColor: "#f8f9fa",
-                    border: "1px solid #dee2e6",
-                    borderRadius: "4px",
-                    maxHeight: "400px",
-                    overflow: "auto",
-                  }}
+                  className="p-4 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded max-h-[400px] overflow-auto text-[var(--light-text)] dark:text-[var(--dark-text)]"
                   dangerouslySetInnerHTML={{ __html: previewTemplate.body }}
                 />
               </div>
@@ -1609,37 +893,15 @@ const EmailTemplates = () => {
 
             {previewTemplate.variables &&
               previewTemplate.variables.length > 0 && (
-                <div>
-                  <strong
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      color: "#495057",
-                    }}
-                  >
+                <div className="mt-6">
+                  <strong className="block mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                     🔤 Variables:
                   </strong>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "8px",
-                      marginTop: "0.5rem",
-                    }}
-                  >
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {previewTemplate.variables.map((v) => (
                       <span
                         key={v}
-                        style={{
-                          display: "inline-block",
-                          padding: "6px 10px",
-                          backgroundColor: "#e9ecef",
-                          border: "1px solid #ced4da",
-                          borderRadius: "4px",
-                          fontSize: "0.75rem",
-                          fontFamily: "monospace",
-                          color: "#e83e8c",
-                        }}
+                        className="inline-block px-2.5 py-1.5 bg-purple-100 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700 rounded text-xs font-mono text-purple-600 dark:text-purple-400"
                       >
                         {`{${v}}`}
                       </span>
@@ -1649,10 +911,8 @@ const EmailTemplates = () => {
               )}
           </div>
         </div>
-
-      )
-      }
-    </div >
+      )}
+    </div>
   );
 };
 

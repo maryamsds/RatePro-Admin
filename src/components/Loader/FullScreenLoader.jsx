@@ -1,18 +1,9 @@
 // components/Loader/FullScreenLoader.jsx
-import { Spinner } from "react-bootstrap";
 
 const FullScreenLoader = () => {
   return (
-    <div style={{
-      position: "fixed",
-      top: 0, left: 0, right: 0, bottom: 0,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "rgba(255,255,255,0.6)",
-      zIndex: 2000
-    }}>
-      <Spinner animation="border" variant="primary" />
+    <div className="fixed inset-0 flex items-center justify-center bg-white/60 dark:bg-black/40 z-[2000]">
+      <span className="w-10 h-10 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin" />
     </div>
   )
 }

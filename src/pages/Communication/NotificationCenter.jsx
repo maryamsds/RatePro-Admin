@@ -3,7 +3,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Modal } from "react-bootstrap"
 import {
   MdNotifications,
   MdAdd,
@@ -29,7 +28,7 @@ const NotificationCenter = ({ darkMode }) => {
   const [filterType, setFilterType] = useState("all")
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState(null)
-  const [pagination, setPagination] = useState({ page: 1, limit:1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
 
   useEffect(() => {
     setTimeout(() => {
@@ -130,37 +129,37 @@ const NotificationCenter = ({ darkMode }) => {
   }, [])
 
   const getTypeBadge = (type) => {
-    const variants = {
-      Success: "success",
-      Warning: "warning",
-      Error: "danger",
-      Info: "info",
+    const badgeStyles = {
+      Success: "bg-[var(--success-color)] text-white",
+      Warning: "bg-[var(--warning-color)] text-white",
+      Error: "bg-[var(--danger-color)] text-white",
+      Info: "bg-[var(--info-color)] text-white",
     }
     const icons = {
-      Success: <MdCheckCircle className="me-1" size={14} />,
-      Warning: <MdWarning className="me-1" size={14} />,
-      Error: <MdError className="me-1" size={14} />,
-      Info: <MdInfo className="me-1" size={14} />,
+      Success: <MdCheckCircle className="mr-1" size={14} />,
+      Warning: <MdWarning className="mr-1" size={14} />,
+      Error: <MdError className="mr-1" size={14} />,
+      Info: <MdInfo className="mr-1" size={14} />,
     }
     return (
-      <Badge bg={variants[type] || "secondary"} className="badge-enhanced d-flex align-items-center">
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${badgeStyles[type] || "bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]"}`}>
         {icons[type]}
         {type}
-      </Badge>
+      </span>
     )
   }
 
   const getPriorityBadge = (priority) => {
-    const variants = {
-      High: "danger",
-      Medium: "warning",
-      Low: "secondary",
+    const badgeStyles = {
+      High: "bg-[var(--danger-color)] text-white",
+      Medium: "bg-[var(--warning-color)] text-white",
+      Low: "bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]",
     }
     return (
-      <Badge bg={variants[priority] || "secondary"} className="badge-enhanced">
-        {priority === "High" && <MdPriorityHigh className="me-1" size={14} />}
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${badgeStyles[priority] || "bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]"}`}>
+        {priority === "High" && <MdPriorityHigh className="mr-1" size={14} />}
         {priority}
-      </Badge>
+      </span>
     )
   }
 
@@ -194,277 +193,261 @@ const NotificationCenter = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container d-flex justify-content-center align-items-center" style={{ height: "50vh" }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="flex justify-center items-center" style={{ height: "50vh" }}>
+        <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
 
   return (
-    <Container fluid className="notification-center-container py-4 fade-in">
+    <div className="py-4 px-3">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center flex-wrap">
-            <div className="d-flex align-items-center">
-              <MdNotifications size={32} className="text-primary me-3" />
-              <div>
-                <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Notification Center</h2>
-                <p className="text-muted mb-0">Manage system notifications and alerts</p>
-              </div>
-            </div>
-            <div className="d-flex gap-2 mt-2 mt-md-0">
-              <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
-              <Button variant="primary" size="sm" className="btn-enhanced">
-                <MdAdd className="me-1" />
-                Create Notification
-              </Button>
+      <div className="mb-4">
+        <div className="flex justify-between items-center flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <MdNotifications size={32} className="text-[var(--primary-color)]" />
+            <div>
+              <h2 className="text-2xl font-bold mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">Notification Center</h2>
+              <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-0">Manage system notifications and alerts</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="flex gap-2">
+            <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white flex items-center gap-1">
+              <MdRefresh />
+              Refresh
+            </button>
+            <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90 flex items-center gap-1">
+              <MdAdd />
+              Create Notification
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--primary-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Notifications</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {notifications.length}
-                  </div>
-                </div>
-                <MdNotifications size={24} style={{ color: "var(--primary-color)" }} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] border-l-4 border-l-[var(--primary-color)]">
+          <div className="flex items-center justify-between">
+            <div className="flex-grow">
+              <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-1">Total Notifications</div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {notifications.length}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--warning-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Unread</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {notifications.filter((n) => !n.isRead).length}
-                  </div>
-                </div>
-                <MdMarkAsUnread size={24} style={{ color: "var(--warning-color)" }} />
+            </div>
+            <MdNotifications size={24} className="text-[var(--primary-color)]" />
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] border-l-4 border-l-[var(--warning-color)]">
+          <div className="flex items-center justify-between">
+            <div className="flex-grow">
+              <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-1">Unread</div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {notifications.filter((n) => !n.isRead).length}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--danger-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>High Priority</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {notifications.filter((n) => n.priority === "High").length}
-                  </div>
-                </div>
-                <MdPriorityHigh size={24} style={{ color: "var(--danger-color)" }} />
+            </div>
+            <MdMarkAsUnread size={24} className="text-[var(--warning-color)]" />
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] border-l-4 border-l-[var(--danger-color)]">
+          <div className="flex items-center justify-between">
+            <div className="flex-grow">
+              <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-1">High Priority</div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {notifications.filter((n) => n.priority === "High").length}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--success-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Success Alerts</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {notifications.filter((n) => n.type === "Success").length}
-                  </div>
-                </div>
-                <MdCheckCircle size={24} style={{ color: "var(--success-color)" }} />
+            </div>
+            <MdPriorityHigh size={24} className="text-[var(--danger-color)]" />
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] border-l-4 border-l-[var(--success-color)]">
+          <div className="flex items-center justify-between">
+            <div className="flex-grow">
+              <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-1">Success Alerts</div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {notifications.filter((n) => n.type === "Success").length}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+            <MdCheckCircle size={24} className="text-[var(--success-color)]" />
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="py-3">
-              <Row className="align-items-center">
-                <Col md={6} lg={4} className="mb-2 mb-md-0">
-                  <InputGroup className="form-enhanced">
-                    <InputGroup.Text>
-                      <MdSearch />
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search notifications..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
-                </Col>
-                <Col md={3} lg={2} className="mb-2 mb-md-0">
-                  <Form.Select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="form-enhanced"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="success">Success</option>
-                    <option value="warning">Warning</option>
-                    <option value="error">Error</option>
-                    <option value="info">Info</option>
-                  </Form.Select>
-                </Col>
-                <Col md={3} lg={2}>
-                  <Button variant="outline-secondary" className="w-100 btn-enhanced">
-                    <MdFilterList className="me-1" />
-                    More Filters
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-3">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+              <div className="md:col-span-6 lg:col-span-4">
+                <div className="relative flex items-center">
+                  <MdSearch className="absolute left-3 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50" />
+                  <input
+                    type="text"
+                    className="w-full pl-10 pr-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                    placeholder="Search notifications..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="md:col-span-3 lg:col-span-2">
+                <select
+                  className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <option value="all">All Types</option>
+                  <option value="success">Success</option>
+                  <option value="warning">Warning</option>
+                  <option value="error">Error</option>
+                  <option value="info">Info</option>
+                </select>
+              </div>
+              <div className="md:col-span-3 lg:col-span-2">
+                <button className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)] flex items-center justify-center gap-1">
+                  <MdFilterList />
+                  More Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Notifications Table */}
-      <Row>
-        <Col>
-          <Card className="border-0 card-enhanced">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0 table-enhanced" >
-                  <thead className="table-light">
-                    <tr>
-                      <th className="border-0 py-3 px-4">
-                        <div className="d-flex align-items-center">
-                          <MdNotifications className="me-2" size={16} />
-                          Notification
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <tr>
+                <th className="py-3 px-4 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  <div className="flex items-center gap-2">
+                    <MdNotifications size={16} />
+                    Notification
+                  </div>
+                </th>
+                <th className="py-3 px-2 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Type</th>
+                <th className="py-3 px-2 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Priority</th>
+                <th className="py-3 px-2 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Source</th>
+                <th className="py-3 px-2 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Recipient</th>
+                <th className="py-3 px-2 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Timestamp</th>
+                <th className="py-3 px-2 text-center text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentNotifications.map((notification) => (
+                <tr
+                  key={notification.id}
+                  className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
+                  style={{ opacity: notification.isRead ? 0.7 : 1 }}
+                >
+                  <td className="py-3 px-4">
+                    <div className="flex items-start gap-2">
+                      {!notification.isRead && (
+                        <div
+                          className="bg-[var(--primary-color)] rounded-full mt-1 flex-shrink-0"
+                          style={{ width: "8px", height: "8px" }}
+                        ></div>
+                      )}
+                      <div className="flex-grow">
+                        <div className="font-medium mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {notification.title}
                         </div>
-                      </th>
-                      <th className="border-0 py-3">Type</th>
-                      <th className="border-0 py-3">Priority</th>
-                      <th className="border-0 py-3">Source</th>
-                      <th className="border-0 py-3">Recipient</th>
-                      <th className="border-0 py-3">Timestamp</th>
-                      <th className="border-0 py-3 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentNotifications.map((notification) => (
-                      <tr
-                        key={notification.id}
-                        style={{ opacity: notification.isRead ? 0.8 : 1 }}
+                        <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">{notification.message}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-2">{getTypeBadge(notification.type)}</td>
+                  <td className="py-3 px-2">{getPriorityBadge(notification.priority)}</td>
+                  <td className="py-3 px-2">
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{notification.source}</span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{notification.recipient}</span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{notification.timestamp}</span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        className="p-1.5 rounded-md transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                        onClick={() => toggleReadStatus(notification.id)}
+                        title={notification.isRead ? "Mark as unread" : "Mark as read"}
                       >
-                        <td className="py-3 px-4 border-0">
-                          <div className="d-flex align-items-start">
-                            {!notification.isRead && (
-                              <div
-                                className="bg-primary rounded-circle me-2 mt-1"
-                                style={{ width: "8px", height: "8px" }}
-                              ></div>
-                            )}
-                            <div>
-                              <div className={`fw-medium mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
-                                {notification.title}
-                              </div>
-                              <div className="small text-muted">{notification.message}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 border-0">{getTypeBadge(notification.type)}</td>
-                        <td className="py-3 border-0">{getPriorityBadge(notification.priority)}</td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{notification.source}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{notification.recipient}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{notification.timestamp}</span>
-                        </td>
-                        <td className="py-3 text-center border-0">
-                          <div className="btn-group btn-group-sm">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              className="btn-enhanced"
-                              onClick={() => toggleReadStatus(notification.id)}
-                            >
-                              {notification.isRead ? <MdMarkAsUnread size={14} /> : <MdMarkEmailRead size={14} />}
-                            </Button>
-                            <Button variant="outline-secondary" size="sm" className="btn-enhanced">
-                              <MdEdit size={14} />
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              className="btn-enhanced"
-                              onClick={() => handleDelete(notification)}
-                            >
-                              <MdDelete size={14} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-              <div className="p-3 border-top">
-                <Pagination
-                  current={pagination.page}
-                  total={filteredNotifications.length}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                  darkMode={darkMode}
-                />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                        {notification.isRead ? <MdMarkAsUnread size={14} /> : <MdMarkEmailRead size={14} />}
+                      </button>
+                      <button
+                        className="p-1.5 rounded-md transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)]"
+                        title="Edit notification"
+                      >
+                        <MdEdit size={14} />
+                      </button>
+                      <button
+                        className="p-1.5 rounded-md transition-colors border border-[var(--danger-color)] text-[var(--danger-color)] hover:bg-[var(--danger-color)] hover:text-white"
+                        onClick={() => handleDelete(notification)}
+                        title="Delete notification"
+                      >
+                        <MdDelete size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="p-3 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <Pagination
+            current={pagination.page}
+            total={filteredNotifications.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+            darkMode={darkMode}
+          />
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered className="modal-enhanced">
-        <Modal.Header closeButton>
-          <Modal.Title className={darkMode ? "text-white" : "text-dark"}>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete "{selectedNotification?.title}"? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="btn-enhanced">
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete} className="btn-enhanced">
-            Delete Notification
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
+            onClick={() => setShowDeleteModal(false)}
+          ></div>
+          <div className="relative bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] max-w-md w-full mx-4">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Confirm Delete</h5>
+              <button 
+                type="button" 
+                className="text-[var(--light-text)] dark:text-[var(--dark-text)] hover:opacity-70 transition-opacity"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                <span className="text-2xl">&times;</span>
+              </button>
+            </div>
+            <div className="p-4">
+              <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                Are you sure you want to delete "{selectedNotification?.title}"? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)]" 
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--danger-color)] text-white hover:opacity-90" 
+                onClick={confirmDelete}
+              >
+                Delete Notification
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

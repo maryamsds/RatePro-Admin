@@ -1,7 +1,6 @@
 // src\pages\UserManagement\RolePermissions.jsx
 "use client"
 import { useState } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal } from "react-bootstrap"
 
 const RolePermissions = () => {
   const [roles, setRoles] = useState([
@@ -136,231 +135,226 @@ const RolePermissions = () => {
   }
 
   return (
-    <Container fluid>
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-0">Roles & Permissions</h1>
-              <p className="text-muted">Manage user roles and their permissions</p>
-            </div>
-            <Button variant="primary" onClick={handleCreateRole}>
-              <i className="fas fa-plus me-2"></i>
-              Create Role
-            </Button>
+    <div className="w-full px-4 py-4">
+      <div className="mb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <h1 className="text-xl font-bold mb-1">Roles & Permissions</h1>
+            <p className="text-[var(--text-secondary)]">Manage user roles and their permissions</p>
           </div>
-        </Col>
-      </Row>
+          <button onClick={handleCreateRole} className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] transition-colors font-medium inline-flex items-center gap-2">
+            <i className="fas fa-plus"></i>
+            Create Role
+          </button>
+        </div>
+      </div>
 
       {/* Roles Overview */}
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0">System Roles</Card.Title>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th>Role Name</th>
-                      <th>Description</th>
-                      <th>Users</th>
-                      <th>Permissions</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roles.map((role) => (
-                      <tr key={role.id}>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <span className="fw-medium">{role.name}</span>
-                            {role.isSystem && (
-                              <Badge bg="info" className="ms-2 small">
-                                System
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="text-truncate" style={{ maxWidth: "300px" }}>
-                            {role.description}
-                          </div>
-                        </td>
-                        <td>
-                          <Badge bg="secondary">{role.userCount} users</Badge>
-                        </td>
-                        <td>
-                          <div className="d-flex flex-wrap gap-1">
-                            {role.permissions.slice(0, 3).map((permission) => (
-                              <Badge key={permission} bg="outline-primary" className="small">
-                                {getPermissionLabel(permission)}
-                              </Badge>
-                            ))}
-                            {role.permissions.length > 3 && (
-                              <Badge bg="outline-secondary" className="small">
-                                +{role.permissions.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="btn-group btn-group-sm">
-                            <Button variant="outline-primary" size="sm" title="View Details">
-                              <i className="fas fa-eye"></i>
-                            </Button>
-                            <Button variant="outline-secondary" size="sm" title="Edit" disabled={role.isSystem}>
-                              <i className="fas fa-edit"></i>
-                            </Button>
-                            <Button variant="outline-info" size="sm" title="Duplicate">
-                              <i className="fas fa-copy"></i>
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              title="Delete"
-                              disabled={role.isSystem || role.userCount > 0}
-                              onClick={() => deleteRole(role.id)}
-                            >
-                              <i className="fas fa-trash"></i>
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-xl shadow-sm border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold m-0">System Roles</h5>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <tr>
+                  <th className="text-left px-4 py-3 font-semibold">Role Name</th>
+                  <th className="text-left px-4 py-3 font-semibold">Description</th>
+                  <th className="text-left px-4 py-3 font-semibold">Users</th>
+                  <th className="text-left px-4 py-3 font-semibold">Permissions</th>
+                  <th className="text-left px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roles.map((role) => (
+                  <tr key={role.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{role.name}</span>
+                        {role.isSystem && (
+                          <span className="px-2 py-0.5 bg-cyan-500 text-white rounded-full text-xs font-medium">System</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="truncate max-w-[300px]">{role.description}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 bg-gray-500 text-white rounded-full text-xs font-medium">{role.userCount} users</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {role.permissions.slice(0, 3).map((permission) => (
+                          <span key={permission} className="px-2 py-0.5 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-full text-xs">
+                            {getPermissionLabel(permission)}
+                          </span>
+                        ))}
+                        {role.permissions.length > 3 && (
+                          <span className="px-2 py-0.5 border border-gray-400 text-gray-500 rounded-full text-xs">
+                            +{role.permissions.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        <button className="p-1.5 border border-[var(--primary-color)] text-[var(--primary-color)] rounded hover:bg-blue-50 transition-colors" title="View Details">
+                          <i className="fas fa-eye text-xs"></i>
+                        </button>
+                        <button className="p-1.5 border border-gray-400 text-gray-500 rounded hover:bg-gray-50 transition-colors" title="Edit" disabled={role.isSystem}>
+                          <i className="fas fa-edit text-xs"></i>
+                        </button>
+                        <button className="p-1.5 border border-cyan-400 text-cyan-500 rounded hover:bg-cyan-50 transition-colors" title="Duplicate">
+                          <i className="fas fa-copy text-xs"></i>
+                        </button>
+                        <button
+                          className="p-1.5 border border-red-400 text-red-500 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+                          title="Delete"
+                          disabled={role.isSystem || role.userCount > 0}
+                          onClick={() => deleteRole(role.id)}
+                        >
+                          <i className="fas fa-trash text-xs"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       {/* Permissions Matrix */}
-      <Row>
-        <Col>
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0">Permissions Matrix</Card.Title>
-            </Card.Header>
-            <Card.Body>
-              <div className="table-responsive">
-                <Table className="mb-0" size="sm">
-                  <thead>
+      <div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-xl shadow-sm border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold m-0">Permissions Matrix</h5>
+          </div>
+          <div className="p-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <th className="text-left px-3 py-2 font-semibold">Permission</th>
+                  {roles.map((role) => (
+                    <th key={role.id} className="text-center px-3 py-2 font-semibold">
+                      {role.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {allPermissions.map((category) => (
+                  <React.Fragment key={category.category}>
                     <tr>
-                      <th>Permission</th>
-                      {roles.map((role) => (
-                        <th key={role.id} className="text-center">
-                          {role.name}
-                        </th>
-                      ))}
+                      <td colSpan={roles.length + 1} className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] px-3 py-2 font-bold">
+                        {category.category}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {allPermissions.map((category) => (
-                      <>
-                        <tr key={category.category}>
-                          <td colSpan={roles.length + 1} className="table-secondary fw-bold">
-                            {category.category}
+                    {category.permissions.map((permission) => (
+                      <tr key={permission.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <td className="px-3 py-2">
+                          <div>
+                            <div className="font-medium">{permission.label}</div>
+                            <small className="text-[var(--text-secondary)]">{permission.description}</small>
+                          </div>
+                        </td>
+                        {roles.map((role) => (
+                          <td key={role.id} className="text-center px-3 py-2">
+                            {role.permissions.includes(permission.id) ? (
+                              <i className="fas fa-check text-green-500"></i>
+                            ) : (
+                              <i className="fas fa-times text-gray-400"></i>
+                            )}
                           </td>
-                        </tr>
-                        {category.permissions.map((permission) => (
-                          <tr key={permission.id}>
-                            <td>
-                              <div>
-                                <div className="fw-medium">{permission.label}</div>
-                                <small className="text-muted">{permission.description}</small>
-                              </div>
-                            </td>
-                            {roles.map((role) => (
-                              <td key={role.id} className="text-center">
-                                {role.permissions.includes(permission.id) ? (
-                                  <i className="fas fa-check text-success"></i>
-                                ) : (
-                                  <i className="fas fa-times text-muted"></i>
-                                )}
-                              </td>
-                            ))}
-                          </tr>
                         ))}
-                      </>
+                      </tr>
                     ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       {/* Create Role Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Create New Role</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Role Name</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter role name"
-                value={currentRole.name}
-                onChange={(e) => setCurrentRole({ ...currentRole, name: e.target.value })}
-              />
-            </Form.Group>
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="text-lg font-semibold m-0">Create New Role</h5>
+              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-xl">×</button>
+            </div>
+            <div className="p-4">
+              <form>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Role Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter role name"
+                    value={currentRole.name}
+                    onChange={(e) => setCurrentRole({ ...currentRole, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all"
+                  />
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                placeholder="Describe this role"
-                value={currentRole.description}
-                onChange={(e) => setCurrentRole({ ...currentRole, description: e.target.value })}
-              />
-            </Form.Group>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Describe this role"
+                    value={currentRole.description}
+                    onChange={(e) => setCurrentRole({ ...currentRole, description: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all resize-vertical"
+                  ></textarea>
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Permissions</Form.Label>
-              <div className="border rounded p-3" style={{ maxHeight: "400px", overflowY: "auto" }}>
-                {allPermissions.map((category) => (
-                  <div key={category.category} className="mb-3">
-                    <h6 className="text-primary mb-2">{category.category}</h6>
-                    {category.permissions.map((permission) => (
-                      <Form.Check
-                        key={permission.id}
-                        type="checkbox"
-                        id={permission.id}
-                        label={
-                          <div>
-                            <div className="fw-medium">{permission.label}</div>
-                            <small className="text-muted">{permission.description}</small>
-                          </div>
-                        }
-                        checked={currentRole.permissions.includes(permission.id)}
-                        onChange={() => togglePermission(permission.id)}
-                        className="mb-2"
-                      />
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Permissions</label>
+                  <div className="border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg p-3 max-h-[400px] overflow-y-auto">
+                    {allPermissions.map((category) => (
+                      <div key={category.category} className="mb-3">
+                        <h6 className="text-[var(--primary-color)] mb-2 font-semibold">{category.category}</h6>
+                        {category.permissions.map((permission) => (
+                          <label key={permission.id} className="flex items-start gap-2 mb-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={currentRole.permissions.includes(permission.id)}
+                              onChange={() => togglePermission(permission.id)}
+                              className="mt-1 accent-[var(--primary-color)]"
+                            />
+                            <div>
+                              <div className="font-medium">{permission.label}</div>
+                              <small className="text-[var(--text-secondary)]">{permission.description}</small>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
                     ))}
                   </div>
-                ))}
-              </div>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSaveRole}>
-            Create Role
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+                </div>
+              </form>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveRole}
+                className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] transition-colors font-medium"
+              >
+                Create Role
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

@@ -1,6 +1,5 @@
 // src\pages\Auth\Login.jsx
 import { useState } from "react"
-import { Form, Button, Alert } from "react-bootstrap"
 import { useNavigate, Link } from "react-router-dom"
 import { FaEye, FaEyeSlash, FaSignInAlt } from "react-icons/fa"
 import axiosInstance from "../../api/axiosInstance"
@@ -31,11 +30,9 @@ const Login = () => {
 
       const user = data?.user;
       if (!user) {
-        // Server ne 2xx diya lekin expected shape nahi mila
         throw new Error(data?.message || "Malformed server response");
       }
 
-      // ✅ Active check
       if (!user.isActive) {
         Swal.fire({
           icon: "error",
@@ -46,19 +43,16 @@ const Login = () => {
         return;
       }
 
-      // ✅ Email verification check (DB flag)
       if (!user.isVerified) {
         Swal.fire({
           icon: "info",
           title: "Email Not Verified",
-          text:
-            "Your email is not verified. A verification link has been sent to your email. Kindly click the link to verify your account.",
+          text: "Your email is not verified. A verification link has been sent to your email. Kindly click the link to verify your account.",
           confirmButtonColor: "#0d6efd",
         });
         return;
       }
 
-      // ✅ Save & redirect
       localStorage.setItem("authUser", JSON.stringify(user));
       setUser(user);
 
@@ -72,7 +66,6 @@ const Login = () => {
       const rawMsg = err.response?.data?.message || err.message || "";
       const msg = rawMsg.toLowerCase();
 
-      // 🟦 Email not verified (server ne error status bheja ho)
       if (
         msg.includes("login verification required") ||
         msg.includes("email not verified") ||
@@ -82,26 +75,22 @@ const Login = () => {
         Swal.fire({
           icon: "info",
           title: "Email Not Verified",
-          text:
-            "Your email is not verified. A verification link has been sent to your email. Kindly click the link to verify your account.",
+          text: "Your email is not verified. A verification link has been sent to your email. Kindly click the link to verify your account.",
           confirmButtonColor: "#0d6efd",
         });
         return;
       }
 
-      // 🔴 User not found
       if (msg.includes("user not found")) {
         Swal.fire({
           icon: "error",
           title: "User Not Found",
-          text:
-            "No account found with this email. Please double-check or contact support.",
+          text: "No account found with this email. Please double-check or contact support.",
           confirmButtonColor: "#d33",
         });
         return;
       }
 
-      // 🔴 Invalid password
       if (msg.includes("invalid password")) {
         Swal.fire({
           icon: "error",
@@ -112,7 +101,6 @@ const Login = () => {
         return;
       }
 
-      // 🟠 Rate limit / too many attempts
       if (status === 429) {
         Swal.fire({
           icon: "warning",
@@ -123,7 +111,6 @@ const Login = () => {
         return;
       }
 
-      // 🔧 Server-side issue
       if (status >= 500) {
         Swal.fire({
           icon: "error",
@@ -134,7 +121,6 @@ const Login = () => {
         return;
       }
 
-      // 🛑 General fallback
       Swal.fire({
         icon: "error",
         title: "Login Failed",
@@ -152,76 +138,95 @@ const Login = () => {
       subtitle="Sign in to your RatePro account"
       icon={<FaSignInAlt className="text-white" size={28} />}
     >
-      {error && <Alert variant="danger">{error}</Alert>}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+          {error}
+        </div>
+      )}
 
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label className="text-sm sm:text-base fw-medium mb-2">Email Address</Form.Label>
-          <Form.Control
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className="block text-sm sm:text-base font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+            Email Address
+          </label>
+          <input
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="text-base py-2 px-3"
-            style={{ minHeight: "44px", fontSize: "16px" }}
+            className="w-full px-3 py-2.5 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                       bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]
+                       focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
+                       transition-all duration-200 text-base"
+            style={{ minHeight: "44px" }}
           />
-        </Form.Group>
+        </div>
 
-        <Form.Group className="mb-3">
-          <Form.Label className="text-sm sm:text-base fw-medium mb-2">Password</Form.Label>
-          <div className="position-relative">
-            <Form.Control
+        <div className="mb-4">
+          <label className="block text-sm sm:text-base font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+            Password
+          </label>
+          <div className="relative">
+            <input
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="text-base py-2 px-3 pe-5"
-              style={{ minHeight: "44px", fontSize: "16px" }}
+              className="w-full px-3 py-2.5 pr-12 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                         bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]
+                         focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
+                         transition-all duration-200 text-base"
+              style={{ minHeight: "44px" }}
             />
             <span
               onClick={() => setShowPassword(!showPassword)}
-              className="position-absolute top-50 end-0 translate-middle-y pe-3 d-flex align-items-center justify-content-center"
-              style={{ cursor: "pointer", color: "#6c757d", fontSize: "1.15rem", minWidth: "44px", minHeight: "44px" }}
+              className="absolute top-1/2 right-3 -translate-y-1/2 flex items-center justify-center
+                         cursor-pointer text-[var(--secondary-color)] text-lg w-11 h-11"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-        </Form.Group>
+        </div>
 
-        <Form.Group className="mb-3">
-          <Form.Check 
-            type="checkbox" 
-            label="Remember me" 
-            className="text-sm sm:text-base"
-            style={{ minHeight: "24px" }}
+        <div className="mb-4 flex items-center">
+          <input
+            type="checkbox"
+            id="remember-me"
+            className="w-4 h-4 rounded border-[var(--light-border)] text-[var(--primary-color)]
+                       focus:ring-[var(--primary-color)] cursor-pointer"
           />
-        </Form.Group>
+          <label htmlFor="remember-me" className="ml-2 text-sm sm:text-base text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer">
+            Remember me
+          </label>
+        </div>
 
-        <Button 
-          type="submit" 
-          variant="primary" 
-          className="w-100 mb-3 py-2 sm:py-3 text-base sm:text-lg fw-medium" 
+        <button
+          type="submit"
           disabled={loading}
+          className="w-full mb-3 py-2.5 sm:py-3 text-base sm:text-lg font-medium rounded-lg
+                     bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white
+                     transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
+                     focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2"
           style={{ minHeight: "48px" }}
         >
           {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Signing in...
-            </>
+            </span>
           ) : (
             "Sign In"
           )}
-        </Button>
+        </button>
 
         <div className="text-center">
-          <Link to="/forgot-password" className="text-decoration-none text-sm sm:text-base">
+          <Link to="/forgot-password" className="text-[var(--primary-color)] hover:underline text-sm sm:text-base no-underline">
             Forgot your password?
           </Link>
         </div>
-      </Form>
+      </form>
     </AuthLayout>
   )
 }

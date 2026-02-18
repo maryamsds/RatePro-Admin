@@ -27,7 +27,6 @@ import {
   updateTicketStatus,
   formatTicketForDisplay
 } from "../../api/ticketApi"
-import { Button } from "react-bootstrap";
 import { useAuth } from "../../context/AuthContext.jsx"
 import Swal from "sweetalert2"
 
@@ -64,13 +63,12 @@ const SupportTickets = ({ darkMode }) => {
         subject: ticket.subject,
         description: ticket.description,
         status: ticket.status,
-        // priority: ticket.priority,
         category: ticket.category,
         submittedBy: ticket.createdBy?.email || ticket.contactEmail,
         submittedByName: ticket.createdBy?.name || "Unknown",
         assignedTo: ticket.assignedTo?.name || "Unassigned",
         createdDate: new Date(ticket.createdAt).toLocaleString(),
-        lastUpdated: new Date(ticket.lastUpdated || ticket.updatedAt).toLocaleString(), // ✅ added support for lastUpdated
+        lastUpdated: new Date(ticket.lastUpdated || ticket.updatedAt).toLocaleString(),
         responseTime: ticket.daysSinceCreation ? `${ticket.daysSinceCreation}d` : "New",
         attachmentCount: ticket.attachmentCount || 0,
         ...formatTicketForDisplay(ticket)
@@ -99,9 +97,17 @@ const SupportTickets = ({ darkMode }) => {
   }, [pagination.page, pagination.limit, searchTerm, filterStatus])
 
   const getStatusBadge = (status) => {
-    const statusClass = status.toLowerCase().replace(" ", "-")
+    const statusColors = {
+      open: "bg-[var(--danger-color)]",
+      "in-progress": "bg-[var(--warning-color)]",
+      inprogress: "bg-[var(--warning-color)]",
+      resolved: "bg-[var(--success-color)]",
+      closed: "bg-gray-500",
+      pending: "bg-[var(--info-color)]",
+    }
+    const colorClass = statusColors[status.toLowerCase().replace(" ", "-")] || "bg-gray-500"
     return (
-      <span className={`status-badge status-${statusClass}`}>
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${colorClass} text-white`}>
         {status}
       </span>
     )
@@ -165,7 +171,7 @@ const SupportTickets = ({ darkMode }) => {
 
       // Update local state
       setTickets(prev => prev.map(ticket =>
-        ticket.id === id
+        ticket.id === ticketId
           ? { ...ticket, status: newStatus, lastUpdated: new Date().toLocaleString() }
           : ticket
       ))
@@ -194,33 +200,41 @@ const SupportTickets = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading support tickets...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-[var(--light-text)] dark:text-[var(--dark-text)]">Loading support tickets...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="support-tickets-container">
+    <div className="p-6 space-y-6">
       {/* Page Header */}
-      <div className="page-header-section">
-        <div className="page-header-content">
-          <div className="page-header-left">
-            <div className="page-header-icon">
-              <MdSupport />
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+              <MdSupport className="text-2xl text-blue-500" />
             </div>
-            <div className="page-header-text">
-              <h1>Support Tickets</h1>
-              <p>Manage customer support requests and issues</p>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Support Tickets</h1>
+              <p className="text-sm text-[var(--text-secondary)]">Manage customer support requests and issues</p>
             </div>
           </div>
-          <div className="page-header-actions">
-            <button className="secondary-action" onClick={() => window.location.reload()}>
+          <div className="flex gap-2">
+            <button 
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2"
+              onClick={() => window.location.reload()}
+            >
               <MdRefresh /> Refresh
             </button>
             {user.role !== "admin" && (
-              <button className="primary-action" onClick={() => navigate("/app/support/create")}>
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
+                onClick={() => navigate("/app/support/create")}
+              >
                 <MdAdd /> Create Ticket
               </button>
             )}
@@ -229,160 +243,146 @@ const SupportTickets = ({ darkMode }) => {
       </div>
 
       {/* Stats Section */}
-      <div className="stats-section">
-        <div className="stat-card stat-card-primary">
-          <div className="stat-icon">
-            <MdSupport />
-          </div>
-          <div className="stat-details">
-            <div className="stat-value">{tickets.length}</div>
-            <div className="stat-label">Total Tickets</div>
-          </div>
-        </div>
-        <div className="stat-card stat-card-danger">
-          <div className="stat-icon">
-            <MdAssignment />
-          </div>
-          <div className="stat-details">
-            <div className="stat-value">{tickets.filter((t) => t.status === "open").length}</div>
-            <div className="stat-label">Open Tickets</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+              <MdSupport className="text-2xl text-blue-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{tickets.length}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Total Tickets</p>
+            </div>
           </div>
         </div>
-        <div className="stat-card stat-card-warning">
-          <div className="stat-icon">
-            <MdSchedule />
-          </div>
-          <div className="stat-details">
-            <div className="stat-value">{tickets.filter((t) => t.status === "in-progress").length}</div>
-            <div className="stat-label">In Progress</div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center">
+              <MdAssignment className="text-2xl text-red-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{tickets.filter((t) => t.status === "open").length}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Open Tickets</p>
+            </div>
           </div>
         </div>
-        <div className="stat-card stat-card-success">
-          <div className="stat-icon">
-            <MdCheckCircle />
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-yellow-500/10 dark:bg-yellow-500/20 flex items-center justify-center">
+              <MdSchedule className="text-2xl text-yellow-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{tickets.filter((t) => t.status === "in-progress").length}</p>
+              <p className="text-sm text-[var(--text-secondary)]">In Progress</p>
+            </div>
           </div>
-          <div className="stat-details">
-            <div className="stat-value">{tickets.filter((t) => t.status === "resolved").length}</div>
-            <div className="stat-label">Resolved</div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+              <MdCheckCircle className="text-2xl text-green-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{tickets.filter((t) => t.status === "resolved").length}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Resolved</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters Section */}
-      <div className="filters-section">
-        <div className="search-input-container">
-          <MdSearch className="search-icon" />
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search tickets..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
+            <input
+              type="text"
+              className="w-full pl-10 pr-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+              placeholder="Search tickets..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="open">Open</option>
+            <option value="inprogress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="closed">Closed</option>
+            <option value="pending">Pending</option>
+          </select>
+          <button className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-2 whitespace-nowrap">
+            <MdFilterList /> More Filters
+          </button>
         </div>
-        <select
-          className="filter-select"
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
-          <option value="all">All Status</option>
-          <option value="open">Open</option>
-          <option value="inprogress">In Progress</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-          <option value="pending">Pending</option>
-        </select>
-        <button className="filter-button">
-          <MdFilterList /> More Filters
-        </button>
       </div>
 
       {/* Tickets Table */}
-      <div className="section-card">
-        <div className="section-header">
-          <h2>Support Tickets</h2>
-          <span className="section-count">{filteredTickets.length} ticket(s) found</span>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] overflow-hidden">
+        <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Support Tickets</h2>
+          <span className="text-sm text-[var(--text-secondary)]">{filteredTickets.length} ticket(s) found</span>
         </div>
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
               <tr>
-                <th>
-                  <div className="th-content">
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">
+                  <div className="flex items-center gap-2">
                     <MdSupport /> Ticket Details
                   </div>
                 </th>
-                <th>Status</th>
-                <th>
-                  <div className="th-content">
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Status</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">
+                  <div className="flex items-center gap-2">
                     <MdPerson /> Assigned To
                   </div>
                 </th>
-                <th>Response Time</th>
-                <th>Last Updated</th>
-                <th className="text-center">Actions</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Response Time</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Last Updated</th>
+                <th className="p-3 text-center text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
               {currentTickets.length > 0 ? (
                 currentTickets.map((ticket) => (
-                  <tr key={ticket.id}>
-                    <td onClick={() => navigate(`/app/support/${ticket.id}`)} style={{ cursor: "pointer" }}>
-                      <div className="ticket-details-cell">
-                        <div className="ticket-number">{ticket.ticketNumber}</div>
-                        <div className="ticket-subject">{ticket.subject}</div>
-                        <div className="ticket-submitter">{ticket.submittedBy}</div>
+                  <tr key={ticket.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                    <td className="p-3 cursor-pointer" onClick={() => navigate(`/app/support/${ticket.id}`)}>
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold text-[var(--primary-color)]">{ticket.ticketNumber}</div>
+                        <div className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{ticket.subject}</div>
+                        <div className="text-xs text-[var(--text-secondary)]">{ticket.submittedBy}</div>
                       </div>
                     </td>
-                    <td>{getStatusBadge(ticket.status)}</td>
-                    {/* <td>{getPriorityBadge(ticket.priority)}</td> */}
-                    <td className="ticket-assigned">{ticket.assignedTo}</td>
-                    <td className="ticket-time">{ticket.responseTime}</td>
-                    <td className="ticket-time">{ticket.lastUpdated}</td>
-                    <td>
-                      {/* <div className="ticket-actions">
-                        <div className="dropdown">
-                          <button className="action-menu-btn">
-                            <MdMoreVert />
-                          </button>
-                          <div className="dropdown-menu">
-                            <button className="dropdown-item" onClick={() => navigate(`/app/support/tickets/${ticket._id}`)}>
-                              <MdVisibility /> View Details
-                            </button>
-                          
-                            {/* <button className="dropdown-item">
-                              <MdAssignment /> Assign
-                            </button>
-                            <div className="dropdown-divider"></div>
-                            <button className="dropdown-item danger" onClick={() => handleDelete(ticket)}>
-                              <MdDelete /> Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div> */}
-                      <div className="action-buttons">
-                        <Button
-                          size="sm"
-                          variant="outline-primary"
+                    <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{getStatusBadge(ticket.status)}</td>
+                    <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{ticket.assignedTo}</td>
+                    <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{ticket.responseTime}</td>
+                    <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{ticket.lastUpdated}</td>
+                    <td className="p-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="p-1.5 border border-[var(--primary-color)] text-[var(--primary-color)] rounded hover:bg-blue-500/10 dark:hover:bg-blue-500/20 transition-colors"
                           onClick={() => navigate(`/app/support/tickets/${ticket._id}`)}
                         >
                           <MdVisibility />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline-danger"
+                        </button>
+                        <button
+                          className="p-1.5 border border-red-400 text-red-500 rounded hover:bg-red-500/10 dark:hover:bg-red-500/20 transition-colors"
                           onClick={() => handleDelete(ticket)}
                         >
                           <MdDelete />
-                        </Button>
-                        {/* text-danger */}
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="no-data">
+                  <td colSpan="7" className="p-6 text-center text-[var(--text-secondary)]">
                     No tickets found
                   </td>
                 </tr>
@@ -390,7 +390,7 @@ const SupportTickets = ({ darkMode }) => {
             </tbody>
           </table>
         </div>
-        <div className="table-footer">
+        <div className="p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <Pagination
             current={pagination.page}
             total={filteredTickets.length}
@@ -403,24 +403,33 @@ const SupportTickets = ({ darkMode }) => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="modal-container delete-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Confirm Delete</h2>
-              <button className="modal-close" onClick={() => setShowDeleteModal(false)}>
-                <MdClose />
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg shadow-xl max-w-md w-full border border-[var(--light-border)] dark:border-[var(--dark-border)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h2 className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Confirm Delete</h2>
+              <button 
+                className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                <MdClose className="text-2xl" />
               </button>
             </div>
-            <div className="modal-body">
-              <p>
+            <div className="p-6">
+              <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
                 Are you sure you want to delete ticket <strong>"{selectedTicket?.ticketNumber}"</strong>? This action cannot be undone.
               </p>
             </div>
-            <div className="modal-footer">
-              <button className="modal-button modal-button-secondary" onClick={() => setShowDeleteModal(false)}>
+            <div className="flex justify-end gap-3 p-6 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-gray-200 dark:hover:bg-gray-600"
+                onClick={() => setShowDeleteModal(false)}
+              >
                 Cancel
               </button>
-              <button className="modal-button modal-button-danger" onClick={confirmDelete}>
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--danger-color)] text-white hover:opacity-90 flex items-center gap-2"
+                onClick={confirmDelete}
+              >
                 <MdDelete /> Delete Ticket
               </button>
             </div>

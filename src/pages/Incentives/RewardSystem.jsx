@@ -2,7 +2,6 @@
 
 "use client"
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Modal } from "react-bootstrap"
 import {
   MdCardGiftcard,
   MdAdd,
@@ -92,28 +91,28 @@ const RewardSystem = ({ darkMode }) => {
   }, [])
 
   const getStatusBadge = (status) => {
-    const variants = {
-      Active: "success",
-      Paused: "warning",
-      Inactive: "secondary",
+    const colors = {
+      Active: "bg-green-100 text-green-800",
+      Paused: "bg-yellow-100 text-yellow-800",
+      Inactive: "bg-gray-100 text-gray-800",
     }
     return (
-      <Badge bg={variants[status] || "secondary"} className="badge-enhanced">
+      <span className={`badge-enhanced px-2 py-1 rounded text-xs font-medium ${colors[status] || "bg-gray-100 text-gray-800"}`}>
         {status}
-      </Badge>
+      </span>
     )
   }
 
   const getTypeBadge = (type) => {
-    const variants = {
-      Points: "primary",
-      "Gift Card": "info",
-      Cash: "success",
+    const colors = {
+      Points: "bg-blue-100 text-blue-800",
+      "Gift Card": "bg-cyan-100 text-cyan-800",
+      Cash: "bg-green-100 text-green-800",
     }
     return (
-      <Badge bg={variants[type] || "secondary"} className="badge-enhanced">
+      <span className={`badge-enhanced px-2 py-1 rounded text-xs font-medium ${colors[type] || "bg-gray-100 text-gray-800"}`}>
         {type}
-      </Badge>
+      </span>
     )
   }
 
@@ -144,7 +143,7 @@ const RewardSystem = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container d-flex justify-content-center align-items-center" style={{ height: "50vh" }}>
+      <div className="loading-container flex justify-content-center align-items-center" style={{ height: "50vh" }}>
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -153,97 +152,79 @@ const RewardSystem = ({ darkMode }) => {
   }
 
   return (
-    <Container fluid className="reward-system-container py-4 fade-in">
+    <div className="reward-system-container py-4 fade-in px-3">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center flex-wrap">
-            <div className="d-flex align-items-center">
-              <MdCardGiftcard size={32} className="text-primary me-3" />
-              <div>
-                <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Reward System</h2>
-                <p className="text-muted mb-0">Manage incentives and rewards for survey participants</p>
-              </div>
-            </div>
-            <div className="d-flex gap-2 mt-2 mt-md-0">
-              <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
-              <Button variant="primary" size="sm" className="btn-enhanced">
-                <MdAdd className="me-1" />
-                Create Reward
-              </Button>
+      <div className="mb-4">
+        <div className="flex justify-content-between align-items-center flex-wrap">
+          <div className="flex align-items-center">
+            <MdCardGiftcard size={32} className="text-primary me-3" />
+            <div>
+              <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Reward System</h2>
+              <p className="text-muted mb-0">Manage incentives and rewards for survey participants</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="flex gap-2 mt-2 mt-md-0">
+            <button className="btn btn-outline-primary btn-sm btn-enhanced">
+              <MdRefresh className="me-1" />
+              Refresh
+            </button>
+            <button className="btn btn-primary btn-sm btn-enhanced">
+              <MdAdd className="me-1" />
+              Create Reward
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--primary-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-              <MdCardGiftcard size={24} style={{ color: "var(--primary-color)" , marginRight: "8px" }} />
-              <>&nbsp;</>
+      <div className="row mb-4">
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--primary-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
+                <MdCardGiftcard size={24} style={{ color: "var(--primary-color)", marginRight: "8px" }} />
                 <div className="flex-grow-1">
                   <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Total Rewards</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>{rewards.length}</div>
                 </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--success-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <MdStar size={24} style={{ color: "var(--success-color)" , marginRight: "8px"  }} />
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--success-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
+                <MdStar size={24} style={{ color: "var(--success-color)", marginRight: "8px" }} />
                 <div className="flex-grow-1">
                   <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Active Rewards</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
                     {rewards.filter((r) => r.status === "Active").length}
                   </div>
                 </div>
-                
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--info-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <MdPeople size={24} style={{ color: "var(--info-color)" , marginRight: "8px" }} />
-                <>&nbsp;</>
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--info-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
+                <MdPeople size={24} style={{ color: "var(--info-color)", marginRight: "8px" }} />
                 <div className="flex-grow-1">
                   <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Total Claims</div>
                   <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
                     {rewards.reduce((sum, r) => sum + r.totalClaimed, 0)}
                   </div>
                 </div>
-                
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--warning-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-sm-6 col-lg-3 mb-3">
+          <div className="stat-card border-0 shadow-sm card-enhanced card" style={{ borderLeft: "4px solid var(--warning-color)" }}>
+            <div className="card-body">
+              <div className="flex align-items-center">
                 <MdAttachMoney size={24} style={{ color: "var(--warning-color)", marginRight: "8px" }} />
                 <div className="flex-grow-1">
                   <div className={`text-muted mb-1 ${darkMode ? "text-light" : ""}`}>Total Value</div>
@@ -251,155 +232,155 @@ const RewardSystem = ({ darkMode }) => {
                     ${rewards.reduce((sum, r) => sum + r.totalValue, 0).toLocaleString()}
                   </div>
                 </div>
-                
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="py-3">
-              <Row className="align-items-center">
-                <Col md={6} lg={4} className="mb-2 mb-md-0">
-                  <InputGroup className="form-enhanced">
-                    <InputGroup.Text>
-                      <MdSearch />
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search rewards..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
-                </Col>
-                <Col md={3} lg={2} className="mb-2 mb-md-0">
-                  <Form.Select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="form-enhanced"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="points">Points</option>
-                    <option value="giftcard">Gift Card</option>
-                    <option value="cash">Cash</option>
-                  </Form.Select>
-                </Col>
-                <Col md={3} lg={2}>
-                  <Button variant="outline-secondary" className="w-100 btn-enhanced">
-                    <MdFilterList className="me-1" />
-                    More Filters
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="mb-4">
+        <div className="border-0 shadow-sm card-enhanced card">
+          <div className="card-body py-3">
+            <div className="row align-items-center">
+              <div className="col-md-6 col-lg-4 mb-2 mb-md-0">
+                <div className="input-group form-enhanced">
+                  <span className="input-group-text">
+                    <MdSearch />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search rewards..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="col-md-3 col-lg-2 mb-2 mb-md-0">
+                <select
+                  className="form-select form-enhanced"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <option value="all">All Types</option>
+                  <option value="points">Points</option>
+                  <option value="giftcard">Gift Card</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+              <div className="col-md-3 col-lg-2">
+                <button className="btn btn-outline-secondary w-100 btn-enhanced">
+                  <MdFilterList className="me-1" />
+                  More Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Rewards Table */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0 table-enhanced" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th className="border-0 py-3 px-4">
-                        <div className="d-flex align-items-center">
-                          <MdCardGiftcard className="me-2" size={16} />
-                          Reward Details
+      <div className="border-0 shadow-sm card-enhanced card">
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table mb-0 table-enhanced table-hover">
+              <thead className="table-light">
+                <tr>
+                  <th className="border-0 py-3 px-4">
+                    <div className="flex align-items-center">
+                      <MdCardGiftcard className="me-2" size={16} />
+                      Reward Details
+                    </div>
+                  </th>
+                  <th className="border-0 py-3">Type</th>
+                  <th className="border-0 py-3">Value</th>
+                  <th className="border-0 py-3">Status</th>
+                  <th className="border-0 py-3">Claims</th>
+                  <th className="border-0 py-3">Total Value</th>
+                  <th className="border-0 py-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentRewards.map((reward) => (
+                  <tr key={reward.id}>
+                    <td className="py-3 px-4 border-0">
+                      <div>
+                        <div className={`fw-medium mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
+                          {reward.name}
                         </div>
-                      </th>
-                      <th className="border-0 py-3">Type</th>
-                      <th className="border-0 py-3">Value</th>
-                      <th className="border-0 py-3">Status</th>
-                      <th className="border-0 py-3">Claims</th>
-                      <th className="border-0 py-3">Total Value</th>
-                      <th className="border-0 py-3 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentRewards.map((reward) => (
-                      <tr key={reward.id}>
-                        <td className="py-3 px-4 border-0">
-                          <div>
-                            <div className={`fw-medium mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
-                              {reward.name}
-                            </div>
-                            <div className="small text-muted">{reward.description}</div>
-                          </div>
-                        </td>
-                        <td className="py-3 border-0">{getTypeBadge(reward.type)}</td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>
-                            {reward.type === "Points" ? `${reward.value} pts` : `$${reward.value}`}
-                          </span>
-                        </td>
-                        <td className="py-3 border-0">{getStatusBadge(reward.status)}</td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{reward.totalClaimed}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>
-                            ${reward.totalValue.toLocaleString()}
-                          </span>
-                        </td>
-                        <td className="py-3 text-center border-0">
-                          <div className="btn-group btn-group-sm">
-                            <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                              <MdEdit size={14} />
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              className="btn-enhanced"
-                              onClick={() => handleDelete(reward)}
-                            >
-                              <MdDelete size={14} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-              <div className="p-3 border-top">
-                <Pagination
-                  current={pagination.page}
-                  total={filteredRewards.length}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                  darkMode={darkMode}
-                />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                        <div className="small text-muted">{reward.description}</div>
+                      </div>
+                    </td>
+                    <td className="py-3 border-0">{getTypeBadge(reward.type)}</td>
+                    <td className="py-3 border-0">
+                      <span className={darkMode ? "text-white" : "text-dark"}>
+                        {reward.type === "Points" ? `${reward.value} pts` : `$${reward.value}`}
+                      </span>
+                    </td>
+                    <td className="py-3 border-0">{getStatusBadge(reward.status)}</td>
+                    <td className="py-3 border-0">
+                      <span className={darkMode ? "text-white" : "text-dark"}>{reward.totalClaimed}</span>
+                    </td>
+                    <td className="py-3 border-0">
+                      <span className={darkMode ? "text-white" : "text-dark"}>
+                        ${reward.totalValue.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="py-3 text-center border-0">
+                      <div className="btn-group btn-group-sm">
+                        <button className="btn btn-outline-primary btn-sm btn-enhanced">
+                          <MdEdit size={14} />
+                        </button>
+                        <button
+                          className="btn btn-outline-danger btn-sm btn-enhanced"
+                          onClick={() => handleDelete(reward)}
+                        >
+                          <MdDelete size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-3 border-top">
+            <Pagination
+              current={pagination.page}
+              total={filteredRewards.length}
+              limit={pagination.limit}
+              onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+              darkMode={darkMode}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered className="modal-enhanced">
-        <Modal.Header closeButton>
-          <Modal.Title className={darkMode ? "text-white" : "text-dark"}>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>Are you sure you want to delete "{selectedReward?.name}"? This action cannot be undone.</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="btn-enhanced">
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete} className="btn-enhanced">
-            Delete Reward
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {showDeleteModal && (
+        <div className="modal-enhanced">
+          <div className="modal-backdrop fade show" style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1040 }} onClick={() => setShowDeleteModal(false)}></div>
+          <div style={{ position: "fixed", inset: 0, zIndex: 1050, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div className={`modal-content rounded shadow ${darkMode ? "bg-dark text-white" : "bg-white"}`} style={{ maxWidth: "500px", width: "90%" }}>
+              <div className="modal-header border-bottom p-3 flex justify-content-between align-items-center">
+                <h5 className={`modal-title mb-0 ${darkMode ? "text-white" : "text-dark"}`}>Confirm Delete</h5>
+                <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+              </div>
+              <div className="modal-body p-3">Are you sure you want to delete "{selectedReward?.name}"? This action cannot be undone.</div>
+              <div className="modal-footer border-top p-3 flex justify-content-end gap-2">
+                <button className="btn btn-secondary btn-enhanced" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-danger btn-enhanced" onClick={confirmDelete}>
+                  Delete Reward
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

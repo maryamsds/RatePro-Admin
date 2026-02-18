@@ -1,9 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal } from "react-bootstrap"
 import { MdAdd, MdEdit, MdDelete, MdSave, MdCancel, MdSecurity } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
+
+const CATEGORY_COLORS = {
+  primary: { bg: 'bg-blue-500', text: 'text-blue-500', light: 'bg-blue-50' },
+  success: { bg: 'bg-green-500', text: 'text-green-500', light: 'bg-green-50' },
+  danger: { bg: 'bg-red-500', text: 'text-red-500', light: 'bg-red-50' },
+  info: { bg: 'bg-cyan-500', text: 'text-cyan-500', light: 'bg-cyan-50' },
+  secondary: { bg: 'bg-gray-500', text: 'text-gray-500', light: 'bg-gray-50' },
+  warning: { bg: 'bg-yellow-500', text: 'text-yellow-700', light: 'bg-yellow-50' },
+}
 
 const PermissionManagement = () => {
   const [permissions, setPermissions] = useState([])
@@ -18,11 +26,9 @@ const PermissionManagement = () => {
     isSystem: false,
   })
 
-  // category-wise pagination state
   const [paginationStates, setPaginationStates] = useState({})
 
   useEffect(() => {
-    // Simulate loading data
     setTimeout(() => {
       const loadedCategories = [
         { id: "content", name: "Content Management", color: "primary" },
@@ -44,7 +50,6 @@ const PermissionManagement = () => {
       ]
       setPermissions(loadedPermissions)
 
-      // Initialize pagination per category
       const paginations = {}
       loadedCategories.forEach((category) => {
         const total = loadedPermissions.filter((perm) => perm.category === category.id).length
@@ -94,7 +99,6 @@ const PermissionManagement = () => {
       }
       setPermissions([...permissions, newPermission])
 
-      // Update pagination total
       setPaginationStates((prev) => {
         const prevTotal = prev[formData.category]?.total || 0
         return {
@@ -111,7 +115,6 @@ const PermissionManagement = () => {
       const permissionToDelete = permissions.find((p) => p.id === permissionId)
       setPermissions(permissions.filter((p) => p.id !== permissionId))
 
-      // Decrement total in pagination state
       setPaginationStates((prev) => {
         const prevTotal = prev[permissionToDelete.category]?.total || 1
         return {
@@ -125,7 +128,7 @@ const PermissionManagement = () => {
     }
   }
 
-  const getCategoryInfo = (categoryId) => categories.find((cat) => cat.id === categoryId) || { name: "Unknown", color: "secondary" }
+  const getCategoryColor = (color) => CATEGORY_COLORS[color] || CATEGORY_COLORS.secondary
 
   const getPaginatedPermissions = (categoryId) => {
     const { page, limit } = paginationStates[categoryId] || { page: 1, limit: 2 }
@@ -136,151 +139,151 @@ const PermissionManagement = () => {
 
   if (loading) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status"></div>
-          <p>Loading permissions...</p>
-        </div>
-      </Container>
+      <div className="w-full py-12 text-center">
+        <div className="w-8 h-8 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p className="text-[var(--text-secondary)]">Loading permissions...</p>
+      </div>
     )
   }
 
   return (
-    <Container fluid className="py-4">
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">Permission Management</h1>
-              <p className="text-muted mb-0">Manage system permissions and access controls</p>
-            </div>
-            <Button variant="primary" onClick={handleCreatePermission}>
-              <MdAdd className="me-2" />
-              Create Permission
-            </Button>
-          </div>
-        </Col>
-      </Row>
+    <div className="w-full py-4 px-4">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h1 className="text-xl font-bold mb-1">Permission Management</h1>
+          <p className="text-[var(--text-secondary)] mb-0">Manage system permissions and access controls</p>
+        </div>
+        <button onClick={handleCreatePermission} className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] transition-colors font-medium inline-flex items-center gap-2">
+          <MdAdd />
+          Create Permission
+        </button>
+      </div>
 
-      <Row className="g-4 mb-4">
-        {categories.map((category) => (
-          <Col key={category.id} xs={12} sm={6} lg={3}>
-            <Card className="h-100 border-0 shadow-sm">
-              <Card.Body className="text-center">
-                <div className={`text-${category.color} mb-2`}>
-                  <MdSecurity size={32} />
-                </div>
-                <h5>{category.name}</h5>
-                <p className="text-muted">{(paginationStates[category.id]?.total || 0)} permissions</p>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {categories.map((category) => {
+          const colors = getCategoryColor(category.color)
+          return (
+            <div key={category.id} className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-xl shadow-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] p-4 text-center">
+              <div className={`${colors.text} mb-2`}>
+                <MdSecurity size={32} />
+              </div>
+              <h5 className="font-semibold">{category.name}</h5>
+              <p className="text-[var(--text-secondary)]">{(paginationStates[category.id]?.total || 0)} permissions</p>
+            </div>
+          )
+        })}
+      </div>
 
       {categories.map((category) => {
         const perms = permissions.filter((p) => p.category === category.id)
         if (perms.length === 0) return null
 
         const paginatedPerms = getPaginatedPermissions(category.id)
+        const colors = getCategoryColor(category.color)
 
         return (
-          <Card key={category.id} className="mb-4 border-0 shadow-sm">
-            <Card.Header className="bg-transparent">
-              <div className="d-flex align-items-center">
-                <Badge bg={category.color} className="me-2">{category.name}</Badge>
-                <span className="text-muted">({perms.length} permissions)</span>
-              </div>
-            </Card.Header>
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table hover className="mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Permission</th>
-                      <th>Description</th>
-                      <th>Used in Roles</th>
-                      <th>Type</th>
-                      <th className="text-center">Actions</th>
+          <div key={category.id} className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-xl shadow-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-4">
+            <div className="flex items-center gap-2 p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <span className={`px-2 py-0.5 text-white rounded-full text-xs font-medium ${colors.bg}`}>{category.name}</span>
+              <span className="text-[var(--text-secondary)]">({perms.length} permissions)</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold">Permission</th>
+                    <th className="text-left px-4 py-3 font-semibold">Description</th>
+                    <th className="text-left px-4 py-3 font-semibold">Used in Roles</th>
+                    <th className="text-left px-4 py-3 font-semibold">Type</th>
+                    <th className="text-center px-4 py-3 font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedPerms.map((permission) => (
+                    <tr key={permission.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{permission.displayName}</div>
+                        <small className="text-[var(--text-secondary)] font-mono">{permission.name}</small>
+                      </td>
+                      <td className="px-4 py-3">{permission.description}</td>
+                      <td className="px-4 py-3"><span className="px-2 py-0.5 bg-blue-500 text-white rounded-full text-xs font-medium">{permission.usedInRoles} roles</span></td>
+                      <td className="px-4 py-3">{permission.isSystem ? <span className="px-2 py-0.5 bg-yellow-500 text-white rounded-full text-xs font-medium">System</span> : <span className="px-2 py-0.5 bg-gray-500 text-white rounded-full text-xs font-medium">Custom</span>}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center gap-1">
+                          <button disabled={permission.isSystem} onClick={() => handleEditPermission(permission)} className="p-1.5 border border-blue-400 text-blue-500 rounded hover:bg-blue-50 transition-colors disabled:opacity-50">
+                            <MdEdit size={16} />
+                          </button>
+                          <button disabled={permission.isSystem || permission.usedInRoles > 0} onClick={() => handleDeletePermission(permission.id)} className="p-1.5 border border-red-400 text-red-500 rounded hover:bg-red-50 transition-colors disabled:opacity-50">
+                            <MdDelete size={16} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedPerms.map((permission) => (
-                      <tr key={permission.id}>
-                        <td>
-                          <div className="fw-medium">{permission.displayName}</div>
-                          <small className="text-muted font-monospace">{permission.name}</small>
-                        </td>
-                        <td>{permission.description}</td>
-                        <td><Badge bg="primary">{permission.usedInRoles} roles</Badge></td>
-                        <td>{permission.isSystem ? <Badge bg="warning">System</Badge> : <Badge bg="secondary">Custom</Badge>}</td>
-                        <td>
-                          <div className="d-flex justify-content-center gap-1">
-                            <Button size="sm" variant="outline-primary" disabled={permission.isSystem} onClick={() => handleEditPermission(permission)}>
-                              <MdEdit />
-                            </Button>
-                            <Button size="sm" variant="outline-danger" disabled={permission.isSystem || permission.usedInRoles > 0} onClick={() => handleDeletePermission(permission.id)}>
-                              <MdDelete />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-              <div className="p-3">
-                <Pagination
-                  current={paginationStates[category.id]?.page || 1}
-                  total={paginationStates[category.id]?.total || 0}
-                  limit={paginationStates[category.id]?.limit || 2}
-                  onChange={(page) =>
-                    setPaginationStates((prev) => ({
-                      ...prev,
-                      [category.id]: {
-                        ...prev[category.id],
-                        page,
-                      },
-                    }))
-                  }
-                />
-              </div>
-            </Card.Body>
-          </Card>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-3">
+              <Pagination
+                current={paginationStates[category.id]?.page || 1}
+                total={paginationStates[category.id]?.total || 0}
+                limit={paginationStates[category.id]?.limit || 2}
+                onChange={(page) =>
+                  setPaginationStates((prev) => ({
+                    ...prev,
+                    [category.id]: {
+                      ...prev[category.id],
+                      page,
+                    },
+                  }))
+                }
+              />
+            </div>
+          </div>
         )
       })}
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingPermission ? "Edit Permission" : "Create Permission"}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Permission Name</Form.Label>
-              <Form.Control type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control as="textarea" rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Category</Form.Label>
-              <Form.Select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
-                <option value="">Select category</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}><MdCancel className="me-2" />Cancel</Button>
-          <Button variant="primary" onClick={handleSavePermission}><MdSave className="me-2" />{editingPermission ? "Update" : "Create"}</Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="text-lg font-semibold m-0">{editingPermission ? "Edit Permission" : "Create Permission"}</h5>
+              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-xl">×</button>
+            </div>
+            <div className="p-4">
+              <form>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Permission Name</label>
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all" />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea rows={3} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all resize-y" />
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium mb-1">Category</label>
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all">
+                    <option value="">Select category</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </form>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors font-medium inline-flex items-center gap-2">
+                <MdCancel /> Cancel
+              </button>
+              <button onClick={handleSavePermission} className="px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] transition-colors font-medium inline-flex items-center gap-2">
+                <MdSave /> {editingPermission ? "Update" : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

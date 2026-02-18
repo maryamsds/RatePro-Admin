@@ -1,612 +1,7 @@
-// // rateProAdmin/src/pages/Surveys/SurveyList.jsx
-// "use client"
-// import { useState, useEffect } from "react"
-// import { Container, Row, Col, Table, Button, Form, InputGroup, Modal, Spinner, Alert } from "react-bootstrap"
-// import {
-//   MdAdd,
-//   MdEdit,
-//   MdDelete,
-//   MdFileDownload,
-//   MdFileUpload,
-//   MdSearch,
-//   MdAssignment,
-//   MdSort,
-//   MdArrowDropUp,
-//   MdArrowDropDown,
-//   MdErrorOutline,
-//   MdBarChart,
-//   MdToggleOn,
-//   MdToggleOff,
-//   MdShare,
-//   MdVisibility,
-//   MdFeedback
-// } from "react-icons/md"
-// import Pagination from "../../components/Pagination/Pagination.jsx"
-// import axiosInstance from "../../api/axiosInstance.js"
-// import Swal from "sweetalert2"
-// import { useAuth } from "../../context/AuthContext"
-// import { useNavigate } from "react-router-dom"
-
-
-// const SurveyList = ({ darkMode }) => {
-//   const navigate = useNavigate();
-//   const { setGlobalLoading, user } = useAuth();
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [currentPage, setCurrentPage] = useState(1)
-//   const [itemsPerPage, setItemsPerPage] = useState(10)
-//   const [totalItems, setTotalItems] = useState(0)
-//   const [searchTerm, setSearchTerm] = useState("")
-//   const [filterStatus, setFilterStatus] = useState("all")
-//   const [showDeleteModal, setShowDeleteModal] = useState(false)
-//   const [selectedSurvey, setSelectedSurvey] = useState(null)
-//   const [sortField, setSortField] = useState("-createdAt")
-//   const [surveys, setSurveys] = useState([])
-
-//   const handleEdit = (surveyId) => {
-//     navigate(`/app/surveys/builder/edit/${surveyId}`);
-//   };
-
-//   const handleAnalytics = (surveyId) => {
-//     navigate(`/app/surveys/${surveyId}/analytics`);
-//   };
-
-//   const handleDistribution = (surveyId) => {
-//     navigate(`/app/surveys/${surveyId}/distribution`);
-//   };
-
-//   const handleDelete = (survey) => {
-//     setSelectedSurvey(survey)
-//     setShowDeleteModal(true)
-//   }
-
-//   const handleViewSurvey = (id) => {
-//     navigate(`/app/surveys/detail/${id}`);
-//   };
-
-//   const handleFeedback = (id) => {
-//     navigate(`/app/surveys/responses/${id}`);
-//   };
-
-//   // Fetch surveys with filters and pagination
-//   const fetchSurveys = async () => {
-//     try {
-//       setLoading(true);
-//       setError(null);
-//       setGlobalLoading(true);
-
-//       const params = new URLSearchParams({
-//         page: currentPage,
-//         limit: itemsPerPage,
-//         sort: sortField,
-//       });
-
-//       // ✅ Add tenant only if user is NOT admin
-//       if (user?.role !== "admin" && user?.tenant) {
-//         params.append("tenant", user.tenant);
-//       }
-
-//       // Optional: if user is not admin and has no tenant, show error
-//       if (user?.role !== "admin" && !user?.tenant) {
-//         setError("No tenant associated with your account");
-//         setLoading(false);
-//         setGlobalLoading(false);
-//         return;
-//       }
-
-//       if (searchTerm) params.append("search", searchTerm);
-//       if (filterStatus !== "all") params.append("status", filterStatus);
-
-//       const response = await axiosInstance.get(`/surveys?${params}`);
-//       console.log("Fetched surveys:", response.data);
-//       setSurveys(response.data.surveys);
-//       setTotalItems(response.data.total);
-//     } catch (err) {
-//       console.error("Error fetching surveys:", err);
-//       const errorMessage =
-//         err.response?.status === 403
-//           ? "You do not have permission to view these surveys. Please contact your administrator."
-//           : err.response?.data?.message || "Failed to load surveys";
-
-//       setError(errorMessage);
-
-//       Swal.fire({
-//         icon: "error",
-//         title: "Error Loading Surveys",
-//         text: errorMessage,
-//         confirmButtonColor: "#dc3545",
-//         showConfirmButton: err.response?.status !== 403,
-//       });
-//     } finally {
-//       setLoading(false);
-//       setGlobalLoading(false);
-//     }
-//   };
-
-//   // Toggle survey status
-//   const toggleStatus = async (surveyId, currentStatus) => {
-//     try {
-//       setGlobalLoading(true);
-//       const newStatus = currentStatus.toLowerCase() === 'active' ? 'inactive' : 'active';
-
-//       await axiosInstance.put(`/surveys/toggle/${surveyId}`, {
-//         status: newStatus
-//       });
-
-//       // Optimistically update UI
-//       setSurveys(surveys.map(s =>
-//         s._id === surveyId
-//           ? { ...s, status: newStatus }
-//           : s
-//       ));
-
-//       Swal.fire({
-//         icon: 'success',
-//         title: 'Status Updated',
-//         text: `Survey is now ${newStatus}`,
-//         confirmButtonColor: '#198754',
-//         timer: 1500
-//       });
-//     } catch (err) {
-//       console.error('Error toggling status:', err);
-//       Swal.fire({
-//         icon: 'error',
-//         title: 'Status Update Failed',
-//         text: err.response?.data?.message || 'Failed to update survey status',
-//         confirmButtonColor: '#dc3545'
-//       });
-//     } finally {
-//       setGlobalLoading(false);
-//     }
-//   };
-
-//   // Delete survey
-//   const confirmDelete = async () => {
-//     try {
-//       setGlobalLoading(true);
-//       await axiosInstance.delete(`/surveys/${selectedSurvey._id}`);
-
-//       // Update local state
-//       setSurveys(surveys.filter(s => s._id !== selectedSurvey._id));
-//       setShowDeleteModal(false);
-//       setSelectedSurvey(null);
-
-//       Swal.fire({
-//         icon: 'success',
-//         title: 'Survey Deleted',
-//         text: 'The survey has been successfully deleted',
-//         confirmButtonColor: '#198754',
-//         timer: 1500
-//       });
-//     } catch (err) {
-//       console.error('Error deleting survey:', err);
-//       Swal.fire({
-//         icon: 'error',
-//         title: 'Delete Failed',
-//         text: err.response?.data?.message || 'Failed to delete survey',
-//         confirmButtonColor: '#dc3545'
-//       });
-//     } finally {
-//       setGlobalLoading(false);
-//     }
-//   };
-
-//   // Effect to fetch surveys when filters/pagination change
-//   useEffect(() => {
-//     const debounceTimer = setTimeout(() => {
-//       fetchSurveys();
-//       console.log("Fetching surveys with params:", {
-//         currentPage,
-//         itemsPerPage,
-//         searchTerm,
-//         filterStatus,
-//         sortField
-//       });
-//     }, searchTerm ? 500 : 0); // Debounce search
-
-//     return () => clearTimeout(debounceTimer);
-//   }, [currentPage, itemsPerPage, searchTerm, filterStatus, sortField]);
-
-//   const getSortIcon = (field) => {
-//     if (sortField === field) return MdArrowDropUp;
-//     if (sortField === `-${field}`) return MdArrowDropDown;
-//     return MdSort;
-//   };
-
-//   return (
-//     <Container fluid className="survey-list-container">
-//       {/* Header Section */}
-//       <div className="survey-header-card">
-//         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-//           <div>
-//             <h1 className="survey-header-title">
-//               <MdAssignment />
-//               Surveys
-//             </h1>
-//             <p className="survey-header-subtitle">Create and manage your feedback surveys</p>
-//           </div>
-//           <div className="d-flex gap-2 flex-wrap">
-//             <Button
-//               className="survey-btn-outline"
-//               onClick={() => {
-//                 Swal.fire({
-//                   title: 'Import Survey',
-//                   html: `
-//                     <input type="file" accept=".json" class="form-control" id="surveyImport">
-//                   `,
-//                   showCancelButton: true,
-//                   confirmButtonText: 'Import',
-//                   confirmButtonColor: 'var(--primary-color)',
-//                   cancelButtonColor: '#6c757d'
-//                 });
-//               }}
-//             >
-//               <MdFileUpload />
-//               Import
-//             </Button>
-//             <Button
-//               className="survey-btn-primary"
-//               onClick={() => navigate("/app/surveys/create")}
-//             >
-//               <MdAdd />
-//               Create Survey
-//             </Button>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Filter Section */}
-//       <div className="survey-filter-card">
-//         <div className="card-body">
-//           <Row className="g-3">
-//             <Col lg={5}>
-//               <InputGroup>
-//                 <InputGroup.Text className="survey-search-icon">
-//                   <MdSearch />
-//                 </InputGroup.Text>
-//                 <Form.Control
-//                   type="text"
-//                   placeholder="Search surveys by title, description..."
-//                   value={searchTerm}
-//                   onChange={(e) => setSearchTerm(e.target.value)}
-//                   className="survey-search-input border-start-0"
-//                 />
-//               </InputGroup>
-//             </Col>
-//             <Col lg={3}>
-//               <Form.Select
-//                 value={filterStatus}
-//                 onChange={(e) => setFilterStatus(e.target.value)}
-//                 className="survey-select"
-//               >
-//                 <option value="all">All Statuses</option>
-//                 <option value="active">Active Surveys</option>
-//                 <option value="completed">Completed Surveys</option>
-//                 <option value="draft">Draft Surveys</option>
-//                 <option value="paused">Paused Surveys</option>
-//               </Form.Select>
-//             </Col>
-//             <Col lg={4}>
-//               <div className="d-flex gap-2">
-//                 <Button className="survey-btn-outline flex-grow-1">
-//                   <MdSearch />
-//                   Advanced Filters
-//                 </Button>
-//                 <Button
-//                   className="survey-btn-outline"
-//                   onClick={() => {
-//                     Swal.fire({
-//                       title: 'Export Surveys',
-//                       text: 'Choose export format',
-//                       icon: 'info',
-//                       showDenyButton: true,
-//                       confirmButtonText: 'Export as PDF',
-//                       denyButtonText: 'Export as Excel',
-//                       confirmButtonColor: 'var(--primary-color)',
-//                       denyButtonColor: '#198754'
-//                     });
-//                   }}
-//                 >
-//                   <MdFileDownload />
-//                   Export
-//                 </Button>
-//               </div>
-//             </Col>
-//           </Row>
-//         </div>
-//       </div>
-
-//       {/* Survey Table */}
-//       <div className="survey-table-card">
-//         <div className="card-body">
-//           {error ? (
-//             <div className="error-state">
-//               <MdErrorOutline size={48} />
-//               <p className="mb-3">{error}</p>
-//               <Button
-//                 className="survey-btn-primary"
-//                 size="sm"
-//                 onClick={fetchSurveys}
-//               >
-//                 <MdErrorOutline className="me-2" />
-//                 Try Again
-//               </Button>
-//             </div>
-//           ) : surveys.length === 0 ? (
-//             <div className="empty-state">
-//               <i className="fas fa-clipboard-list"></i>
-//               <h5>No surveys found</h5>
-//               <p>Create your first survey to get started</p>
-//               <Button
-//                 className="survey-btn-primary"
-//                 onClick={() => navigate("/app/surveys/create")}
-//               >
-//                 <i className="fas fa-plus"></i>
-//                 Create Your First Survey
-//               </Button>
-//             </div>
-//           ) : (
-//             <div className="table-responsive survey-table-responsive">
-//               <Table className="survey-table">
-//                 <thead>
-//                   <tr>
-//                     <th
-//                       onClick={() =>
-//                         setSortField(sortField === "title" ? "-title" : "title")
-//                       }
-//                       style={{ cursor: "pointer" }}
-//                     >
-//                       Title
-//                       {(() => {
-//                         const Icon = getSortIcon("title");
-//                         return <Icon className="ms-2" />;
-//                       })()}
-//                     </th>
-//                     <th>Description</th>
-//                     <th
-//                       onClick={() =>
-//                         setSortField(sortField === "status" ? "-status" : "status")
-//                       }
-//                       style={{ cursor: "pointer" }}
-//                     >
-//                       Status
-//                       {(() => {
-//                         const Icon = getSortIcon("status");
-//                         return <Icon className="ms-2" />;
-//                       })()}
-//                     </th>
-//                     <th
-//                       onClick={() =>
-//                         setSortField(
-//                           sortField === "createdAt" ? "-createdAt" : "createdAt"
-//                         )
-//                       }
-//                       style={{ cursor: "pointer" }}
-//                     >
-//                       Created At
-//                       {(() => {
-//                         const Icon = getSortIcon("createdAt");
-//                         return <Icon className="ms-2" />;
-//                       })()}
-//                     </th>
-//                     <th className="text-end">Actions</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {surveys.length > 0 ? (
-//                     surveys.map((survey) => (
-//                       <tr key={survey._id}>
-//                         <td>{survey.title}</td>
-//                         <td>{survey.description}</td>
-//                         <td>
-//                           <span
-//                             className={`status-badge ${survey.status.toLowerCase()}`}
-//                           >
-//                             {survey.status}
-//                           </span>
-//                         </td>
-//                         <td>
-//                           {new Date(survey.createdAt).toLocaleDateString("en-US", {
-//                             year: "numeric",
-//                             month: "short",
-//                             day: "numeric",
-//                           })}
-//                         </td>
-//                         <td className="text-end">
-//                           <Button
-//                             variant="link"
-//                             className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
-//                               }`}
-//                             onClick={() => toggleStatus(survey._id, survey.status)}
-//                             title={`${survey.status === "active" ? "Deactivate" : "Activate"
-//                               } Survey`}
-//                           >
-//                             {survey.status.toLowerCase() === "active" ? (
-//                               <MdToggleOn size={20} />
-//                             ) : (
-//                               <MdToggleOff size={20} />
-//                             )}
-//                           </Button>
-
-//                           {/* Edit Button — show only if NOT admin */}
-//                           {user?.role !== "admin" && (
-//                             <Button
-//                               variant="link"
-//                               className="action-btn edit me-2"
-//                               onClick={() => handleEdit(survey._id)}
-//                               title="Edit Survey"
-//                             >
-//                               <MdEdit size={20} />
-//                             </Button>
-//                           )}
-
-//                           {/* Analytics */}
-//                           {survey.status !== "draft" && (
-//                           <Button
-//                             variant="link"
-//                             className="action-btn analytics me-2"
-//                             onClick={() => handleAnalytics(survey._id)}
-//                             title="View Analytics"
-//                           >
-//                             <MdBarChart size={20} />
-//                           </Button>
-//                           )}
-//                           {/* Distribution */}
-//                           {survey.status !== "inactive" && survey.status !== "draft" && (
-//                           <Button
-//                             variant="link"
-//                             className="action-btn distribution me-2"
-//                             onClick={() => handleDistribution(survey._id)}
-//                             title="Distribution & QR Codes"
-//                           >
-//                             <MdShare size={20} />
-//                           </Button>
-//                           )}
-//                           {/* Delete Button — show only if NOT admin */}
-//                           {user?.role !== "admin" && (
-//                             <Button
-//                               variant="link"
-//                               className="action-btn delete me-2"
-//                               onClick={() => handleDelete(survey)}
-//                               title="Delete Survey"
-//                             >
-//                               <MdDelete size={20} />
-//                             </Button>
-//                           )}
-
-//                           {/* View Survey */}
-//                           <Button
-//                             variant="link"
-//                             className="action-btn view me-2"
-//                             onClick={() => handleViewSurvey(survey._id)}
-//                             title="View Survey Details"
-//                           >
-//                             <MdVisibility size={20} />
-//                           </Button>
-
-//                           {/* Feedback */}
-//                           {survey.status !== "draft" && (
-//                           <Button
-//                             variant="link"
-//                             className="action-btn feedback"
-//                             onClick={() => handleFeedback(survey._id)}
-//                             title="View Survey Feedback"
-//                           >
-//                             <MdFeedback size={20} />
-//                           </Button>
-//                           )}
-//                         </td>
-//                       </tr>
-//                     ))
-//                   ) : (
-//                     <tr>
-//                       <td colSpan="5">
-//                         <div className="empty-state">
-//                           <MdAssignment className="empty-state-icon" />
-//                           <h5>No surveys found</h5>
-//                           <p className="text-muted">
-//                             Create your first survey to get started
-//                           </p>
-//                           <Button
-//                             variant="primary"
-//                             onClick={() => navigate("/surveys/create")}
-//                             className="mt-3"
-//                           >
-//                             <MdAdd className="me-2" />
-//                             Create Survey
-//                           </Button>
-//                         </div>
-//                       </td>
-//                     </tr>
-//                   )}
-//                 </tbody>
-//               </Table>
-//             </div>
-//           )}
-//         </div>
-//         <div className="survey-table-footer">
-//           <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-//             <div className="d-flex align-items-center gap-3 w-100 justify-content-between">
-//               <small className="pagination-info">
-//                 Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{" "}
-//                 {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} surveys
-//               </small>
-//               <Form.Select
-//                 size="sm"
-//                 value={itemsPerPage}
-//                 onChange={(e) => {
-//                   setItemsPerPage(Number(e.target.value));
-//                   setCurrentPage(1);
-//                 }}
-//                 className="per-page-select"
-//               >
-//                 <option value="10">10 per page</option>
-//                 <option value="25">25 per page</option>
-//                 <option value="50">50 per page</option>
-//                 <option value="100">100 per page</option>
-//               </Form.Select>
-//             </div>
-//             <div>
-//               <Pagination
-//                 current={currentPage}
-//                 total={totalItems}
-//                 limit={itemsPerPage}
-//                 onChange={(page) => setCurrentPage(page)}
-//                 darkMode={darkMode}
-//               />
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-
-//       {/* Delete Confirmation Modal */}
-//       <Modal
-//         show={showDeleteModal}
-//         onHide={() => setShowDeleteModal(false)}
-//         centered
-//         className="survey-delete-modal"
-//       >
-//         <Modal.Header closeButton>
-//           <Modal.Title>
-//             <i className="fas fa-exclamation-triangle me-2"></i>
-//             Confirm Delete
-//           </Modal.Title>
-//         </Modal.Header>
-//         <Modal.Body>
-//           <p>Are you sure you want to delete the survey "<strong>{selectedSurvey?.title}</strong>"?</p>
-//           <Alert variant="warning" className="mb-0">
-//             <i className="fas fa-exclamation-circle me-2"></i>
-//             This action cannot be undone. All survey responses and analytics will be permanently deleted.
-//           </Alert>
-//         </Modal.Body>
-//         <Modal.Footer>
-//           <Button
-//             variant="light"
-//             onClick={() => setShowDeleteModal(false)}
-//             className="px-4"
-//           >
-//             Cancel
-//           </Button>
-//           <Button
-//             variant="danger"
-//             onClick={confirmDelete}
-//             className="px-4"
-//           >
-//             <i className="fas fa-trash me-2"></i>
-//             Delete Survey
-//           </Button>
-//         </Modal.Footer>
-//       </Modal>
-//     </Container>
-//   )
-// }
-
-// export default SurveyList
 // rateProAdmin/src/pages/Surveys/SurveyList.jsx
 "use client"
 import { useState, useEffect } from "react"
-import { Container, Row, Col, Table, Button, Form, InputGroup, Modal, Spinner, Alert } from "react-bootstrap"
+// react-bootstrap removed — using native HTML + Bootstrap 5 classes
 import {
   MdAdd,
   MdEdit,
@@ -824,20 +219,21 @@ const SurveyList = ({ darkMode }) => {
   };
 
   return (
-    <Container fluid className="survey-list-container">
+    <div className="p-4 space-y-6">
       {/* Header Section */}
-      <div className="survey-header-card">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div>
-            <h1 className="survey-header-title">
+            <h1 className="text-2xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] flex items-center gap-2">
               <MdAssignment />
               Surveys
             </h1>
-            <p className="survey-header-subtitle">Create and manage your feedback surveys</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">Create and manage your feedback surveys</p>
           </div>
-          <div className="d-flex gap-2 flex-wrap">
-            <Button
-              className="survey-btn-outline"
+          <div className="flex gap-2 flex-wrap">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-2"
               onClick={() => {
                 Swal.fire({
                   title: 'Import Survey',
@@ -853,137 +249,142 @@ const SurveyList = ({ darkMode }) => {
             >
               <MdFileUpload />
               Import
-            </Button>
-            <Button
-              className="survey-btn-primary"
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
               onClick={() => navigate("/app/surveys/create")}
             >
               <MdAdd />
               Create Survey
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Filter Section */}
-      <div className="survey-filter-card">
-        <div className="card-body">
-          <Row className="g-3">
-            <Col lg={5}>
-              <InputGroup>
-                <InputGroup.Text className="survey-search-icon">
-                  <MdSearch />
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Search surveys by title, description..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="survey-search-input border-start-0"
-                />
-              </InputGroup>
-            </Col>
-            <Col lg={3}>
-              <Form.Select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="survey-select"
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+          <div className="lg:col-span-5">
+            <div className="flex items-center">
+              <span className="px-3 py-2 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-r-0 border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-l-md text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                <MdSearch />
+              </span>
+              <input
+                type="text"
+                className="flex-1 px-3 py-2 rounded-r-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                placeholder="Search surveys by title, description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="lg:col-span-3">
+            <select
+              className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Surveys</option>
+              <option value="completed">Completed Surveys</option>
+              <option value="draft">Draft Surveys</option>
+              <option value="paused">Paused Surveys</option>
+            </select>
+          </div>
+          <div className="lg:col-span-4">
+            <div className="flex gap-2">
+              <button type="button" className="flex-1 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center justify-center gap-2">
+                <MdSearch />
+                Advanced Filters
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-2"
+                onClick={() => {
+                  Swal.fire({
+                    title: 'Export Surveys',
+                    text: 'Choose export format',
+                    icon: 'info',
+                    showDenyButton: true,
+                    confirmButtonText: 'Export as PDF',
+                    denyButtonText: 'Export as Excel',
+                    confirmButtonColor: 'var(--primary-color)',
+                    denyButtonColor: '#198754'
+                  });
+                }}
               >
-                <option value="all">All Statuses</option>
-                <option value="active">Active Surveys</option>
-                <option value="completed">Completed Surveys</option>
-                <option value="draft">Draft Surveys</option>
-                <option value="paused">Paused Surveys</option>
-              </Form.Select>
-            </Col>
-            <Col lg={4}>
-              <div className="d-flex gap-2">
-                <Button className="survey-btn-outline flex-grow-1">
-                  <MdSearch />
-                  Advanced Filters
-                </Button>
-                <Button
-                  className="survey-btn-outline"
-                  onClick={() => {
-                    Swal.fire({
-                      title: 'Export Surveys',
-                      text: 'Choose export format',
-                      icon: 'info',
-                      showDenyButton: true,
-                      confirmButtonText: 'Export as PDF',
-                      denyButtonText: 'Export as Excel',
-                      confirmButtonColor: 'var(--primary-color)',
-                      denyButtonColor: '#198754'
-                    });
-                  }}
-                >
-                  <MdFileDownload />
-                  Export
-                </Button>
-              </div>
-            </Col>
-          </Row>
+                <MdFileDownload />
+                Export
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Survey Table */}
-      <div className="survey-table-card">
-        <div className="card-body">
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="p-6">
           {error ? (
-            <div className="error-state">
-              <MdErrorOutline size={48} />
-              <p className="mb-3">{error}</p>
-              <Button
-                className="survey-btn-primary"
-                size="sm"
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <MdErrorOutline size={48} className="text-[var(--danger-color)] mb-4" />
+              <p className="text-[var(--light-text)] dark:text-[var(--dark-text)] mb-4">{error}</p>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
                 onClick={fetchSurveys}
               >
-                <MdErrorOutline className="me-2" />
+                <MdErrorOutline />
                 Try Again
-              </Button>
+              </button>
             </div>
           ) : surveys.length === 0 ? (
-            <div className="empty-state">
-              <i className="fas fa-clipboard-list"></i>
-              <h5>No surveys found</h5>
-              <p>Create your first survey to get started</p>
-              <Button
-                className="survey-btn-primary"
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <MdAssignment size={64} className="text-[var(--text-secondary)] mb-4" />
+              <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">No surveys found</h5>
+              <p className="text-[var(--text-secondary)] mb-4">Create your first survey to get started</p>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
                 onClick={() => navigate("/app/surveys/create")}
               >
-                <i className="fas fa-plus"></i>
+                <MdAdd />
                 Create Your First Survey
-              </Button>
+              </button>
             </div>
           ) : (
-            <div className="table-responsive survey-table-responsive">
-              <Table className="survey-table">
-                <thead>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
                   <tr>
                     <th
                       onClick={() =>
                         setSortField(sortField === "title" ? "-title" : "title")
                       }
-                      style={{ cursor: "pointer" }}
+                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors"
                     >
-                      Title
-                      {(() => {
-                        const Icon = getSortIcon("title");
-                        return <Icon className="ms-2" />;
-                      })()}
+                      <span className="flex items-center">
+                        Title
+                        {(() => {
+                          const Icon = getSortIcon("title");
+                          return <Icon className="ml-2" />;
+                        })()}
+                      </span>
                     </th>
-                    <th>Description</th>
+                    <th className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Description</th>
                     <th
                       onClick={() =>
                         setSortField(sortField === "status" ? "-status" : "status")
                       }
-                      style={{ cursor: "pointer" }}
+                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors"
                     >
-                      Status
-                      {(() => {
-                        const Icon = getSortIcon("status");
-                        return <Icon className="ms-2" />;
-                      })()}
+                      <span className="flex items-center">
+                        Status
+                        {(() => {
+                          const Icon = getSortIcon("status");
+                          return <Icon className="ml-2" />;
+                        })()}
+                      </span>
                     </th>
                     <th
                       onClick={() =>
@@ -991,42 +392,56 @@ const SurveyList = ({ darkMode }) => {
                           sortField === "createdAt" ? "-createdAt" : "createdAt"
                         )
                       }
-                      style={{ cursor: "pointer" }}
+                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors"
                     >
-                      Created At
-                      {(() => {
-                        const Icon = getSortIcon("createdAt");
-                        return <Icon className="ms-2" />;
-                      })()}
+                      <span className="flex items-center">
+                        Created At
+                        {(() => {
+                          const Icon = getSortIcon("createdAt");
+                          return <Icon className="ml-2" />;
+                        })()}
+                      </span>
                     </th>
-                    <th className="text-end">Actions</th>
+                    <th className="px-4 py-3 text-right font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {surveys.length > 0 ? (
                     surveys.map((survey) => (
-                      <tr key={survey._id}>
-                        <td>{survey.title}</td>
-                        <td>{survey.description}</td>
-                        <td>
+                      <tr key={survey._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors">
+                        <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{survey.title}</td>
+                        <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{survey.description}</td>
+                        <td className="px-4 py-3">
                           <span
-                            className={`status-badge ${survey.status.toLowerCase()}`}
+                            className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                              survey.status.toLowerCase() === 'active'
+                                ? 'bg-[var(--success-light)] text-[var(--success-color)]'
+                                : survey.status.toLowerCase() === 'completed'
+                                ? 'bg-[var(--info-light)] text-[var(--info-color)]'
+                                : survey.status.toLowerCase() === 'draft'
+                                ? 'bg-[var(--warning-light)] text-[var(--warning-color)]'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                            }`}
                           >
                             {survey.status}
                           </span>
                         </td>
-                        <td>
+                        <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                           {new Date(survey.createdAt).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
                           })}
                         </td>
-                        <td className="text-end d-flex justify-content-center align-items-center py-4">
-                          <Button
-                            variant="link"
-                            className={`action-btn toggle me-2 ${survey.status.toLowerCase() === "active" ? "active" : "inactive"
-                              }`}
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end items-center gap-1">
+                          <button
+                            type="button"
+                            className={`p-2 rounded-md transition-colors ${
+                              survey.status.toLowerCase() === "active"
+                                ? "text-[var(--success-color)] hover:bg-[var(--success-light)]"
+                                : "text-[var(--text-secondary)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
+                            }`}
                             onClick={() => toggleStatus(survey._id, survey.status)}
                             title={`${survey.status === "active" ? "Deactivate" : "Activate"
                               } Survey`}
@@ -1036,106 +451,107 @@ const SurveyList = ({ darkMode }) => {
                             ) : (
                               <MdToggleOff size={20} />
                             )}
-                          </Button>
+                          </button>
 
                           {/* Edit Button — show only if NOT admin */}
                           {user?.role !== "admin" && (
-                            <Button
-                              variant="link"
-                              className="action-btn edit me-2"
+                            <button
+                              type="button"
+                              className="p-2 rounded-md transition-colors text-[var(--primary-color)] hover:bg-[var(--primary-light)]"
                               onClick={() => handleEdit(survey._id)}
                               title="Edit Survey"
                             >
                               <MdEdit size={20} />
-                            </Button>
+                            </button>
                           )}
 
                           {/* Analytics */}
                           {survey.status !== "draft" && (
-                            <Button
-                              variant="link"
-                              className="action-btn analytics me-2"
+                            <button
+                              type="button"
+                              className="p-2 rounded-md transition-colors text-[var(--info-color)] hover:bg-[var(--info-light)]"
                               onClick={() => handleAnalytics(survey._id)}
                               title="View Analytics"
                             >
                               <MdBarChart size={20} />
-                            </Button>
+                            </button>
                           )}
                           {/* Distribution */}
                           {survey.status !== "inactive" && survey.status !== "draft" && (
-                            <Button
-                              variant="link"
-                              className="action-btn distribution me-2"
+                            <button
+                              type="button"
+                              className="p-2 rounded-md transition-colors text-[var(--primary-color)] hover:bg-[var(--primary-light)]"
                               onClick={() => handleDistribution(survey._id)}
                               title="Distribution & QR Codes"
                             >
                               <MdShare size={20} />
-                            </Button>
+                            </button>
                           )}
                           {/* Delete Button — show only if NOT admin */}
                           {user?.role !== "admin" && (
-                            <Button
-                              variant="link"
-                              className="action-btn delete me-2"
+                            <button
+                              type="button"
+                              className="p-2 rounded-md transition-colors text-[var(--danger-color)] hover:bg-[var(--danger-light)]"
                               onClick={() => handleDelete(survey)}
                               title="Delete Survey"
                             >
                               <MdDelete size={20} />
-                            </Button>
+                            </button>
                           )}
 
                           {/* View Survey */}
-                          <Button
-                            variant="link"
-                            className="action-btn view me-2"
+                          <button
+                            type="button"
+                            className="p-2 rounded-md transition-colors text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
                             onClick={() => handleViewSurvey(survey._id)}
                             title="View Survey Details"
                           >
                             <MdVisibility size={20} />
-                          </Button>
+                          </button>
 
                           {/* Feedback */}
                           {survey.status !== "draft" && (
-                            <Button
-                              variant="link"
-                              className="action-btn feedback"
+                            <button
+                              type="button"
+                              className="p-2 rounded-md transition-colors text-[var(--warning-color)] hover:bg-[var(--warning-light)]"
                               onClick={() => handleFeedback(survey._id)}
                               title="View Survey Feedback"
                             >
                               <MdFeedback size={20} />
-                            </Button>
+                            </button>
                           )}
+                          </div>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5">
-                        <div className="empty-state">
-                          <MdAssignment className="empty-state-icon" />
-                          <h5>No surveys found</h5>
-                          <p className="text-muted">
+                      <td colSpan="5" className="px-4 py-12">
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <MdAssignment size={64} className="text-[var(--text-secondary)] mb-4" />
+                          <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">No surveys found</h5>
+                          <p className="text-[var(--text-secondary)] mb-4">
                             Create your first survey to get started
                           </p>
-                          <Button
-                            variant="primary"
+                          <button
+                            type="button"
+                            className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
                             onClick={() => navigate("/surveys/create")}
-                            className="mt-3"
                           >
-                            <MdAdd className="me-2" />
+                            <MdAdd />
                             Create Survey
-                          </Button>
+                          </button>
                         </div>
                       </td>
                     </tr>
                   )}
                 </tbody>
-              </Table>
+              </table>
             </div>
           )}
         </div>
-        <div className="survey-table-footer">
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <div className="p-6 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3">
             <Pagination
               current={currentPage}
               total={totalItems}
@@ -1149,44 +565,65 @@ const SurveyList = ({ darkMode }) => {
 
 
       {/* Delete Confirmation Modal */}
-      <Modal
-        show={showDeleteModal}
-        onHide={() => setShowDeleteModal(false)}
-        centered
-        className="survey-delete-modal"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <i className="fas fa-exclamation-triangle me-2"></i>
-            Confirm Delete
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Are you sure you want to delete the survey "<strong>{selectedSurvey?.title}</strong>"?</p>
-          <Alert variant="warning" className="mb-0">
-            <i className="fas fa-exclamation-circle me-2"></i>
-            This action cannot be undone. All survey responses and analytics will be permanently deleted.
-          </Alert>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="light"
-            onClick={() => setShowDeleteModal(false)}
-            className="px-4"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={confirmDelete}
-            className="px-4"
-          >
-            <i className="fas fa-trash me-2"></i>
-            Delete Survey
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {showDeleteModal && (
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowDeleteModal(false)} />
+          
+          {/* Modal */}
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg p-6 max-w-md w-full mx-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-4">
+                <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] flex items-center gap-2">
+                  <MdDelete className="text-[var(--danger-color)]" />
+                  Confirm Delete
+                </h5>
+                <button
+                  type="button"
+                  className="p-1 rounded-md transition-colors hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] text-[var(--light-text)] dark:text-[var(--dark-text)]"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Body */}
+              <div className="mb-4">
+                <p className="text-[var(--light-text)] dark:text-[var(--dark-text)] mb-3">
+                  Are you sure you want to delete the survey "<strong>{selectedSurvey?.title}</strong>"?
+                </p>
+                <div className="bg-[var(--warning-light)] border-l-4 border-[var(--warning-color)] p-3 rounded">
+                  <p className="text-sm text-[var(--warning-color)] flex items-center gap-2">
+                    <MdErrorOutline />
+                    This action cannot be undone. All survey responses and analytics will be permanently deleted.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--danger-color)] text-white hover:opacity-90 flex items-center gap-2"
+                  onClick={confirmDelete}
+                >
+                  <MdDelete />
+                  Delete Survey
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 

@@ -2,7 +2,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Container, Row, Col, Card, Button, Table, Badge, Spinner } from "react-bootstrap"
 import { Line, Doughnut, Bar } from "react-chartjs-2"
 import {
     Chart as ChartJS,
@@ -44,6 +43,14 @@ ChartJS.register(
     ArcElement,
     Filler,
 )
+
+const badgeColors = {
+    success: "bg-[var(--success-light)] text-[var(--success-color)]",
+    secondary: "bg-gray-100 dark:bg-gray-700 text-[var(--text-secondary)]",
+    danger: "bg-[var(--danger-light)] text-[var(--danger-color)]",
+    warning: "bg-[var(--warning-light)] text-[var(--warning-color)]",
+    primary: "bg-[var(--primary-light)] text-[var(--primary-color)]",
+}
 
 const PlatformDashboard = ({ darkMode }) => {
     const navigate = useNavigate()
@@ -195,248 +202,320 @@ const PlatformDashboard = ({ darkMode }) => {
             suspended: "danger",
             pending: "warning"
         }
-        return <Badge bg={variants[status] || "secondary"}>{status}</Badge>
+        const variant = variants[status] || "secondary"
+        return (
+            <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded ${badgeColors[variant]}`}>
+                {status}
+            </span>
+        )
     }
 
     return (
-        <Container fluid className="dashboard-container">
+        <div className="w-full">
             {/* Header */}
-            <div className="dashboard-header">
-                <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div className="mb-6">
+                <div className="flex justify-between items-start flex-wrap gap-4">
                     <div>
-                        <h2>
-                            <MdBusiness size={28} className="me-2" style={{ marginBottom: "4px" }} />
+                        <h2 className="flex items-center gap-2 text-2xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                            <MdBusiness size={28} />
                             Platform Overview
                         </h2>
-                        <p>System-wide statistics and company management</p>
+                        <p className="text-[var(--text-secondary)]">
+                            System-wide statistics and company management
+                        </p>
                     </div>
-                    <div className="d-flex gap-2">
-                        <Button
-                            variant="outline-secondary"
-                            size="sm"
+                    <div className="flex gap-2 flex-wrap">
+                        <button
                             onClick={handleRefresh}
                             disabled={refreshing}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
+                                       border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                                       text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                       bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                       hover:bg-[var(--light-hover)]/10 dark:hover:bg-[var(--dark-hover)]/10
+                                       disabled:opacity-50 disabled:cursor-not-allowed
+                                       transition-colors duration-300"
                         >
                             {refreshing ? (
-                                <Spinner animation="border" size="sm" className="me-1" />
+                                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                             ) : (
-                                <MdRefresh size={16} className="me-1" />
+                                <MdRefresh size={16} />
                             )}
                             {refreshing ? "Refreshing..." : "Refresh"}
-                        </Button>
-                        <Button
-                            variant="primary"
-                            size="sm"
+                        </button>
+                        <button
                             onClick={() => navigate("/app/subscription/tenants")}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
+                                       bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
+                                       text-white transition-colors duration-300"
                         >
-                            <MdBusiness size={16} className="me-1" />
+                            <MdBusiness size={16} />
                             Manage Tenants
-                        </Button>
+                        </button>
                     </div>
                 </div>
             </div>
 
             {/* Error Alert */}
             {error && (
-                <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
-                    <span>{error}</span>
-                    <Button variant="link" className="ms-auto p-0" onClick={handleRefresh}>
+                <div 
+                    className="flex items-center gap-3 mb-6 p-4 rounded-md
+                               bg-[var(--danger-light)] border border-[var(--danger-color)]
+                               text-[var(--danger-color)]" 
+                    role="alert"
+                >
+                    <span className="flex-1">{error}</span>
+                    <button 
+                        onClick={handleRefresh}
+                        className="text-sm text-[var(--primary-color)] hover:underline font-medium
+                                   bg-transparent border-0 cursor-pointer p-0 transition-colors duration-300"
+                    >
                         Try Again
-                    </Button>
+                    </button>
                 </div>
             )}
 
             {/* Loading State */}
             {loading ? (
-                <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" />
-                    <p className="mt-3 text-muted">Loading platform dashboard...</p>
+                <div className="flex flex-col items-center justify-center py-16">
+                    <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-[var(--text-secondary)] text-lg">Loading platform dashboard...</p>
                 </div>
             ) : (
                 <>
                     {/* Stats Cards */}
-                    <Row className="g-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         {/* Total Companies */}
-                        <Col xl={3} lg={6} md={6} xs={12}>
-                            <div className="stats-card">
-                                <div className="stats-card-header">
-                                    <div className="stats-icon icon-primary">
-                                        <MdBusiness />
-                                    </div>
-                                    <div className="stats-trend trend-up">
-                                        <MdTrendingUp size={14} />
-                                        <span>+{stats.newTenantsThisMonth} this month</span>
-                                    </div>
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                        rounded-md shadow-md p-6
+                                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                                        transition-all duration-300 hover:shadow-lg">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                                bg-[var(--primary-light)]">
+                                    <MdBusiness className="text-[var(--primary-color)]" size={24} />
                                 </div>
-                                <div className="stats-card-body">
-                                    <h3>{stats.totalTenants}</h3>
-                                    <p>Total Companies</p>
+                                <div className="flex items-center gap-1 text-[var(--success-color)] text-xs">
+                                    <MdTrendingUp size={14} />
+                                    <span>+{stats.newTenantsThisMonth}</span>
                                 </div>
                             </div>
-                        </Col>
+                            <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                                {stats.totalTenants}
+                            </h3>
+                            <p className="text-[var(--text-secondary)] text-sm">Total Companies</p>
+                        </div>
 
                         {/* Total Users */}
-                        <Col xl={3} lg={6} md={6} xs={12}>
-                            <div className="stats-card">
-                                <div className="stats-card-header">
-                                    <div className="stats-icon icon-success">
-                                        <MdPeople />
-                                    </div>
-                                    <div className="stats-trend trend-up">
-                                        <MdTrendingUp size={14} />
-                                        <span>+{stats.newUsersThisMonth} this month</span>
-                                    </div>
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                        rounded-md shadow-md p-6
+                                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                                        transition-all duration-300 hover:shadow-lg">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                                bg-[var(--success-light)]">
+                                    <MdPeople className="text-[var(--success-color)]" size={24} />
                                 </div>
-                                <div className="stats-card-body">
-                                    <h3>{stats.totalUsers.toLocaleString()}</h3>
-                                    <p>Total Users</p>
+                                <div className="flex items-center gap-1 text-[var(--success-color)] text-xs">
+                                    <MdTrendingUp size={14} />
+                                    <span>+{stats.newUsersThisMonth}</span>
                                 </div>
                             </div>
-                        </Col>
+                            <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                                {stats.totalUsers.toLocaleString()}
+                            </h3>
+                            <p className="text-[var(--text-secondary)] text-sm">Total Users</p>
+                        </div>
 
                         {/* Total Surveys */}
-                        <Col xl={3} lg={6} md={6} xs={12}>
-                            <div className="stats-card">
-                                <div className="stats-card-header">
-                                    <div className="stats-icon icon-info">
-                                        <MdPoll />
-                                    </div>
-                                    <div className="stats-trend trend-up">
-                                        <MdTrendingUp size={14} />
-                                        <span>+{stats.newSurveysThisMonth} this month</span>
-                                    </div>
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                        rounded-md shadow-md p-6
+                                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                                        transition-all duration-300 hover:shadow-lg">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                                bg-[var(--info-light)]">
+                                    <MdPoll className="text-[var(--info-color)]" size={24} />
                                 </div>
-                                <div className="stats-card-body">
-                                    <h3>{stats.totalSurveys.toLocaleString()}</h3>
-                                    <p>Total Surveys</p>
+                                <div className="flex items-center gap-1 text-[var(--success-color)] text-xs">
+                                    <MdTrendingUp size={14} />
+                                    <span>+{stats.newSurveysThisMonth}</span>
                                 </div>
                             </div>
-                        </Col>
+                            <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                                {stats.totalSurveys.toLocaleString()}
+                            </h3>
+                            <p className="text-[var(--text-secondary)] text-sm">Total Surveys</p>
+                        </div>
 
                         {/* Active Subscriptions */}
-                        <Col xl={3} lg={6} md={6} xs={12}>
-                            <div className="stats-card">
-                                <div className="stats-card-header">
-                                    <div className="stats-icon icon-warning">
-                                        <MdCreditCard />
-                                    </div>
-                                    <div className="stats-trend trend-up">
-                                        <MdVerifiedUser size={14} />
-                                        <span>{stats.activeTenants} active</span>
-                                    </div>
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                        rounded-md shadow-md p-6
+                                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                                        transition-all duration-300 hover:shadow-lg">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                                bg-[var(--warning-light)]">
+                                    <MdCreditCard className="text-[var(--warning-color)]" size={24} />
                                 </div>
-                                <div className="stats-card-body">
-                                    <h3>{subscriptions.length}</h3>
-                                    <p>Subscription Plans</p>
+                                <div className="flex items-center gap-1 text-[var(--success-color)] text-xs">
+                                    <MdVerifiedUser size={14} />
+                                    <span>{stats.activeTenants}</span>
                                 </div>
                             </div>
-                        </Col>
-                    </Row>
+                            <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                                {subscriptions.length}
+                            </h3>
+                            <p className="text-[var(--text-secondary)] text-sm">Subscription Plans</p>
+                        </div>
+                    </div>
 
                     {/* Charts Row */}
-                    <Row className="g-3 mb-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                         {/* Growth Trends */}
-                        <Col lg={8}>
-                            <div className="chart-card">
-                                <h5>
-                                    <MdTrendingUp size={20} style={{ marginBottom: "2px" }} />
+                        <div className="lg:col-span-2 bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                        rounded-md shadow-md
+                                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <h5 className="flex items-center gap-2 text-lg font-semibold
+                                               text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                    <MdTrendingUp size={20} />
                                     Growth Trends (Last 7 Days)
                                 </h5>
-                                <div className="chart-container" style={{ height: "300px" }}>
+                            </div>
+                            <div className="p-6">
+                                <div className="w-full h-80">
                                     <Line data={growthChartData} options={chartOptions} />
                                 </div>
                             </div>
-                        </Col>
+                        </div>
 
                         {/* Subscription Distribution */}
-                        <Col lg={4}>
-                            <div className="chart-card">
-                                <h5>
-                                    <MdCreditCard size={20} style={{ marginBottom: "2px" }} />
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                        rounded-md shadow-md
+                                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <h5 className="flex items-center gap-2 text-lg font-semibold
+                                               text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                    <MdCreditCard size={20} />
                                     Subscription Distribution
                                 </h5>
-                                <div className="chart-container" style={{ height: "300px" }}>
-                                    {subscriptions.length > 0 ? (
-                                        <Doughnut data={subscriptionChartData} options={doughnutOptions} />
-                                    ) : (
-                                        <div className="text-center py-5 text-muted">
-                                            <MdCreditCard size={48} />
-                                            <p className="mt-2">No subscription data</p>
-                                        </div>
-                                    )}
-                                </div>
                             </div>
-                        </Col>
-                    </Row>
+                            <div className="p-6">
+                                {subscriptions.length > 0 ? (
+                                    <div className="w-full h-80">
+                                        <Doughnut data={subscriptionChartData} options={doughnutOptions} />
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <MdCreditCard size={48} className="text-[var(--text-secondary)] mb-3" />
+                                        <p className="text-[var(--text-secondary)]">No subscription data</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Recent Tenants */}
-                    <Row className="g-3">
-                        <Col lg={12}>
-                            <div className="recent-surveys-section">
-                                <div className="section-header">
-                                    <h5>
-                                        <MdAddBusiness size={20} />
-                                        Recent Company Registrations
-                                    </h5>
-                                    <Button
-                                        variant="link"
-                                        size="sm"
-                                        onClick={() => navigate("/app/subscription/tenants")}
-                                        style={{ textDecoration: "none" }}
-                                    >
-                                        View All →
-                                    </Button>
+                    <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                    rounded-md shadow-md
+                                    border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <div className="flex items-center justify-between p-6 border-b
+                                        border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <h5 className="flex items-center gap-2 text-lg font-semibold
+                                           text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                <MdAddBusiness size={20} />
+                                Recent Company Registrations
+                            </h5>
+                            <button
+                                onClick={() => navigate("/app/subscription/tenants")}
+                                className="text-sm text-[var(--primary-color)] hover:underline font-medium
+                                           bg-transparent border-0 cursor-pointer p-0 transition-colors duration-300"
+                            >
+                                View All →
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            {recentTenants.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12">
+                                    <MdBusiness size={48} className="text-[var(--text-secondary)] mb-3" />
+                                    <h6 className="text-lg font-medium text-[var(--text-secondary)]">
+                                        No companies registered yet
+                                    </h6>
                                 </div>
-                                <div className="table-container">
-                                    {recentTenants.length === 0 ? (
-                                        <div className="text-center py-5">
-                                            <MdBusiness size={48} className="text-muted mb-3" />
-                                            <h6 className="text-muted">No companies registered yet</h6>
-                                        </div>
-                                    ) : (
-                                        <Table className="custom-table" hover responsive>
-                                            <thead>
-                                                <tr>
-                                                    <th>Company Name</th>
-                                                    <th className="d-none d-md-table-cell">Industry</th>
-                                                    <th>Plan</th>
-                                                    <th>Status</th>
-                                                    <th className="d-none d-lg-table-cell">Registered</th>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full border-collapse">
+                                        <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                                            <tr>
+                                                <th className="p-3 text-left text-sm font-semibold
+                                                               text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                                               border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                    Company Name
+                                                </th>
+                                                <th className="hidden md:table-cell p-3 text-left text-sm font-semibold
+                                                               text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                                               border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                    Industry
+                                                </th>
+                                                <th className="p-3 text-left text-sm font-semibold
+                                                               text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                                               border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                    Plan
+                                                </th>
+                                                <th className="p-3 text-left text-sm font-semibold
+                                                               text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                                               border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                    Status
+                                                </th>
+                                                <th className="hidden lg:table-cell p-3 text-left text-sm font-semibold
+                                                               text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                                               border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                    Registered
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {recentTenants.map((tenant) => (
+                                                <tr key={tenant.id}
+                                                    className="hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
+                                                               transition-colors duration-200">
+                                                    <td className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                        <div className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                                            {tenant.name}
+                                                        </div>
+                                                    </td>
+                                                    <td className="hidden md:table-cell p-3 border-b
+                                                                   border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                        <span className="text-[var(--text-secondary)]">{tenant.industry}</span>
+                                                    </td>
+                                                    <td className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium
+                                                                         ${badgeColors.primary}`}>
+                                                            {tenant.plan}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                        {getStatusBadge(tenant.status)}
+                                                    </td>
+                                                    <td className="hidden lg:table-cell p-3 border-b
+                                                                   border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                                        <span className="flex items-center gap-1 text-[var(--text-secondary)] text-sm">
+                                                            <MdCalendarToday size={14} />
+                                                            {formatDate(tenant.registeredAt)}
+                                                        </span>
+                                                    </td>
                                                 </tr>
-                                            </thead>
-                                            <tbody>
-                                                {recentTenants.map((tenant) => (
-                                                    <tr key={tenant.id}>
-                                                        <td>
-                                                            <div style={{ fontWeight: 500 }}>{tenant.name}</div>
-                                                        </td>
-                                                        <td className="d-none d-md-table-cell">
-                                                            <span className="text-muted">{tenant.industry}</span>
-                                                        </td>
-                                                        <td>
-                                                            <Badge bg="primary">{tenant.plan}</Badge>
-                                                        </td>
-                                                        <td>
-                                                            {getStatusBadge(tenant.status)}
-                                                        </td>
-                                                        <td className="d-none d-lg-table-cell">
-                                                            <span className="text-muted d-flex align-items-center gap-1">
-                                                                <MdCalendarToday size={14} />
-                                                                {formatDate(tenant.registeredAt)}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </Table>
-                                    )}
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div>
-                        </Col>
-                    </Row>
+                            )}
+                        </div>
+                    </div>
                 </>
             )}
-        </Container>
+        </div>
     )
 }
 

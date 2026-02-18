@@ -390,41 +390,41 @@ const Profile = () => {
   }
 
   return (
-    <div className="profile-container">
+    <div className="w-full">
       {/* Loading Overlay */}
       {isUploading && (
-        <div className="loading-overlay">
-          <div className="loading-spinner-large"></div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
 
       {/* Page Header */}
-      <div className="page-header-section">
-        <div className="page-header-content">
-          <div className="page-header-left">
-            <div className="page-header-icon">
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-lg bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-2xl flex-shrink-0">
               <MdPerson />
             </div>
-            <div className="page-header-text">
-              <h1>Profile Settings</h1>
-              <p>Manage your account settings and preferences</p>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Profile Settings</h1>
+              <p className="text-sm text-[var(--text-secondary)]">Manage your account settings and preferences</p>
             </div>
           </div>
-          <div className="page-header-actions">
+          <div className="flex flex-wrap gap-2">
             {activeTab === "profile" && (
               isEditing ? (
                 <>
-                  <button onClick={handleCancel} className="secondary-action">
+                  <button onClick={handleCancel} className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] hover:bg-opacity-10 flex items-center gap-2">
                     <MdCancel />
                     Cancel
                   </button>
-                  <button onClick={handleSave} className="primary-action">
+                  <button onClick={handleSave} className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
                     <MdSave />
                     Save Changes
                   </button>
                 </>
               ) : (
-                <button onClick={() => setIsEditing(true)} className="primary-action">
+                <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
                   <MdEdit />
                   Edit Profile
                 </button>
@@ -436,16 +436,16 @@ const Profile = () => {
 
       {/* Success Notification */}
       {(showAlert || saved) && (
-        <div className="notification-overlay" onClick={() => { setShowAlert(false); setSaved(false); }}>
-          <div className="notification-container success">
-            <div className="notification-icon">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4" onClick={() => { setShowAlert(false); setSaved(false); }}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg shadow-lg p-6 max-w-md w-full border border-[var(--success-color)] flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-[var(--success-light)] flex items-center justify-center text-[var(--success-color)] text-xl flex-shrink-0">
               <MdCheck />
             </div>
-            <div className="notification-content">
-              <h4>Success!</h4>
-              <p>Your changes have been saved successfully!</p>
+            <div className="flex-1">
+              <h4 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Success!</h4>
+              <p className="text-sm text-[var(--text-secondary)]">Your changes have been saved successfully!</p>
             </div>
-            <button className="notification-close" onClick={() => { setShowAlert(false); setSaved(false); }}>
+            <button className="w-8 h-8 rounded-full hover:bg-[var(--light-hover)] hover:bg-opacity-10 flex items-center justify-center text-[var(--text-secondary)] transition-colors" onClick={() => { setShowAlert(false); setSaved(false); }}>
               <MdClose />
             </button>
           </div>
@@ -453,128 +453,124 @@ const Profile = () => {
       )}
 
       {/* Profile Content */}
-      <div className="profile-content-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Profile Sidebar */}
-        <div className="profile-sidebar">
-          <div className="profile-card">
-            <div className="avatar-section">
-              <div className="profile-avatar">
-                {userData?.avatar?.url ? (
-                  <img
-                    src={userData.avatar.url}
-                    alt="Avatar"
-                    className="avatar-image"
-                  />
-                ) : (
-                  <span className="avatar-initial">
-                    {userData?.name?.charAt(0)?.toUpperCase() || <MdPerson />}
-                  </span>
-                )}
+        <div className="lg:col-span-4">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="p-6 text-center border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="relative inline-block mb-4">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[var(--primary-color)] bg-gray-200 dark:bg-gray-700">
+                  {userData?.avatar?.url ? (
+                    <img
+                      src={userData.avatar.url}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="w-full h-full flex items-center justify-center text-3xl font-bold text-[var(--primary-color)]">
+                      {userData?.name?.charAt(0)?.toUpperCase() || <MdPerson />}
+                    </span>
+                  )}
+                </div>
 
                 <input
                   id="avatarUpload"
                   type="file"
                   accept="image/*"
                   onChange={handleAvatarChange}
-                  style={{ display: "none" }}
+                  className="hidden"
                 />
 
-                <label htmlFor="avatarUpload" className="avatar-edit-btn">
+                <label htmlFor="avatarUpload" className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center cursor-pointer hover:bg-[var(--primary-hover)] transition-colors">
                   <MdCamera />
                 </label>
               </div>
 
-              <div className="user-info">
-                <h3 className="user-name">
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
                   {formData.firstName} {formData.lastName}
                 </h3>
-                <p className="user-email">{formData.email}</p>
-                <span className="user-role-badge">
+                <p className="text-sm text-[var(--text-secondary)] mb-2">{formData.email}</p>
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-[var(--primary-light)] text-[var(--primary-color)]">
                   {capitalize(formData.role)}
                 </span>
               </div>
 
               {formData.bio && (
-                <p className="user-bio">{formData.bio}</p>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{formData.bio}</p>
               )}
             </div>
 
-            <div className="profile-stats">
-              <div className="stat-item">
-                <div className="stat-icon">
+            <div className="grid grid-cols-3 gap-4 p-6">
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-full bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-lg mx-auto mb-2">
                   <MdAssessment />
                 </div>
-                <div className="stat-content">
-                  <div className="stat-value">24</div>
-                  <div className="stat-label">Surveys</div>
-                </div>
+                <div className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">24</div>
+                <div className="text-xs text-[var(--text-secondary)]">Surveys</div>
               </div>
-              <div className="stat-item">
-                <div className="stat-icon">
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-full bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-lg mx-auto mb-2">
                   <MdPeople />
                 </div>
-                <div className="stat-content">
-                  <div className="stat-value">1.2K</div>
-                  <div className="stat-label">Responses</div>
-                </div>
+                <div className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">1.2K</div>
+                <div className="text-xs text-[var(--text-secondary)]">Responses</div>
               </div>
-              <div className="stat-item">
-                <div className="stat-icon">
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-full bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-lg mx-auto mb-2">
                   <MdTrendingUp />
                 </div>
-                <div className="stat-content">
-                  <div className="stat-value">78%</div>
-                  <div className="stat-label">Completion</div>
-                </div>
+                <div className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">78%</div>
+                <div className="text-xs text-[var(--text-secondary)]">Completion</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Settings Section */}
-        <div className="settings-section">
-          <div className="section-card">
+        <div className="lg:col-span-8">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
             {/* Custom Tab Navigation */}
-            <div className="tab-nav">
+            <div className="flex flex-wrap gap-2 p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
               <button 
-                className={`tab-button ${activeTab === "profile" ? "active" : ""}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${activeTab === "profile" ? "bg-[var(--primary-color)] text-white" : "bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--primary-light)]"}`}
                 onClick={() => setActiveTab("profile")}
               >
                 <MdPerson />
-                Personal Info
+                <span className="hidden sm:inline">Personal Info</span>
               </button>
               <button 
-                className={`tab-button ${activeTab === "security" ? "active" : ""}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${activeTab === "security" ? "bg-[var(--primary-color)] text-white" : "bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--primary-light)]"}`}
                 onClick={() => setActiveTab("security")}
               >
                 <MdLock />
-                Security
+                <span className="hidden sm:inline">Security</span>
               </button>
               {(user?.role === "company" || user?.role === "companyAdmin") && (
                 <button 
-                  className={`tab-button ${activeTab === "company" ? "active" : ""}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${activeTab === "company" ? "bg-[var(--primary-color)] text-white" : "bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--primary-light)]"}`}
                   onClick={() => setActiveTab("company")}
                 >
                   <MdBusiness />
-                  Company Details
+                  <span className="hidden sm:inline">Company Details</span>
                 </button>
               )}
               <button 
-                className={`tab-button ${activeTab === "notifications" ? "active" : ""}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${activeTab === "notifications" ? "bg-[var(--primary-color)] text-white" : "bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--primary-light)]"}`}
                 onClick={() => setActiveTab("notifications")}
               >
                 <MdNotifications />
-                Notifications
+                <span className="hidden sm:inline">Notifications</span>
               </button>
             </div>
 
             {/* Tab Content */}
-            <div className="tab-content">
+            <div className="p-6">
               {/* Personal Info Tab */}
               {activeTab === "profile" && (
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label htmlFor="firstName">First Name *</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">First Name *</label>
                     <input
                       type="text"
                       id="firstName"
@@ -582,14 +578,15 @@ const Profile = () => {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       disabled={!isEditing}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     />
                     {formErrors.firstName && (
-                      <span className="form-error">{formErrors.firstName}</span>
+                      <span className="text-xs text-[var(--danger-color)]">{formErrors.firstName}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="lastName">Last Name</label>
+                  <div className="space-y-2">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Last Name</label>
                     <input
                       type="text"
                       id="lastName"
@@ -597,25 +594,27 @@ const Profile = () => {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       disabled={!isEditing}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     />
                     {formErrors.lastName && (
-                      <span className="form-error">{formErrors.lastName}</span>
+                      <span className="text-xs text-[var(--danger-color)]">{formErrors.lastName}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="email">Email</label>
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Email</label>
                     <input
                       type="email"
                       id="email"
                       name="email"
                       value={formData.email}
                       disabled
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="phone">Phone</label>
+                  <div className="space-y-2">
+                    <label htmlFor="phone" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Phone</label>
                     <input
                       type="text"
                       id="phone"
@@ -623,25 +622,27 @@ const Profile = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       disabled={!isEditing}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     />
                     {formErrors.phone && (
-                      <span className="form-error">{formErrors.phone}</span>
+                      <span className="text-xs text-[var(--danger-color)]">{formErrors.phone}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="role">Role</label>
+                  <div className="space-y-2">
+                    <label htmlFor="role" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Role</label>
                     <input
                       type="text"
                       id="role"
                       name="role"
                       value={formData.role}
                       disabled
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     />
                   </div>
 
-                  <div className="form-group full-width">
-                    <label htmlFor="bio">Bio</label>
+                  <div className="space-y-2 md:col-span-2">
+                    <label htmlFor="bio" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Bio</label>
                     <textarea
                       id="bio"
                       name="bio"
@@ -649,6 +650,7 @@ const Profile = () => {
                       value={formData.bio}
                       onChange={handleInputChange}
                       disabled={!isEditing}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors resize-none"
                     ></textarea>
                   </div>
                 </div>
@@ -656,9 +658,9 @@ const Profile = () => {
 
               {/* Security Tab */}
               {activeTab === "security" && (
-                <div className="form-grid">
-                  <div className="form-group full-width">
-                    <label htmlFor="currentPassword">Current Password</label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Current Password</label>
                     <input
                       type="password"
                       id="currentPassword"
@@ -668,14 +670,15 @@ const Profile = () => {
                         setPasswordData({ ...passwordData, currentPassword: e.target.value })
                         setPasswordErrors({ ...passwordErrors, currentPassword: "" })
                       }}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors placeholder:text-[var(--text-secondary)]"
                     />
                     {passwordErrors.currentPassword && (
-                      <span className="form-error">{passwordErrors.currentPassword}</span>
+                      <span className="text-xs text-[var(--danger-color)]">{passwordErrors.currentPassword}</span>
                     )}
                   </div>
 
-                  <div className="form-group full-width">
-                    <label htmlFor="newPassword">New Password</label>
+                  <div className="space-y-2">
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">New Password</label>
                     <input
                       type="password"
                       id="newPassword"
@@ -685,14 +688,15 @@ const Profile = () => {
                         setPasswordData({ ...passwordData, newPassword: e.target.value })
                         setPasswordErrors({ ...passwordErrors, newPassword: "" })
                       }}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors placeholder:text-[var(--text-secondary)]"
                     />
                     {passwordErrors.newPassword && (
-                      <span className="form-error">{passwordErrors.newPassword}</span>
+                      <span className="text-xs text-[var(--danger-color)]">{passwordErrors.newPassword}</span>
                     )}
                   </div>
 
-                  <div className="form-group full-width">
-                    <label htmlFor="confirmPassword">Confirm Password</label>
+                  <div className="space-y-2">
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Confirm Password</label>
                     <input
                       type="password"
                       id="confirmPassword"
@@ -702,16 +706,17 @@ const Profile = () => {
                         setPasswordData({ ...passwordData, confirmPassword: e.target.value })
                         setPasswordErrors({ ...passwordErrors, confirmPassword: "" })
                       }}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors placeholder:text-[var(--text-secondary)]"
                     />
                     {passwordErrors.confirmPassword && (
-                      <span className="form-error">{passwordErrors.confirmPassword}</span>
+                      <span className="text-xs text-[var(--danger-color)]">{passwordErrors.confirmPassword}</span>
                     )}
                   </div>
 
-                  <div className="form-group full-width">
+                  <div className="pt-4">
                     <button
                       type="button"
-                      className="primary-action"
+                      className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
                       onClick={handlePasswordRequest}
                     >
                       <MdLock />
@@ -723,84 +728,91 @@ const Profile = () => {
 
               {/* Company Details Tab */}
               {activeTab === "company" && (
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label htmlFor="companyName">Company Name *</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="companyName" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Company Name *</label>
                     <input
                       type="text"
                       id="companyName"
                       name="name"
                       value={companyData.name}
                       onChange={handleCompanyChange}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="contactEmail">Company Email</label>
+                  <div className="space-y-2">
+                    <label htmlFor="contactEmail" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Company Email</label>
                     <input
                       type="email"
                       id="contactEmail"
                       name="contactEmail"
                       value={companyData.contactEmail}
                       onChange={handleCompanyChange}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="contactPhone">Company Phone</label>
+                  <div className="space-y-2">
+                    <label htmlFor="contactPhone" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Company Phone</label>
                     <input
                       type="text"
                       id="contactPhone"
                       name="contactPhone"
                       value={companyData.contactPhone}
                       onChange={handleCompanyChange}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="website">Website (optional)</label>
+                  <div className="space-y-2">
+                    <label htmlFor="website" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Website (optional)</label>
                     <input
                       type="text"
                       id="website"
                       name="website"
                       value={companyData.website}
                       onChange={handleCompanyChange}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
                     />
                   </div>
 
-                  <div className="form-group full-width">
-                    <label htmlFor="address">Company Address</label>
+                  <div className="space-y-2 md:col-span-2">
+                    <label htmlFor="address" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Company Address</label>
                     <input
                       type="text"
                       id="address"
                       name="address"
                       value={companyData.address}
                       onChange={handleCompanyChange}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="employees">Total Employees</label>
+                  <div className="space-y-2">
+                    <label htmlFor="employees" className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Total Employees</label>
                     <input
                       type="number"
                       id="employees"
                       name="employees"
                       value={companyData.employees}
                       onChange={handleCompanyChange}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors"
                     />
                   </div>
 
-                  <div className="form-group full-width">
-                    <label>Departments</label>
-                    <div className="departments-list">
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Departments</label>
+                    <div className="space-y-3">
                       {companyData.departments.map((dept, idx) => (
-                        <div key={idx} className="department-row">
+                        <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <input
                             type="text"
                             name="departmentName"
                             placeholder="Department Name"
                             value={dept.name}
                             onChange={(e) => handleCompanyChange(e, idx)}
+                            className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors placeholder:text-[var(--text-secondary)]"
                           />
                           <input
                             type="text"
@@ -808,12 +820,13 @@ const Profile = () => {
                             placeholder="Department Head"
                             value={dept.head}
                             onChange={(e) => handleCompanyChange(e, idx)}
+                            className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-colors placeholder:text-[var(--text-secondary)]"
                           />
                         </div>
                       ))}
                       <button
                         type="button"
-                        className="secondary-action"
+                        className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)]"
                         onClick={addDepartment}
                       >
                         + Add Department
@@ -821,10 +834,10 @@ const Profile = () => {
                     </div>
                   </div>
 
-                  <div className="form-group full-width">
+                  <div className="pt-4 md:col-span-2">
                     <button
                       type="button"
-                      className="primary-action"
+                      className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
                       onClick={handleSaveInfo}
                     >
                       <MdSave />
@@ -836,29 +849,30 @@ const Profile = () => {
 
               {/* Notifications Tab */}
               {activeTab === "notifications" && (
-                <div className="notifications-grid">
+                <div className="space-y-4">
                   {Object.entries(notifications).map(([key, value]) => (
-                    <div key={key} className="notification-item">
-                      <div className="notification-info">
-                        <h4>{key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}</h4>
-                        <p>Receive {key.replace(/([A-Z])/g, " $1").toLowerCase()} updates</p>
+                    <div key={key} className="flex items-center justify-between p-4 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}</h4>
+                        <p className="text-xs text-[var(--text-secondary)]">Receive {key.replace(/([A-Z])/g, " $1").toLowerCase()} updates</p>
                       </div>
-                      <label className="custom-switch">
+                      <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
                           name={key}
                           checked={value}
                           onChange={handleNotificationChange}
+                          className="sr-only peer"
                         />
-                        <span className="switch-slider"></span>
+                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--primary-color)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--primary-color)]"></div>
                       </label>
                     </div>
                   ))}
 
-                  <div className="form-group full-width">
+                  <div className="pt-4">
                     <button
                       type="button"
-                      className="primary-action"
+                      className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
                       onClick={handleSaveNotifications}
                     >
                       <MdSave />

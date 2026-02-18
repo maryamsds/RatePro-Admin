@@ -1,8 +1,7 @@
 // src\pages\AccessManagement\RoleManagement.jsx
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Container, Row, Col, Card, Table, Badge, Button, Form, Modal, OverlayTrigger, Tooltip, Dropdown } from "react-bootstrap";
-import { 
-  MdAdd, MdEdit, MdDelete, MdSave, MdCancel, MdSecurity, MdGroup, 
+import {
+  MdAdd, MdEdit, MdDelete, MdSave, MdCancel, MdSecurity, MdGroup,
   MdMoreVert, MdRefresh, MdAssignmentInd, MdSettings, MdSearch,
   MdFilterList, MdVpnKey, MdPerson
 } from "react-icons/md";
@@ -107,7 +106,9 @@ const RoleManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [mobileDropdownId, setMobileDropdownId] = useState(null);
   const inputRef = useRef(null);
+  const mobileDropdownRef = useRef(null);
 
   const currentUserRole = user?.role || "";
   const isMember = currentUserRole === "member";
@@ -130,7 +131,6 @@ const RoleManagement = () => {
 
   // Filter permissions based on selected role (for both create and edit)
   const filteredPermissions = useMemo(() => {
-    // For both create and edit, use the selectedRole (which is set to editingRole.name if editing)
     if (!selectedRole) return [];
     const roleConfig = rolePermissionMap[selectedRole] || { group: null, permissions: [] };
     return permissions.filter((p) => {
@@ -172,8 +172,8 @@ const RoleManagement = () => {
   // Handle user selection
   const handleSelectUser = (user) => {
     setSelectedUserId(user._id);
-    setSearchTerm(`${user.name} (${user.email})`); // Show selected user in input
-    setShowDropdown(false); // Close dropdown
+    setSearchTerm(`${user.name} (${user.email})`);
+    setShowDropdown(false);
   };
 
   // Handle click outside to close dropdown
@@ -181,6 +181,9 @@ const RoleManagement = () => {
     const handleClickOutside = (event) => {
       if (inputRef.current && !inputRef.current.contains(event.target)) {
         setShowDropdown(false);
+      }
+      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target)) {
+        setMobileDropdownId(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -194,15 +197,14 @@ const RoleManagement = () => {
     if (showModal && !editingRole && availablePredefinedRoles.length > 0 && selectedRole === "") {
       const firstRole = availablePredefinedRoles[0];
       setSelectedRole(firstRole);
-      setRoleDescription(rolePermissionMap[firstRole]?.description || ""); // 👈 ab sahi
-      setRolePermissions([]); // Ensure no permissions are pre-selected
+      setRoleDescription(rolePermissionMap[firstRole]?.description || "");
+      setRolePermissions([]);
     }
   }, [showModal, editingRole, availablePredefinedRoles, selectedRole]);
 
   // Fetch data on mount and when pagination.page changes
   useEffect(() => {
     if (!authLoading && tenantId && (user?.role === "companyAdmin" || hasPermission("role:read"))) {
-
       let isMounted = true;
       setIsLoading(true);
       Promise.all([fetchRoles(), fetchPermissions(), fetchUsers()])
@@ -362,11 +364,6 @@ const RoleManagement = () => {
       assignedUsers = data.users || [];
     } catch (err) {
       console.error("Error fetching assigned users for edit:", err);
-      console.error("Error fetching assigned users:", {
-        message: err.response?.data?.message,
-        status: err.response?.status,
-        error: err.message,
-      });
       Swal.fire("Error", "Failed to fetch assigned users", "error");
     } finally {
       setEditingRole({ ...role, users: assignedUsers });
@@ -382,10 +379,10 @@ const RoleManagement = () => {
   const handleAssignRole = async (userId, roleId) => {
     try {
       setIsLoading(true);
-      const response = await axiosInstance.post(`/roles/assign/${userId}`, { roleId }, { withCredentials: true });
+      await axiosInstance.post(`/roles/assign/${userId}`, { roleId }, { withCredentials: true });
       Swal.fire("Success", "Role assigned successfully", "success");
       setAssignedUserIds((prev) => [...prev, userId]);
-      await fetchRoles(); // Refresh roles to update userCount
+      await fetchRoles();
     } catch (err) {
       console.error("Error assigning role:", err);
       Swal.fire("Error", err.response?.data?.message || "Failed to assign role", "error");
@@ -400,19 +397,15 @@ const RoleManagement = () => {
       setIsLoading(true);
       await axiosInstance.post(`/roles/remove/${userId}`, { roleId }, { withCredentials: true });
       Swal.fire("Success", "Role unassigned successfully", "success");
-      // Update editingRole state
       setEditingRole((prev) => ({
         ...prev,
         users: prev.users.filter((u) => u._id !== userId),
         userCount: (prev.userCount || prev.users.length) - 1
       }));
-
-
-      // 🔥 FIX: assignedUserIds ko bhi update karo
       setAssignedUserIds((prev) => prev.filter((id) => id !== userId));
       setSearchTerm("");
       setShowDropdown(false);
-      await fetchRoles(); // Refresh roles to update userCount
+      await fetchRoles();
     } catch (err) {
       console.error("Error unassigning role:", err);
       Swal.fire("Error", err.response?.data?.message || "Failed to unassign role", "error");
@@ -434,641 +427,671 @@ const RoleManagement = () => {
   const handleRoleChange = (e) => {
     const role = e.target.value;
     setSelectedRole(role);
-    setRolePermissions([]); // Reset permissions to none selected
+    setRolePermissions([]);
     setRoleDescription(rolePermissionMap[role]?.description || "");
   };
 
   if (isLoading || authLoading) {
     return (
-      <div className="role-management-container">
-        <div className="role-management-loading">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p>Loading roles...</p>
+      <div className="min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Loading roles...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="role-management-container">
-      <Container fluid className="p-0">
+    <div className="min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Modern Header Section */}
-        <div className="page-header-section">
-          <div className="header-content">
-            <div className="header-main">
-              <div className="page-title-section">
-                <div className="page-icon">
-                  <MdSecurity />
-                </div>
-                <div className="page-info">
-                  <h1 className="page-title">Role Management</h1>
-                  <p className="page-subtitle">Create and manage user roles and permissions</p>
-                </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 mb-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <MdSecurity className="text-2xl text-blue-500" />
               </div>
-              <div className="header-actions d-flex align-items-center gap-2">
-                <Button variant="outline-secondary" size="sm" className="d-none d-md-flex" onClick={() => window.location.reload()}>
-                  <MdRefresh className="me-1" />
-                  Refresh
-                </Button>
-                <Button 
-                  variant="primary"
-                  onClick={() => {
-                    resetForm();
-                    setShowModal(true);
-                  }}
-                  disabled={
-                    isLoading ||
-                    authLoading ||
-                    availablePredefinedRoles.length === 0 ||
-                    !memberCanCreate
-                  }
+              <div>
+                <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Role Management</h1>
+                <p className="text-sm text-[var(--text-secondary)]">Create and manage user roles and permissions</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]" 
+                onClick={() => window.location.reload()}
+              >
+                <MdRefresh />
+                Refresh
+              </button>
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }}
+                disabled={
+                  isLoading ||
+                  authLoading ||
+                  availablePredefinedRoles.length === 0 ||
+                  !memberCanCreate
+                }
+              >
+                <MdAdd />
+                <span className="hidden sm:inline">Create Role</span>
+                <span className="sm:hidden">Create</span>
+              </button>
+              {/* Mobile more menu */}
+              <div className="md:hidden relative" ref={mobileDropdownRef}>
+                <button
+                  className="p-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]"
+                  onClick={() => setMobileDropdownId(mobileDropdownId === "header" ? null : "header")}
                 >
-                  <MdAdd className="me-1" />
-                  <span className="d-none d-sm-inline">Create Role</span>
-                  <span className="d-sm-none">Create</span>
-                </Button>
-                <Dropdown className="d-md-none">
-                  <Dropdown.Toggle variant="outline-secondary" size="sm">
-                    <MdMoreVert />
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu align="end">
-                    <Dropdown.Item onClick={() => window.location.reload()}>
-                      <MdRefresh className="me-2" />
+                  <MdMoreVert />
+                </button>
+                {mobileDropdownId === "header" && (
+                  <div className="absolute right-0 mt-2 bg-[var(--light-card)] dark:bg-[var(--dark-card)] shadow-lg rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] py-1 min-w-[160px] z-50">
+                    <button className="w-full flex items-center gap-2 px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors" onClick={() => { window.location.reload(); setMobileDropdownId(null); }}>
+                      <MdRefresh />
                       Refresh
-                    </Dropdown.Item>
-                    <Dropdown.Item>
-                      <MdSettings className="me-2" />
+                    </button>
+                    <button className="w-full flex items-center gap-2 px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors" onClick={() => setMobileDropdownId(null)}>
+                      <MdSettings />
                       Settings
-                    </Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
         {/* Stats Section */}
-        <div className="stats-section">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-roles">
-                <MdGroup />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+                <MdGroup className="text-2xl text-blue-500" />
               </div>
-              <div className="stat-content">
-                <div className="stat-number">{roles.length}</div>
-                <div className="stat-label">Total Roles</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-permissions">
-                <MdVpnKey />
-              </div>
-              <div className="stat-content">
-                <div className="stat-number">{permissions.length}</div>
-                <div className="stat-label">Permissions</div>
+              <div>
+                <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{roles.length}</p>
+                <p className="text-sm text-[var(--text-secondary)]">Total Roles</p>
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-users">
-                <MdAssignmentInd />
+          </div>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center">
+                <MdVpnKey className="text-2xl text-purple-500" />
               </div>
-              <div className="stat-content">
-                <div className="stat-number">{roles.reduce((sum, role) => sum + (role.userCount || 0), 0)}</div>
-                <div className="stat-label">Assigned Users</div>
+              <div>
+                <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{permissions.length}</p>
+                <p className="text-sm text-[var(--text-secondary)]">Permissions</p>
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-active">
-                <MdSecurity />
+          </div>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+                <MdAssignmentInd className="text-2xl text-green-500" />
               </div>
-              <div className="stat-content">
-                <div className="stat-number">{availablePredefinedRoles.length}</div>
-                <div className="stat-label">Available Roles</div>
+              <div>
+                <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{roles.reduce((sum, role) => sum + (role.userCount || 0), 0)}</p>
+                <p className="text-sm text-[var(--text-secondary)]">Assigned Users</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
+                <MdSecurity className="text-2xl text-orange-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{availablePredefinedRoles.length}</p>
+                <p className="text-sm text-[var(--text-secondary)]">Available Roles</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="content-grid">
-          <div className="roles-section">
-            <div className="section-card">
-              <div className="section-header">
-                <div className="section-title">
-                  <h3>System Roles</h3>
-                  <p>Manage role permissions and user assignments</p>
-                </div>
-                <div className="section-actions d-none d-md-flex">
-                  <Button variant="outline-secondary" size="sm">
-                    <MdFilterList className="me-1" />
-                    Filter
-                  </Button>
-                </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">System Roles</h3>
+                <p className="text-sm text-[var(--text-secondary)]">Manage role permissions and user assignments</p>
               </div>
+              <div className="hidden md:flex">
+                <button className="flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]">
+                  <MdFilterList />
+                  Filter
+                </button>
+              </div>
+            </div>
 
-              {/* Desktop Table View */}
-              <div className="roles-table d-none d-md-block">
-                <div className="modern-table">
-                  <div className="table-header">
-                    <div className="table-row">
-                      <div className="table-cell">Role</div>
-                      <div className="table-cell">Permissions</div>
-                      <div className="table-cell">Users</div>
-                      <div className="table-cell text-center">Actions</div>
-                    </div>
-                  </div>
-                  <div className="table-body">
-                    {!memberCanRead ? (
-                      <div className="empty-state">
-                        <div className="empty-state-icon">
-                          <MdSecurity />
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full border-collapse">
+                <thead className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <tr>
+                    <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Role</th>
+                    <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Permissions</th>
+                    <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Users</th>
+                    <th className="p-3 text-center text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+                  {!memberCanRead ? (
+                    <tr>
+                      <td colSpan="4" className="p-12">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-16 h-16 rounded-full bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center">
+                            <MdSecurity className="text-3xl text-red-500" />
+                          </div>
+                          <p className="text-[var(--text-secondary)]">No permission to view roles</p>
                         </div>
-                        <p>No permission to view roles</p>
-                      </div>
-                    ) : roles.length === 0 ? (
-                      <div className="empty-state">
-                        <div className="empty-state-icon">
-                          <MdGroup />
+                      </td>
+                    </tr>
+                  ) : roles.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="p-12">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-16 h-16 rounded-full bg-gray-500/10 dark:bg-gray-500/20 flex items-center justify-center">
+                            <MdGroup className="text-3xl text-gray-500" />
+                          </div>
+                          <p className="text-[var(--text-secondary)]">No roles found</p>
                         </div>
-                        <p>No roles found</p>
-                      </div>
-                    ) : (
-                      roles.map((role) => (
-                        <div key={role._id} className="table-row">
-                          <div className="table-cell">
-                            <div className="role-info">
-                              <div className="role-icon">
-                                <MdSecurity />
+                      </td>
+                    </tr>
+                  ) : (
+                    roles.map((role) => (
+                      <tr key={role._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                              <MdSecurity className="text-xl text-blue-500" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{role.name}</div>
+                              <div className="text-sm text-[var(--text-secondary)] mt-0.5">
+                                {role.description || "No description"}
                               </div>
-                              <div className="role-details">
-                                <div className="role-name">{role.name}</div>
-                                <div className="role-description">
-                                  {role.description || "No description"}
-                                </div>
-                                {role.isSystem && (
-                                  <span className="system-badge">System Role</span>
+                              {role.isSystem && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500/10 text-blue-500 mt-1">System Role</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex flex-wrap gap-2">
+                            {role.permissions && role.permissions.length > 0 ? (
+                              <>
+                                {role.permissions.slice(0, 2).map((permission, index) => {
+                                  const permName = typeof permission === "string"
+                                    ? permission
+                                    : permission.name;
+                                  return (
+                                    <span key={permission._id || index} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-500/10 text-purple-500">
+                                      {permName.replace(":", " ")}
+                                    </span>
+                                  );
+                                })}
+                                {role.permissions.length > 2 && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-[var(--text-secondary)]">
+                                    +{role.permissions.length - 2} more
+                                  </span>
                                 )}
-                              </div>
-                            </div>
+                              </>
+                            ) : (
+                              <span className="text-sm text-[var(--text-secondary)]">No permissions</span>
+                            )}
                           </div>
-                          <div className="table-cell">
-                            <div className="permissions-list">
-                              {role.permissions && role.permissions.length > 0 ? (
-                                <>
-                                  {role.permissions.slice(0, 2).map((permission, index) => {
-                                    const permName = typeof permission === "string"
-                                      ? permission
-                                      : permission.name;
-                                    return (
-                                      <span key={permission._id || index} className="permission-badge">
-                                        {permName.replace(":", " ")}
-                                      </span>
-                                    );
-                                  })}
-                                  {role.permissions.length > 2 && (
-                                    <span className="permission-count">
-                                      +{role.permissions.length - 2} more
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="no-permissions">No permissions</span>
-                              )}
-                            </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">{role.userCount || 0}</span>
+                            <span className="text-sm text-[var(--text-secondary)]">users</span>
+                            {memberCanAssign && (
+                              <button
+                                className="ml-2 p-1.5 rounded-md text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10 transition-colors disabled:opacity-50"
+                                onClick={async () => {
+                                  setAssigningRole(role);
+                                  setIsLoading(true);
+                                  let assignedIds = [];
+                                  try {
+                                    const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
+                                    assignedIds = data.users?.map((u) => u._id) || [];
+                                  } catch (err) {
+                                    console.error("Error fetching assigned users:", err);
+                                    Swal.fire("Error", "Failed to fetch assigned users", "error");
+                                  } finally {
+                                    setAssignedUserIds(assignedIds);
+                                    setIsLoading(false);
+                                    setShowAssignModal(true);
+                                  }
+                                }}
+                                disabled={isLoading}
+                              >
+                                <MdAssignmentInd className="text-xl" />
+                              </button>
+                            )}
                           </div>
-                          <div className="table-cell">
-                            <div className="user-count-wrapper">
-                              <span className="user-count">{role.userCount || 0}</span>
-                              <span className="user-count-label">users</span>
-                              {memberCanAssign && (
-                                <Button
-                                  variant="link"
-                                  size="sm"
-                                  className="assign-btn"
-                                  onClick={async () => {
-                                    setAssigningRole(role);
-                                    setIsLoading(true);
-                                    let assignedIds = [];
-                                    try {
-                                      const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
-                                      assignedIds = data.users?.map((u) => u._id) || [];
-                                    } catch (err) {
-                                      console.error("Error fetching assigned users:", err);
-                                      Swal.fire("Error", "Failed to fetch assigned users", "error");
-                                    } finally {
-                                      setAssignedUserIds(assignedIds);
-                                      setIsLoading(false);
-                                      setShowAssignModal(true);
-                                    }
-                                  }}
-                                  disabled={isLoading}
-                                >
-                                  <MdAssignmentInd />
-                                </Button>
-                              )}
-                            </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-center gap-2">
+                            {memberCanUpdate && (
+                              <button
+                                className="p-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => handleEditRole(role)}
+                                disabled={role.isSystem || isLoading}
+                              >
+                                <MdEdit />
+                              </button>
+                            )}
+                            {memberCanDelete && (
+                              <button
+                                className="p-2 rounded-md font-medium transition-colors border border-[var(--danger-color)] text-[var(--danger-color)] hover:bg-[var(--danger-color)] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => handleDeleteRole(role._id)}
+                                disabled={role.isSystem || isLoading}
+                              >
+                                <MdDelete />
+                              </button>
+                            )}
                           </div>
-                          <div className="table-cell">
-                            <div className="action-buttons">
-                              {memberCanUpdate && (
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  className="action-btn"
-                                  onClick={() => handleEditRole(role)}
-                                  disabled={role.isSystem || isLoading}
-                                >
-                                  <MdEdit />
-                                </Button>
-                              )}
-                              {memberCanDelete && (
-                                <Button
-                                  variant="outline-danger"
-                                  size="sm"
-                                  className="action-btn"
-                                  onClick={() => handleDeleteRole(role._id)}
-                                  disabled={role.isSystem || isLoading}
-                                >
-                                  <MdDelete />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-              {/* Mobile Cards View */}
-              <div className="roles-cards d-md-none">
-                {!memberCanRead ? (
-                  <div className="empty-state">
-                    <div className="empty-state-icon">
-                      <MdSecurity />
-                    </div>
-                    <p>No permission to view roles</p>
+            {/* Mobile Cards View */}
+            <div className="md:hidden space-y-4">
+              {!memberCanRead ? (
+                <div className="flex flex-col items-center gap-4 py-12">
+                  <div className="w-16 h-16 rounded-full bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center">
+                    <MdSecurity className="text-3xl text-red-500" />
                   </div>
-                ) : roles.length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-state-icon">
-                      <MdGroup />
-                    </div>
-                    <p>No roles found</p>
+                  <p className="text-[var(--text-secondary)]">No permission to view roles</p>
+                </div>
+              ) : roles.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 py-12">
+                  <div className="w-16 h-16 rounded-full bg-gray-500/10 dark:bg-gray-500/20 flex items-center justify-center">
+                    <MdGroup className="text-3xl text-gray-500" />
                   </div>
-                ) : (
-                  roles.map((role) => (
-                    <div key={role._id} className="role-card">
-                      <div className="role-card-header">
-                        <div className="role-icon">
-                          <MdSecurity />
-                        </div>
-                        <div className="role-info">
-                          <div className="role-name">{role.name}</div>
-                          <div className="role-description">{role.description || "No description"}</div>
-                        </div>
-                        <div className="role-actions">
-                          <Dropdown>
-                            <Dropdown.Toggle variant="link" size="sm">
-                              <MdMoreVert />
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu align="end">
-                              {memberCanUpdate && (
-                                <Dropdown.Item 
-                                  onClick={() => handleEditRole(role)}
-                                  disabled={role.isSystem || isLoading}
-                                >
-                                  <MdEdit className="me-2" />
-                                  Edit
-                                </Dropdown.Item>
-                              )}
-                              {memberCanAssign && (
-                                <Dropdown.Item
-                                  onClick={async () => {
-                                    setAssigningRole(role);
-                                    setIsLoading(true);
-                                    let assignedIds = [];
-                                    try {
-                                      const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
-                                      assignedIds = data.users?.map((u) => u._id) || [];
-                                    } catch (err) {
-                                      console.error("Error fetching assigned users:", err);
-                                      Swal.fire("Error", "Failed to fetch assigned users", "error");
-                                    } finally {
-                                      setAssignedUserIds(assignedIds);
-                                      setIsLoading(false);
-                                      setShowAssignModal(true);
-                                    }
-                                  }}
-                                  disabled={isLoading}
-                                >
-                                  <MdAssignmentInd className="me-2" />
-                                  Assign Users
-                                </Dropdown.Item>
-                              )}
-                              {memberCanDelete && (
-                                <Dropdown.Item 
-                                  className="text-danger"
-                                  onClick={() => handleDeleteRole(role._id)}
-                                  disabled={role.isSystem || isLoading}
-                                >
-                                  <MdDelete className="me-2" />
-                                  Delete
-                                </Dropdown.Item>
-                              )}
-                            </Dropdown.Menu>
-                          </Dropdown>
-                        </div>
+                  <p className="text-[var(--text-secondary)]">No roles found</p>
+                </div>
+              ) : (
+                roles.map((role) => (
+                  <div key={role._id} className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <MdSecurity className="text-xl text-blue-500" />
                       </div>
-                      <div className="role-card-content">
-                        <div className="role-meta">
-                          <div className="meta-item">
-                            <span className="meta-label">Permissions:</span>
-                            <div className="permissions-mobile">
-                              {role.permissions && role.permissions.length > 0 ? (
-                                <>
-                                  {role.permissions.slice(0, 3).map((permission, index) => {
-                                    const permName = typeof permission === "string"
-                                      ? permission
-                                      : permission.name;
-                                    return (
-                                      <span key={permission._id || index} className="permission-badge-mobile">
-                                        {permName.replace(":", " ")}
-                                      </span>
-                                    );
-                                  })}
-                                  {role.permissions.length > 3 && (
-                                    <span className="permission-count-mobile">
-                                      +{role.permissions.length - 3}
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="no-permissions-mobile">None</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{role.name}</div>
+                        <div className="text-sm text-[var(--text-secondary)] mt-0.5">{role.description || "No description"}</div>
+                      </div>
+                      <div className="relative">
+                        <button
+                          className="p-1 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] rounded"
+                          onClick={() => setMobileDropdownId(mobileDropdownId === role._id ? null : role._id)}
+                        >
+                          <MdMoreVert />
+                        </button>
+                        {mobileDropdownId === role._id && (
+                          <div className="absolute right-0 mt-2 bg-[var(--light-card)] dark:bg-[var(--dark-card)] shadow-lg rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] py-1 min-w-[160px] z-50">
+                            {memberCanUpdate && (
+                              <button
+                                className="w-full flex items-center gap-2 px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors disabled:opacity-50"
+                                onClick={() => { handleEditRole(role); setMobileDropdownId(null); }}
+                                disabled={role.isSystem || isLoading}
+                              >
+                                <MdEdit />
+                                Edit
+                              </button>
+                            )}
+                            {memberCanAssign && (
+                              <button
+                                className="w-full flex items-center gap-2 px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors disabled:opacity-50"
+                                onClick={async () => {
+                                  setAssigningRole(role);
+                                  setIsLoading(true);
+                                  let assignedIds = [];
+                                  try {
+                                    const { data } = await axiosInstance.get(`/roles/${role._id}/users`, { withCredentials: true });
+                                    assignedIds = data.users?.map((u) => u._id) || [];
+                                  } catch (err) {
+                                    console.error("Error fetching assigned users:", err);
+                                    Swal.fire("Error", "Failed to fetch assigned users", "error");
+                                  } finally {
+                                    setAssignedUserIds(assignedIds);
+                                    setIsLoading(false);
+                                    setShowAssignModal(true);
+                                    setMobileDropdownId(null);
+                                  }
+                                }}
+                                disabled={isLoading}
+                              >
+                                <MdAssignmentInd />
+                                Assign Users
+                              </button>
+                            )}
+                            {memberCanDelete && (
+                              <button
+                                className="w-full flex items-center gap-2 px-3 py-2 text-[var(--danger-color)] hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                                onClick={() => { handleDeleteRole(role._id); setMobileDropdownId(null); }}
+                                disabled={role.isSystem || isLoading}
+                              >
+                                <MdDelete />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-sm font-medium text-[var(--text-secondary)] mb-1.5 block">Permissions:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {role.permissions && role.permissions.length > 0 ? (
+                            <>
+                              {role.permissions.slice(0, 3).map((permission, index) => {
+                                const permName = typeof permission === "string"
+                                  ? permission
+                                  : permission.name;
+                                return (
+                                  <span key={permission._id || index} className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-500/10 text-purple-500">
+                                    {permName.replace(":", " ")}
+                                  </span>
+                                );
+                              })}
+                              {role.permissions.length > 3 && (
+                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-[var(--text-secondary)]">
+                                  +{role.permissions.length - 3}
+                                </span>
                               )}
-                            </div>
-                          </div>
-                          <div className="meta-item">
-                            <span className="meta-label">Users:</span>
-                            <span className="meta-value">{role.userCount || 0} assigned</span>
-                          </div>
-                          {role.isSystem && (
-                            <div className="meta-item">
-                              <span className="system-badge-mobile">System Role</span>
-                            </div>
+                            </>
+                          ) : (
+                            <span className="text-sm text-[var(--text-secondary)]">None</span>
                           )}
                         </div>
                       </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-[var(--text-secondary)]">Users:</span>
+                        <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{role.userCount || 0} assigned</span>
+                      </div>
+                      {role.isSystem && (
+                        <div>
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-500">System Role</span>
+                        </div>
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
+            </div>
 
-              {/* Pagination */}
-              <div className="pagination-section">
-                <Pagination
-                  current={pagination.page}
-                  total={pagination.total}
-                  limit={pagination.limit}
-                  onChange={(page) => {
-                    setPagination((prev) => ({ ...prev, page }));
-                  }}
-                />
+            {/* Pagination */}
+            <div className="mt-6 pt-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <Pagination
+                current={pagination.page}
+                total={pagination.total}
+                limit={pagination.limit}
+                onChange={(page) => {
+                  setPagination((prev) => ({ ...prev, page }));
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Create/Edit Role Modal */}
+        {showModal && (
+          <div>
+            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowModal(false)}></div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
+                <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">{editingRole ? "Edit Role" : "Create New Role"}</h5>
+                  <button 
+                    type="button" 
+                    className="w-8 h-8 flex items-center justify-center rounded-md text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
+                    onClick={() => setShowModal(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="p-4">
+                  <form>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Role Name</label>
+                        {editingRole ? (
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50 cursor-not-allowed"
+                            value={selectedRole}
+                            disabled
+                          />
+                        ) : (
+                          <>
+                            <select
+                              className={`w-full px-3 py-2 rounded-md border ${formErrors.selectedRole ? 'border-[var(--danger-color)]' : 'border-[var(--light-border)] dark:border-[var(--dark-border)]'} bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]`}
+                              value={selectedRole}
+                              onChange={handleRoleChange}
+                              disabled={isLoading}
+                            >
+                              <option value="">-- Select Role --</option>
+                              {availablePredefinedRoles.map((role) => (
+                                <option key={role} value={role}>
+                                  {role}
+                                </option>
+                              ))}
+                            </select>
+                            {formErrors.selectedRole && (
+                              <div className="text-[var(--danger-color)] text-sm mt-1">
+                                {formErrors.selectedRole}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Description</label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50 cursor-not-allowed"
+                          value={roleDescription}
+                          onChange={(e) => setRoleDescription(e.target.value)}
+                          placeholder="Enter role description"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Permissions</label>
+                      {formErrors.rolePermissions && (
+                        <div className="text-[var(--danger-color)] text-sm mb-2">{formErrors.rolePermissions}</div>
+                      )}
+                      <div className="space-y-4">
+                        {Object.entries(groupedPermissions).length > 0 ? (
+                          Object.entries(groupedPermissions).map(([group, perms]) => (
+                            <div key={group}>
+                              <h5 className="text-md font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-3">{group.charAt(0).toUpperCase() + group.slice(1)} Permissions</h5>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {perms.map((permission) =>
+                                  permission && permission._id && permission.name ? (
+                                    <div key={permission._id} className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md p-3 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                      <div className="flex items-start gap-2">
+                                        <input
+                                          type="checkbox"
+                                          className="mt-1 w-4 h-4 rounded border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50"
+                                          id={`permission-${permission._id}`}
+                                          checked={memoizedRolePermissions.includes(permission._id)}
+                                          onChange={(e) => handlePermissionChange(permission._id, e.target.checked)}
+                                          disabled={isLoading}
+                                        />
+                                        <label className="flex-1 cursor-pointer" htmlFor={`permission-${permission._id}`}>
+                                          <span className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                            {permission.name.replace(":", " ")}
+                                          </span>
+                                          <span className="block text-xs text-[var(--text-secondary)] mt-0.5">
+                                            {permission.description || permission.name.replace(":", " ").toUpperCase()}
+                                          </span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                  ) : null
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-[var(--text-secondary)] text-sm">No permissions available for this role.</p>
+                        )}
+                      </div>
+                    </div>
+                    {editingRole && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Assigned Users</label>
+                        {editingRole.users && editingRole.users.length > 0 ? (
+                          <div className="space-y-2">
+                            {editingRole.users.map((u) => (
+                              <div
+                                key={u._id}
+                                className="flex items-center justify-between p-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]"
+                              >
+                                <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{u.name} ({u.email})</span>
+                                <button
+                                  className="p-2 rounded-md font-medium transition-colors border border-[var(--danger-color)] text-[var(--danger-color)] hover:bg-[var(--danger-color)] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                  onClick={() => handleUnassignRole(u._id, editingRole._id)}
+                                  disabled={isLoading || !memberCanRemove}
+                                >
+                                  <MdDelete />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[var(--text-secondary)] text-sm">No users assigned to this role.</p>
+                        )}
+                      </div>
+                    )}
+                  </form>
+                </div>
+                <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <button 
+                    className="flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] disabled:opacity-50 disabled:cursor-not-allowed" 
+                    onClick={() => setShowModal(false)} 
+                    disabled={isLoading}
+                  >
+                    <MdCancel />
+                    Cancel
+                  </button>
+                  <button 
+                    className="flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed" 
+                    onClick={handleSaveRole} 
+                    disabled={
+                      isLoading ||
+                      (editingRole ? !memberCanUpdate : !memberCanCreate)
+                    }
+                  >
+                    <MdSave />
+                    {editingRole ? "Update Role" : "Create Role"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Create/Edit Role Modal */}
-          <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-            <Modal.Header closeButton>
-              <Modal.Title>{editingRole ? "Edit Role" : "Create New Role"}</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Role Name</Form.Label>
-                      {editingRole ? (
-                        <Form.Control
-                          type="text"
-                          value={selectedRole}
-                          disabled
-                        />
-                      ) : (
-                        <Form.Select
-                          value={selectedRole}
-                          onChange={handleRoleChange}
-                          disabled={isLoading}
-                          isInvalid={!!formErrors.selectedRole}
-                        >
-                          <option value="">-- Select Role --</option>
-                          {availablePredefinedRoles.map((role) => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      )}
-                      <Form.Control.Feedback type="invalid">
-                        {formErrors.selectedRole}
-                      </Form.Control.Feedback>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Description</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={roleDescription}
-                        onChange={(e) => setRoleDescription(e.target.value)}
-                        placeholder="Enter role description"
-                        disabled
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <Form.Group className="mb-3">
-                  <Form.Label>Permissions</Form.Label>
-                  {formErrors.rolePermissions && (
-                    <div className="text-danger mb-2">{formErrors.rolePermissions}</div>
-                  )}
-                  <div className="permission-grid">
-                    {Object.entries(groupedPermissions).length > 0 ? (
-                      Object.entries(groupedPermissions).map(([group, perms]) => (
-                        <div key={group} className="mb-4 w-100">
-                          <h5>{group.charAt(0).toUpperCase() + group.slice(1)} Permissions</h5>
-                          <div className="d-flex justify-content-between flex-wrap gap-2 ">
-                            {perms.map((permission) =>
-                              permission && permission._id && permission.name ? (
-                                <Card key={permission._id} className="permission-card mb-2" style={{ width: "15rem" }}>
-                                  <Card.Body className="p-3">
-                                    <Form.Check
-                                      type="checkbox"
-                                      id={`permission-${permission._id}`}
-                                      label={permission.name.replace(":", " ")}
-                                      checked={memoizedRolePermissions.includes(permission._id)}
-                                      onChange={(e) => handlePermissionChange(permission._id, e.target.checked)}
-                                      disabled={isLoading}
-                                    />
-                                    <small className="text-muted d-block mt-1">
-                                      {permission.description || permission.name.replace(":", " ").toUpperCase()}
-                                    </small>
-                                  </Card.Body>
-                                </Card>
-                              ) : null
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-muted">No permissions available for this role.</p>
-                    )}
-                  </div>
-                </Form.Group>
-                {editingRole && (
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold">Assigned Users</Form.Label>
-                    {editingRole.users && editingRole.users.length > 0 ? (
-                      <ul className="list-group">
-                        {editingRole.users.map((user) => (
-                          <li
-                            key={user._id}
-                            className="list-group-item d-flex justify-content-between align-items-center"
-                          >
-                            {user.name} ({user.email})
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleUnassignRole(user._id, editingRole._id)}
-                              disabled={isLoading || !memberCanRemove}
-                            >
-                              <MdDelete />
-                            </Button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-muted">No users assigned to this role.</p>
-                    )}
-                  </Form.Group>
-                )}
-              </Form>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowModal(false)} disabled={isLoading}>
-                <MdCancel className="me-2" />
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleSaveRole} disabled={
-                isLoading ||
-                (editingRole ? !memberCanUpdate : !memberCanCreate)
-              }>
-                <MdSave className="me-2" />
-                {editingRole ? "Update Role" : "Create Role"}
-              </Button>
-            </Modal.Footer>
-          </Modal>
-
-          {/* Assign Role Modal */}
-          <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
-            <Modal.Header closeButton>
-              <Modal.Title>Assign Role: {assigningRole?.name}</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form.Group>
-                <Form.Label>Select User</Form.Label>
-                {/* <Form.Select
-                  value={selectedUserId || ""}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  disabled={isLoading}
-                >
-                  <option value="">-- Select User --</option>
-                  {users.filter((user) => user.role !== "companyAdmin" &&
-                    !assignedUserIds.includes(user._id)).map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.name} ({user.email})
-                      </option>
-                    ))}
-                </Form.Select> */}
-
-                <div className="position-relative" ref={inputRef}>
-                  <Form.Control
-                    type="text"
-                    placeholder="Type to search user..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onFocus={() => {
-                      setSearchTerm("");
-                      setShowDropdown(true);
-                    }} // Clear input and show dropdown on focus
-                    disabled={isLoading}
-                  />
-                  {showDropdown && filteredUsers.length > 0 && (
-                    <ul
-                      className="list-group position-absolute w-100"
-                      style={{
-                        zIndex: 1000,
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      {filteredUsers.map((user) => (
-                        <li
-                          key={user._id}
-                          className="list-group-item list-group-item-action"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => handleSelectUser(user)}
-                        >
-                          {user.name} ({user.email})
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {showDropdown && searchTerm && filteredUsers.length === 0 && (
-                    <div
-                      className="position-absolute w-100 p-2 bg-white"
-                      style={{
-                        zIndex: 1000,
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      No users found
-                    </div>
-                  )}
+        {/* Assign Role Modal */}
+        {showAssignModal && (
+          <div>
+            <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowAssignModal(false)}></div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg w-full max-w-md">
+                <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Assign Role: {assigningRole?.name}</h5>
+                  <button 
+                    type="button" 
+                    className="w-8 h-8 flex items-center justify-center rounded-md text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
+                    onClick={() => setShowAssignModal(false)}
+                  >
+                    ✕
+                  </button>
                 </div>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowAssignModal(false)} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button
-                variant="success"
-                onClick={async () => {
-                  if (!selectedUserId) return;
-                  setIsLoading(true);
-                  await handleAssignRole(selectedUserId, assigningRole._id);
-                  setShowAssignModal(false);
-                  setSelectedUserId("");
-                  fetchUsers();
-                  setIsLoading(false);
-                }}
-                disabled={!selectedUserId || isLoading || !memberCanAssign}
-              >
-                Assign
-              </Button>
-            </Modal.Footer>
-          </Modal>
-
-        </div>
-      </Container>
+                <div className="p-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Select User</label>
+                    <div className="relative" ref={inputRef}>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50"
+                        placeholder="Type to search user..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onFocus={() => {
+                          setSearchTerm("");
+                          setShowDropdown(true);
+                        }}
+                        disabled={isLoading}
+                      />
+                      {showDropdown && filteredUsers.length > 0 && (
+                        <ul className="absolute w-full mt-1 bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md shadow-lg max-h-48 overflow-y-auto z-50">
+                          {filteredUsers.map((u) => (
+                            <li
+                              key={u._id}
+                              className="px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] cursor-pointer transition-colors"
+                              onClick={() => handleSelectUser(u)}
+                            >
+                              {u.name} ({u.email})
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {showDropdown && searchTerm && filteredUsers.length === 0 && (
+                        <div className="absolute w-full mt-1 p-3 bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md shadow-lg z-50">
+                          <p className="text-[var(--text-secondary)] text-sm">No users found</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <button 
+                    className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] disabled:opacity-50 disabled:cursor-not-allowed" 
+                    onClick={() => setShowAssignModal(false)} 
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={async () => {
+                      if (!selectedUserId) return;
+                      setIsLoading(true);
+                      await handleAssignRole(selectedUserId, assigningRole._id);
+                      setShowAssignModal(false);
+                      setSelectedUserId("");
+                      fetchUsers();
+                      setIsLoading(false);
+                    }}
+                    disabled={!selectedUserId || isLoading || !memberCanAssign}
+                  >
+                    Assign
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

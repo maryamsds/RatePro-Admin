@@ -2,7 +2,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Container, Row, Col, Card, Button, Table, Badge, ProgressBar, Spinner } from "react-bootstrap"
 import { Line } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -355,33 +354,47 @@ const Dashboard = ({ darkMode }) => {
   )
 
   return (
-    <Container fluid className="dashboard-container">
+    <div className="w-full">
       {/* Header Section */}
-      <div className="dashboard-header">
-        <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div className="mb-6">
+        <div className="flex justify-between items-start flex-wrap gap-4">
           <div>
-            <h2>Dashboard Overview</h2>
-            <p>Welcome back! Here's what's happening with your surveys today.</p>
+            <h2 className="text-2xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+              Dashboard Overview
+            </h2>
+            <p className="text-[var(--text-secondary)]">
+              Welcome back! Here's what's happening with your surveys today.
+            </p>
           </div>
-          <div className="d-flex gap-2 flex-wrap">
-            <Button
-              variant="outline-secondary"
-              size="sm"
+          <div className="flex gap-2 flex-wrap">
+            <button
               onClick={handleRefresh}
               disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
+                         border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                         text-[var(--light-text)] dark:text-[var(--dark-text)]
+                         bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                         hover:bg-[var(--light-hover)]/10 dark:hover:bg-[var(--dark-hover)]/10
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         transition-colors duration-300"
             >
               {refreshing ? (
-                <Spinner animation="border" size="sm" className="me-1" />
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
-                <MdRefresh size={16} className="me-1" />
+                <MdRefresh size={16} />
               )}
               {refreshing ? "Refreshing..." : "Refresh"}
-            </Button>
+            </button>
             {canCreateSurvey && (
-              <Button variant="primary" onClick={createNewSurvey} size="sm">
-                <MdAdd size={16} className="me-1" />
+              <button
+                onClick={createNewSurvey}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
+                           bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
+                           text-white transition-colors duration-300"
+              >
+                <MdAdd size={16} />
                 New Survey
-              </Button>
+              </button>
             )}
           </div>
         </div>
@@ -389,232 +402,336 @@ const Dashboard = ({ darkMode }) => {
 
       {/* Error Alert */}
       {error && (
-        <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
-          <span>{error}</span>
-          <Button variant="link" className="ms-auto p-0" onClick={handleRefresh}>
+        <div 
+          className="flex items-center gap-3 mb-6 p-4 rounded-md
+                     bg-[var(--danger-light)] border border-[var(--danger-color)]
+                     text-[var(--danger-color)]" 
+          role="alert"
+        >
+          <span className="flex-1">{error}</span>
+          <button 
+            onClick={handleRefresh}
+            className="text-sm text-[var(--primary-color)] hover:underline font-medium
+                       bg-transparent border-0 cursor-pointer p-0 transition-colors duration-300"
+          >
             Try Again
-          </Button>
+          </button>
         </div>
       )}
 
       {/* Loading State */}
       {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Loading dashboard...</p>
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-[var(--text-secondary)] text-lg">Loading dashboard...</p>
         </div>
       ) : (
         <>
           {/* Stats Cards */}
-          <Row className="g-3 mb-4">
-            <Col xl={3} lg={6} md={6} xs={12}>
-              <div className="stats-card">
-                <div className="stats-card-header">
-                  <div className="stats-icon icon-primary">
-                    <MdPoll />
-                  </div>
-                </div>
-                <div className="stats-card-body">
-                  <h3>{stats.totalSurveys}</h3>
-                  <p>Total Surveys</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Total Surveys Card */}
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                            rounded-md shadow-md p-6
+                            border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                            transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                bg-[var(--primary-light)]">
+                  <MdPoll className="text-[var(--primary-color)]" size={24} />
                 </div>
               </div>
-            </Col>
+              <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                {stats.totalSurveys}
+              </h3>
+              <p className="text-[var(--text-secondary)] text-sm">Total Surveys</p>
+            </div>
 
-            <Col xl={3} lg={6} md={6} xs={12}>
-              <div className="stats-card">
-                <div className="stats-card-header">
-                  <div className="stats-icon icon-success">
-                    <MdPeople />
-                  </div>
-                </div>
-                <div className="stats-card-body">
-                  <h3>{stats.activeResponses.toLocaleString()}</h3>
-                  <p>Active Responses</p>
+            {/* Active Responses Card */}
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                            rounded-md shadow-md p-6
+                            border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                            transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                bg-[var(--success-light)]">
+                  <MdPeople className="text-[var(--success-color)]" size={24} />
                 </div>
               </div>
-            </Col>
+              <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                {stats.activeResponses.toLocaleString()}
+              </h3>
+              <p className="text-[var(--text-secondary)] text-sm">Active Responses</p>
+            </div>
 
-            <Col xl={3} lg={6} md={6} xs={12}>
-              <div className="stats-card">
-                <div className="stats-card-header">
-                  <div className="stats-icon icon-info">
-                    <MdTrendingUp />
-                  </div>
-                </div>
-                <div className="stats-card-body">
-                  <h3>{stats.completionRate}%</h3>
-                  <p>Completion Rate</p>
+            {/* Completion Rate Card */}
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                            rounded-md shadow-md p-6
+                            border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                            transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                bg-[var(--info-light)]">
+                  <MdTrendingUp className="text-[var(--info-color)]" size={24} />
                 </div>
               </div>
-            </Col>
+              <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                {stats.completionRate}%
+              </h3>
+              <p className="text-[var(--text-secondary)] text-sm">Completion Rate</p>
+            </div>
 
-            <Col xl={3} lg={6} md={6} xs={12}>
-              <div className="stats-card">
-                <div className="stats-card-header">
-                  <div className="stats-icon icon-warning">
-                    <MdTrendingUp />
-                  </div>
-                </div>
-                <div className="stats-card-body">
-                  <h3>{typeof stats.avgSatisfaction === 'number' ? stats.avgSatisfaction.toFixed(2) : stats.avgSatisfaction}</h3>
-                  <p>Avg Satisfaction</p>
+            {/* Avg Satisfaction Card */}
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                            rounded-md shadow-md p-6
+                            border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                            transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-md
+                                bg-[var(--warning-light)]">
+                  <MdTrendingUp className="text-[var(--warning-color)]" size={24} />
                 </div>
               </div>
-            </Col>
-          </Row>
+              <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                {typeof stats.avgSatisfaction === 'number' ? stats.avgSatisfaction.toFixed(2) : stats.avgSatisfaction}
+              </h3>
+              <p className="text-[var(--text-secondary)] text-sm">Avg Satisfaction</p>
+            </div>
+          </div>
 
           {/* Charts Row - Only show if user can view analytics */}
           {canViewAnalytics && (
-            <Row className="g-3 mb-4">
-              <Col lg={12}>
-                <div className="chart-card">
-                  <h5 className="d-flex align-items-center gap-2">
+            <div className="mb-6">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                              rounded-md shadow-md p-6
+                              border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <div className="flex items-center justify-between mb-6">
+                  <h5 className="flex items-center gap-2 text-lg font-semibold
+                                 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                     <MdShowChart size={20} />
                     Satisfaction Trends
-                    <Button
-                      variant="link"
-                      onClick={ViewTrendsAnalytics}
-                      size="sm"
-                      className="ms-auto text-decoration-none"
-                    >
-                      View Details →
-                    </Button>
                   </h5>
-                  <div className="chart-container d-flex justify-content-center align-items-center">
-                    <Line data={responseData} options={chartOptions} />
-                  </div>
+                  <button
+                    onClick={ViewTrendsAnalytics}
+                    className="text-sm text-[var(--primary-color)] hover:underline font-medium
+                               bg-transparent border-0 cursor-pointer p-0 transition-colors duration-300"
+                  >
+                    View Details →
+                  </button>
                 </div>
-              </Col>
-            </Row>
+                <div className="w-full h-80">
+                  <Line data={responseData} options={chartOptions} />
+                </div>
+              </div>
+            </div>
           )}
 
-          {/* Recent Surveys and Completion Rates - Only show if user can view surveys */}
+          {/* Recent Surveys - Only show if user can view surveys */}
           {canViewSurveys ? (
-            <Row className="g-3">
-              <Col lg={8}>
-                <div className="recent-surveys-section">
-                  <div className="section-header">
-                    <h5>
-                      <MdPoll size={20} />
-                      Recent Surveys
-                    </h5>
-                    <Button
-                      variant="link"
-                      onClick={ViewRecentSurveys}
-                      size="sm"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      View All →
-                    </Button>
-                  </div>
-                  <div className="table-container">
-                    {recentSurveys.length === 0 ? (
-                      <div className="text-center py-5">
-                        <MdPoll size={48} className="text-muted mb-3" />
-                        <h6 className="text-muted">No surveys yet</h6>
-                        <p className="text-muted small mb-3">Create your first survey to get started</p>
-                        {canCreateSurvey && (
-                          <Button variant="primary" size="sm" onClick={createNewSurvey}>
-                            <MdAdd size={16} className="me-1" />
-                            Create Survey
-                          </Button>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        <Table className="custom-table" hover responsive>
-                          <thead>
-                            <tr>
-                              <th>Survey Name</th>
-                              <th className="d-none d-md-table-cell">Responses</th>
-                              <th>Status</th>
-                              <th className="text-center">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {currentSurveys.map((survey) => (
-                              <tr key={survey.id}>
-                                <td>
-                                  <Link
-                                    to={`/app/surveys/${survey.id}`}
-                                    style={{ textDecoration: 'none', color: 'inherit' }}
-                                  >
-                                    <div style={{ fontWeight: 500 }}>{survey.name}</div>
-                                  </Link>
-                                  <small className="d-md-none text-muted">{survey.responses} responses</small>
-                                </td>
-                                <td className="d-none d-md-table-cell">
-                                  <strong>{survey.responses}</strong>
-                                </td>
-                                <td>
-                                  <span className={`status-badge status-${survey.status.toLowerCase()}`}>
-                                    {survey.status}
-                                  </span>
-                                </td>
-                                <td className="text-center">
-                                  <div className="d-flex gap-1 justify-content-center">
-                                    <Link to={`/app/surveys/responses/${survey.id}`} className="action-button" title="View Responses">
-                                      <MdQuestionAnswer size={18} />
-                                    </Link>
-                                    <Link to={`/app/surveys/${survey.id}/analytics`} className="action-button" title="View Analytics">
-                                      <MdBarChart size={18} />
-                                    </Link>
-                                    <Link to={`/app/surveys/detail/${survey.id}`} className="action-button" title="Survey Details">
-                                      <MdInfo size={18} />
-                                    </Link>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                        <div className="pagination-container">
-                          <div className="pagination-info">
-                            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} surveys
-                          </div>
-                          <div className="pagination-controls">
-                            <button
-                              className="pagination-button"
-                              disabled={pagination.page === 1}
-                              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-                            >
-                              <MdChevronLeft size={18} />
-                              Previous
-                            </button>
-                            <button
-                              className="pagination-button"
-                              disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
-                              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-                            >
-                              Next
-                              <MdChevronRight size={18} />
-                            </button>
-                          </div>
-                        </div>
-                      </>
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                            rounded-md shadow-md
+                            border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="flex items-center justify-between p-6 border-b
+                              border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="flex items-center gap-2 text-lg font-semibold
+                               text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  <MdPoll size={20} />
+                  Recent Surveys
+                </h5>
+                <button
+                  onClick={ViewRecentSurveys}
+                  className="text-sm text-[var(--primary-color)] hover:underline font-medium
+                             bg-transparent border-0 cursor-pointer p-0 transition-colors duration-300"
+                >
+                  View All →
+                </button>
+              </div>
+
+              <div className="p-6">
+                {recentSurveys.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <MdPoll size={48} className="text-[var(--text-secondary)] mb-3" />
+                    <h6 className="text-lg font-medium text-[var(--text-secondary)] mb-1">
+                      No surveys yet
+                    </h6>
+                    <p className="text-[var(--text-secondary)] text-sm mb-4">
+                      Create your first survey to get started
+                    </p>
+                    {canCreateSurvey && (
+                      <button
+                        onClick={createNewSurvey}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
+                                   bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
+                                   text-white transition-colors duration-300"
+                      >
+                        <MdAdd size={16} />
+                        Create Survey
+                      </button>
                     )}
                   </div>
-                </div>
-              </Col>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border-collapse">
+                        <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                          <tr>
+                            <th className="p-3 text-left text-sm font-semibold
+                                           text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                           border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                              Survey Name
+                            </th>
+                            <th className="hidden md:table-cell p-3 text-left text-sm font-semibold
+                                           text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                           border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                              Responses
+                            </th>
+                            <th className="p-3 text-left text-sm font-semibold
+                                           text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                           border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                              Status
+                            </th>
+                            <th className="p-3 text-center text-sm font-semibold
+                                           text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                           border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentSurveys.map((survey) => (
+                            <tr key={survey.id}
+                                className="hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
+                                           transition-colors duration-200">
+                              <td className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <Link
+                                  to={`/app/surveys/${survey.id}`}
+                                  className="no-underline text-[var(--primary-color)] hover:text-[var(--primary-hover)]
+                                             transition-colors duration-200"
+                                >
+                                  <div className="font-medium">{survey.name}</div>
+                                </Link>
+                                <small className="md:hidden text-[var(--text-secondary)] text-xs">
+                                  {survey.responses} responses
+                                </small>
+                              </td>
+                              <td className="hidden md:table-cell p-3 border-b
+                                             border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                  {survey.responses}
+                                </span>
+                              </td>
+                              <td className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <span className={`
+                                  inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium
+                                  ${survey.status.toLowerCase() === 'active' 
+                                    ? 'bg-[var(--success-light)] text-[var(--success-color)]'
+                                    : survey.status.toLowerCase() === 'completed'
+                                    ? 'bg-[var(--info-light)] text-[var(--info-color)]'
+                                    : survey.status.toLowerCase() === 'draft'
+                                    ? 'bg-[var(--warning-light)] text-[var(--warning-color)]'
+                                    : survey.status.toLowerCase() === 'paused'
+                                    ? 'bg-[var(--danger-light)] text-[var(--danger-color)]'
+                                    : 'bg-[var(--primary-light)] text-[var(--primary-color)]'
+                                  }
+                                `}>
+                                  {survey.status}
+                                </span>
+                              </td>
+                              <td className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <div className="flex gap-2 justify-center">
+                                  <Link 
+                                    to={`/app/surveys/responses/${survey.id}`}
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded
+                                               text-[var(--primary-color)] hover:bg-[var(--primary-light)]
+                                               transition-colors duration-200"
+                                    title="View Responses"
+                                  >
+                                    <MdQuestionAnswer size={18} />
+                                  </Link>
+                                  <Link 
+                                    to={`/app/surveys/${survey.id}/analytics`}
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded
+                                               text-[var(--info-color)] hover:bg-[var(--info-light)]
+                                               transition-colors duration-200"
+                                    title="View Analytics"
+                                  >
+                                    <MdBarChart size={18} />
+                                  </Link>
+                                  <Link 
+                                    to={`/app/surveys/detail/${survey.id}`}
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded
+                                               text-[var(--secondary-color)] hover:bg-gray-100 dark:hover:bg-gray-800
+                                               transition-colors duration-200"
+                                    title="Survey Details"
+                                  >
+                                    <MdInfo size={18} />
+                                  </Link>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-              {/* Weekly Completion chart removed - no backend API support */}
-            </Row>
+                    {/* Pagination */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4
+                                    border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="text-sm text-[var(--text-secondary)]">
+                        Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} surveys
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-md
+                                     border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                                     text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                     bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                     hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
+                                     disabled:opacity-50 disabled:cursor-not-allowed
+                                     transition-colors duration-300"
+                          disabled={pagination.page === 1}
+                          onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                        >
+                          <MdChevronLeft size={18} />
+                          Previous
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-md
+                                     border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                                     text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                     bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                                     hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
+                                     disabled:opacity-50 disabled:cursor-not-allowed
+                                     transition-colors duration-300"
+                          disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                          onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                        >
+                          Next
+                          <MdChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           ) : (
             /* Fallback for users without survey permissions */
-            <Row className="g-3">
-              <Col lg={12}>
-                <div className="text-center py-5">
-                  <MdPoll size={48} className="text-muted mb-3" />
-                  <h6 className="text-muted">Limited Access</h6>
-                  <p className="text-muted small">You don't have permission to view surveys. Contact your administrator for access.</p>
-                </div>
-              </Col>
-            </Row>
+            <div className="flex flex-col items-center justify-center py-16
+                            bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                            rounded-md shadow-md
+                            border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <MdPoll size={48} className="text-[var(--text-secondary)] mb-3" />
+              <h6 className="text-lg font-medium text-[var(--text-secondary)] mb-1">
+                Limited Access
+              </h6>
+              <p className="text-[var(--text-secondary)] text-sm">
+                You don't have permission to view surveys. Contact your administrator for access.
+              </p>
+            </div>
           )}
         </>
       )}
-    </Container>
+    </div>
   )
 }
 

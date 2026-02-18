@@ -15,13 +15,13 @@ const AudienceSegments = ({ darkMode }) => {
   const [filterOptions, setFilterOptions] = useState({})
   const [previewContacts, setPreviewContacts] = useState([])
   const [previewCount, setPreviewCount] = useState(0)
-  
+
   const [currentSegment, setCurrentSegment] = useState({
     name: "",
     description: "",
     filters: {},
   })
-  
+
   const [viewSegment, setViewSegment] = useState(null)
   const [viewContacts, setViewContacts] = useState([])
 
@@ -52,7 +52,7 @@ const AudienceSegments = ({ darkMode }) => {
     try {
       const res = await axiosInstance.get('/segments')
       const list = res?.data?.data?.segments || []
-      
+
       // Fetch counts for each segment
       const segmentsWithCounts = await Promise.all(
         list.map(async (seg) => {
@@ -64,7 +64,7 @@ const AudienceSegments = ({ darkMode }) => {
           }
         })
       )
-      
+
       setSegments(segmentsWithCounts)
     } catch (err) {
       console.error("Failed to fetch segments:", err)
@@ -104,13 +104,13 @@ const AudienceSegments = ({ darkMode }) => {
 
       const res = await axiosInstance.post('/segments/preview?limit=5', { filters: cleanFilters })
       const data = res?.data?.data || {}
-      
+
       setPreviewContacts(data.contacts || [])
       setPreviewCount(data.total || 0)
-      
+
       Swal.fire({
         title: `Preview: ${data.total || 0} contacts match`,
-        html: data.contacts?.length > 0 
+        html: data.contacts?.length > 0
           ? `<ul style="text-align:left">${data.contacts.slice(0, 5).map(c => `<li>${c.name} (${c.email})</li>`).join('')}</ul>
              ${data.total > 5 ? `<p>...and ${data.total - 5} more</p>` : ''}`
           : '<p>No contacts match these filters</p>',
@@ -180,7 +180,7 @@ const AudienceSegments = ({ darkMode }) => {
     try {
       const res = await axiosInstance.get(`/segments/${seg._id}/contacts?limit=20`)
       const data = res?.data?.data || {}
-      
+
       setViewSegment(seg)
       setViewContacts(data.items || [])
       setShowViewModal(true)
@@ -198,14 +198,14 @@ const AudienceSegments = ({ darkMode }) => {
       Swal.fire("Info", "System segments cannot be edited", "info")
       return
     }
-    
+
     setCurrentSegment({
       _id: seg._id,
       name: seg.name,
       description: seg.description || '',
       filters: seg.filters || {},
     })
-    
+
     // Populate filter form from segment
     setFilters({
       status: seg.filters?.status || "",
@@ -219,7 +219,7 @@ const AudienceSegments = ({ darkMode }) => {
       country: seg.filters?.country || "",
       city: seg.filters?.city || "",
     })
-    
+
     setModalMode('edit')
     setShowBuilderModal(true)
   }
@@ -288,30 +288,40 @@ const AudienceSegments = ({ darkMode }) => {
   // ─────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading segments...</p>
+      <div className="flex items-center justify-center min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Loading segments...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="audience-segmentation-container">
+    <div className="p-6 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] min-h-screen">
       {/* Page Header */}
-      <div className="page-header-section">
-        <div className="page-header-content">
-          <div className="page-title-wrapper">
-            <div className="page-icon"><MdSegment /></div>
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-[var(--primary-color)] text-white">
+              <MdSegment size={24} />
+            </div>
             <div>
-              <h1 className="page-title">Audience Segments</h1>
-              <p className="page-subtitle">Dynamic, rule-based contact segments for targeted surveys</p>
+              <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Audience Segments</h1>
+              <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Dynamic, rule-based contact segments for targeted surveys</p>
             </div>
           </div>
-          <div className="page-actions">
-            <button className="action-button secondary-action" onClick={fetchSegments}>
+          <div className="flex gap-2">
+            <button 
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] flex items-center gap-2"
+              onClick={fetchSegments}
+            >
               <MdRefresh /> Refresh
             </button>
-            <button className="action-button primary-action" onClick={handleCreateSegment}>
+            <button 
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90 flex items-center gap-2"
+              onClick={handleCreateSegment}
+            >
               <MdAdd /> Create Segment
             </button>
           </div>
@@ -319,67 +329,79 @@ const AudienceSegments = ({ darkMode }) => {
       </div>
 
       {/* Info Banner */}
-      <div className="alert alert-info d-flex align-items-center mb-4">
-        <MdAutoAwesome className="me-2" size={24} />
-        <div>
-          <strong>Dynamic Segments:</strong> Contacts are automatically included based on matching rules. 
+      <div className="mb-6 bg-[var(--info-color)] bg-opacity-10 border border-[var(--info-color)] border-opacity-30 rounded-md p-4 flex items-start gap-3">
+        <MdAutoAwesome className="text-[var(--info-color)] flex-shrink-0" size={24} />
+        <div className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+          <strong>Dynamic Segments:</strong> Contacts are automatically included based on matching rules.
           No manual assignment needed - segment membership updates in real-time!
         </div>
       </div>
 
       {/* Segments Table */}
-      <div className="section-card">
-        <div className="p-4 border-bottom">
-          <h2 className="section-title">All Segments</h2>
-          <p className="section-subtitle">System and custom segments</p>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <h2 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">All Segments</h2>
+          <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">System and custom segments</p>
         </div>
         <div className="overflow-x-auto">
-          <table className="data-table w-full">
-            <thead>
+          <table className="min-w-full border-collapse">
+            <thead className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
               <tr>
-                <th>Segment Name</th>
-                <th>Description</th>
-                <th>Type</th>
-                <th>Matching Contacts</th>
-                <th>Actions</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Segment Name</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Description</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Type</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Matching Contacts</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
               {segments.map((seg) => (
-                <tr key={seg._id}>
-                  <td>
-                    <div className="segment-name">
-                      {seg.name}
-                      {seg.isSystem && <span className="badge bg-info ms-2">System</span>}
+                <tr key={seg._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">{seg.name}</span>
+                      {seg.isSystem && <span className="px-2 py-1 text-xs rounded-md bg-[var(--info-color)] text-white">System</span>}
                     </div>
-                    <div className="segment-date text-muted small">
+                    <div className="text-xs text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 mt-1">
                       {seg.createdAt ? new Date(seg.createdAt).toLocaleDateString() : ''}
                     </div>
                   </td>
-                  <td>{seg.description || '-'}</td>
-                  <td>
-                    <span className={`badge ${seg.isSystem ? 'bg-secondary' : 'bg-primary'}`}>
+                  <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{seg.description || '-'}</td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 text-xs rounded-md ${seg.isSystem ? 'bg-gray-500' : 'bg-[var(--primary-color)]'} text-white`}>
                       {seg.isSystem ? 'System' : 'Custom'}
                     </span>
                   </td>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      <MdPeople className="me-1" />
+                  <td className="p-3">
+                    <div className="flex items-center gap-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                      <MdPeople />
                       <strong>{seg.contactCount?.toLocaleString() || 0}</strong>
-                      <span className="ms-1 text-muted">contacts</span>
+                      <span className="opacity-60">contacts</span>
                     </div>
                   </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button className="icon-btn view-btn" onClick={() => handleViewSegment(seg)} title="View Contacts">
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <button 
+                        className="p-2 rounded-md transition-colors bg-[var(--info-color)] bg-opacity-10 text-[var(--info-color)] hover:bg-opacity-20"
+                        onClick={() => handleViewSegment(seg)} 
+                        title="View Contacts"
+                      >
                         <MdVisibility />
                       </button>
                       {!seg.isSystem && (
                         <>
-                          <button className="icon-btn edit-btn" onClick={() => handleEditSegment(seg)} title="Edit">
+                          <button 
+                            className="p-2 rounded-md transition-colors bg-[var(--warning-color)] bg-opacity-10 text-[var(--warning-color)] hover:bg-opacity-20"
+                            onClick={() => handleEditSegment(seg)} 
+                            title="Edit"
+                          >
                             <MdEdit />
                           </button>
-                          <button className="icon-btn delete-btn" onClick={() => handleDeleteSegment(seg)} title="Delete">
+                          <button 
+                            className="p-2 rounded-md transition-colors bg-[var(--danger-color)] bg-opacity-10 text-[var(--danger-color)] hover:bg-opacity-20"
+                            onClick={() => handleDeleteSegment(seg)} 
+                            title="Delete"
+                          >
                             <MdDelete />
                           </button>
                         </>
@@ -390,7 +412,7 @@ const AudienceSegments = ({ darkMode }) => {
               ))}
               {segments.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="text-center py-4">No segments found</td>
+                  <td colSpan="5" className="p-4 text-center text-[var(--light-text)] dark:text-[var(--dark-text)]">No segments found</td>
                 </tr>
               )}
             </tbody>
@@ -400,30 +422,37 @@ const AudienceSegments = ({ darkMode }) => {
 
       {/* Segment Builder Modal */}
       {showBuilderModal && (
-        <div className="modal-overlay" onClick={() => setShowBuilderModal(false)}>
-          <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3><MdFilterAlt className="me-2" />{modalMode === 'edit' ? 'Edit Segment' : 'Create Segment'}</h3>
-              <button className="modal-close" onClick={() => setShowBuilderModal(false)}>×</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowBuilderModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] sticky top-0 bg-[var(--light-card)] dark:bg-[var(--dark-card)] z-10">
+              <h3 className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] flex items-center gap-2">
+                <MdFilterAlt />{modalMode === 'edit' ? 'Edit Segment' : 'Create Segment'}
+              </h3>
+              <button 
+                className="text-2xl text-[var(--light-text)] dark:text-[var(--dark-text)] hover:opacity-70 transition-opacity" 
+                onClick={() => setShowBuilderModal(false)}
+              >
+                ×
+              </button>
             </div>
-            <div className="modal-body">
+            <div className="p-6">
               {/* Segment Info */}
-              <div className="row mb-4">
-                <div className="col-md-6">
-                  <label className="form-label">Segment Name *</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Segment Name *</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., Unhappy Customers, VIP Clients"
                     value={currentSegment.name}
                     onChange={(e) => setCurrentSegment({ ...currentSegment, name: e.target.value })}
                   />
                 </div>
-                <div className="col-md-6">
-                  <label className="form-label">Description</label>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Description</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="Brief description"
                     value={currentSegment.description}
                     onChange={(e) => setCurrentSegment({ ...currentSegment, description: e.target.value })}
@@ -432,13 +461,17 @@ const AudienceSegments = ({ darkMode }) => {
               </div>
 
               {/* Filter Builder */}
-              <h5 className="mb-3">Define Rules (contacts matching ALL these will be included)</h5>
-              
-              <div className="row g-3">
+              <h5 className="mb-4 text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Define Rules (contacts matching ALL these will be included)</h5>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Status */}
-                <div className="col-md-4">
-                  <label className="form-label">Status</label>
-                  <select className="form-select" value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Status</label>
+                  <select 
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]" 
+                    value={filters.status} 
+                    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                  >
                     <option value="">Any Status</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -447,9 +480,13 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* NPS Category */}
-                <div className="col-md-4">
-                  <label className="form-label">NPS Category</label>
-                  <select className="form-select" value={filters.npsCategory} onChange={(e) => setFilters({ ...filters, npsCategory: e.target.value })}>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">NPS Category</label>
+                  <select 
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]" 
+                    value={filters.npsCategory} 
+                    onChange={(e) => setFilters({ ...filters, npsCategory: e.target.value })}
+                  >
                     <option value="">Any NPS</option>
                     <option value="promoter">Promoters (9-10)</option>
                     <option value="passive">Passives (7-8)</option>
@@ -458,11 +495,11 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* NPS Below */}
-                <div className="col-md-4">
-                  <label className="form-label">NPS Score Below</label>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">NPS Score Below</label>
                   <input
                     type="number"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., 6"
                     min="0"
                     max="10"
@@ -472,11 +509,11 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* Responded Last Days */}
-                <div className="col-md-4">
-                  <label className="form-label">Responded in Last (days)</label>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Responded in Last (days)</label>
                   <input
                     type="number"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., 30"
                     min="1"
                     value={filters.respondedLastDays}
@@ -485,11 +522,11 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* Inactive Days */}
-                <div className="col-md-4">
-                  <label className="form-label">Inactive for (days)</label>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Inactive for (days)</label>
                   <input
                     type="number"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., 90"
                     min="1"
                     value={filters.inactiveDays}
@@ -498,11 +535,11 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* Has Tag */}
-                <div className="col-md-4">
-                  <label className="form-label">Has Tag</label>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Has Tag</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., VIP"
                     value={filters.hasTag}
                     onChange={(e) => setFilters({ ...filters, hasTag: e.target.value })}
@@ -510,11 +547,11 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* Country */}
-                <div className="col-md-4">
-                  <label className="form-label">Country</label>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Country</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., US"
                     value={filters.country}
                     onChange={(e) => setFilters({ ...filters, country: e.target.value })}
@@ -522,11 +559,11 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* City */}
-                <div className="col-md-4">
-                  <label className="form-label">City</label>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">City</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., New York"
                     value={filters.city}
                     onChange={(e) => setFilters({ ...filters, city: e.target.value })}
@@ -534,37 +571,52 @@ const AudienceSegments = ({ darkMode }) => {
                 </div>
 
                 {/* Invited but not responded */}
-                <div className="col-md-4">
-                  <label className="form-label">&nbsp;</label>
-                  <div className="form-check mt-2">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="invitedNotResponded"
-                      checked={filters.invitedButNotResponded}
-                      onChange={(e) => setFilters({ ...filters, invitedButNotResponded: e.target.checked })}
-                    />
-                    <label className="form-check-label" htmlFor="invitedNotResponded">
-                      Invited but never responded
-                    </label>
-                  </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)]"
+                    id="invitedNotResponded"
+                    checked={filters.invitedButNotResponded}
+                    onChange={(e) => setFilters({ ...filters, invitedButNotResponded: e.target.checked })}
+                  />
+                  <label className="ml-2 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]" htmlFor="invitedNotResponded">
+                    Invited but never responded
+                  </label>
                 </div>
               </div>
 
               {/* Preview */}
               {previewCount > 0 && (
-                <div className="alert alert-success mt-4">
-                  <strong>{previewCount}</strong> contacts match these rules
+                <div className="mt-6 bg-[var(--success-color)] bg-opacity-10 border border-[var(--success-color)] border-opacity-30 rounded-md p-4">
+                  <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    <strong>{previewCount}</strong> contacts match these rules
+                  </span>
                 </div>
               )}
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-outline-secondary" onClick={resetFilters}>Reset</button>
-              <button className="btn btn-outline-info" onClick={handlePreviewFilters}>
-                <MdVisibility className="me-1" /> Preview
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)] sticky bottom-0 bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]" 
+                onClick={resetFilters}
+              >
+                Reset
               </button>
-              <button className="btn btn-secondary" onClick={() => setShowBuilderModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSaveSegment}>
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--info-color)] bg-opacity-10 text-[var(--info-color)] border border-[var(--info-color)] border-opacity-30 hover:bg-opacity-20 flex items-center gap-1" 
+                onClick={handlePreviewFilters}
+              >
+                <MdVisibility /> Preview
+              </button>
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]" 
+                onClick={() => setShowBuilderModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90" 
+                onClick={handleSaveSegment}
+              >
                 {modalMode === 'edit' ? 'Update Segment' : 'Create Segment'}
               </button>
             </div>
@@ -574,63 +626,77 @@ const AudienceSegments = ({ darkMode }) => {
 
       {/* View Segment Contacts Modal */}
       {showViewModal && viewSegment && (
-        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-          <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>
-                <MdPeople className="me-2" />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowViewModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] sticky top-0 bg-[var(--light-card)] dark:bg-[var(--dark-card)] z-10">
+              <h3 className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] flex items-center gap-2">
+                <MdPeople />
                 {viewSegment.name} - Matching Contacts
               </h3>
-              <button className="modal-close" onClick={() => setShowViewModal(false)}>×</button>
+              <button 
+                className="text-2xl text-[var(--light-text)] dark:text-[var(--dark-text)] hover:opacity-70 transition-opacity" 
+                onClick={() => setShowViewModal(false)}
+              >
+                ×
+              </button>
             </div>
-            <div className="modal-body">
+            <div className="p-6">
               {/* Segment Info */}
-              <div className="alert alert-light mb-3">
-                <strong>Rules:</strong> {JSON.stringify(viewSegment.filters || {})}
+              <div className="mb-4 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md p-4">
+                <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  <strong>Rules:</strong> {JSON.stringify(viewSegment.filters || {})}
+                </span>
               </div>
-              
+
               {/* Contacts Table */}
-              <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Company</th>
-                    <th>NPS</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {viewContacts.map((c) => (
-                    <tr key={c._id}>
-                      <td>{c.name}</td>
-                      <td>{c.email}</td>
-                      <td>{c.company || '-'}</td>
-                      <td>
-                        {c.surveyStats?.latestNpsScore !== undefined 
-                          ? <span className={`badge ${c.surveyStats.npsCategory === 'promoter' ? 'bg-success' : c.surveyStats.npsCategory === 'detractor' ? 'bg-danger' : 'bg-warning'}`}>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                  <thead className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <tr>
+                      <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Name</th>
+                      <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Email</th>
+                      <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Company</th>
+                      <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">NPS</th>
+                      <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+                    {viewContacts.map((c) => (
+                      <tr key={c._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                        <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{c.name}</td>
+                        <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{c.email}</td>
+                        <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{c.company || '-'}</td>
+                        <td className="p-3">
+                          {c.surveyStats?.latestNpsScore !== undefined
+                            ? <span className={`px-2 py-1 text-xs rounded-md ${c.surveyStats.npsCategory === 'promoter' ? 'bg-[var(--success-color)]' : c.surveyStats.npsCategory === 'detractor' ? 'bg-[var(--danger-color)]' : 'bg-[var(--warning-color)]'} text-white`}>
                               {c.surveyStats.latestNpsScore}
                             </span>
-                          : '-'
-                        }
-                      </td>
-                      <td>
-                        <span className={`badge ${c.status === 'Active' ? 'bg-success' : 'bg-secondary'}`}>
-                          {c.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {viewContacts.length === 0 && (
-                    <tr>
-                      <td colSpan="5" className="text-center">No contacts match this segment</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                            : <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">-</span>
+                          }
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 text-xs rounded-md ${c.status === 'Active' ? 'bg-[var(--success-color)]' : 'bg-gray-500'} text-white`}>
+                            {c.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {viewContacts.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="p-4 text-center text-[var(--light-text)] dark:text-[var(--dark-text)]">No contacts match this segment</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>Close</button>
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)] sticky bottom-0 bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+              <button 
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]" 
+                onClick={() => setShowViewModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

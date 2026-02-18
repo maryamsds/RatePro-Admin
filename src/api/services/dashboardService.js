@@ -109,12 +109,12 @@ const transformExecutiveDashboard = (data) => {
   const rr = rawData?.responseRate || {};
 
   const kpis = {
-    totalSurveys: rr.total || 0,
+    totalSurveys: rr.surveysSent || 0,
     totalResponses: rr.completed || 0,
     avgSatisfaction: csi.overall || 0,
     satisfactionIndex: Math.round((csi.overall || 0) * 20),
     npsScore: nps.current || 0,
-    responseRate: rr.current || 0,
+    responseRate: rr.rate || 0,
     completionRate: rr.completed > 0 ? 100 : 0,
     avgResponseTime: "-- min",
     averageRating: csi.overall || 0,

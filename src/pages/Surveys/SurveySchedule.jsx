@@ -1,18 +1,7 @@
 // src/pages/SurveySchedule/SurveySchedule.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import {
-  Container,
-  Card,
-  Row,
-  Col,
-  Button,
-  Form,
-  Alert,
-  Spinner,
-  Badge,
-  ProgressBar
-} from 'react-bootstrap';
+
 import {
   MdCalendarToday,
   MdAccessTime,
@@ -243,199 +232,209 @@ const SurveySchedule = ({ onSchedule }) => {
 
   if (loading) {
     return (
-      <Container fluid className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
+      <div className="w-full flex justify-center items-center" style={{ minHeight: '60vh' }}>
         <div className="text-center">
-          <Spinner animation="border" variant="primary" className="mb-3" />
+          <div className="w-8 h-8 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
           <h5>Loading survey data...</h5>
         </div>
-      </Container>
+      </div>
     );
   }
 
   if (error && !survey) {
     return (
-      <Container fluid className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-        <Alert variant="danger" className="text-center">
-          <h5>Error Loading Survey</h5>
-          <p>{error}</p>
-          <Button variant="outline-danger" onClick={() => navigate('/app/surveys')}>
+      <div className="w-full flex justify-center items-center" style={{ minHeight: '60vh' }}>
+        <div className="text-center p-6 bg-red-50 border border-red-200 rounded-lg">
+          <h5 className="text-red-700">Error Loading Survey</h5>
+          <p className="text-red-600">{error}</p>
+          <button className="px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors" onClick={() => navigate('/app/surveys')}>
             Back to Surveys
-          </Button>
-        </Alert>
-      </Container>
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container fluid className="survey-schedule py-4">
+    <div className="survey-schedule py-4 w-full px-4">
       {/* Header */}
       <div className="mb-4">
-        <div className="d-flex align-items-center justify-content-between mb-3">
+        <div className="flex align-items-center justify-content-between mb-3">
           <div>
             <h2 className="mb-1">Schedule Survey</h2>
             <p className="text-muted mb-0">
               Set when your survey should be published: <strong>{survey?.title}</strong>
             </p>
           </div>
-          <Badge bg="success" className="fs-6">Step 3 of 3</Badge>
+          <span className="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-full">Step 3 of 3</span>
         </div>
 
         {/* Progress Bar */}
-        <ProgressBar now={100} className="mb-3" style={{ height: '8px' }} />
+        <div className="w-full bg-gray-200 rounded-full mb-3" style={{ height: '8px' }}>
+          <div className="h-full bg-[var(--primary-color)] rounded-full" style={{ width: '100%' }}></div>
+        </div>
       </div>
 
-      <Row>
-        <Col lg={8}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8">
           {/* Survey & Audience Summary */}
           {survey && (
-            <Card className="mb-4 bg-light">
-              <Card.Body>
-                <h6 className="fw-bold mb-3 d-flex align-items-center">
-                  <MdInfo className="me-2" />
-                  Survey Summary
-                </h6>
+            <div className="mb-4 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)] p-4">
+              <h6 className="fw-bold mb-3 flex align-items-center">
+                <MdInfo className="me-2" />
+                Survey Summary
+              </h6>
 
-                <Row>
-                  <Col md={6}>
-                    <div className="mb-2">
-                      <small className="text-muted">Survey Title:</small>
-                      <div className="fw-semibold">{survey.title}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="mb-2">
+                    <small className="text-muted">Survey Title:</small>
+                    <div className="fw-semibold">{survey.title}</div>
+                  </div>
+                  <div className="mb-2">
+                    <small className="text-muted">Status:</small>
+                    <div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white ${survey.status === 'active' ? 'bg-green-500' : survey.status === 'draft' ? 'bg-yellow-500' : 'bg-gray-500'}`}>
+                        {survey.status === 'active' && <MdPublish className="me-1" />}
+                        {survey.status === 'draft' && <MdDraft className="me-1" />}
+                        {survey.status || 'Draft'}
+                      </span>
                     </div>
-                    <div className="mb-2">
-                      <small className="text-muted">Status:</small>
-                      <div>
-                        <Badge bg={survey.status === 'active' ? 'success' : survey.status === 'draft' ? 'warning' : 'secondary'}>
-                          {survey.status === 'active' && <MdPublish className="me-1" />}
-                          {survey.status === 'draft' && <MdDraft className="me-1" />}
-                          {survey.status || 'Draft'}
-                        </Badge>
-                      </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2">
+                    <small className="text-muted">Target Audience:</small>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {(survey.targetAudience || ['public']).map(audienceId => {
+                        const audience = audienceOptions[audienceId];
+                        return audience ? (
+                          <span key={audienceId} className="inline-flex items-center px-2 py-0.5 bg-[var(--primary-color)] text-white text-xs rounded">
+                            {audience.icon} {audience.name}
+                          </span>
+                        ) : null;
+                      })}
                     </div>
-                  </Col>
-                  <Col md={6}>
-                    <div className="mb-2">
-                      <small className="text-muted">Target Audience:</small>
-                      <div className="d-flex flex-wrap gap-1 mt-1">
-                        {(survey.targetAudience || ['public']).map(audienceId => {
-                          const audience = audienceOptions[audienceId];
-                          return audience ? (
-                            <Badge key={audienceId} bg="primary" className="small">
-                              {audience.icon} {audience.name}
-                            </Badge>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                    <div className="mb-2">
-                      <small className="text-muted">Questions:</small>
-                      <div className="fw-semibold">{survey.questions?.length || 0} questions</div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
+                  </div>
+                  <div className="mb-2">
+                    <small className="text-muted">Questions:</small>
+                    <div className="fw-semibold">{survey.questions?.length || 0} questions</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           )}
 
           {/* Scheduling Form */}
-          <Card>
-            <Card.Header className="d-flex align-items-center">
+          <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
+            <div className="flex items-center p-4 border-b border-[var(--border-color)]">
               <MdSchedule className="me-2" />
               <strong>Schedule Settings</strong>
-            </Card.Header>
-            <Card.Body>
-              <Form onSubmit={handleSubmit}>
+            </div>
+            <div className="p-4">
+              <form onSubmit={handleSubmit}>
                 {/* Auto-Publish Toggle */}
-                <Alert variant="info" className="mb-4">
-                  <Form.Check
-                    type="switch"
-                    id="auto-publish"
-                    name="autoPublish"
-                    label="Enable Auto-Publishing"
-                    checked={schedule.autoPublish}
-                    onChange={handleChange}
-                    className="mb-2"
-                  />
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <label className="flex items-center gap-3 cursor-pointer mb-2">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      id="auto-publish"
+                      name="autoPublish"
+                      checked={schedule.autoPublish}
+                      onChange={handleChange}
+                      className="w-10 h-5 appearance-none bg-gray-300 rounded-full checked:bg-[var(--primary-color)] transition-colors cursor-pointer relative
+                        before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-5"
+                    />
+                    <span className="font-medium">Enable Auto-Publishing</span>
+                  </label>
                   <small className="text-muted">
                     {schedule.autoPublish
                       ? 'Survey will automatically become active at the specified start time.'
                       : 'Survey will be scheduled but you\'ll need to manually publish it.'
                     }
                   </small>
-                </Alert>
+                </div>
 
                 {/* Start Date & Time */}
-                <Row className="mb-4">
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold d-flex align-items-center">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="mb-3">
+                      <label className="font-semibold flex items-center mb-1">
                         <MdCalendarToday className="me-2" />
                         Start Date *
-                      </Form.Label>
-                      <Form.Control
+                      </label>
+                      <input
                         type="date"
                         name="startDate"
                         value={schedule.startDate}
                         onChange={handleChange}
                         required
                         min={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                       />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold d-flex align-items-center">
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-3">
+                      <label className="font-semibold flex items-center mb-1">
                         <MdAccessTime className="me-2" />
                         Start Time *
-                      </Form.Label>
-                      <Form.Control
+                      </label>
+                      <input
                         type="time"
                         name="startTime"
                         value={schedule.startTime}
                         onChange={handleChange}
                         required
+                        className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                       />
-                    </Form.Group>
-                  </Col>
-                </Row>
+                    </div>
+                  </div>
+                </div>
 
                 {/* End Date & Time */}
-                <Row className="mb-4">
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">End Date (Optional)</Form.Label>
-                      <Form.Control
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="mb-3">
+                      <label className="font-semibold mb-1 block">End Date (Optional)</label>
+                      <input
                         type="date"
                         name="endDate"
                         value={schedule.endDate}
                         onChange={handleChange}
                         min={schedule.startDate}
+                        className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                       />
-                      <Form.Text className="text-muted">
+                      <small className="text-muted">
                         Leave empty for unlimited duration
-                      </Form.Text>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold">End Time</Form.Label>
-                      <Form.Control
+                      </small>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-3">
+                      <label className="font-semibold mb-1 block">End Time</label>
+                      <input
                         type="time"
                         name="endTime"
                         value={schedule.endTime}
                         onChange={handleChange}
                         disabled={!schedule.endDate}
+                        className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] disabled:opacity-50"
                       />
-                    </Form.Group>
-                  </Col>
-                </Row>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Timezone */}
-                <Form.Group className="mb-4">
-                  <Form.Label className="fw-semibold">Timezone</Form.Label>
-                  <Form.Select
+                <div className="mb-4">
+                  <label className="font-semibold mb-1 block">Timezone</label>
+                  <select
                     name="timezone"
                     value={schedule.timezone}
                     onChange={handleChange}
+                    className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                   >
                     <option value="UTC">UTC (Coordinated Universal Time)</option>
                     <option value="America/New_York">Eastern Time (ET)</option>
@@ -447,91 +446,97 @@ const SurveySchedule = ({ onSchedule }) => {
                     <option value="Asia/Dubai">Dubai (GST)</option>
                     <option value="Asia/Kolkata">India (IST)</option>
                     <option value="Asia/Tokyo">Tokyo (JST)</option>
-                  </Form.Select>
-                </Form.Group>
+                  </select>
+                </div>
 
                 {/* Repeat Settings */}
-                <Card className="mb-4 bg-light">
-                  <Card.Header className="d-flex align-items-center bg-transparent border-0 pb-0">
+                <div className="mb-4 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
+                  <div className="flex items-center p-4 pb-0">
                     <MdAutorenew className="me-2" />
                     <strong>Repeat Settings</strong>
-                  </Card.Header>
-                  <Card.Body className="pt-3">
-                    <Form.Check
-                      type="switch"
-                      id="repeat-enabled"
-                      name="repeat.enabled"
-                      label="Repeat this survey"
-                      checked={schedule.repeat.enabled}
-                      onChange={handleChange}
-                      className="mb-3"
-                    />
+                  </div>
+                  <div className="p-4 pt-3">
+                    <label className="flex items-center gap-3 cursor-pointer mb-3">
+                      <input
+                        type="checkbox"
+                        role="switch"
+                        id="repeat-enabled"
+                        name="repeat.enabled"
+                        checked={schedule.repeat.enabled}
+                        onChange={handleChange}
+                        className="w-10 h-5 appearance-none bg-gray-300 rounded-full checked:bg-[var(--primary-color)] transition-colors cursor-pointer relative
+                          before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-5"
+                      />
+                      <span>Repeat this survey</span>
+                    </label>
 
                     {schedule.repeat.enabled && (
-                      <Row>
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>Frequency</Form.Label>
-                            <Form.Select
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="mb-3">
+                            <label className="block mb-1">Frequency</label>
+                            <select
                               name="repeat.frequency"
                               value={schedule.repeat.frequency}
                               onChange={handleChange}
+                              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                             >
                               <option value="daily">Daily</option>
                               <option value="weekly">Weekly</option>
                               <option value="monthly">Monthly</option>
-                            </Form.Select>
-                          </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>Stop Repeating On</Form.Label>
-                            <Form.Control
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="mb-3">
+                            <label className="block mb-1">Stop Repeating On</label>
+                            <input
                               type="date"
                               name="repeat.endRepeatDate"
                               value={schedule.repeat.endRepeatDate}
                               onChange={handleChange}
                               min={schedule.startDate}
+                              className="w-full px-3 py-2 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                             />
-                          </Form.Group>
-                        </Col>
-                      </Row>
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </Card.Body>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Action Buttons */}
-                <div className="d-flex justify-content-between align-items-center">
-                  <Button
-                    variant="outline-secondary"
+                <div className="flex justify-content-between align-items-center">
+                  <button
+                    type="button"
                     onClick={() => navigate('/app/surveys')}
                     disabled={saving}
-                    className="d-flex align-items-center"
+                    className="flex items-center px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
                     <MdArrowBack className="me-2" />
                     Cancel
-                  </Button>
+                  </button>
 
-                  <div className="d-flex gap-2">
+                  <div className="flex gap-2">
                     {fromAudienceSelection && (
-                      <Button
-                        variant="outline-primary"
+                      <button
+                        type="button"
+                        className="px-4 py-2 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors disabled:opacity-50"
                         onClick={() => navigate(`/app/surveys/${surveyId}/target-audience`)}
                         disabled={saving}
                       >
                         ← Back to Audience
-                      </Button>
+                      </button>
                     )}
 
-                    <Button
+                    <button
                       type="submit"
-                      variant="primary"
                       disabled={saving}
-                      className="d-flex align-items-center"
+                      className="flex items-center px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                       {saving ? (
                         <>
-                          <Spinner size="sm" className="me-2" />
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin me-2"></div>
                           Scheduling...
                         </>
                       ) : (
@@ -540,21 +545,21 @@ const SurveySchedule = ({ onSchedule }) => {
                           {schedule.autoPublish ? 'Schedule & Publish' : 'Save Schedule'}
                         </>
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
+              </form>
+            </div>
+          </div>
+        </div>
 
-        <Col lg={4}>
+        <div className="lg:col-span-4">
           {/* Schedule Preview */}
-          <Card className="sticky-top" style={{ top: '1rem' }}>
-            <Card.Header>
+          <div className="sticky top-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
+            <div className="p-4 border-b border-[var(--border-color)]">
               <strong>Schedule Preview</strong>
-            </Card.Header>
-            <Card.Body>
+            </div>
+            <div className="p-4">
               {schedule.startDate && schedule.startTime ? (
                 <div>
                   <div className="mb-3">
@@ -581,9 +586,9 @@ const SurveySchedule = ({ onSchedule }) => {
                   <div className="mb-3">
                     <small className="text-muted">Auto-publish:</small>
                     <div>
-                      <Badge bg={schedule.autoPublish ? 'success' : 'warning'}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white ${schedule.autoPublish ? 'bg-green-500' : 'bg-yellow-500'}`}>
                         {schedule.autoPublish ? 'Enabled' : 'Disabled'}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
 
@@ -607,11 +612,11 @@ const SurveySchedule = ({ onSchedule }) => {
                   <p>Set start date and time to see preview</p>
                 </div>
               )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

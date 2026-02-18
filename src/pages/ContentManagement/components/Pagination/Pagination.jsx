@@ -1,14 +1,13 @@
-// src/components/Pagination/Pagination.jsx
+// src/components/Pagination/Pagination.jsx (ContentManagement)
 "use client"
 
-import { Pagination as BootstrapPagination } from "react-bootstrap"
 import { MdChevronLeft, MdChevronRight, MdMoreHoriz } from "react-icons/md"
 
-const Pagination = ({ 
-  current, 
-  total, 
-  limit, 
-  onChange, 
+const Pagination = ({
+  current,
+  total,
+  limit,
+  onChange,
   darkMode,
   showTotal = true,
   className = "",
@@ -46,48 +45,62 @@ const Pagination = ({
 
   const visiblePages = getVisiblePages()
 
+  const pageBtnBase = `inline-flex items-center justify-center min-w-[32px] h-8 px-2 text-sm rounded-md
+                       border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                       transition-all duration-200 cursor-pointer`
+
+  const pageBtnNormal = `${pageBtnBase} bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)]
+                         hover:bg-gray-100 dark:hover:bg-gray-700`
+
+  const pageBtnActive = `${pageBtnBase} bg-[var(--primary-color)] text-white border-[var(--primary-color)]`
+
+  const pageBtnDisabled = `${pageBtnBase} opacity-40 cursor-not-allowed bg-transparent
+                           text-[var(--secondary-color)]`
+
   return (
-    <div className={`d-flex justify-content-between align-items-center flex-wrap ${className}`}>
+    <div className={`flex justify-between items-center flex-wrap gap-2 ${className}`}>
       {showTotal && (
-        <small className={`text-muted mb-2 mb-md-0 ${darkMode ? "text-light" : ""}`}>
+        <small className="text-[var(--secondary-color)]">
           Showing {Math.min((current - 1) * limit + 1, total)} to {Math.min(current * limit, total)} of {total} entries
         </small>
       )}
 
-      <BootstrapPagination size={size} className="mb-0 pagination-enhanced">
-        <BootstrapPagination.Prev 
-          disabled={current === 1} 
+      <div className="flex items-center gap-1">
+        {/* Prev */}
+        <button
+          disabled={current === 1}
           onClick={() => onChange(current - 1)}
-          className={darkMode ? "text-light" : ""}
+          className={current === 1 ? pageBtnDisabled : pageBtnNormal}
         >
           <MdChevronLeft size={16} />
-        </BootstrapPagination.Prev>
+        </button>
 
+        {/* Page numbers */}
         {visiblePages.map((page, index) =>
           page === "..." ? (
-            <BootstrapPagination.Ellipsis key={index} className={darkMode ? "text-light" : ""}>
+            <span key={index} className="px-1 text-[var(--secondary-color)]">
               <MdMoreHoriz size={16} />
-            </BootstrapPagination.Ellipsis>
+            </span>
           ) : (
-            <BootstrapPagination.Item 
-              key={index} 
-              active={page === current} 
+            <button
+              key={index}
               onClick={() => onChange(page)}
-              className={darkMode ? page === current ? "" : "text-light" : ""}
+              className={page === current ? pageBtnActive : pageBtnNormal}
             >
               {page}
-            </BootstrapPagination.Item>
+            </button>
           )
         )}
 
-        <BootstrapPagination.Next 
-          disabled={current === totalPages} 
+        {/* Next */}
+        <button
+          disabled={current === totalPages}
           onClick={() => onChange(current + 1)}
-          className={darkMode ? "text-light" : ""}
+          className={current === totalPages ? pageBtnDisabled : pageBtnNormal}
         >
           <MdChevronRight size={16} />
-        </BootstrapPagination.Next>
-      </BootstrapPagination>
+        </button>
+      </div>
     </div>
   )
 }

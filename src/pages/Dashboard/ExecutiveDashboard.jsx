@@ -1,11 +1,7 @@
-// src\pages\Dashboard\ExecutiveDashboard.jsx
+// src/pages/Dashboard/ExecutiveDashboard.jsx
 "use client"
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container, Row, Col, Card, Button, Badge, Table,
-  ProgressBar, Alert, Spinner, OverlayTrigger, Tooltip
-} from 'react-bootstrap';
 import {
   MdDashboard, MdTrendingUp, MdTrendingDown, MdFlag,
   MdNotifications, MdWarning, MdCheckCircle, MdInsights,
@@ -54,7 +50,7 @@ ChartJS.register(
 
 const ExecutiveDashboard = () => {
   const navigate = useNavigate();
-  
+
   // State Management
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +66,6 @@ const ExecutiveDashboard = () => {
       else setLoading(true);
       setError(null);
 
-      // Fetch executive dashboard and alerts in parallel
       const [executiveData, operationalData, alertsData] = await Promise.all([
         getExecutiveDashboard({ range: selectedTimeframe === 'week' ? '7d' : selectedTimeframe === 'month' ? '30d' : '90d' })
           .catch(err => {
@@ -89,7 +84,6 @@ const ExecutiveDashboard = () => {
           }),
       ]);
 
-      // Combine data or use fallback
       if (executiveData || operationalData) {
         setDashboardData({
           kpis: executiveData?.kpis || mockDashboardData.kpis,
@@ -102,7 +96,6 @@ const ExecutiveDashboard = () => {
         setDashboardData(mockDashboardData);
       }
 
-      // Set alerts
       setAlerts(alertsData?.length > 0 ? alertsData : mockAlerts);
 
     } catch (err) {
@@ -116,19 +109,14 @@ const ExecutiveDashboard = () => {
     }
   }, [selectedTimeframe]);
 
-  // Initial fetch and refresh interval
   useEffect(() => {
     fetchDashboardData();
-    
-    // Set up real-time updates
     const interval = setInterval(() => {
       fetchDashboardData(true);
-    }, 60000); // Update every 60 seconds
-
+    }, 60000);
     return () => clearInterval(interval);
   }, [fetchDashboardData]);
 
-  // Handle manual refresh
   const handleRefresh = () => {
     fetchDashboardData(true);
   };
@@ -221,8 +209,8 @@ const ExecutiveDashboard = () => {
         {
           label: 'Satisfaction Score',
           data: dashboardData?.trends.satisfaction.data || [],
-          borderColor: 'rgb(var(--bs-teal-rgb))',
-          backgroundColor: 'rgba(var(--bs-teal-rgb), 0.1)',
+          borderColor: '#14b8a6',
+          backgroundColor: 'rgba(20, 184, 166, 0.1)',
           tension: 0.4,
           fill: true
         }
@@ -252,8 +240,8 @@ const ExecutiveDashboard = () => {
         {
           label: 'NPS Score',
           data: dashboardData?.trends.nps.data || [],
-          backgroundColor: 'rgba(var(--bs-primary-rgb), 0.8)',
-          borderColor: 'rgb(var(--bs-primary-rgb))',
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: '#3b82f6',
           borderWidth: 1
         }
       ]
@@ -275,12 +263,12 @@ const ExecutiveDashboard = () => {
         {
           label: 'Satisfaction',
           data: dashboardData?.locations.map(loc => loc.satisfaction) || [],
-          backgroundColor: 'rgba(var(--bs-danger-rgb), 0.8)'
+          backgroundColor: 'rgba(239, 68, 68, 0.8)'
         },
         {
           label: 'NPS',
-          data: dashboardData?.locations.map(loc => loc.nps / 20) || [], // Scale NPS to match satisfaction
-          backgroundColor: 'rgba(var(--bs-primary-rgb), 0.8)'
+          data: dashboardData?.locations.map(loc => loc.nps / 20) || [],
+          backgroundColor: 'rgba(59, 130, 246, 0.8)'
         }
       ]
     },
@@ -297,406 +285,502 @@ const ExecutiveDashboard = () => {
   // Helper functions
   const getAlertIcon = (type) => {
     switch (type) {
-      case 'critical': return <MdFlag className="text-danger" />;
-      case 'warning': return <MdWarning className="text-warning" />;
-      case 'info': return <MdCheckCircle className="text-info" />;
-      default: return <MdNotifications />;
+      case 'critical': return <MdFlag className="text-[var(--danger-color)]" />;
+      case 'warning': return <MdWarning className="text-[var(--warning-color)]" />;
+      case 'info': return <MdCheckCircle className="text-[var(--info-color)]" />;
+      default: return <MdNotifications className="text-[var(--text-secondary)]" />;
     }
   };
 
   const getStatusBadge = (status) => {
     const variants = {
-      excellent: 'success',
-      good: 'primary',
-      'needs-attention': 'warning',
-      critical: 'danger'
+      excellent: 'bg-[var(--success-color)]',
+      good: 'bg-[var(--info-color)]',
+      'needs-attention': 'bg-[var(--warning-color)]',
+      critical: 'bg-[var(--danger-color)]'
     };
-    return <Badge bg={variants[status]}>{status.replace('-', ' ').toUpperCase()}</Badge>;
+    return (
+      <span className={`px-2 py-0.5 text-white rounded-full text-xs font-medium ${variants[status] || 'bg-[var(--secondary-color)]'}`}>
+        {status.replace('-', ' ').toUpperCase()}
+      </span>
+    );
   };
 
   const getTrendIcon = (trend) => {
     switch (trend) {
-      case 'up': return <FaArrowUp className="text-danger" />;
-      case 'down': return <FaArrowDown className="text-success" />;
-      default: return <span className="text-muted">—</span>;
+      case 'up': return <FaArrowUp className="text-[var(--danger-color)]" />;
+      case 'down': return <FaArrowDown className="text-[var(--success-color)]" />;
+      default: return <span className="text-[var(--text-secondary)]">—</span>;
     }
   };
 
   if (loading) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" size="lg" />
-          <p className="mt-3 text-muted">Loading executive dashboard...</p>
-        </div>
-      </Container>
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-[var(--text-secondary)] text-lg">Loading executive dashboard...</p>
+      </div>
     );
   }
 
   return (
-    <Container fluid className="py-4 executive-dashboard">
+    <div className="w-full">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div className="d-flex align-items-center">
-              <MdDashboard size={32} className="text-primary me-3" />
-              <div>
-                <h2 className="mb-1 fw-bold">Executive Dashboard</h2>
-                <p className="text-muted mb-0">Real-time insights and performance metrics</p>
-              </div>
-            </div>
-            
-            <div className="d-flex gap-2">
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={refreshing}
-              >
-                {refreshing ? (
-                  <Spinner animation="border" size="sm" className="me-1" />
-                ) : (
-                  <MdRefresh className="me-1" />
-                )}
-                {refreshing ? 'Refreshing...' : 'Refresh'}
-              </Button>
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={() => navigate('/app/analytics')}
-              >
-                <MdAnalytics className="me-1" />
-                Detailed Analytics
-              </Button>
+      <div className="mb-6">
+        <div className="flex justify-between items-start flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <MdDashboard size={32} className="text-[var(--primary-color)]" />
+            <div>
+              <h2 className="text-2xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-0">
+                Executive Dashboard
+              </h2>
+              <p className="text-[var(--text-secondary)] mb-0">
+                Real-time insights and performance metrics
+              </p>
             </div>
           </div>
-        </Col>
-      </Row>
+
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
+                         border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                         text-[var(--light-text)] dark:text-[var(--dark-text)]
+                         bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                         hover:bg-[var(--light-hover)]/10 dark:hover:bg-[var(--dark-hover)]/10
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         transition-colors duration-300"
+            >
+              {refreshing ? (
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <MdRefresh size={16} />
+              )}
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button
+              onClick={() => navigate('/app/analytics')}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
+                         bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
+                         text-white transition-colors duration-300"
+            >
+              <MdAnalytics size={16} />
+              Detailed Analytics
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Error Alert */}
       {error && (
-        <Row className="mb-4">
-          <Col>
-            <Alert variant="danger" className="d-flex align-items-center justify-content-between">
-              <span>{error}</span>
-              <Button variant="outline-danger" size="sm" onClick={handleRefresh}>
-                Try Again
-              </Button>
-            </Alert>
-          </Col>
-        </Row>
+        <div className="flex items-center gap-3 mb-6 p-4 rounded-md
+                       bg-[var(--danger-light)] border border-[var(--danger-color)]
+                       text-[var(--danger-color)]">
+          <span className="flex-1">{error}</span>
+          <button 
+            onClick={handleRefresh}
+            className="text-sm text-[var(--primary-color)] hover:underline font-medium
+                       bg-transparent border-0 cursor-pointer p-0 transition-colors duration-300"
+          >
+            Try Again
+          </button>
+        </div>
       )}
 
       {/* Timeframe Selector */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex gap-2">
-            {['week', 'month', 'quarter'].map((tf) => (
-              <Button
-                key={tf}
-                variant={selectedTimeframe === tf ? 'primary' : 'outline-secondary'}
-                size="sm"
-                onClick={() => setSelectedTimeframe(tf)}
-              >
-                {tf === 'week' ? 'Last 7 Days' : tf === 'month' ? 'Last 30 Days' : 'Last 90 Days'}
-              </Button>
-            ))}
-          </div>
-        </Col>
-      </Row>
+      <div className="flex gap-2 mb-6">
+        {['week', 'month', 'quarter'].map((tf) => (
+          <button
+            key={tf}
+            onClick={() => setSelectedTimeframe(tf)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${selectedTimeframe === tf
+                ? 'bg-[var(--primary-color)] text-white'
+                : 'border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]'
+              }`}
+          >
+            {tf === 'week' ? 'Last 7 Days' : tf === 'month' ? 'Last 30 Days' : 'Last 90 Days'}
+          </button>
+        ))}
+      </div>
 
       {/* Real-time Alerts */}
       {alerts.length > 0 && (
-        <Row className="mb-4">
-          <Col>
-            <Card className="alert-card border-start border-4 border-warning">
-              <Card.Body>
-                <div className="d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center">
-                    <MdNotifications className="text-warning me-2" size={24} />
-                    <strong>Active Alerts ({alerts.length})</strong>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md mb-6
+                        border-l-4 border-l-[var(--warning-color)]
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MdNotifications className="text-[var(--warning-color)]" size={20} />
+                <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  Active Alerts ({alerts.length})
+                </strong>
+              </div>
+              <button 
+                onClick={() => navigate('/app/actions')}
+                className="text-sm text-[var(--primary-color)] hover:underline font-medium
+                           bg-transparent border-0 cursor-pointer p-0 transition-colors duration-300"
+              >
+                View All
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {alerts.slice(0, 3).map(alert => (
+                <div key={alert.id} 
+                     className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded-md p-4">
+                  <div className="flex items-start gap-3">
+                    {getAlertIcon(alert.type)}
+                    <div className="flex-1">
+                      <strong className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                        {alert.title}
+                      </strong>
+                      <p className="mb-0 mt-1 text-sm text-[var(--text-secondary)]">
+                        {alert.description}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium
+                                     bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--text-secondary)]">
+                      {alert.location}
+                    </span>
                   </div>
-                  <Button variant="link" size="sm" onClick={() => navigate('/app/actions')}>
-                    View All
-                  </Button>
                 </div>
-                
-                <div className="mt-2">
-                  {alerts.slice(0, 3).map(alert => (
-                    <Alert key={alert.id} variant="light" className="mb-2 py-2 border-0">
-                      <div className="d-flex align-items-start">
-                        {getAlertIcon(alert.type)}
-                        <div className="ms-2 flex-grow-1">
-                          <strong className="small">{alert.title}</strong>
-                          <p className="mb-0 small text-muted">{alert.description}</p>
-                        </div>
-                        <Badge bg="light" text="dark" className="small">
-                          {alert.location}
-                        </Badge>
-                      </div>
-                    </Alert>
-                  ))}
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* KPI Cards */}
-      <Row className="mb-4">
-        <Col xl={2} lg={4} md={6} className="mb-3">
-          <Card className="kpi-card h-100 border-0 shadow-sm">
-            <Card.Body className="text-center p-3">
-              <div className="kpi-icon bg-primary bg-opacity-10 text-primary rounded-circle p-3 mx-auto mb-2">
-                <MdAnalytics size={24} />
-              </div>
-              <h4 className="mb-0 fw-bold">{dashboardData?.kpis.totalSurveys}</h4>
-              <small className="text-muted">Active Surveys</small>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col xl={2} lg={4} md={6} className="mb-3">
-          <Card className="kpi-card h-100 border-0 shadow-sm">
-            <Card.Body className="text-center p-3">
-              <div className="kpi-icon bg-info bg-opacity-10 text-info rounded-circle p-3 mx-auto mb-2">
-                <FaUsers size={24} />
-              </div>
-              <h4 className="mb-0 fw-bold">{dashboardData?.kpis.totalResponses.toLocaleString()}</h4>
-              <small className="text-muted">Total Responses</small>
-              <div className="mt-1">
-                <span className="text-success small">
-                  <FaArrowUp className="me-1" />
-                  +{dashboardData?.trends.responses.change}%
-                </span>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col xl={2} lg={4} md={6} className="mb-3">
-          <Card className="kpi-card h-100 border-0 shadow-sm">
-            <Card.Body className="text-center p-3">
-              <div className="kpi-icon bg-success bg-opacity-10 text-success rounded-circle p-3 mx-auto mb-2">
-                <FaStar size={24} />
-              </div>
-              <h4 className="mb-0 fw-bold">{dashboardData?.kpis.avgSatisfaction}</h4>
-              <small className="text-muted">Avg Satisfaction</small>
-              <div className="mt-1">
-                <span className="text-success small">
-                  <FaArrowUp className="me-1" />
-                  +{dashboardData?.trends.satisfaction.change}
-                </span>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col xl={2} lg={4} md={6} className="mb-3">
-          <Card className="kpi-card h-100 border-0 shadow-sm">
-            <Card.Body className="text-center p-3">
-              <div className="kpi-icon bg-warning bg-opacity-10 text-warning rounded-circle p-3 mx-auto mb-2">
-                <MdTrendingUp size={24} />
-              </div>
-              <h4 className="mb-0 fw-bold">{dashboardData?.kpis.npsScore}</h4>
-              <small className="text-muted">NPS Score</small>
-              <div className="mt-1">
-                <span className="text-success small">
-                  <FaArrowUp className="me-1" />
-                  +{dashboardData?.trends.nps.change}
-                </span>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col xl={2} lg={4} md={6} className="mb-3">
-          <Card className="kpi-card h-100 border-0 shadow-sm">
-            <Card.Body className="text-center p-3">
-              <div className="kpi-icon bg-secondary bg-opacity-10 text-secondary rounded-circle p-3 mx-auto mb-2">
-                <MdCheckCircle size={24} />
-              </div>
-              <h4 className="mb-0 fw-bold">{dashboardData?.kpis.responseRate}%</h4>
-              <small className="text-muted">Response Rate</small>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col xl={2} lg={4} md={6} className="mb-3">
-          <Card className="kpi-card h-100 border-0 shadow-sm">
-            <Card.Body className="text-center p-3">
-              <div className="kpi-icon bg-info bg-opacity-10 text-info rounded-circle p-3 mx-auto mb-2">
-                <MdAssignment size={24} />
-              </div>
-              <h4 className="mb-0 fw-bold">{dashboardData?.kpis.completionRate}%</h4>
-              <small className="text-muted">Completion Rate</small>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md p-4
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                        text-center transition-all duration-300 hover:shadow-lg">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full
+                          bg-[var(--primary-light)] mx-auto mb-3">
+            <MdAnalytics size={24} className="text-[var(--primary-color)]" />
+          </div>
+          <h4 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+            {dashboardData?.kpis.totalSurveys}
+          </h4>
+          <small className="text-[var(--text-secondary)] text-xs">Active Surveys</small>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md p-4
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                        text-center transition-all duration-300 hover:shadow-lg">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full
+                          bg-[var(--info-light)] mx-auto mb-3">
+            <FaUsers size={24} className="text-[var(--info-color)]" />
+          </div>
+          <h4 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+            {dashboardData?.kpis.totalResponses.toLocaleString()}
+          </h4>
+          <small className="text-[var(--text-secondary)] text-xs">Total Responses</small>
+          <div className="mt-2">
+            <span className="text-[var(--success-color)] text-xs flex items-center justify-center gap-1">
+              <FaArrowUp />
+              +{dashboardData?.trends.responses.change}%
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md p-4
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                        text-center transition-all duration-300 hover:shadow-lg">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full
+                          bg-[var(--success-light)] mx-auto mb-3">
+            <FaStar size={24} className="text-[var(--success-color)]" />
+          </div>
+          <h4 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+            {dashboardData?.kpis.avgSatisfaction}
+          </h4>
+          <small className="text-[var(--text-secondary)] text-xs">Avg Satisfaction</small>
+          <div className="mt-2">
+            <span className="text-[var(--success-color)] text-xs flex items-center justify-center gap-1">
+              <FaArrowUp />
+              +{dashboardData?.trends.satisfaction.change}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md p-4
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                        text-center transition-all duration-300 hover:shadow-lg">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full
+                          bg-[var(--warning-light)] mx-auto mb-3">
+            <MdTrendingUp size={24} className="text-[var(--warning-color)]" />
+          </div>
+          <h4 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+            {dashboardData?.kpis.npsScore}
+          </h4>
+          <small className="text-[var(--text-secondary)] text-xs">NPS Score</small>
+          <div className="mt-2">
+            <span className="text-[var(--success-color)] text-xs flex items-center justify-center gap-1">
+              <FaArrowUp />
+              +{dashboardData?.trends.nps.change}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md p-4
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                        text-center transition-all duration-300 hover:shadow-lg">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full
+                          bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] mx-auto mb-3">
+            <MdCheckCircle size={24} className="text-[var(--text-secondary)]" />
+          </div>
+          <h4 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+            {dashboardData?.kpis.responseRate}%
+          </h4>
+          <small className="text-[var(--text-secondary)] text-xs">Response Rate</small>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md p-4
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                        text-center transition-all duration-300 hover:shadow-lg">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full
+                          bg-[var(--info-light)] mx-auto mb-3">
+            <MdAssignment size={24} className="text-[var(--info-color)]" />
+          </div>
+          <h4 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+            {dashboardData?.kpis.completionRate}%
+          </h4>
+          <small className="text-[var(--text-secondary)] text-xs">Completion Rate</small>
+        </div>
+      </div>
 
       {/* Charts Row */}
-      <Row className="mb-4">
-        <Col lg={6} className="mb-4">
-          <Card className="chart-card h-100">
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <Card.Title className="mb-0">Satisfaction Trend</Card.Title>
-              <small className="text-muted">Last 7 weeks</small>
-            </Card.Header>
-            <Card.Body>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex justify-between items-center p-6 border-b
+                          border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] m-0">
+              Satisfaction Trend
+            </h5>
+            <small className="text-[var(--text-secondary)]">Last 7 weeks</small>
+          </div>
+          <div className="p-6">
+            <div className="w-full h-80">
               <Line {...satisfactionTrendChart} />
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col lg={6} className="mb-4">
-          <Card className="chart-card h-100">
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <Card.Title className="mb-0">NPS Performance</Card.Title>
-              <small className="text-muted">Weekly comparison</small>
-            </Card.Header>
-            <Card.Body>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex justify-between items-center p-6 border-b
+                          border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] m-0">
+              NPS Performance
+            </h5>
+            <small className="text-[var(--text-secondary)]">Weekly comparison</small>
+          </div>
+          <div className="p-6">
+            <div className="w-full h-80">
               <Bar {...npsChart} />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Location Performance */}
-      <Row className="mb-4">
-        <Col lg={8} className="mb-4">
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0">Location Performance</Card.Title>
-            </Card.Header>
-            <Card.Body>
-              <Table responsive className="mb-0">
-                <thead>
-                  <tr>
-                    <th>Location</th>
-                    <th>Satisfaction</th>
-                    <th>Responses</th>
-                    <th>NPS Score</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboardData?.locations.map((location, index) => (
-                    <tr key={index}>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <FaMapMarkerAlt className="text-muted me-2" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="lg:col-span-2 bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] m-0">
+              Location Performance
+            </h5>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                <tr>
+                  <th className="text-left p-4 text-sm font-semibold
+                                 text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    Location
+                  </th>
+                  <th className="text-left p-4 text-sm font-semibold
+                                 text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    Satisfaction
+                  </th>
+                  <th className="text-left p-4 text-sm font-semibold
+                                 text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    Responses
+                  </th>
+                  <th className="text-left p-4 text-sm font-semibold
+                                 text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    NPS Score
+                  </th>
+                  <th className="text-left p-4 text-sm font-semibold
+                                 text-[var(--light-text)] dark:text-[var(--dark-text)]
+                                 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {dashboardData?.locations.map((location, index) => (
+                  <tr key={index}
+                      className="hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
+                                 transition-colors duration-200">
+                    <td className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="flex items-center gap-2">
+                        <FaMapMarkerAlt className="text-[var(--text-secondary)]" />
+                        <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
                           {location.name}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <span className="me-2">{location.satisfaction}</span>
-                          <div className="rating-stars">
-                            {[...Array(5)].map((_, i) => (
-                              <FaStar
-                                key={i}
-                                className={i < location.satisfaction ? 'text-warning' : 'text-muted'}
-                                size={12}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </td>
-                      <td>{location.responses.toLocaleString()}</td>
-                      <td>
-                        <span className={`fw-bold ${location.nps >= 70 ? 'text-success' : location.nps >= 50 ? 'text-warning' : 'text-danger'}`}>
-                          {location.nps}
                         </span>
-                      </td>
-                      <td>{getStatusBadge(location.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col lg={4} className="mb-4">
-          <Card className="h-100">
-            <Card.Header>
-              <Card.Title className="mb-0">Location Comparison</Card.Title>
-            </Card.Header>
-            <Card.Body>
+                      </div>
+                    </td>
+                    <td className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {location.satisfaction}
+                        </span>
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <FaStar
+                              key={i}
+                              className={i < location.satisfaction ? 'text-[var(--warning-color)]' : 'text-[var(--text-secondary)]'}
+                              size={12}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                        {location.responses.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <span className={`font-bold ${
+                        location.nps >= 70 
+                          ? 'text-[var(--success-color)]' 
+                          : location.nps >= 50 
+                            ? 'text-[var(--warning-color)]' 
+                            : 'text-[var(--danger-color)]'
+                      }`}>
+                        {location.nps}
+                      </span>
+                    </td>
+                    <td className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      {getStatusBadge(location.status)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] m-0">
+              Location Comparison
+            </h5>
+          </div>
+          <div className="p-6">
+            <div className="w-full h-80">
               <Bar {...locationPerformanceChart} />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Issues & Praises */}
-      <Row>
-        <Col lg={6} className="mb-4">
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <Card.Title className="mb-0 text-danger">
-                <MdThumbDown className="me-2" />
-                Top Complaints
-              </Card.Title>
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => navigate('/app/actions')}
-              >
-                <MdAssignment className="me-1" />
-                Create Actions
-              </Button>
-            </Card.Header>
-            <Card.Body>
-              {dashboardData?.topComplaints.map((complaint, index) => (
-                <div key={index} className="d-flex justify-content-between align-items-center mb-3">
-                  <div>
-                    <div className="fw-semibold">{complaint.issue}</div>
-                    <small className="text-muted">{complaint.count} mentions</small>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex justify-between items-center p-6 border-b
+                          border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold m-0 text-[var(--danger-color)] flex items-center gap-2">
+              <MdThumbDown />
+              Top Complaints
+            </h5>
+            <button
+              onClick={() => navigate('/app/actions')}
+              className="px-3 py-1.5 text-sm font-medium rounded-md
+                         border border-[var(--danger-color)] text-[var(--danger-color)]
+                         bg-transparent hover:bg-[var(--danger-light)]
+                         transition-colors duration-300"
+            >
+              <MdAssignment className="inline mr-1" />
+              Create Actions
+            </button>
+          </div>
+          <div className="p-6">
+            {dashboardData?.topComplaints.map((complaint, index) => (
+              <div key={index} className="flex justify-between items-center mb-3 last:mb-0">
+                <div>
+                  <div className="font-semibold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    {complaint.issue}
                   </div>
-                  <div className="d-flex align-items-center">
-                    <Badge 
-                      bg={complaint.severity === 'high' ? 'danger' : complaint.severity === 'medium' ? 'warning' : 'info'}
-                      className="me-2"
-                    >
-                      {complaint.severity}
-                    </Badge>
-                    {getTrendIcon(complaint.trend)}
-                  </div>
+                  <small className="text-[var(--text-secondary)]">{complaint.count} mentions</small>
                 </div>
-              ))}
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col lg={6} className="mb-4">
-          <Card>
-            <Card.Header>
-              <Card.Title className="mb-0 text-success">
-                <MdThumbUp className="me-2" />
-                Top Praises
-              </Card.Title>
-            </Card.Header>
-            <Card.Body>
-              {dashboardData?.topPraises.map((praise, index) => (
-                <div key={index} className="d-flex justify-content-between align-items-center mb-3">
-                  <div>
-                    <div className="fw-semibold">{praise.praise}</div>
-                    <small className="text-muted">{praise.count} mentions</small>
-                  </div>
-                  <div>
-                    {getTrendIcon(praise.trend)}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 text-white rounded-full text-xs font-medium ${
+                    complaint.severity === 'high' 
+                      ? 'bg-[var(--danger-color)]' 
+                      : complaint.severity === 'medium' 
+                        ? 'bg-[var(--warning-color)]' 
+                        : 'bg-[var(--info-color)]'
+                  }`}>
+                    {complaint.severity}
+                  </span>
+                  {getTrendIcon(complaint.trend)}
                 </div>
-              ))}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+                        rounded-md shadow-md
+                        border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h5 className="font-semibold m-0 text-[var(--success-color)] flex items-center gap-2">
+              <MdThumbUp />
+              Top Praises
+            </h5>
+          </div>
+          <div className="p-6">
+            {dashboardData?.topPraises.map((praise, index) => (
+              <div key={index} className="flex justify-between items-center mb-3 last:mb-0">
+                <div>
+                  <div className="font-semibold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    {praise.praise}
+                  </div>
+                  <small className="text-[var(--text-secondary)]">{praise.count} mentions</small>
+                </div>
+                <div>
+                  {getTrendIcon(praise.trend)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

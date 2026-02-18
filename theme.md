@@ -1,11 +1,11 @@
-🎨 UI / Theme Guidelines for Project (Bootstrap 5 – Final)
+🎨 UI / Theme Guidelines for Project (Tailwind v4 – Final)
 
 This document defines the single source of truth for UI, theme, and styling decisions in this project.
 All rules are global, strict, and non-negotiable.
 
 Goal:
 ➡ Clean, modern, scalable, enterprise-ready SaaS UI
-➡ Bootstrap utilities first, custom CSS last
+➡ Tailwind CSS v4 first, custom CSS only when required
 
 🎯 1. Design Philosophy (Big Picture)
 
@@ -17,15 +17,13 @@ Consistency > creativity
 
 UI should feel professional, calm, enterprise-grade
 
-Less UI, more clarity.
+Less UI, more clarity
 
 🧱 2. Global CSS Architecture (Mandatory)
 
-Only ONE global CSS system is allowed.
+Only one global CSS system is allowed.
 
-✅ Allowed Global CSS
-
-Custom CSS is allowed only for:
+✅ Allowed global CSS:
 
 :root design tokens (colors, spacing, layout, transitions)
 
@@ -35,88 +33,108 @@ Global reusable animations
 
 Dark mode variable overrides
 
-❌ No component-specific styling
-❌ No page-specific CSS
-❌ No duplicate Bootstrap behavior
+❌ No component-specific or page-specific CSS
+
+❌ No duplicate Tailwind behavior
+
+Rule: Tailwind classes must be used wherever possible.
+Custom CSS only if a Tailwind utility does not exist.
 
 🎨 3. :root — Design Tokens (Single Source of Truth)
 
-All colors, spacing, shadows, typography, and layout sizes must come from :root variables.
+All colors, spacing, shadows, typography, layout sizes must come from :root variables
 
-Bootstrap Color Overrides (Approved)
 :root {
-  --bs-primary: #1fdae4;
-  --bs-primary-rgb: 31, 218, 228;
+  --primary-color: #1fdae4;
+  --text-primary: #1fdae4;
+  --text-secondary: #6c757d;
+  --primary-hover: #17c1ca;
+  --secondary-color: #6c757d;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+
+  /* Light Theme */
+  --light-bg: #f8f9fa;
+  --light-text: #212529;
+  --light-border: #dee2e6;
+  --light-card: #ffffff;
+  --light-hover: #1fdae4;
+
+  /* Dark Theme */
+  --dark-bg: #1a1d23;
+  --dark-text: #ffff;
+  --dark-border: #343a40;
+  --dark-card: #2a2e35;
+  --dark-hover: #1fdae4;
+
+  /* Layout */
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 70px;
+  --header-height: 56px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Typography & Layout */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --border-radius: 8px;
+  --transition: all 0.3s ease;
+
+  /* Light Color Variants */
+  --primary-light: rgba(31, 218, 228, 0.1);
+  --success-light: rgba(40, 167, 69, 0.1);
+  --danger-light: rgba(220, 53, 69, 0.1);
+  --warning-light: rgba(255, 193, 7, 0.1);
+  --info-light: rgba(23, 162, 184, 0.1);
+
+  /* Layout & Containers */
+  --container-padding-mobile: 0.5rem;
+  --container-padding-tablet: 1rem;
+  --container-padding-desktop: 1.5rem;
 }
 
-Rules:
 
-.btn-primary, .text-primary, .bg-primary must rely on these
-
-❌ Never hard-code Bootstrap colors elsewhere
-
-Theme & UI Variables (Locked)
-
-The following categories are official and frozen:
-
-Light & Dark colors
-
-Layout sizing (sidebar, header)
-
-Typography
-
-Spacing scale
-
-Shadows
-
-Transitions
-
-Hover & state colors
-
-👉 Developers consume variables, never redefine them.
+Rule: Use only these variables in Tailwind classes (text-[var(--text-primary)], bg-[var(--primary-color)], etc.)
 
 🌗 4. Light & Dark Mode (Strict)
-
-Dark mode works only via variable switching, not duplicate CSS.
-
 body {
   background-color: var(--light-bg);
   color: var(--light-text);
   font-family: var(--font-family);
 }
 
-
 .dark body {
   background-color: var(--dark-bg);
   color: var(--dark-text);
 }
 
-Rules:
 
-❌ No #fff, #000, or hard-coded colors
+❌ No hard-coded #fff, #000, or other colors
 
 ❌ No separate dark CSS files
 
-✅ Only variable overrides are allowed
+✅ Only variable overrides allowed
+
+Tailwind Tip: Use dark: modifier:
+
+<div class="bg-[var(--light-card)] dark:bg-[var(--dark-card)]"></div>
 
 🧹 5. CSS Reset (Mandatory & Frozen)
-
-The following reset must exist and must not be changed:
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-
-html,
-body {
+html, body {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
 }
-
 
 #root {
   display: flex;
@@ -124,252 +142,171 @@ body {
   min-height: 100vh;
 }
 
-Purpose:
-
-Predictable layouts
-
-No browser inconsistencies
-
-Stable flex-based app shell
-
 ✨ 6. Animations (Global Only)
 
-Animations are allowed only when:
+Use Tailwind animation utilities first (animate-spin, animate-pulse)
 
-Reusable
+Only create new global animations if Tailwind does not provide
 
-Semantic (fade, slide, pulse, loading)
-
-Improve UX clarity
-
-Rules:
-
-All @keyframes must be global
-
-❌ No inline animations in components
-
-❌ No duplicate animations
-
-👉 Use existing animations first
-👉 Create new ones only if none exist
+No inline animations in components
 
 📱 7. Responsiveness (Mobile-First)
 
-Entire app must be mobile-first
+Use Tailwind responsive utilities (sm:, md:, lg:, xl:)
 
-Use Bootstrap responsive utilities only
+Mobile-first approach
 
-Examples:
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
-col-*
-col-sm-*
-col-md-*
-col-lg-*
-col-xl-*
-d-none d-md-block
 
-Test every screen on:
-
-Mobile
-
-Tablet
-
-Desktop
+Verify layouts on Mobile / Tablet / Desktop
 
 🧭 8. Layout Structure (Sidebar & Header)
-Sidebar
+<aside class="w-[var(--sidebar-width)] dark:bg-[var(--dark-bg)]"></aside>
+<header class="h-[var(--header-height)] dark:bg-[var(--dark-bg)]"></header>
 
-Expanded width → --sidebar-width (280px)
-
-Collapsed width → --sidebar-collapsed-width (70px)
-
-Header
-
-Fixed height → --header-height (64px)
-
-Rules:
-
-Sizes come only from variables
 
 ❌ No hard-coded widths/heights
 
-🧩 9. Bootstrap-First Rule (Very Strict)
+Use Tailwind classes with variables
 
-If Bootstrap provides a utility or component, custom CSS is FORBIDDEN.
+🔘 9. Tailwind-First Rule (Strict)
 
-✅ Correct
-<div class="d-flex gap-2 p-3 rounded shadow-sm"></div>
-❌ Wrong
-.box {
-  display: flex;
-  padding: 12px;
-  border-radius: 8px;
-}
+If Tailwind provides utility → use it
 
-This rule applies to:
+If not → use :root variables with custom CSS in index.css
 
-Layout
+❌ No duplicate styles
 
-Spacing
+Example:
 
-Typography
+✅ Correct:
 
-Colors
+<div class="flex gap-4 p-4 rounded shadow-sm"></div>
 
-Flex/Grid
 
-Shadows
+❌ Wrong:
 
-Borders
+.box { display: flex; padding: 16px; border-radius: 8px; }
 
 🔘 10. Buttons — Single Design System
 
-Buttons must follow one Bootstrap-based system.
+Use Tailwind classes + variables
 
-Allowed variants:
+<button class="px-4 py-2 rounded-md font-medium transition-colors
+  bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]">
+  Primary
+</button>
 
-Primary → btn btn-primary
 
-Secondary → btn btn-secondary
+❌ No inconsistent sizing
 
-Outline → btn btn-outline-*
+✅ Height, padding, radius, transitions must match across app
 
-Danger → btn btn-danger
+📊 11. Tables — Unified Style
 
-Rules:
+Tailwind table utilities + variables:
 
-Same height
+<table class="min-w-full border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+  <thead class="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+    <tr><th class="p-2 text-left">Header</th></tr>
+  </thead>
+  <tbody>
+    <tr class="hover:bg-[var(--row-hover-bg)]">
+      <td class="p-2">Data</td>
+    </tr>
+  </tbody>
+</table>
 
-Same padding
 
-Same border radius
+Same padding, hover, header styling
 
-Same transitions
-
-❌ No custom button styles unless Bootstrap cannot do it
-
-📊 11. Tables — One Global Style
-
-❌ Different table designs across pages are NOT allowed
-
-✅ Entire app must use one unified Bootstrap table style
-
-Rules:
-
-.table base
-
-Same spacing
-
-Same hover behavior
-
-Same header styling
-
-Same Light/Dark behavior
-
-Any table change → global only
+✅ Light/Dark consistency
 
 🧩 12. Cards — Consistent Structure
+<div class="bg-[var(--light-card)] dark:bg-[var(--dark-card)]
+            rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+  Card content
+</div>
 
-All cards must follow Bootstrap structure:
 
-.card
-.card-body
-
-Rules:
-
-Same padding
-
-Same border radius
-
-Same shadow level
-
-Only content changes, never structure.
+❌ No different card designs per page
 
 🎚 13. Spacing, Radius & Shadows
-Spacing (Critical)
 
-❌ No custom margin/padding CSS
+Use Tailwind utilities + variables
 
-Use only:
+Aspect	Tailwind Example
+Margin/Padding	m-4 p-4 gap-4
+Border Radius	rounded, rounded-md
+Shadows	shadow-sm, shadow-md, shadow-lg
+Transition	transition-all duration-300
 
-m-*  p-*  mt-*  mb-*  gap-*
-Border Radius
+❌ No custom pixel values
 
-Use Bootstrap first:
+🧠 14. UX Priority
 
-rounded
-rounded-1
-rounded-2
-rounded-pill
-Shadows
-shadow-sm
-shadow
-shadow-lg
-🧠 14. UX Priority (Non-Negotiable)
+Simple, intuitive, self-explanatory
 
-UI must be simple, intuitive, self-explanatory
+Global font: font-family: var(--font-family)
 
-Global font:
+Ensure contrast in Light/Dark modes
 
-font-family: var(--font-family)
+No hidden/confusing elements
 
-❌ No component should look:
+🧹 15. Custom CSS Decision Rule
 
-dull
+Before writing any CSS:
 
-hidden
+Can Tailwind solve it? → ✅ Use Tailwind
 
-confusing
+Can a variable solve it? → ✅ Use variable
 
-In either Light or Dark mode
+Only if neither → minimal CSS in index.css with comment
 
-🧹 15. Custom CSS Decision Rule (Strict)
+Example:
 
-Before writing any CSS, ask:
-
-Does Bootstrap utility exist?
-→ YES → Use Bootstrap
-→ NO → Continue
-
-Can it be solved via :root variable?
-→ YES → Add variable
-→ NO → Write minimal CSS
-
-If this flow is not followed → code review fail
+/* Custom scroll for sidebar - Tailwind cannot fully handle */
+.sidebar-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) transparent;
+}
 
 👨‍💻 16. Developer Rules
 
-CSS allowed only in:
+CSS allowed only in index.css or :root variables
 
-App.css
-
-:root variables
-
-Do not duplicate Bootstrap behavior
+Do not duplicate Tailwind behavior
 
 Reuse existing patterns
 
-New styles only when absolutely necessary
+New styles only if absolutely necessary
 
-Code must be:
+Code must be clean, readable, maintainable
 
-clean
+🔑 Final Checklist
 
-readable
+✅ Test Light & Dark mode
 
-maintainable
+✅ Verify contrast across app
 
-🔑 Final Rule
+✅ Test all breakpoints
 
-If Bootstrap can do it, custom CSS must NOT be written.
-Inconsistent UI is a bug, not a feature.
+✅ Ensure UI consistency (buttons, tables, cards, spacing)
 
-✅ Final Checklist
+✅ Only Tailwind v4 + :root variables used
 
-Test Light & Dark mode
+💡 Summary:
 
-Verify contrast on all components
+Bootstrap completely removed
 
-Test all breakpoints
+Tailwind v4 classes first
 
-Ensure UI consistency across the app
+:root variables mandatory for all colors, spacing, shadows
+
+Custom CSS only if Tailwind/variables cannot handle
+
+Light/Dark themes fully variable-driven
+
+Mobile-first, enterprise-ready, consistent UI

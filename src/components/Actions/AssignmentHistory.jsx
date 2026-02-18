@@ -1,6 +1,6 @@
 // src/components/Actions/AssignmentHistory.jsx
 import React from 'react';
-import { ListGroup, Badge } from 'react-bootstrap';
+// react-bootstrap removed — using native HTML + Tailwind CSS
 import { MdPerson, MdSwapHoriz, MdSchedule, MdAutorenew } from 'react-icons/md';
 
 /**
@@ -27,8 +27,8 @@ const formatDateTime = (dateStr) => {
 const AssignmentHistory = ({ history = [], className = '' }) => {
     if (!history || history.length === 0) {
         return (
-            <div className={`text-muted text-center py-3 ${className}`}>
-                <MdSchedule size={24} className="mb-2 d-block mx-auto" />
+            <div className={`text-[var(--text-muted)] text-center py-3 ${className}`}>
+                <MdSchedule size={24} className="mb-2 block mx-auto" />
                 <small>No assignment history</small>
             </div>
         );
@@ -41,24 +41,24 @@ const AssignmentHistory = ({ history = [], className = '' }) => {
 
     return (
         <div className={className}>
-            <h6 className="mb-3 d-flex align-items-center">
-                <MdSwapHoriz className="me-2" />
+            <h6 className="mb-3 flex items-center">
+                <MdSwapHoriz className="mr-2" />
                 Assignment History
             </h6>
 
-            <ListGroup variant="flush" className="assignment-timeline">
+            <div className="assignment-timeline">
                 {sortedHistory.map((entry, index) => (
-                    <ListGroup.Item
+                    <div
                         key={index}
-                        className="px-0 py-2 border-start-0 border-end-0"
+                        className="px-0 py-2 border-b border-[var(--border-color)] last:border-b-0"
                     >
-                        <div className="d-flex justify-content-between align-items-start">
-                            <div className="d-flex align-items-start">
-                                <div className="timeline-icon me-3">
+                        <div className="flex justify-between items-start">
+                            <div className="flex items-start">
+                                <div className="mr-3">
                                     {entry.auto ? (
-                                        <MdAutorenew className="text-info" size={20} />
+                                        <MdAutorenew className="text-cyan-500" size={20} />
                                     ) : (
-                                        <MdPerson className="text-primary" size={20} />
+                                        <MdPerson className="text-blue-600" size={20} />
                                     )}
                                 </div>
 
@@ -66,41 +66,42 @@ const AssignmentHistory = ({ history = [], className = '' }) => {
                                     <div className="mb-1">
                                         {entry.from ? (
                                             <>
-                                                <span className="text-muted">
+                                                <span className="text-[var(--text-muted)]">
                                                     {entry.fromName || 'Previous assignee'}
                                                 </span>
-                                                <MdSwapHoriz className="mx-2 text-muted" />
+                                                <MdSwapHoriz className="mx-2 text-[var(--text-muted)] inline" />
                                             </>
                                         ) : (
-                                            <span className="text-muted me-2">Assigned to</span>
+                                            <span className="text-[var(--text-muted)] mr-2">Assigned to</span>
                                         )}
                                         <strong>{entry.toName || entry.toTeam || 'User'}</strong>
                                     </div>
 
                                     {entry.note && (
-                                        <small className="text-muted d-block">
+                                        <small className="text-[var(--text-muted)] block">
                                             {entry.note}
                                         </small>
                                     )}
 
-                                    <small className="text-muted">
-                                        <MdSchedule className="me-1" size={12} />
+                                    <small className="text-[var(--text-muted)]">
+                                        <MdSchedule className="mr-1 inline" size={12} />
                                         {formatDateTime(entry.at)}
                                     </small>
                                 </div>
                             </div>
 
-                            <Badge
-                                bg={entry.auto ? 'info' : 'secondary'}
-                                className="ms-2"
-                                pill
+                            <span
+                                className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${entry.auto
+                                        ? 'bg-cyan-100 text-cyan-800'
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`}
                             >
                                 {entry.auto ? 'Auto' : 'Manual'}
-                            </Badge>
+                            </span>
                         </div>
-                    </ListGroup.Item>
+                    </div>
                 ))}
-            </ListGroup>
+            </div>
         </div>
     );
 };

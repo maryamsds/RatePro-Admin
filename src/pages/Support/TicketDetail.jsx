@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Row, Col, Form, Button, Badge, Spinner } from "react-bootstrap"
 import {
   MdArrowBack,
   MdSupport,
@@ -89,7 +88,7 @@ const TicketDetail = () => {
         canEdit: updatedTicketData.canEdit || false,
         canDelete: updatedTicketData.canDelete || false,
         isOwner: updatedTicketData.isOwner || false,
-        ...formatTicketForDisplay(updatedTicketData), // ✅ use helper if you’ve defined it
+        ...formatTicketForDisplay(updatedTicketData), // ✅ use helper if you've defined it
       };
 
       setTicket(formattedTicket);
@@ -236,67 +235,72 @@ const TicketDetail = () => {
 
   // Render status badge
   const getStatusBadge = (status) => {
-    const statusMap = {
-      Open: "danger",
-      "In Progress": "warning",
-      Resolved: "success",
-      Closed: "secondary",
-      Pending: "info",
+    const statusColors = {
+      Open: "bg-[var(--danger-color)] text-white",
+      open: "bg-[var(--danger-color)] text-white",
+      "In Progress": "bg-[var(--warning-color)] text-white",
+      "in-progress": "bg-[var(--warning-color)] text-white",
+      Resolved: "bg-[var(--success-color)] text-white",
+      resolved: "bg-[var(--success-color)] text-white",
+      Closed: "bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]",
+      closed: "bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]",
+      Pending: "bg-[var(--info-color)] text-white",
+      pending: "bg-[var(--info-color)] text-white",
     }
-    return <Badge bg={statusMap[status] || "secondary"}>{status}</Badge>
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${statusColors[status] || "bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]"}`}>
+        {status}
+      </span>
+    )
   }
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3">Loading ticket details...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+        <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-[var(--light-text)] dark:text-[var(--dark-text)]">Loading ticket details...</p>
       </div>
     )
   }
 
   if (!ticket) {
     return (
-      <div className="error-container">
-        <h2>Ticket Not Found</h2>
-        <Button variant="primary" onClick={() => navigate("/app/support")}>
-          <MdArrowBack className="me-2" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+        <h2 className="text-2xl font-semibold mb-4 text-[var(--light-text)] dark:text-[var(--dark-text)]">Ticket Not Found</h2>
+        <button 
+          className="flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90"
+          onClick={() => navigate("/app/support")}
+        >
+          <MdArrowBack />
           Back to Tickets
-        </Button>
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="container-fluid p-0">
+    <div className="w-full">
       {/* Page Header */}
-      <div className="bg-light border-bottom mb-4" style={{
-        backgroundColor: 'var(--light-card)',
-        borderColor: 'var(--light-border)'
-      }}>
-        <div className="container-fluid px-3 px-md-4 py-3">
-          <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
-            <div className="d-flex align-items-center gap-3 flex-grow-1">
-              <div className="d-flex align-items-center justify-content-center rounded"
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  backgroundColor: '#1fdae4',
-                  // color: 'white'
-                }}>
-                <MdSupport size={24} />
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)] mb-4">
+        <div className="px-3 md:px-4 py-3">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+            <div className="flex items-center gap-3 flex-grow">
+              <div 
+                className="flex items-center justify-center rounded w-12 h-12 bg-[var(--primary-color)]"
+              >
+                <MdSupport size={24} className="text-white" />
               </div>
 
-              <div className="flex-grow-1">
-                <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 mb-1">
-                  <h1 className="h4 mb-0 me-2">
+              <div className="flex-grow">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-semibold mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                     {ticket.ticketNumber}
                   </h1>
-                  <div className="d-flex gap-2">
+                  <div className="flex gap-2">
                     {getStatusBadge(ticket.status)}
                   </div>
                 </div>
-                <p className="mb-0 text-muted">{ticket.subject}</p>
+                <p className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">{ticket.subject}</p>
               </div>
             </div>
           </div>
@@ -304,73 +308,56 @@ const TicketDetail = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container-fluid px-md-0">
-        <div className="row g-3 g-lg-4">
+      <div className="w-full px-0 md:px-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4">
           {/* Left Column - Ticket Details & Comments */}
-          <div className="col-12 col-lg-8">
+          <div className="lg:col-span-8">
             {/* Ticket Information */}
-            <div className="card shadow-sm mb-4" style={{
-              backgroundColor: 'var(--light-card)',
-              borderColor: 'var(--light-border)',
-              borderRadius: 'var(--border-radius)'
-            }}>
-              <div className="card-header border-bottom" style={{
-                // backgroundColor: 'var(--light-bg)',
-                borderColor: 'var(--light-border)'
-              }}>
-                <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#1fdae4',
-                      color: 'white'
-                    }}>
-                    <MdInfo size={20} />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md mb-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] p-4">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center justify-center rounded w-10 h-10 bg-[var(--primary-color)]"
+                  >
+                    <MdInfo size={20} className="text-white" />
                   </div>
                   <div>
-                    <h5 className="mb-1" style={{ color: '#1fdae4' }}>
+                    <h5 className="mb-1 text-lg font-semibold text-[var(--primary-color)]">
                       Ticket Details
                     </h5>
-                    <p className="mb-0 small text-muted">Issue description and information</p>
+                    <p className="mb-0 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Issue description and information</p>
                   </div>
                 </div>
               </div>
 
-              <div className="card-body p-3 p-md-4">
+              <div className="p-3 md:p-4">
                 <div className="mb-4">
-                  <h6 className="mb-3">Description</h6>
-                  <p className="text-muted mb-0" style={{ lineHeight: '1.6' }}>
+                  <h6 className="mb-3 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Description</h6>
+                  <p className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-80 leading-relaxed">
                     {ticket.description}
                   </p>
                 </div>
 
                 {ticket?.attachments?.length > 0 && (
                   <div className="mt-4">
-                    <h6 className="mb-3 d-flex align-items-center gap-2">
+                    <h6 className="mb-3 flex items-center gap-2 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                       <MdAttachFile /> Attachments
                     </h6>
-                    <div className="row g-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {ticket.attachments.map((file, index) => (
-                        <div key={index} className="col-12 col-sm-6">
-                          <div className="d-flex align-items-center justify-content-between p-3 rounded border"
-                            style={{
-                              backgroundColor: 'var(--light-bg)',
-                              borderColor: 'var(--light-border)'
-                            }}>
-                            <div className="d-flex align-items-center gap-3">
-                              <MdAttachFile className="text-muted" size={20} />
-                              <div>
-                                <div className="fw-medium small" style={{ color: 'var(--light-text)' }}>
-                                  {file.fileName}
-                                </div>
-                                <div className="text-muted small">{file.fileSize}</div>
+                        <div key={index} className="flex items-center justify-between p-3 rounded border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                          <div className="flex items-center gap-3">
+                            <MdAttachFile className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60" size={20} />
+                            <div>
+                              <div className="font-medium text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                {file.fileName}
                               </div>
+                              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 text-sm">{file.fileSize}</div>
                             </div>
-                            <Button variant="link" size="sm" className="p-1 text-primary">
-                              <MdDownload size={18} />
-                            </Button>
                           </div>
+                          <button className="p-1 text-[var(--primary-color)] hover:opacity-80 transition-opacity">
+                            <MdDownload size={18} />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -380,45 +367,33 @@ const TicketDetail = () => {
             </div>
 
             {/* Comments Section */}
-            <div className="card shadow-sm mb-4" style={{
-              backgroundColor: 'var(--light-card)',
-              borderColor: 'var(--light-border)',
-              borderRadius: 'var(--border-radius)'
-            }}>
-              <div className="card-header border-bottom" style={{
-                // backgroundColor: 'var(--light-bg)',
-                borderColor: 'var(--light-border)'
-              }}>
-                <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#1fdae4',
-                      color: 'white'
-                    }}>
-                    <MdAssignment size={20} />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md mb-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] p-4">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center justify-center rounded w-10 h-10 bg-[var(--primary-color)]"
+                  >
+                    <MdAssignment size={20} className="text-white" />
                   </div>
                   <div>
-                    <h5 className="mb-1" style={{ color: '#1fdae4' }}>
+                    <h5 className="mb-1 text-lg font-semibold text-[var(--primary-color)]">
                       Comments & Activity
                     </h5>
-                    <p className="mb-0 small text-muted">{ticket?.comments?.length} comment(s)</p>
+                    <p className="mb-0 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">{ticket?.comments?.length} comment(s)</p>
                   </div>
                 </div>
               </div>
 
-              <div className="card-body p-3 p-md-4">
+              <div className="p-3 md:p-4">
                 <div className="mb-4">
                   {ticket?.comments?.map((comment, index) => (
                     <div
-                      // key={comment.id}
                       key={comment.id || comment._id || index}
-                      className={`mb-4 ${index === ticket.comments.length - 1 ? 'mb-0' : ''} d-flex ${comment.author?._id === user._id ? 'justify-content-end' : 'justify-content-start'
+                      className={`mb-4 ${index === ticket.comments.length - 1 ? 'mb-0' : ''} flex ${comment.author?._id === user._id ? 'justify-end' : 'justify-start'
                         }`}
                     >
                       <div
-                        className="d-flex gap-3"
+                        className="flex gap-3"
                         style={{
                           flexDirection: comment.author?._id === user._id ? 'row-reverse' : 'row',
                           maxWidth: '80%',
@@ -426,11 +401,9 @@ const TicketDetail = () => {
                       >
                         {/* Avatar or Icon */}
                         <div
-                          className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 overflow-hidden"
+                          className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden w-10 h-10"
                           style={{
-                            width: '40px',
-                            height: '40px',
-                            backgroundColor: comment.role === 'support' ? '#1fdae4' : 'var(--light-border)',
+                            backgroundColor: comment.role === 'support' ? 'var(--primary-color)' : 'var(--light-border)',
                             color: comment.role === 'support' ? 'white' : 'var(--light-text)',
                           }}
                         >
@@ -438,61 +411,54 @@ const TicketDetail = () => {
                             <img
                               src={comment.author.avatar.url}
                               alt={comment.author.name || 'User'}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                              }}
+                              className="w-full h-full object-cover"
                             />
                           ) : (
                             <MdPerson size={20} />
                           )}
                         </div>
 
-                        <div className="flex-grow-1">
+                        <div className="flex-grow">
                           <div
-                            className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between mb-2"
+                            className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2"
                             style={{
                               textAlign: comment.author?._id === user._id ? 'right' : 'left',
                             }}
                           >
                             <div
-                              className="d-flex align-items-center gap-2 flex-wrap"
+                              className="flex items-center gap-2 flex-wrap"
                               style={{
                                 flexDirection: comment.author?._id === user._id ? 'row-reverse' : 'row',
                               }}
                             >
-                              <span className="fw-medium">
+                              <span className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                                 {comment.author?._id === user._id ? 'You' : comment.author?.name || 'Unknown User'}
                               </span>
                               {comment.role === 'support' && (
-                                <Badge bg="primary" className="small">
+                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[var(--info-color)] text-white">
                                   Support
-                                </Badge>
+                                </span>
                               )}
                             </div>
-                            <div className="d-flex align-items-center gap-1 text-muted small">
+                            <div className="flex items-center gap-1 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 text-sm">
                               <MdAccessTime size={16} />
                               {formatLocalDateTime(comment.timestamp)}
                             </div>
                           </div>
 
                           <div
-                            className="p-3 rounded"
+                            className="p-3 rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] leading-relaxed"
                             style={{
-                              backgroundColor: 'var(--light-bg)',
                               borderLeft:
                                 comment.author?._id === user._id
                                   ? 'none'
-                                  : `3px solid ${comment.role === 'support' ? '#1fdae4' : 'var(--light-border)'
+                                  : `3px solid ${comment.role === 'support' ? 'var(--primary-color)' : 'var(--light-border)'
                                   }`,
                               borderRight:
                                 comment.author?._id === user._id
-                                  ? `3px solid ${comment.role === 'support' ? '#1fdae4' : 'var(--light-border)'
+                                  ? `3px solid ${comment.role === 'support' ? 'var(--primary-color)' : 'var(--light-border)'
                                   }`
                                   : 'none',
-                              color: 'var(--light-text)',
-                              lineHeight: '1.5',
                               textAlign: comment.author?._id === user._id ? 'right' : 'left',
                             }}
                           >
@@ -505,213 +471,182 @@ const TicketDetail = () => {
                 </div>
 
                 {/* Add Comment Form */}
-                <div className="border-top pt-4" style={{ borderColor: 'var(--light-border)' }}>
-                  <Form onSubmit={handleAddComment}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-medium mb-2">
+                <div className="border-t border-[var(--light-border)] dark:border-[var(--dark-border)] pt-4">
+                  <form onSubmit={handleAddComment}>
+                    <div className="mb-3">
+                      <label className="block font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                         Add a Comment
-                      </Form.Label>
-                      <Form.Control
-                        as="textarea"
+                      </label>
+                      <textarea
                         rows={4}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Type your response here..."
-                        className="border"
-                        style={{
-                          borderColor: 'var(--light-border)',
-                          backgroundColor: 'var(--light-bg)',
-                          color: 'var(--light-text)',
-                          borderRadius: 'var(--border-radius)',
-                          resize: 'vertical'
-                        }}
+                        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] resize-y"
                       />
-                    </Form.Group>
-                    <div className="d-flex justify-content-end">
-                      <Button
+                    </div>
+                    <div className="flex justify-end">
+                      <button
                         type="submit"
+                        className="flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={!newComment.trim() || isSubmittingComment}
-                        className="d-flex align-items-center"
-                        style={{
-                          backgroundColor: '#1fdae4',
-                          borderColor: '#1fdae4',
-                          color: 'white'
-                        }}
                       >
                         {isSubmittingComment ? (
                           <>
-                            <Spinner size="sm" className="me-2" animation="border" />
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             Sending...
                           </>
                         ) : (
                           <>
-                            <MdSend className="me-2" size={18} />
+                            <MdSend size={18} />
                             Add Comment
                           </>
                         )}
-                      </Button>
+                      </button>
                     </div>
-                  </Form>
+                  </form>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Right Column - Metadata & Actions */}
-          <div className="col-12 col-lg-4">
+          <div className="lg:col-span-4">
             {/* Ticket Status Management */}
-            <div className="card shadow-sm mb-4" style={{
-              backgroundColor: 'var(--light-card)',
-              borderColor: 'var(--light-border)',
-              borderRadius: 'var(--border-radius)'
-            }}>
-              <div className="card-header border-bottom" style={{
-                // backgroundColor: 'var(--light-bg)',
-                borderColor: 'var(--light-border)'
-              }}>
-                <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#1fdae4',
-                      color: 'white'
-                    }}>
-                    <MdUpdate size={20} />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md mb-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] p-4">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center justify-center rounded w-10 h-10 bg-[var(--primary-color)]"
+                  >
+                    <MdUpdate size={20} className="text-white" />
                   </div>
                   <div>
-                    <h5 className="mb-1" style={{ color: '#1fdae4' }}>
+                    <h5 className="mb-1 text-lg font-semibold text-[var(--primary-color)]">
                       Update Status
                     </h5>
-                    <p className="mb-0 small text-muted">Change ticket status</p>
+                    <p className="mb-0 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Change ticket status</p>
                   </div>
                 </div>
               </div>
-              <div className="card-body p-3">
-                <div className="d-grid gap-2">
+              <div className="p-3">
+                <div className="flex flex-col gap-2">
                   {/* In Progress Button */}
                   {ticket.status !== "resolved" && ticket.status !== "closed" && (
-                    <Button
-                      variant={ticket.status === "in-progress" ? "warning" : "outline-warning"}
-                      className={`d-flex align-items-center justify-content-center button ${ticket.status === "in-progress" ? "active" : ""
-                        }`}
+                    <button
+                      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
+                        ticket.status === "in-progress" 
+                          ? "bg-[var(--warning-color)] text-white" 
+                          : "border border-[var(--warning-color)] text-[var(--warning-color)] hover:bg-[var(--warning-color)] hover:text-white"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                       onClick={() => handleStatusChange("In Progress")}
                       disabled={isUpdatingStatus || ticket.status === "in-progress" || isTicketCreator}
                     >
-                      <MdSchedule className="me-2" size={18} />
+                      <MdSchedule size={18} />
                       In Progress
-                    </Button>
+                    </button>
                   )}
 
                   {/* Resolved Button */}
                   {ticket.status !== "closed" && (
-                    <Button
-                      variant={ticket.status === "resolved" ? "success" : "outline-success"}
-                      className={`d-flex align-items-center justify-content-center button resolved ${ticket.status === "resolved" ? "active" : ""
-                        }`}
+                    <button
+                      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
+                        ticket.status === "resolved" 
+                          ? "bg-[var(--success-color)] text-white" 
+                          : "border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                       onClick={() => handleStatusChange("Resolved")}
-                      disabled={isUpdatingStatus || ticket.status === "resolved" || isTicketCreator}>
-                      <MdCheckCircle className="me-2" size={18} />
+                      disabled={isUpdatingStatus || ticket.status === "resolved" || isTicketCreator}
+                    >
+                      <MdCheckCircle size={18} />
                       Mark as Resolved
-                    </Button>
+                    </button>
                   )}
 
                   {/* Closed Button */}
-                  <Button
-                    variant={ticket.status === "closed" ? "secondary" : "outline-secondary"}
-                    className={`d-f lex align-items-center justify-content-center button closed ${ticket.status === "closed" ? "active" : ""
-                      }`}
+                  <button
+                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
+                      ticket.status === "closed" 
+                        ? "bg-[var(--light-border)] dark:bg-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]" 
+                        : "border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)]"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                     onClick={() => handleStatusChange("Closed")}
-                    disabled={isUpdatingStatus || ticket.status === "closed" || isTicketCreator}>
-                    <MdClose className="me-2" size={18} />
+                    disabled={isUpdatingStatus || ticket.status === "closed" || isTicketCreator}
+                  >
+                    <MdClose size={18} />
                     Close Ticket
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
 
             {/* Ticket Metadata */}
-            <div className="card shadow-sm mb-4" style={{
-              backgroundColor: 'var(--light-card)',
-              borderColor: 'var(--light-border)',
-              borderRadius: 'var(--border-radius)'
-            }}>
-              <div className="card-header border-bottom" style={{
-                // backgroundColor: 'var(--light-bg)',
-                borderColor: 'var(--light-border)'
-              }}>
-                <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#1fdae4',
-                      color: 'white'
-                    }}>
-                    <MdInfo size={20} />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md mb-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] p-4">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center justify-center rounded w-10 h-10 bg-[var(--primary-color)]"
+                  >
+                    <MdInfo size={20} className="text-white" />
                   </div>
                   <div>
-                    <h5 className="mb-0" style={{ color: '#1fdae4' }}>
+                    <h5 className="mb-0 text-lg font-semibold text-[var(--primary-color)]">
                       Ticket Information
                     </h5>
                   </div>
                 </div>
               </div>
 
-              <div className="card-body p-3">
-                <div className="row g-3">
-                  <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                      style={{ borderColor: 'var(--light-border)' }}>
-                      <div className="d-flex align-items-center gap-2 text-muted">
+              <div className="p-3">
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between py-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
                         <MdCategory size={16} />
-                        <span className="small">Category</span>
+                        <span className="text-sm">Category</span>
                       </div>
-                      <span className="small fw-medium">
+                      <span className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                         {ticket.category}
                       </span>
                     </div>
                   </div>
 
-                  <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                      style={{ borderColor: 'var(--light-border)' }}>
+                  <div>
+                    <div className="flex items-center justify-between py-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
                     </div>
                   </div>
 
-                  <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                      style={{ borderColor: 'var(--light-border)' }}>
-                      <div className="d-flex align-items-center gap-2 text-muted">
+                  <div>
+                    <div className="flex items-center justify-between py-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
                         <MdSchedule size={16} />
-                        <span className="small">Created</span>
+                        <span className="text-sm">Created</span>
                       </div>
-                      <span className="small fw-medium">
+                      <span className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                         {formatLocalDateTime(ticket.createdAt)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                      style={{ borderColor: 'var(--light-border)' }}>
-                      <div className="d-flex align-items-center gap-2 text-muted">
+                  <div>
+                    <div className="flex items-center justify-between py-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
                         <MdUpdate size={16} />
-                        <span className="small">Last Updated</span>
+                        <span className="text-sm">Last Updated</span>
                       </div>
-                      <span className="small fw-medium">
+                      <span className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                         {formatLocalDateTime(ticket.updatedAt)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="col-12">
-                    <div className="d-flex align-items-center justify-content-between py-2">
-                      <div className="d-flex align-items-center gap-2 text-muted">
+                  <div>
+                    <div className="flex items-center justify-between py-2">
+                      <div className="flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
                         <MdAccessTime size={16} />
-                        <span className="small">Response Time</span>
+                        <span className="text-sm">Response Time</span>
                       </div>
-                      <span className="small fw-medium">
+                      <span className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                         {ticket.responseTime}
                       </span>
                     </div>
@@ -721,61 +656,48 @@ const TicketDetail = () => {
             </div>
 
             {/* Contact Information */}
-            <div className="card shadow-sm" style={{
-              backgroundColor: 'var(--light-card)',
-              borderColor: 'var(--light-border)',
-              borderRadius: 'var(--border-radius)'
-            }}>
-              <div className="card-header border-bottom" style={{
-                // backgroundColor: 'var(--light-bg)', 
-                borderColor: 'var(--light-border)'
-              }}>
-                <div className="d-flex align-items-center gap-3">
-                  <div className="d-flex align-items-center justify-content-center rounded"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#1fdae4',
-                      color: 'white'
-                    }}>
-                    <MdPerson size={20} />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] p-4">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="flex items-center justify-center rounded w-10 h-10 bg-[var(--primary-color)]"
+                  >
+                    <MdPerson size={20} className="text-white" />
                   </div>
                   <div>
-                    <h5 className="mb-0" style={{ color: '#1fdae4' }}>
+                    <h5 className="mb-0 text-lg font-semibold text-[var(--primary-color)]">
                       Contact Details
                     </h5>
                   </div>
                 </div>
               </div>
 
-              <div className="card-body p-3">
+              <div className="p-3">
                 <div className="mb-4">
-                  <h6 className="mb-3 fw-medium">
+                  <h6 className="mb-3 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                     Submitted By
                   </h6>
-                  <div className="row g-2">
-                    <div className="col-12">
-                      <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                        style={{ borderColor: 'var(--light-border)' }}>
-                        <div className="d-flex align-items-center gap-2 text-muted">
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <div className="flex items-center justify-between py-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <div className="flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
                           <MdPerson size={16} />
-                          <span className="small">Name</span>
+                          <span className="text-sm">Name</span>
                         </div>
-                        <span className="small fw-medium">
+                        <span className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                           {ticket?.submittedBy?.name}
                         </span>
                       </div>
                     </div>
-                    <div className="col-12">
-                      <div className="d-flex align-items-center justify-content-between py-2">
-                        <div className="d-flex align-items-center gap-2 text-muted">
+                    <div>
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
                           <MdEmail size={16} />
-                          <span className="small">Email</span>
+                          <span className="text-sm">Email</span>
                         </div>
                         <a
                           href={`mailto:${ticket?.submittedBy?.email}`}
-                          className="small text-decoration-none"
-                          style={{ color: '#1fdae4' }}
+                          className="text-sm no-underline text-[var(--primary-color)] hover:opacity-80"
                         >
                           {ticket?.submittedBy?.email}
                         </a>
@@ -785,38 +707,7 @@ const TicketDetail = () => {
                 </div>
 
                 <div>
-                  {/* <h6 className="mb-3 fw-medium">
-                    Assigned To
-                  </h6> */}
-                  {/* <div className="row g-2">
-                    <div className="col-12">
-                      <div className="d-flex align-items-center justify-content-between py-2 border-bottom"
-                        style={{ borderColor: 'var(--light-border)' }}>
-                        <div className="d-flex align-items-center gap-2 text-muted">
-                          <MdPerson size={16} />
-                          <span className="small">Team</span>
-                        </div>
-                        <span className="small fw-medium">
-                          {ticket?.assignedTo?.name}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="col-12">
-                      <div className="d-flex align-items-center justify-content-between py-2">
-                        <div className="d-flex align-items-center gap-2 text-muted">
-                          <MdEmail size={16} />
-                          <span className="small">Email</span>
-                        </div>
-                        <a
-                          href={`mailto:${ticket?.assignedTo?.email}`}
-                          className="small text-decoration-none"
-                          style={{ color: '#1fdae4' }}
-                        >
-                          {ticket?.assignedTo?.email}
-                        </a>
-                      </div>
-                    </div>
-                  </div> */}
+                  {/* Assigned To section - commented out in original */}
                 </div>
               </div>
             </div>

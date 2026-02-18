@@ -4,7 +4,6 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Container, Row, Col, Card, Form, Button, ProgressBar, Alert } from "react-bootstrap"
 import { MdArrowBack, MdArrowForward, MdCheck } from "react-icons/md"
 
 const TakeSurvey = () => {
@@ -108,22 +107,22 @@ const TakeSurvey = () => {
 
   if (loading) {
     return (
-      <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--light-bg)" }}>
         <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p>Loading survey...</p>
+          <span className="inline-block w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-[var(--secondary-color)]">Loading survey...</p>
         </div>
-      </Container>
+      </div>
     )
   }
 
   if (!survey) {
     return (
-      <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center">
-        <Alert variant="danger">Survey not found</Alert>
-      </Container>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--light-bg)" }}>
+        <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400" role="alert">
+          Survey not found
+        </div>
+      </div>
     )
   }
 
@@ -131,186 +130,205 @@ const TakeSurvey = () => {
   const progress = ((currentQuestion + 1) / survey.questions.length) * 100
 
   return (
-    <Container fluid className="min-vh-100 py-4" style={{ backgroundColor: "var(--light-bg)" }}>
-      <Row className="justify-content-center">
-        <Col xs={12} lg={8} xl={6}>
-          {/* Header */}
-          <Card className="mb-4 border-0 shadow-sm">
-            <Card.Body>
-              <div className="text-center">
-                <h1 className="h3 text-primary fw-bold mb-2">{survey.title}</h1>
-                <p className="text-muted mb-3">{survey.description}</p>
-                <ProgressBar now={progress} className="mb-2" style={{ height: "8px" }} />
-                <small className="text-muted">
-                  Question {currentQuestion + 1} of {survey.questions.length}
-                </small>
-              </div>
-            </Card.Body>
-          </Card>
+    <div className="min-h-screen py-4 px-4" style={{ backgroundColor: "var(--light-bg)" }}>
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="card mb-4 border-0 shadow-sm rounded-xl p-6">
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-[var(--primary-color)] mb-2">{survey.title}</h1>
+            <p className="text-[var(--secondary-color)] mb-3">{survey.description}</p>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full mb-2" style={{ height: "8px" }}>
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${progress}%`, backgroundColor: "var(--primary-color)" }}
+              />
+            </div>
+            <small className="text-[var(--secondary-color)]">
+              Question {currentQuestion + 1} of {survey.questions.length}
+            </small>
+          </div>
+        </div>
 
-          {/* Question */}
-          <Card className="mb-4 border-0 shadow-sm">
-            <Card.Body className="p-4">
-              <div className="survey-question">
-                <h5 className="mb-4">
-                  {question.text}
-                  {question.required && <span className="text-danger ms-1">*</span>}
-                </h5>
+        {/* Question */}
+        <div className="card mb-4 border-0 shadow-sm rounded-xl p-6">
+          <div className="survey-question">
+            <h5 className="mb-4 font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+              {question.text}
+              {question.required && <span className="text-red-500 ml-1">*</span>}
+            </h5>
 
-                {/* Rating Question */}
-                {question.type === "rating" && (
-                  <div className="rating-buttons d-flex flex-wrap">
-                    {question.options.map((rating) => (
-                      <Button
-                        key={rating}
-                        variant={answers[question.id] === rating ? "primary" : "outline-primary"}
-                        onClick={() => handleAnswer(question.id, rating)}
-                        className="me-2 mb-2"
-                      >
-                        {rating}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-
-                {/* NPS Question */}
-                {question.type === "nps" && (
-                  <div>
-                    <div className="rating-buttons d-flex flex-wrap mb-3">
-                      {question.options.map((rating) => (
-                        <Button
-                          key={rating}
-                          variant={answers[question.id] === rating ? "primary" : "outline-primary"}
-                          onClick={() => handleAnswer(question.id, rating)}
-                          className="me-1 mb-2"
-                          size="sm"
-                        >
-                          {rating}
-                        </Button>
-                      ))}
-                    </div>
-                    <div className="d-flex justify-content-between small text-muted">
-                      <span>Not likely</span>
-                      <span>Very likely</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Multiple Choice Question */}
-                {question.type === "multiple_choice" && (
-                  <div>
-                    {question.options.map((option, index) => (
-                      <Form.Check
-                        key={index}
-                        type="checkbox"
-                        id={`q${question.id}-option${index}`}
-                        label={option}
-                        checked={(answers[question.id] || []).includes(option)}
-                        onChange={(e) => {
-                          const currentAnswers = answers[question.id] || []
-                          if (e.target.checked) {
-                            handleAnswer(question.id, [...currentAnswers, option])
-                          } else {
-                            handleAnswer(
-                              question.id,
-                              currentAnswers.filter((a) => a !== option),
-                            )
-                          }
-                        }}
-                        className="mb-2"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Single Choice Question */}
-                {question.type === "single_choice" && (
-                  <div>
-                    {question.options.map((option, index) => (
-                      <Form.Check
-                        key={index}
-                        type="radio"
-                        id={`q${question.id}-option${index}`}
-                        name={`question-${question.id}`}
-                        label={option}
-                        checked={answers[question.id] === option}
-                        onChange={() => handleAnswer(question.id, option)}
-                        className="mb-2"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Text Question */}
-                {question.type === "text" && (
-                  <Form.Control
-                    as="textarea"
-                    rows={4}
-                    value={answers[question.id] || ""}
-                    onChange={(e) => handleAnswer(question.id, e.target.value)}
-                    placeholder="Enter your response..."
-                  />
-                )}
-              </div>
-            </Card.Body>
-          </Card>
-
-          {/* Navigation */}
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center">
-                <Button
-                  variant="outline-secondary"
-                  onClick={prevQuestion}
-                  disabled={currentQuestion === 0}
-                  className="d-flex align-items-center"
-                >
-                  <MdArrowBack className="me-2" />
-                  Previous
-                </Button>
-
-                {currentQuestion === survey.questions.length - 1 ? (
-                  <Button
-                    variant="success"
-                    onClick={submitSurvey}
-                    disabled={!canProceed() || submitting}
-                    className="d-flex align-items-center"
+            {/* Rating Question */}
+            {question.type === "rating" && (
+              <div className="flex flex-wrap gap-2">
+                {question.options.map((rating) => (
+                  <button
+                    key={rating}
+                    onClick={() => handleAnswer(question.id, rating)}
+                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200
+                      ${answers[question.id] === rating
+                        ? "bg-[var(--primary-color)] text-white border-[var(--primary-color)]"
+                        : "border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10"
+                      }`}
                   >
-                    {submitting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <MdCheck className="me-2" />
-                        Submit Survey
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    onClick={nextQuestion}
-                    disabled={!canProceed()}
-                    className="d-flex align-items-center"
-                  >
-                    Next
-                    <MdArrowForward className="ms-2" />
-                  </Button>
-                )}
+                    {rating}
+                  </button>
+                ))}
               </div>
+            )}
 
-              {question.required && !isCurrentQuestionAnswered() && (
-                <div className="text-center mt-3">
-                  <small className="text-danger">This question is required</small>
+            {/* NPS Question */}
+            {question.type === "nps" && (
+              <div>
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {question.options.map((rating) => (
+                    <button
+                      key={rating}
+                      onClick={() => handleAnswer(question.id, rating)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-200
+                        ${answers[question.id] === rating
+                          ? "bg-[var(--primary-color)] text-white border-[var(--primary-color)]"
+                          : "border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10"
+                        }`}
+                    >
+                      {rating}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                <div className="flex justify-between text-sm text-[var(--secondary-color)]">
+                  <span>Not likely</span>
+                  <span>Very likely</span>
+                </div>
+              </div>
+            )}
+
+            {/* Multiple Choice Question */}
+            {question.type === "multiple_choice" && (
+              <div className="space-y-2">
+                {question.options.map((option, index) => (
+                  <label
+                    key={index}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      id={`q${question.id}-option${index}`}
+                      checked={(answers[question.id] || []).includes(option)}
+                      onChange={(e) => {
+                        const currentAnswers = answers[question.id] || []
+                        if (e.target.checked) {
+                          handleAnswer(question.id, [...currentAnswers, option])
+                        } else {
+                          handleAnswer(
+                            question.id,
+                            currentAnswers.filter((a) => a !== option),
+                          )
+                        }
+                      }}
+                      className="w-4 h-4 rounded accent-[var(--primary-color)]"
+                    />
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{option}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {/* Single Choice Question */}
+            {question.type === "single_choice" && (
+              <div className="space-y-2">
+                {question.options.map((option, index) => (
+                  <label
+                    key={index}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <input
+                      type="radio"
+                      id={`q${question.id}-option${index}`}
+                      name={`question-${question.id}`}
+                      checked={answers[question.id] === option}
+                      onChange={() => handleAnswer(question.id, option)}
+                      className="w-4 h-4 accent-[var(--primary-color)]"
+                    />
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{option}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {/* Text Question */}
+            {question.type === "text" && (
+              <textarea
+                rows={4}
+                value={answers[question.id] || ""}
+                onChange={(e) => handleAnswer(question.id, e.target.value)}
+                placeholder="Enter your response..."
+                className="w-full px-4 py-3 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                           bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]
+                           text-[var(--light-text)] dark:text-[var(--dark-text)]
+                           focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 focus:border-[var(--primary-color)]
+                           transition-all duration-200 resize-y"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="card border-0 shadow-sm rounded-xl p-6">
+          <div className="flex justify-between items-center">
+            <button
+              onClick={prevQuestion}
+              disabled={currentQuestion === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+                         border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                         text-[var(--light-text)] dark:text-[var(--dark-text)]
+                         hover:bg-gray-50 dark:hover:bg-gray-800
+                         disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              <MdArrowBack />
+              Previous
+            </button>
+
+            {currentQuestion === survey.questions.length - 1 ? (
+              <button
+                onClick={submitSurvey}
+                disabled={!canProceed() || submitting}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white
+                           bg-green-600 hover:bg-green-700
+                           disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {submitting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <MdCheck />
+                    Submit Survey
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={nextQuestion}
+                disabled={!canProceed()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white
+                           bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
+                           disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                Next
+                <MdArrowForward />
+              </button>
+            )}
+          </div>
+
+          {question.required && !isCurrentQuestionAnswered() && (
+            <div className="text-center mt-3">
+              <small className="text-red-500">This question is required</small>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

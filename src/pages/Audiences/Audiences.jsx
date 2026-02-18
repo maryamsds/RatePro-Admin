@@ -73,35 +73,44 @@ const Audiences = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading audiences...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--primary-color)]"></div>
+        <p className="mt-4 text-[var(--light-text)] dark:text-[var(--dark-text)]">Loading audiences...</p>
       </div>
     )
   }
 
   return (
-    <div className="audiences-container">
+    <div className="p-6 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] min-h-screen">
       {/* Page Header */}
-      <div className="page-header-section">
-        <div className="page-header-content">
-          <div className="page-title-wrapper">
-            <div className="page-icon">
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-[var(--primary-color)] bg-opacity-10 flex items-center justify-center text-[var(--primary-color)] text-2xl">
               <MdPeople />
             </div>
             <div>
-              <h1 className="page-title">Audience Management</h1>
-              <p className="page-subtitle">Create and manage audience segments for targeted surveys</p>
+              <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Audience Management</h1>
+              <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Create and manage audience segments for targeted surveys</p>
             </div>
           </div>
-          <div className="page-actions">
-            <button className="action-button secondary-action" onClick={() => setLoading(true)}>
+          <div className="flex gap-3">
+            <button 
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:border-[var(--primary-color)] transition-colors" 
+              onClick={() => setLoading(true)}
+            >
               <MdRefresh /> Refresh
             </button>
-            <button className="action-button primary-action" onClick={() => setShowForm(true)}>
+            <button 
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 transition-opacity" 
+              onClick={() => setShowForm(true)}
+            >
               <MdAdd /> Create Audience
             </button>
-            <button className="action-button secondary-action" onClick={() => setImportModal(true)}>
+            <button 
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:border-[var(--primary-color)] transition-colors" 
+              onClick={() => setImportModal(true)}
+            >
               <MdImportExport /> Import
             </button>
           </div>
@@ -109,57 +118,57 @@ const Audiences = ({ darkMode }) => {
       </div>
 
       {/* Stats Section */}
-      <div className="stats-section">
-        <div className="stat-card primary-card">
-          <div className="stat-icon">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-[var(--primary-color)] bg-opacity-10 flex items-center justify-center text-[var(--primary-color)] text-2xl">
             <MdGroup />
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{audiences.length}</div>
-            <div className="stat-label">Total Audiences</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{audiences.length}</div>
+            <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Total Audiences</div>
           </div>
         </div>
-        <div className="stat-card success-card">
-          <div className="stat-icon">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-[var(--success-color)] bg-opacity-10 flex items-center justify-center text-[var(--success-color)] text-2xl">
             <MdCheckCircle />
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{activeAudiences}</div>
-            <div className="stat-label">Active Audiences</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{activeAudiences}</div>
+            <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Active Audiences</div>
           </div>
         </div>
-        <div className="stat-card info-card">
-          <div className="stat-icon">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-[var(--info-color)] bg-opacity-10 flex items-center justify-center text-[var(--info-color)] text-2xl">
             <MdPeople />
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{totalMembers}</div>
-            <div className="stat-label">Total Members</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{totalMembers}</div>
+            <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Total Members</div>
           </div>
         </div>
-        <div className="stat-card warning-card">
-          <div className="stat-icon">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-[var(--warning-color)] bg-opacity-10 flex items-center justify-center text-[var(--warning-color)] text-2xl">
             <MdTrendingUp />
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{audiences.filter(a => a.filters.length > 0).length}</div>
-            <div className="stat-label">Filtered Audiences</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{audiences.filter(a => a.filters.length > 0).length}</div>
+            <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Filtered Audiences</div>
           </div>
         </div>
       </div>
 
       {/* Audience Form Section */}
       {showForm && (
-        <div className="section-card audience-form-section">
-          <div className="section-header">
-            <h2 className="section-title">{currentAudience.id ? 'Edit' : 'Create'} Audience</h2>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg p-6 mb-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{currentAudience.id ? 'Edit' : 'Create'} Audience</h2>
           </div>
-          <form onSubmit={saveAudience} className="audience-form">
-            <div className="form-group">
-              <label className="form-label">Audience Name</label>
+          <form onSubmit={saveAudience} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Audience Name</label>
               <input
                 type="text"
-                className="form-input"
+                className="w-full px-4 py-2 rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
                 placeholder="Enter audience name"
                 value={currentAudience.name}
                 onChange={(e) => setCurrentAudience({ ...currentAudience, name: e.target.value })}
@@ -167,20 +176,20 @@ const Audiences = ({ darkMode }) => {
               />
             </div>
 
-            <div className="filters-builder">
-              <div className="filters-header">
-                <h3 className="filters-title">
+            <div className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg p-4">
+              <div className="mb-4">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                   <MdFilterAlt /> Audience Filters
                 </h3>
-                <p className="filters-description">Define criteria to segment your audience</p>
+                <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mt-1">Define criteria to segment your audience</p>
               </div>
               
-              <div className="filter-rows">
+              <div className="space-y-3">
                 {currentAudience.filters.map((filter, index) => (
-                  <div key={index} className="filter-row">
-                    <div className="filter-field">
+                  <div key={index} className="flex gap-2 items-center">
+                    <div className="flex-1">
                       <select
-                        className="filter-select"
+                        className="w-full px-3 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
                         value={filter.field}
                         onChange={(e) => handleFilterChange(index, 'field', e.target.value)}
                         required
@@ -192,9 +201,9 @@ const Audiences = ({ darkMode }) => {
                         <option value="gender">Gender</option>
                       </select>
                     </div>
-                    <div className="filter-operator">
+                    <div className="flex-1">
                       <select
-                        className="filter-select"
+                        className="w-full px-3 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
                         value={filter.operator}
                         onChange={(e) => handleFilterChange(index, 'operator', e.target.value)}
                         required
@@ -208,10 +217,10 @@ const Audiences = ({ darkMode }) => {
                         <option value="contains">Contains</option>
                       </select>
                     </div>
-                    <div className="filter-value">
+                    <div className="flex-1">
                       <input
                         type="text"
-                        className="filter-input"
+                        className="w-full px-3 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
                         placeholder="Enter value"
                         value={filter.value}
                         onChange={(e) => handleFilterChange(index, 'value', e.target.value)}
@@ -220,7 +229,7 @@ const Audiences = ({ darkMode }) => {
                     </div>
                     <button
                       type="button"
-                      className="filter-remove-btn"
+                      className="w-10 h-10 flex items-center justify-center rounded-lg bg-[var(--danger-color)] bg-opacity-10 text-[var(--danger-color)] hover:bg-opacity-20 transition-all"
                       onClick={() => removeFilter(index)}
                       title="Remove filter"
                     >
@@ -232,20 +241,23 @@ const Audiences = ({ darkMode }) => {
               
               <button
                 type="button"
-                className="add-filter-btn"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:border-[var(--primary-color)] transition-colors mt-4"
                 onClick={addFilter}
               >
                 <MdFilterAlt /> Add Filter
               </button>
             </div>
 
-            <div className="form-actions">
-              <button type="submit" className="submit-btn">
+            <div className="flex gap-3">
+              <button 
+                type="submit" 
+                className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 transition-opacity"
+              >
                 <MdSave /> Save Audience
               </button>
               <button
                 type="button"
-                className="cancel-btn"
+                className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:border-[var(--danger-color)] hover:text-[var(--danger-color)] transition-colors"
                 onClick={() => {
                   setShowForm(false)
                   setCurrentAudience({ name: '', filters: [] })
@@ -260,39 +272,45 @@ const Audiences = ({ darkMode }) => {
 
       {/* Import Modal */}
       {importModal && (
-        <div className="modal-overlay" onClick={() => setImportModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setImportModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                 <MdImportExport /> Import Audience
               </h2>
-              <button className="modal-close" onClick={() => setImportModal(false)}>
+              <button 
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors" 
+                onClick={() => setImportModal(false)}
+              >
                 <MdClose />
               </button>
             </div>
             <form onSubmit={handleImport}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">CSV File</label>
+              <div className="p-6">
+                <div>
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">CSV File</label>
                   <input
                     type="file"
-                    className="file-input"
+                    className="w-full px-4 py-2 rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:border-[var(--primary-color)] transition-colors"
                     accept=".csv"
                     onChange={(e) => setFile(e.target.files[0])}
                     required
                   />
-                  <p className="help-text">
+                  <p className="text-xs text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mt-2">
                     CSV should contain columns: email, name, and any additional demographic data
                   </p>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="submit" className="modal-submit-btn">
+              <div className="flex gap-3 p-6 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <button 
+                  type="submit" 
+                  className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 transition-opacity"
+                >
                   <MdImportExport /> Import
                 </button>
                 <button
                   type="button"
-                  className="modal-cancel-btn"
+                  className="flex items-center gap-2 px-6 py-2 rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:border-[var(--danger-color)] hover:text-[var(--danger-color)] transition-colors"
                   onClick={() => setImportModal(false)}
                 >
                   <MdClose /> Cancel
@@ -304,54 +322,57 @@ const Audiences = ({ darkMode }) => {
       )}
 
       {/* Audiences List Section */}
-      <div className="section-card audiences-list-section">
-        <div className="section-header">
-          <div className="section-title-wrapper">
-            <h2 className="section-title">Audiences</h2>
-            <p className="section-subtitle">Manage your audience segments</p>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div>
+            <h2 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Audiences</h2>
+            <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mt-1">Manage your audience segments</p>
           </div>
-          <button className="section-action" onClick={() => {}}>
+          <button 
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:border-[var(--primary-color)] transition-colors" 
+            onClick={() => {}}
+          >
             <MdSettings /> Settings
           </button>
         </div>
 
-        <div className="table-container">
-          <table className="data-table">
+        <div className="overflow-x-auto">
+          <table className="w-full">
             <thead>
-              <tr>
-                <th>Name</th>
-                <th>Members</th>
-                <th>Filters</th>
-                <th>Actions</th>
+              <tr className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] uppercase tracking-wider">Members</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] uppercase tracking-wider">Filters</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {currentAudiences.map(audience => (
-                <tr key={audience.id}>
-                  <td>
-                    <div className="audience-name">{audience.name}</div>
+                <tr key={audience.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{audience.name}</div>
                   </td>
-                  <td>
-                    <div className="member-count">{audience.count}</div>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{audience.count}</div>
                   </td>
-                  <td>
-                    <div className="filter-badges">
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-2">
                       {audience.filters.map((filter, i) => (
-                        <span key={i} className="filter-badge">
-                          <span className="filter-field">{filter.field}</span>
-                          <span className="filter-operator">{filter.operator}</span>
-                          <span className="filter-value">{filter.value}</span>
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[var(--primary-color)] bg-opacity-10 text-xs">
+                          <span className="font-medium text-[var(--primary-color)]">{filter.field}</span>
+                          <span className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">{filter.operator}</span>
+                          <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">{filter.value}</span>
                         </span>
                       ))}
                       {audience.filters.length === 0 && (
-                        <span className="no-filters">No filters</span>
+                        <span className="text-xs text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50">No filters</span>
                       )}
                     </div>
                   </td>
-                  <td>
-                    <div className="action-buttons">
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
                       <button
-                        className="action-btn edit-btn"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--info-color)] bg-opacity-10 text-[var(--info-color)] hover:bg-opacity-20 transition-all"
                         onClick={() => {
                           setCurrentAudience(audience)
                           setShowForm(true)
@@ -361,7 +382,7 @@ const Audiences = ({ darkMode }) => {
                         <MdEdit />
                       </button>
                       <button
-                        className="action-btn delete-btn"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--danger-color)] bg-opacity-10 text-[var(--danger-color)] hover:bg-opacity-20 transition-all"
                         onClick={() => setAudiences(audiences.filter(a => a.id !== audience.id))}
                         title="Delete audience"
                       >
@@ -375,7 +396,7 @@ const Audiences = ({ darkMode }) => {
           </table>
         </div>
 
-        <div className="table-footer">
+        <div className="p-6 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <Pagination
             current={pagination.page}
             total={audiences.length}

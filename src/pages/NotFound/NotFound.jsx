@@ -1,24 +1,26 @@
 // src\pages\NotFound\NotFound.jsx
 
-import { Container, Row, Col, Button } from "react-bootstrap"
 import { Link } from "react-router-dom"
-import { MdHome } from "react-icons/md"
+import { MdErrorOutline } from "react-icons/md"
 
 const NotFound = () => {
   return (
-    <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center">
-      <Row>
-        <Col xs={12} className="text-center">
-          <h1 className="display-1 fw-bold text-primary">404</h1>
-          <h2 className="mb-4">Page Not Found</h2>
-          <p className="text-muted mb-4">The page you are looking for doesn't exist or has been moved.</p>
-          <Button as={Link} to="/app" variant="primary">
-            <MdHome className="me-2" />
-            Go Home
-          </Button>
-        </Col>
-      </Row>
-    </Container>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] p-6">
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg p-8 border border-[var(--light-border)] dark:border-[var(--dark-border)] max-w-md w-full text-center">
+        <div className="w-20 h-20 rounded-full bg-[var(--warning-color)]/10 dark:bg-[var(--warning-color)]/20 flex items-center justify-center mx-auto mb-6">
+          <MdErrorOutline className="text-5xl text-[var(--warning-color)]" />
+        </div>
+        <h1 className="text-6xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-3">404</h1>
+        <p className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Page Not Found</p>
+        <p className="text-[var(--text-secondary)] mb-6">The page you're looking for doesn't exist.</p>
+        <Link
+          to="/app"
+          className="inline-block px-6 py-3 rounded-md font-medium bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] transition-colors"
+        >
+          Back to Home
+        </Link>
+      </div>
+    </div>
   )
 }
 

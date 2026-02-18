@@ -1,13 +1,7 @@
-﻿// src\pages\Actions\ActionManagement.jsx
+﻿// src/pages/Actions/ActionManagement.jsx
 "use client"
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container, Row, Col, Card, Button, Badge, Tab, Tabs,
-  Form, Modal, Alert, Spinner, Table, InputGroup,
-  OverlayTrigger, Tooltip, Dropdown, ProgressBar,
-  ListGroup
-} from 'react-bootstrap';
 import {
   MdAssignment, MdFlag, MdCheckCircle, MdWarning,
   MdSchedule, MdPerson, MdLocationOn, MdTrendingUp,
@@ -59,6 +53,30 @@ import { formatDate, isActionOverdue } from '../../api/adapters/actionAdapters';
 import AssignmentHistory from '../../components/Actions/AssignmentHistory';
 
 // ============================================================================
+// Helper: Tailwind color mapping for badge configs (Using :root variables)
+// ============================================================================
+
+const BADGE_COLOR_MAP = {
+  primary: 'bg-[var(--primary-color)]',
+  secondary: 'bg-[var(--secondary-color)]',
+  success: 'bg-[var(--success-color)]',
+  danger: 'bg-[var(--danger-color)]',
+  warning: 'bg-[var(--warning-color)]',
+  info: 'bg-[var(--info-color)]',
+  dark: 'bg-[var(--dark-card)]',
+  light: 'bg-[var(--light-card)] text-[var(--light-text)]',
+};
+
+const STAT_CARD_COLORS = {
+  primary: { bg: 'bg-[var(--primary-color)]', text: 'text-white' },
+  warning: { bg: 'bg-[var(--warning-color)]', text: 'text-white' },
+  info: { bg: 'bg-[var(--info-color)]', text: 'text-white' },
+  success: { bg: 'bg-[var(--success-color)]', text: 'text-white' },
+  danger: { bg: 'bg-[var(--danger-color)]', text: 'text-white' },
+  dark: { bg: 'bg-[var(--dark-card)]', text: 'text-white' },
+};
+
+// ============================================================================
 // 🎨 Badge Rendering Components
 // ============================================================================
 
@@ -71,12 +89,13 @@ const PriorityBadge = ({ priority }) => {
     MdSchedule,
   };
   const Icon = IconMap[config.icon] || MdFlag;
+  const colorClass = BADGE_COLOR_MAP[config.color] || 'bg-gray-500';
 
   return (
-    <Badge bg={config.color} className="d-flex align-items-center gap-1">
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-white rounded-full text-xs font-medium ${colorClass}`}>
       <Icon size={14} />
       {config.label?.toUpperCase() || priority?.toUpperCase() || 'MEDIUM'}
-    </Badge>
+    </span>
   );
 };
 
@@ -89,12 +108,13 @@ const StatusBadge = ({ status }) => {
     MdCheckCircle,
   };
   const Icon = IconMap[config.icon] || MdSchedule;
+  const colorClass = BADGE_COLOR_MAP[config.color] || 'bg-gray-500';
 
   return (
-    <Badge bg={config.color} className="d-flex align-items-center gap-1">
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-white rounded-full text-xs font-medium ${colorClass}`}>
       <Icon size={14} />
       {config.label?.toUpperCase() || status?.replace('-', ' ').toUpperCase() || 'PENDING'}
-    </Badge>
+    </span>
   );
 };
 
@@ -104,18 +124,18 @@ const StatusBadge = ({ status }) => {
 
 const SourceBadge = ({ source }) => {
   const sourceConfig = {
-    'ai_generated': { icon: MdInsights, color: 'info', label: 'AI' },
-    'survey_feedback': { icon: MdAssignment, color: 'primary', label: 'Survey' },
-    'manual': { icon: MdEdit, color: 'secondary', label: 'Manual' }
+    'ai_generated': { icon: MdInsights, color: 'bg-[var(--info-color)]', label: 'AI' },
+    'survey_feedback': { icon: MdAssignment, color: 'bg-[var(--primary-color)]', label: 'Survey' },
+    'manual': { icon: MdEdit, color: 'bg-[var(--secondary-color)]', label: 'Manual' }
   };
   const config = sourceConfig[source] || sourceConfig.manual;
   const Icon = config.icon;
 
   return (
-    <Badge bg={config.color} className="d-flex align-items-center gap-1">
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-white rounded-full text-xs font-medium ${config.color}`}>
       <Icon size={12} />
       {config.label}
-    </Badge>
+    </span>
   );
 };
 
@@ -127,18 +147,18 @@ const SentimentBadge = ({ sentiment }) => {
   if (!sentiment) return null;
 
   const sentimentConfig = {
-    'positive': { icon: MdSentimentSatisfied, color: 'success', label: 'Positive' },
-    'neutral': { icon: MdSentimentNeutral, color: 'warning', label: 'Neutral' },
-    'negative': { icon: MdSentimentDissatisfied, color: 'danger', label: 'Negative' }
+    'positive': { icon: MdSentimentSatisfied, color: 'bg-[var(--success-light)] text-[var(--success-color)]', label: 'Positive' },
+    'neutral': { icon: MdSentimentNeutral, color: 'bg-[var(--warning-light)] text-[var(--warning-color)]', label: 'Neutral' },
+    'negative': { icon: MdSentimentDissatisfied, color: 'bg-[var(--danger-light)] text-[var(--danger-color)]', label: 'Negative' }
   };
   const config = sentimentConfig[sentiment] || sentimentConfig.neutral;
   const Icon = config.icon;
 
   return (
-    <Badge bg={config.color} className="bg-opacity-25 text-dark d-flex align-items-center gap-1">
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
       <Icon size={14} />
       {config.label}
-    </Badge>
+    </span>
   );
 };
 
@@ -148,33 +168,33 @@ const SentimentBadge = ({ sentiment }) => {
 
 const StatsCards = ({ stats }) => {
   const cards = [
-    { key: 'total', label: 'Total Actions', icon: MdAssignment, bg: 'primary', textColor: 'white' },
-    { key: 'pending', label: 'Pending', icon: MdSchedule, bg: 'warning', textColor: 'dark' },
-    { key: 'inProgress', label: 'In Progress', icon: MdTimer, bg: 'info', textColor: 'white' },
-    { key: 'completed', label: 'Completed', icon: MdCheckCircle, bg: 'success', textColor: 'white' },
-    { key: 'overdue', label: 'Overdue', icon: MdAssignmentLate, bg: 'danger', textColor: 'white' },
-    { key: 'highPriority', label: 'High Priority', icon: MdPriorityHigh, bg: 'dark', textColor: 'white' },
+    { key: 'total', label: 'Total Actions', icon: MdAssignment, color: 'primary' },
+    { key: 'pending', label: 'Pending', icon: MdSchedule, color: 'warning' },
+    { key: 'inProgress', label: 'In Progress', icon: MdTimer, color: 'info' },
+    { key: 'completed', label: 'Completed', icon: MdCheckCircle, color: 'success' },
+    { key: 'overdue', label: 'Overdue', icon: MdAssignmentLate, color: 'danger' },
+    { key: 'highPriority', label: 'High Priority', icon: MdPriorityHigh, color: 'dark' },
   ];
 
   return (
-    <Row className="g-3 mb-4">
-      {cards.map(({ key, label, icon: Icon, bg, textColor }) => (
-        <Col key={key} xl={2} lg={4} md={4} sm={6} xs={6}>
-          <Card className={`bg-${bg} text-${textColor} border-0 shadow-sm h-100`}>
-            <Card.Body className="d-flex align-items-center p-3">
-              <div className={`rounded-circle d-flex align-items-center justify-content-center me-3 bg-white bg-opacity-25`}
-                style={{ width: 48, height: 48, minWidth: 48 }}>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+      {cards.map(({ key, label, icon: Icon, color }) => {
+        const colorConfig = STAT_CARD_COLORS[color] || STAT_CARD_COLORS.primary;
+        return (
+          <div key={key} className={`${colorConfig.bg} ${colorConfig.text} rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]`}>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-white/20 dark:bg-white/30 flex items-center justify-center">
                 <Icon size={24} />
               </div>
               <div>
-                <div className="fw-bold fs-4 lh-1 mb-1">{stats[key] ?? 0}</div>
-                <div className="small opacity-75">{label}</div>
+                <p className="text-2xl font-bold">{stats[key] ?? 0}</p>
+                <p className="text-sm opacity-90">{label}</p>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      ))}
-    </Row>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 };
 
@@ -183,27 +203,26 @@ const StatsCards = ({ stats }) => {
 // ============================================================================
 
 const EmptyState = ({ onGenerateActions, isGenerating, canGenerate = false }) => (
-  <div className="text-center py-5">
-    <MdAssignment size={64} className="text-muted mb-3" />
-    <h5>No Actions Found</h5>
-    <p className="text-muted mb-3">
+  <div className="text-center py-12">
+    <MdAssignment size={64} className="text-[var(--text-secondary)] mx-auto mb-3" />
+    <h5 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">No Actions Found</h5>
+    <p className="text-[var(--text-secondary)] mb-3">
       No action items match your current filters.
       {canGenerate && ' Try generating AI actions from recent feedback.'}
     </p>
-    {/* Generate button only visible for CompanyAdmin */}
     {canGenerate && (
-      <Button
-        variant="primary"
+      <button
         onClick={onGenerateActions}
         disabled={isGenerating}
+        className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50"
       >
         {isGenerating ? (
-          <Spinner animation="border" size="sm" className="me-2" />
+          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></span>
         ) : (
-          <MdInsights className="me-2" />
+          <MdInsights className="inline mr-2" />
         )}
         Generate AI Actions
-      </Button>
+      </button>
     )}
   </div>
 );
@@ -213,16 +232,16 @@ const EmptyState = ({ onGenerateActions, isGenerating, canGenerate = false }) =>
 // ============================================================================
 
 const ErrorState = ({ error, onRetry }) => (
-  <Alert variant="danger" className="d-flex align-items-center justify-content-between">
-    <div className="d-flex align-items-center">
-      <MdError size={24} className="me-2" />
+  <div className="flex items-center justify-between p-4 mb-4 bg-[var(--danger-light)] border border-[var(--danger-color)] rounded-md text-[var(--danger-color)]">
+    <div className="flex items-center gap-2">
+      <MdError size={24} />
       <span>{error || 'Failed to load actions. Please try again.'}</span>
     </div>
-    <Button variant="outline-danger" size="sm" onClick={onRetry}>
-      <MdRefresh className="me-1" />
+    <button onClick={onRetry} className="px-3 py-1 rounded-md font-medium transition-colors bg-[var(--danger-color)] text-white hover:opacity-90 text-sm">
+      <MdRefresh className="inline mr-1" />
       Retry
-    </Button>
-  </Alert>
+    </button>
+  </div>
 );
 
 // ============================================================================
@@ -240,120 +259,123 @@ const ActionTableRow = ({
   const isOverdue = action.isOverdue || isActionOverdue(action);
 
   return (
-    <tr className={isOverdue ? 'table-danger' : ''}>
+    <tr className={`border-b border-[var(--light-border)] dark:border-[var(--dark-border)] transition-colors ${
+      isOverdue 
+        ? 'bg-[var(--danger-light)]' 
+        : 'hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]'
+    }`}>
       {/* Title + Description */}
-      <td style={{ minWidth: 280 }}>
-        <div className="d-flex align-items-start gap-2">
-          <div className="flex-grow-1">
+      <td className="px-4 py-3" style={{ minWidth: 280 }}>
+        <div className="flex items-start gap-2">
+          <div className="flex-grow">
             <div
-              className="fw-semibold text-dark mb-1 text-decoration-none cursor-pointer"
+              className="font-semibold mb-1 cursor-pointer text-[var(--light-text)] dark:text-[var(--dark-text)] hover:text-[var(--primary-color)] transition-colors"
               role="button"
               onClick={() => onViewDetails(action)}
-              style={{ cursor: 'pointer' }}
             >
               {action.title || 'Untitled Action'}
             </div>
-            <p className="text-muted small mb-1 text-truncate" style={{ maxWidth: 320 }}>
+            <p className="text-[var(--text-secondary)] text-xs mb-1 truncate" style={{ maxWidth: 320 }}>
               {action.description || 'No description provided'}
             </p>
-            <div className="d-flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1">
               <SourceBadge source={action.source} />
               {action.metadata?.sentiment && (
                 <SentimentBadge sentiment={action.metadata.sentiment} />
               )}
-              {isOverdue && <Badge bg="danger" pill className="small">Overdue</Badge>}
+              {isOverdue && <span className="px-2 py-0.5 bg-[var(--danger-color)] text-white rounded-full text-xs font-medium">Overdue</span>}
             </div>
           </div>
         </div>
       </td>
 
       {/* Priority */}
-      <td className="align-middle">
+      <td className="px-4 py-3 align-middle">
         <PriorityBadge priority={action.priority} />
       </td>
 
       {/* Status */}
-      <td className="align-middle">
+      <td className="px-4 py-3 align-middle">
         <StatusBadge status={action.status} />
       </td>
 
       {/* Assignee */}
-      <td className="align-middle">
-        <div className="d-flex align-items-center gap-1 small">
-          <MdPerson size={16} className="text-muted" />
-          <span className="text-truncate" style={{ maxWidth: 120 }}>
+      <td className="px-4 py-3 align-middle">
+        <div className="flex items-center gap-1 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+          <MdPerson size={16} className="text-[var(--text-secondary)]" />
+          <span className="truncate" style={{ maxWidth: 120 }}>
             {action.assigneeName || action.assignee?.name || 'Unassigned'}
           </span>
         </div>
       </td>
 
       {/* Department */}
-      <td className="align-middle">
-        <span className="small text-muted">
+      <td className="px-4 py-3 align-middle">
+        <span className="text-sm text-[var(--text-secondary)]">
           {action.department || action.category || '—'}
         </span>
       </td>
 
       {/* Due Date */}
-      <td className="align-middle">
-        <span className={`small ${isOverdue ? 'text-danger fw-semibold' : 'text-muted'}`}>
+      <td className="px-4 py-3 align-middle">
+        <span className={`text-sm ${
+          isOverdue 
+            ? 'text-[var(--danger-color)] font-semibold' 
+            : 'text-[var(--text-secondary)]'
+        }`}>
           {action.dueDate ? formatDate(action.dueDate) : '—'}
         </span>
       </td>
 
       {/* Actions */}
-      <td className="align-middle text-end">
-        <div className="d-flex gap-1 justify-content-end">
+      <td className="px-4 py-3 align-middle text-right">
+        <div className="flex gap-1 justify-end">
           {action.status === ACTION_STATUSES.PENDING && (
-            <Button
-              variant="outline-primary"
-              size="sm"
+            <button
               onClick={() => onStatusChange(action.id, ACTION_STATUSES.IN_PROGRESS)}
               disabled={isUpdating}
               title="Start"
+              className="p-1.5 rounded-md font-medium transition-colors bg-[var(--info-color)] text-white hover:opacity-90 disabled:opacity-50"
             >
               {isUpdating ? (
-                <Spinner animation="border" size="sm" />
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
               ) : (
                 <MdTimer size={16} />
               )}
-            </Button>
+            </button>
           )}
 
           {action.status === ACTION_STATUSES.IN_PROGRESS && (
-            <Button
-              variant="outline-success"
-              size="sm"
+            <button
               onClick={() => onStatusChange(action.id, ACTION_STATUSES.RESOLVED)}
               disabled={isUpdating}
               title="Complete"
+              className="p-1.5 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:opacity-90 disabled:opacity-50"
             >
               {isUpdating ? (
-                <Spinner animation="border" size="sm" />
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
               ) : (
                 <MdCheckCircle size={16} />
               )}
-            </Button>
+            </button>
           )}
 
-          <Button
-            variant="outline-dark"
-            size="sm"
+          <button
             onClick={() => onViewDetails(action)}
             title="View Details"
+            className="p-1.5 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]"
           >
             <MdArrowForward size={16} />
-          </Button>
+          </button>
 
           {canDelete && (
-            <Button
-              variant="outline-danger"
-              size="sm"
+            <button
               onClick={() => onDelete(action)}
               title="Delete"
+              className="p-1.5 rounded-md font-medium transition-colors bg-[var(--danger-color)] text-white hover:opacity-90"
             >
               <MdDelete size={16} />
-            </Button>
+            </button>
           )}
         </div>
       </td>
@@ -387,20 +409,20 @@ const ActionTable = ({
   }
 
   return (
-    <div className="table-responsive">
-      <Table hover className="align-middle mb-0">
-        <thead className="table-light">
+    <div className="overflow-x-auto">
+      <table className="min-w-full border-collapse">
+        <thead className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <tr>
-            <th>Action</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Assignee</th>
-            <th>Department</th>
-            <th>Due Date</th>
-            <th className="text-end">Actions</th>
+            <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Action</th>
+            <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Priority</th>
+            <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Status</th>
+            <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Assignee</th>
+            <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Department</th>
+            <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Due Date</th>
+            <th className="p-3 text-right text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
           {actions.map(action => (
             <ActionTableRow
               key={action.id || action._id}
@@ -413,7 +435,7 @@ const ActionTable = ({
             />
           ))}
         </tbody>
-      </Table>
+      </table>
     </div>
   );
 };
@@ -423,81 +445,67 @@ const ActionTable = ({
 // ============================================================================
 
 const FiltersBar = ({ filters, setFilters, onClearFilters, searchTerm, onSearchChange }) => (
-  <Card className="mb-4 border-0 shadow-sm">
-    <Card.Body className="py-3">
-      <Row className="g-2 align-items-center">
-        <Col lg={3} md={6}>
-          <InputGroup size="sm">
-            <InputGroup.Text className="bg-white">
-              <MdFilterList size={16} />
-            </InputGroup.Text>
-            <Form.Control
-              placeholder="Search actions..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-            />
-          </InputGroup>
-        </Col>
+  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md mb-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] p-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 items-center">
+      <div className="flex items-center border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md overflow-hidden">
+        <span className="px-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--text-secondary)] border-r border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <MdFilterList size={16} />
+        </span>
+        <input
+          type="text"
+          className="w-full px-3 py-2 bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] text-sm"
+          placeholder="Search actions..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
+      </div>
 
-        <Col lg={2} md={3} sm={6}>
-          <Form.Select
-            size="sm"
-            value={filters.priority}
-            onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-          >
-            <option value="all">All Priorities</option>
-            {Object.values(ACTION_PRIORITIES).map(p => (
-              <option key={p} value={p}>
-                {PRIORITY_CONFIG[p]?.label || p}
-              </option>
-            ))}
-          </Form.Select>
-        </Col>
+      <select
+        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] text-sm"
+        value={filters.priority}
+        onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
+      >
+        <option value="all">All Priorities</option>
+        {Object.values(ACTION_PRIORITIES).map(p => (
+          <option key={p} value={p}>
+            {PRIORITY_CONFIG[p]?.label || p}
+          </option>
+        ))}
+      </select>
 
-        <Col lg={2} md={3} sm={6}>
-          <Form.Select
-            size="sm"
-            value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-          >
-            <option value="all">All Status</option>
-            {Object.values(ACTION_STATUSES).map(s => (
-              <option key={s} value={s}>
-                {STATUS_CONFIG[s]?.label || s}
-              </option>
-            ))}
-          </Form.Select>
-        </Col>
+      <select
+        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] text-sm"
+        value={filters.status}
+        onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+      >
+        <option value="all">All Status</option>
+        {Object.values(ACTION_STATUSES).map(s => (
+          <option key={s} value={s}>
+            {STATUS_CONFIG[s]?.label || s}
+          </option>
+        ))}
+      </select>
 
-        <Col lg={2} md={3} sm={6}>
-          <Form.Select
-            size="sm"
-            value={filters.department}
-            onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
-          >
-            <option value="all">All Departments</option>
-            {DEPARTMENTS.map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </Form.Select>
-        </Col>
+      <select
+        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] text-sm"
+        value={filters.department}
+        onChange={(e) => setFilters(prev => ({ ...prev, department: e.target.value }))}
+      >
+        <option value="all">All Departments</option>
+        {DEPARTMENTS.map(d => (
+          <option key={d} value={d}>{d}</option>
+        ))}
+      </select>
 
-        <Col lg={3} md={3} sm={6}>
-          <div className="d-flex gap-2">
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={onClearFilters}
-              className="d-flex align-items-center"
-            >
-              <MdRefresh size={16} className="me-1" />
-              Reset
-            </Button>
-          </div>
-        </Col>
-      </Row>
-    </Card.Body>
-  </Card>
+      <button
+        onClick={onClearFilters}
+        className="flex items-center gap-1 px-3 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] text-sm"
+      >
+        <MdRefresh size={16} />
+        Reset
+      </button>
+    </div>
+  </div>
 );
 
 // ============================================================================
@@ -541,16 +549,14 @@ const ActionManagement = () => {
   // System Admin blocked from tenant actions - show blocked state
   if (isSystemAdmin) {
     return (
-      <Container fluid className="py-5">
-        <div className="text-center">
-          <MdBlock size={64} className="text-danger mb-3" />
-          <h4>Access Restricted</h4>
-          <p className="text-muted">
-            System Admin cannot access tenant action management.<br />
-            Please use Company Admin or Member account to manage actions.
-          </p>
-        </div>
-      </Container>
+      <div className="w-full py-12 text-center">
+        <MdBlock size={64} className="text-[var(--danger-color)] mx-auto mb-3" />
+        <h4 className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Access Restricted</h4>
+        <p className="text-[var(--text-secondary)]">
+          System Admin cannot access tenant action management.<br />
+          Please use Company Admin or Member account to manage actions.
+        </p>
+      </div>
     );
   }
 
@@ -587,7 +593,6 @@ const ActionManagement = () => {
       }
       setError('');
 
-      // Fetch actions first (always works for any role)
       const actionsData = await listActions({
         priority: filters.priority,
         status: filters.status !== 'all' ? filters.status : undefined,
@@ -604,16 +609,12 @@ const ActionManagement = () => {
       const fetchedActions = actionsData.actions || [];
       setActions(fetchedActions);
 
-      // Try to fetch stats from backend (companyAdmin only endpoint)
-      // Falls back to computing from actions list if the call fails
       try {
         const statsData = await getActionStats({ period: '30' });
-        // Validate that stats actually have data — if all zeros but we have actions, prefer computed
         const backendTotal = statsData?.total || 0;
         if (backendTotal > 0) {
           setStats(statsData);
         } else {
-          // Backend returned empty/zero stats — compute from actions
           setStats(computeStatsFromActions(fetchedActions));
         }
       } catch (statsErr) {
@@ -648,7 +649,6 @@ const ActionManagement = () => {
 
     let result = actions;
 
-    // Tab filtering
     switch (activeTab) {
       case ACTION_TABS.HIGH_PRIORITY:
         result = result.filter(a => a.priority === ACTION_PRIORITIES.HIGH);
@@ -660,7 +660,6 @@ const ActionManagement = () => {
         break;
     }
 
-    // Search filtering (client-side text search)
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter(a =>
@@ -681,7 +680,6 @@ const ActionManagement = () => {
   const handleStatusChange = async (actionId, newStatus) => {
     setUpdatingActionId(actionId);
 
-    // Optimistic update
     const previousActions = [...actions];
     setActions(prev => prev.map(a =>
       a.id === actionId ? { ...a, status: newStatus } : a
@@ -691,7 +689,6 @@ const ActionManagement = () => {
       await updateAction(actionId, { status: newStatus });
       toast.success(`Action ${newStatus === ACTION_STATUSES.RESOLVED ? 'completed' : 'started'} successfully!`);
 
-      // Recompute stats from updated actions
       const updated = previousActions.map(a =>
         a.id === actionId ? { ...a, status: newStatus } : a
       );
@@ -719,7 +716,6 @@ const ActionManagement = () => {
 
     if (!result.isConfirmed) return;
 
-    // Optimistic update
     const previousActions = [...actions];
     const updatedActions = actions.filter(a => a.id !== action.id);
     setActions(updatedActions);
@@ -736,9 +732,6 @@ const ActionManagement = () => {
     }
   };
 
-  // ==========================================
-  // Navigate to ActionDetailPage (instead of modal)
-  // ==========================================
   const handleViewDetails = (action) => {
     const actionId = action.id || action._id;
     navigate(`/app/actions/${actionId}`);
@@ -808,17 +801,25 @@ const ActionManagement = () => {
   };
 
   // ============================================================================
+  // Tab definitions
+  // ============================================================================
+
+  const tabItems = [
+    { key: ACTION_TABS.ALL, icon: <MdAssignment size={16} />, label: 'All', count: stats.total, countColor: 'bg-[var(--secondary-color)]' },
+    { key: ACTION_TABS.HIGH_PRIORITY, icon: <MdPriorityHigh size={16} />, label: 'High Priority', count: stats.highPriority, countColor: 'bg-[var(--danger-color)]' },
+    { key: ACTION_TABS.OVERDUE, icon: <MdAssignmentLate size={16} />, label: 'Overdue', count: stats.overdue, countColor: 'bg-[var(--warning-color)] text-gray-800' },
+  ];
+
+  // ============================================================================
   // 🔄 Loading State
   // ============================================================================
 
   if (loading) {
     return (
-      <Container fluid className="py-5">
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Loading action items...</p>
-        </div>
-      </Container>
+      <div className="w-full py-12 text-center">
+        <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="mt-3 text-[var(--text-secondary)]">Loading action items...</p>
+      </div>
     );
   }
 
@@ -827,44 +828,40 @@ const ActionManagement = () => {
   // ============================================================================
 
   return (
-    <Container fluid className="py-4 px-lg-4">
+    <div className="w-full px-4 py-4">
       {/* Page Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
         <div>
-          <h2 className="fw-bold mb-1 d-flex align-items-center gap-2">
-            <MdAssignment size={28} className="text-primary" />
+          <h2 className="text-2xl font-bold mb-1 flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+            <MdAssignment size={28} className="text-[var(--primary-color)]" />
             Action Management
           </h2>
-          <p className="text-muted mb-0 small">
+          <p className="text-[var(--text-secondary)] text-sm mb-0">
             Track and manage action items from survey feedback
           </p>
         </div>
-        <div className="d-flex gap-2">
-          <Button
-            variant="outline-secondary"
-            size="sm"
+        <div className="flex gap-2">
+          <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="d-flex align-items-center"
+            className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] disabled:opacity-50 text-sm flex items-center gap-1"
           >
             {refreshing ? (
-              <Spinner animation="border" size="sm" className="me-1" />
+              <span className="w-4 h-4 border-2 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin inline-block"></span>
             ) : (
-              <MdRefresh size={18} className="me-1" />
+              <MdRefresh size={18} />
             )}
             {refreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          </button>
           {isCompanyAdmin && (
-            <Button
-              variant="primary"
-              size="sm"
+            <button
               onClick={handleGenerateActions}
               disabled={refreshing}
-              className="d-flex align-items-center"
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 text-sm flex items-center gap-1"
             >
-              <MdInsights size={18} className="me-1" />
+              <MdInsights size={18} />
               Generate AI Actions
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -885,161 +882,160 @@ const ActionManagement = () => {
       />
 
       {/* Tab Content */}
-      <Card className="border-0 shadow-sm">
-        <Card.Header className="bg-white border-bottom py-0">
-          <Tabs
-            activeKey={activeTab}
-            onSelect={(k) => setActiveTab(k)}
-            className="border-0"
-          >
-            <Tab eventKey={ACTION_TABS.ALL} title={
-              <span className="d-flex align-items-center gap-1">
-                <MdAssignment size={16} />
-                All <Badge bg="secondary" pill className="ms-1">{stats.total}</Badge>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-t-md overflow-x-auto">
+          {tabItems.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-1 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab.key
+                  ? 'border-b-[var(--primary-color)] text-[var(--primary-color)]'
+                  : 'border-b-transparent text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)]'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+              <span className={`px-1.5 py-0.5 text-white rounded-full text-xs font-medium ml-1 ${tab.countColor}`}>
+                {tab.count}
               </span>
-            } />
-            <Tab eventKey={ACTION_TABS.HIGH_PRIORITY} title={
-              <span className="d-flex align-items-center gap-1">
-                <MdPriorityHigh size={16} />
-                High Priority <Badge bg="danger" pill className="ms-1">{stats.highPriority}</Badge>
-              </span>
-            } />
-            <Tab eventKey={ACTION_TABS.OVERDUE} title={
-              <span className="d-flex align-items-center gap-1">
-                <MdAssignmentLate size={16} />
-                Overdue <Badge bg="warning" text="dark" pill className="ms-1">{stats.overdue}</Badge>
-              </span>
-            } />
-          </Tabs>
-        </Card.Header>
-        <Card.Body className="p-0">
-          <ActionTable
-            actions={filteredActions}
-            onStatusChange={handleStatusChange}
-            onViewDetails={handleViewDetails}
-            onDelete={handleDeleteAction}
-            updatingActionId={updatingActionId}
-            canDelete={isCompanyAdmin}
-            onGenerateActions={handleGenerateActions}
-            isGenerating={refreshing}
-            canGenerate={isCompanyAdmin}
-          />
-        </Card.Body>
+            </button>
+          ))}
+        </div>
+
+        {/* Table */}
+        <ActionTable
+          actions={filteredActions}
+          onStatusChange={handleStatusChange}
+          onViewDetails={handleViewDetails}
+          onDelete={handleDeleteAction}
+          updatingActionId={updatingActionId}
+          canDelete={isCompanyAdmin}
+          onGenerateActions={handleGenerateActions}
+          isGenerating={refreshing}
+          canGenerate={isCompanyAdmin}
+        />
+
         {/* Results count footer */}
         {filteredActions.length > 0 && (
-          <Card.Footer className="bg-white text-muted small py-2">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--text-secondary)] text-sm py-2 px-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-b-md">
             Showing {filteredActions.length} of {stats.total} actions
-          </Card.Footer>
+          </div>
         )}
-      </Card>
+      </div>
 
-      {/* Detail Modal - keeping for quick preview but primary flow is navigate */}
-      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Action Details</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedAction && (
-            <div>
-              <h5>{selectedAction.title}</h5>
-              <p className="text-muted">{selectedAction.description}</p>
-
-              <hr />
-
-              <Row>
-                <Col md={6}>
-                  <p><strong>Status:</strong> <StatusBadge status={selectedAction.status} /></p>
-                  <p><strong>Priority:</strong> <PriorityBadge priority={selectedAction.priority} /></p>
-                  <p><strong>Department:</strong> {selectedAction.department || 'N/A'}</p>
-                </Col>
-                <Col md={6}>
-                  <p><strong>Due Date:</strong> {formatDate(selectedAction.dueDate)}</p>
-                  <p><strong>Created:</strong> {formatDate(selectedAction.createdAt)}</p>
-                </Col>
-              </Row>
-
-              <hr />
-              <h6>Assignment</h6>
-              <Row className="align-items-center mb-3">
-                <Col md={6}>
-                  <p className="mb-1"><strong>Current Assignee:</strong></p>
-                  <Badge bg="secondary" className="py-2 px-3">
-                    <MdPerson className="me-1" />
-                    {selectedAction.assigneeName || 'Unassigned'}
-                  </Badge>
-                </Col>
-                <Col md={6}>
-                  {(isCompanyAdmin || canAssignAction(selectedAction)) && (
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => handleAssignToMe(selectedAction.id)}
-                      disabled={assigningActionId === selectedAction.id}
-                    >
-                      {assigningActionId === selectedAction.id ? (
-                        <Spinner animation="border" size="sm" className="me-1" />
-                      ) : (
-                        <MdPerson className="me-1" />
-                      )}
-                      Assign to Me
-                    </Button>
-                  )}
-                </Col>
-              </Row>
-
-              {selectedAction.assignmentHistory && selectedAction.assignmentHistory.length > 0 && (
-                <>
-                  <hr />
-                  <AssignmentHistory history={selectedAction.assignmentHistory} />
-                </>
-              )}
-
-              <hr />
-              <h6>Action Source</h6>
-              <Row>
-                <Col md={6}>
-                  <p className="mb-2">
-                    <strong>Generated From:</strong>{' '}
-                    <SourceBadge source={selectedAction.source} />
-                  </p>
-                  {selectedAction.metadata?.surveyId && (
-                    <p className="mb-2">
-                      <strong>Survey ID:</strong>{' '}
-                      <code className="small">{selectedAction.metadata.surveyId}</code>
-                    </p>
-                  )}
-                </Col>
-                <Col md={6}>
-                  {selectedAction.metadata?.sentiment && (
-                    <p className="mb-2">
-                      <strong>Original Sentiment:</strong>{' '}
-                      <SentimentBadge sentiment={selectedAction.metadata.sentiment} />
-                    </p>
-                  )}
-                </Col>
-              </Row>
+      {/* Detail Modal */}
+      {showDetailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowDetailModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-[var(--light-border)] dark:border-[var(--dark-border)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="text-lg font-semibold m-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Action Details</h5>
+              <button onClick={() => setShowDetailModal(false)} className="p-1 hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] rounded-full transition-colors text-xl text-[var(--light-text)] dark:text-[var(--dark-text)]">×</button>
             </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          {selectedAction && (
-            <Button
-              variant="primary"
-              onClick={() => {
-                setShowDetailModal(false);
-                handleViewDetails(selectedAction);
-              }}
-            >
-              <MdOpenInNew className="me-1" />
-              Open Full View
-            </Button>
-          )}
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+            <div className="p-4 overflow-y-auto" style={{ maxHeight: '70vh' }}>
+              {selectedAction && (
+                <div>
+                  <h5 className="font-semibold text-lg text-[var(--light-text)] dark:text-[var(--dark-text)]">{selectedAction.title}</h5>
+                  <p className="text-[var(--text-secondary)]">{selectedAction.description}</p>
+
+                  <hr className="my-3 border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]"><strong>Status:</strong> <StatusBadge status={selectedAction.status} /></p>
+                      <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]"><strong>Priority:</strong> <PriorityBadge priority={selectedAction.priority} /></p>
+                      <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]"><strong>Department:</strong> {selectedAction.department || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]"><strong>Due Date:</strong> {formatDate(selectedAction.dueDate)}</p>
+                      <p className="text-[var(--light-text)] dark:text-[var(--dark-text)]"><strong>Created:</strong> {formatDate(selectedAction.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  <hr className="my-3 border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+                  <h6 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Assignment</h6>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center mb-3">
+                    <div>
+                      <p className="mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]"><strong>Current Assignee:</strong></p>
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-[var(--secondary-color)] text-white rounded-full text-sm">
+                        <MdPerson />
+                        {selectedAction.assigneeName || 'Unassigned'}
+                      </span>
+                    </div>
+                    <div>
+                      {(isCompanyAdmin || canAssignAction(selectedAction)) && (
+                        <button
+                          onClick={() => handleAssignToMe(selectedAction.id)}
+                          disabled={assigningActionId === selectedAction.id}
+                          className="px-3 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--primary-color)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] text-sm disabled:opacity-50"
+                        >
+                          {assigningActionId === selectedAction.id ? (
+                            <span className="w-4 h-4 border-2 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin inline-block mr-1"></span>
+                          ) : (
+                            <MdPerson className="inline mr-1" />
+                          )}
+                          Assign to Me
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedAction.assignmentHistory && selectedAction.assignmentHistory.length > 0 && (
+                    <>
+                      <hr className="my-3 border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+                      <AssignmentHistory history={selectedAction.assignmentHistory} />
+                    </>
+                  )}
+
+                  <hr className="my-3 border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+                  <h6 className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Action Source</h6>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                        <strong>Generated From:</strong>{' '}
+                        <SourceBadge source={selectedAction.source} />
+                      </p>
+                      {selectedAction.metadata?.surveyId && (
+                        <p className="mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          <strong>Survey ID:</strong>{' '}
+                          <code className="text-xs bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] px-1 rounded text-[var(--light-text)] dark:text-[var(--dark-text)]">{selectedAction.metadata.surveyId}</code>
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      {selectedAction.metadata?.sentiment && (
+                        <p className="mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          <strong>Original Sentiment:</strong>{' '}
+                          <SentimentBadge sentiment={selectedAction.metadata.sentiment} />
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              {selectedAction && (
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    handleViewDetails(selectedAction);
+                  }}
+                  className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
+                >
+                  <MdOpenInNew className="inline mr-1" />
+                  Open Full View
+                </button>
+              )}
+              <button onClick={() => setShowDetailModal(false)} className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--secondary-color)] text-white hover:opacity-90">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

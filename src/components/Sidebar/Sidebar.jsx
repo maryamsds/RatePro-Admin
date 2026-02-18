@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Nav, Collapse, Button } from "react-bootstrap";
+// react-bootstrap removed — using native HTML + Tailwind
 import {
   MdDashboard,
   MdAssignment,
@@ -469,21 +469,10 @@ const Sidebar = ({
       }
     }
   };
-  const sidebarStyle = {
-    width: collapsed ? "70px" : "280px",
-    height: "100vh",
-    position: "fixed",
-    top: 0,
-    left: isMobile ? undefined : 0, // Let CSS handle mobile positioning, set desktop positioning
-    zIndex: 1050,
-    transition: isMobile ? undefined : "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", // Let CSS handle mobile transitions
-    backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)", // Theme colors for consistency
-    borderRight: `1px solid ${darkMode ? "var(--dark-border)" : "var(--light-border)"
-      }`,
-    boxShadow: "var(--shadow-md)",
-    overflowY: "auto",
-    overflowX: "hidden",
-  };
+
+  // CRITICAL: On mobile, sidebar should NEVER be collapsed
+  // This ensures menu items and close button are always visible
+  const effectiveCollapsed = isMobile ? false : collapsed;
 
   const navItems = [
     // Platform Dashboard - System Admin Only
@@ -663,12 +652,6 @@ const Sidebar = ({
           icon: <MdBarChart />,
           roles: ["companyAdmin"],
         },
-        {
-          path: "/app/analytics/response-overview",
-          name: "Response Overview",
-          icon: <MdShowChart />,
-          roles: ["companyAdmin"],
-        },
       ],
     },
     {
@@ -696,12 +679,6 @@ const Sidebar = ({
           icon: <IoLogoWhatsapp />,
           roles: ["admin"],
         },
-        // {
-        //   path: "/app/communication/sms",
-        //   name: "SMS Settings",
-        //   icon: <MdSms />,
-        //   roles: ["admin"],
-        // },
       ],
     },
     {
@@ -775,46 +752,6 @@ const Sidebar = ({
         }
       ]
     },
-    // {
-    //   name: "Content Management",
-    //   icon: <MdOutlineDashboardCustomize />,
-    //   submenu: true,
-    //   isOpen: contentmanagement,
-    //   roles: ["admin"],
-    //   toggle: () => toggleSubmenu("content"),
-    //   permissions: [
-    //     "content:features",
-    //     "content:pricing",
-    //     "content:testimonials",
-    //     "content:widgets",
-    //   ],
-    //   submenuItems: [
-    //     {
-    //       path: "/app/content/features",
-    //       name: "Features",
-    //       icon: <MdCode />,
-    //       roles: ["admin"],
-    //     },
-    //     {
-    //       path: "/app/content/pricing",
-    //       name: "Pricing",
-    //       icon: <MdPayment />,
-    //       roles: ["admin"],
-    //     },
-    //     {
-    //       path: "/app/content/testimonials",
-    //       name: "Testimonials",
-    //       icon: <MdThumbUp />,
-    //       roles: ["admin"],
-    //     },
-    //     {
-    //       path: "/app/content/widgets",
-    //       name: "Widgets",
-    //       icon: <MdCampaign />,
-    //       roles: ["admin"],
-    //     },
-    //   ],
-    // },
     {
       name: "Support Tickets",
       icon: <MdSupport />,
@@ -899,7 +836,7 @@ const Sidebar = ({
       {/* Mobile Toggle Button - Shows when sidebar is closed on mobile (kept for backward compatibility) */}
       {isMobile && !isOpen && (
         <button
-          className="mobile-sidebar-toggle"
+          className="fixed top-1 left-4 z-[1060] flex items-center justify-center w-11 h-11 rounded-lg border-0 bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] shadow-md transition-all duration-200 hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] cursor-pointer"
           onClick={onToggle}
           aria-label="Open sidebar"
         >
@@ -907,13 +844,14 @@ const Sidebar = ({
         </button>
       )}
 
-      <div
+      <aside
         id="mobile-sidebar"
         ref={sidebarRef}
-        style={sidebarStyle}
-        className={`sidebar d-flex flex-column ${collapsed ? "collapsed" : "expanded"
-          } ${isMobile ? "mobile" : ""} ${isTablet ? "tablet" : ""} ${darkMode ? "dark-mode" : ""
-          } ${isOpen ? "open" : ""}`}
+        className={`fixed top-0 h-screen bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-r border-[var(--light-border)] dark:border-[var(--dark-border)] shadow-[var(--shadow-md)] overflow-y-auto overflow-x-hidden flex flex-col z-[1050] transition-all duration-300 ease-in-out
+          ${effectiveCollapsed ? 'w-[var(--sidebar-collapsed-width)]' : 'w-[var(--sidebar-width)]'}
+          ${isMobile ? (isOpen ? 'left-0 w-full max-w-[320px]' : '-left-full') : 'left-0'}
+          ${isTablet && !effectiveCollapsed ? 'w-[var(--sidebar-width)]' : ''}
+        `}
         role={isMobile ? "dialog" : undefined}
         aria-modal={isMobile ? "true" : undefined}
         aria-label={isMobile ? "Navigation menu" : undefined}
@@ -922,96 +860,95 @@ const Sidebar = ({
         onTouchMove={handleTouchMove}
       >
         {/* Header with mobile close button */}
-        <div className="sidebar-header">
-          {!collapsed && <h4 className="sidebar-logo">Rate Pro</h4>}
+        <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] flex-shrink-0 h-[var(--header-height)]">
+          {!effectiveCollapsed && <h4 className="text-xl font-bold text-[var(--primary-color)] m-0">Rate Pro</h4>}
 
           {/* Mobile close button - only shows when sidebar is open on mobile */}
           {isMobile && isOpen ? (
-            <Button
-              variant="link"
-              className="sidebar-toggle d-flex align-items-center justify-content-center mobile-close-button cursor-pointer"
+            <button
+              type="button"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] p-2 rounded-lg border-0 bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer transition-all duration-200 hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] mobile-close-button"
               onClick={onClose}
               aria-label="Close navigation menu"
               tabIndex={0}
               autoFocus
             >
               <MdClose size={24} />
-            </Button>
+            </button>
           ) : !isMobile ? (
             /* Desktop/tablet toggle button */
-            <Button
-              variant="link"
-              className="sidebar-toggle cursor-pointer"
-              onClick={() => onToggle(!collapsed)}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            <button
+              type="button"
+              className="flex items-center justify-center min-w-[44px] min-h-[44px] p-2 rounded-lg border-0 bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer transition-all duration-200 hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)]"
+              onClick={() => onToggle(!effectiveCollapsed)}
+              aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               tabIndex={0}
             >
-              {collapsed ? (
+              {effectiveCollapsed ? (
                 <MdMenu size={isMobile ? 20 : 24} />
               ) : (
                 <MdClose size={isMobile ? 20 : 24} />
               )}
-            </Button>
+            </button>
           ) : null}
         </div>
 
         {/* Navigation */}
-        <Nav className="sidebar-nav flex-column flex-fill">
+        <nav className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden p-2">
           {navItems
             .filter((item) => hasAccess(item, user, hasPermission))
             .map((item, index) => (
-              <div key={index} className="nav-item">
+              <div key={index} className="mb-1 relative">
                 {item.submenu ? (
                   <>
                     <button
-                      className="nav-link d-flex align-items-center cursor-pointer position-relative w-100 text-decoration-none"
+                      className={`flex items-center w-full min-h-[44px] p-3 rounded-lg border-0 bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer transition-all duration-200 hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] hover:translate-x-0.5 font-medium relative group ${effectiveCollapsed ? 'justify-center' : ''}`}
                       onClick={
-                        collapsed
+                        effectiveCollapsed
                           ? () => handleCollapsedDropdownClick(item.name)
                           : item.toggle
                       }
                       onMouseEnter={() => {
                         setHoveredItem(item.name);
-                        if (collapsed && !isMobile)
+                        if (effectiveCollapsed && !isMobile)
                           handleCollapsedDropdownHover(item.name);
                       }}
                       onMouseLeave={() => {
                         setHoveredItem(null);
-                        if (collapsed && !isMobile)
+                        if (effectiveCollapsed && !isMobile)
                           handleCollapsedDropdownLeave();
                       }}
                       aria-expanded={item.isOpen}
                       aria-controls={`submenu-${item.name}`}
                     >
-                      <span className="nav-icon">{item.icon}</span>
-                      {!collapsed && (
+                      <span className={`flex items-center justify-center w-6 h-6 flex-shrink-0 ${!effectiveCollapsed ? 'mr-3' : ''}`}>{item.icon}</span>
+                      {!effectiveCollapsed && (
                         <>
-                          <span className="nav-text">{item.name}</span>
+                          <span className="whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</span>
                           <span
-                            className={`nav-arrow ${item.isOpen ? "rotated" : ""
-                              }`}
+                            className={`ml-auto transition-transform duration-200 ${item.isOpen ? 'rotate-180' : ''}`}
                           >
                             <MdExpandMore />
                           </span>
                         </>
                       )}
-                      {collapsed && (
-                        <div className="nav-tooltip">{item.name}</div>
+                      {effectiveCollapsed && (
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 rounded-lg bg-[var(--dark-card)] text-[var(--dark-text)] text-sm whitespace-nowrap z-[1050] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-lg pointer-events-none">{item.name}</div>
                       )}
                     </button>
 
                     {/* Collapsed Dropdown */}
-                    {collapsed &&
+                    {effectiveCollapsed &&
                       collapsedDropdownOpen === item.name &&
                       !isMobile && (
                         <div
-                          className="collapsed-dropdown"
+                          className="absolute left-full top-0 ml-2 min-w-[220px] max-w-[280px] bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg shadow-lg overflow-hidden z-[1050] animate-slideIn"
                           onMouseEnter={() =>
                             setCollapsedDropdownOpen(item.name)
                           }
                           onMouseLeave={() => setCollapsedDropdownOpen(null)}
                         >
-                          <div className="collapsed-dropdown-header">
+                          <div className="px-4 py-3 bg-[var(--primary-light)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)] font-semibold text-[var(--primary-color)] text-sm">
                             {item.name}
                           </div>
 
@@ -1022,8 +959,7 @@ const Sidebar = ({
                             .map((subItem, subIndex) => (
                               <div
                                 key={subIndex}
-                                className={`collapsed-dropdown-item ${isActiveRoute(subItem.path) ? "active" : ""
-                                  }`}
+                                className={`px-4 py-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] last:border-b-0 transition-all duration-200 cursor-pointer hover:bg-[var(--primary-light)] ${isActiveRoute(subItem.path) ? 'bg-[var(--primary-light)] text-[var(--primary-color)]' : ''}`}
                                 onClick={() => {
                                   setCollapsedDropdownOpen(null);
                                   handleItemClick(subItem.path);
@@ -1031,9 +967,9 @@ const Sidebar = ({
                               >
                                 <NavLink
                                   to={subItem.path}
-                                  className="collapsed-dropdown-link"
+                                  className="flex items-center text-inherit no-underline text-sm"
                                 >
-                                  <span className="collapsed-dropdown-icon">
+                                  <span className="flex items-center justify-center w-4 h-4 mr-2 flex-shrink-0">
                                     {subItem.icon}
                                   </span>
                                   <span>{subItem.name}</span>
@@ -1044,55 +980,58 @@ const Sidebar = ({
                       )}
 
                     {/* Expanded Submenu */}
-                    {!collapsed && (
-                      <Collapse in={item.isOpen} id={`submenu-${item.name}`}>
-                        <div className="submenu">
-                          {item.submenuItems
-                            .filter((subItem) =>
-                              hasAccess(subItem, user, hasPermission)
-                            )
-                            .map((subItem, subIndex) => (
-                              <div key={subIndex} className="submenu-item">
-                                <NavLink
-                                  to={subItem.path}
-                                  className={`submenu-link ${isActiveRoute(subItem.path) ? "active" : ""
-                                    }`}
-                                  onClick={() => handleItemClick(subItem.path)}
-                                >
-                                  <span className="submenu-icon">
-                                    {subItem.icon}
-                                  </span>
-                                  <span>{subItem.name}</span>
-                                </NavLink>
-                              </div>
-                            ))}
-                        </div>
-                      </Collapse>
+                    {!effectiveCollapsed && (
+                      <div
+                        id={`submenu-${item.name}`}
+                        className="ml-4 border-l-2 border-[var(--light-border)] dark:border-[var(--dark-border)] pl-2 overflow-hidden transition-all duration-300"
+                        style={{
+                          maxHeight: item.isOpen ? `${(item.submenuItems?.filter(s => hasAccess(s, user, hasPermission)).length || 0) * 50}px` : "0px",
+                          opacity: item.isOpen ? 1 : 0,
+                        }}
+                      >
+                        {item.submenuItems
+                          .filter((subItem) =>
+                            hasAccess(subItem, user, hasPermission)
+                          )
+                          .map((subItem, subIndex) => (
+                            <div key={subIndex} className="mb-1">
+                              <NavLink
+                                to={subItem.path}
+                                className={`flex items-center min-h-[40px] p-2 px-3 rounded-md no-underline text-[var(--light-text)] dark:text-[var(--dark-text)] transition-all duration-200 text-sm hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] hover:translate-x-1 ${isActiveRoute(subItem.path) ? 'bg-[var(--primary-light)] text-[var(--primary-color)] font-semibold' : ''}`}
+                                onClick={() => handleItemClick(subItem.path)}
+                              >
+                                <span className="flex items-center justify-center w-[18px] h-[18px] mr-2 flex-shrink-0">
+                                  {subItem.icon}
+                                </span>
+                                <span>{subItem.name}</span>
+                              </NavLink>
+                            </div>
+                          ))}
+                      </div>
                     )}
                   </>
                 ) : (
                   <NavLink
                     to={item.path}
-                    className={`nav-link d-flex align-items-center cursor-pointer position-relative w-100 text-decoration-none ${isActiveRoute(item.path) ? "active" : ""
-                      }`}
+                    className={`flex items-center w-full min-h-[44px] p-3 rounded-lg no-underline cursor-pointer transition-all duration-200 font-medium relative group ${effectiveCollapsed ? 'justify-center' : ''} ${isActiveRoute(item.path) ? 'bg-[var(--primary-color)] text-white shadow-[var(--shadow-sm)] hover:bg-[var(--primary-hover)]' : 'bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] hover:translate-x-0.5'}`}
                     onClick={() => handleItemClick(item.path)}
                     onMouseEnter={() => setHoveredItem(item.name)}
                     onMouseLeave={() => setHoveredItem(null)}
                   >
-                    <span className="nav-icon">{item.icon}</span>
-                    {!collapsed && (
-                      <span className="nav-text">{item.name}</span>
+                    <span className={`flex items-center justify-center w-6 h-6 flex-shrink-0 ${!effectiveCollapsed ? 'mr-3' : ''}`}>{item.icon}</span>
+                    {!effectiveCollapsed && (
+                      <span className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</span>
                     )}
 
-                    {collapsed && (
-                      <div className="nav-tooltip">{item.name}</div>
+                    {effectiveCollapsed && (
+                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 rounded-lg bg-[var(--dark-card)] text-[var(--dark-text)] text-sm whitespace-nowrap z-[1050] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-lg pointer-events-none">{item.name}</div>
                     )}
                   </NavLink>
                 )}
               </div>
             ))}
-        </Nav>
-      </div>
+        </nav>
+      </aside>
     </>
   );
 };

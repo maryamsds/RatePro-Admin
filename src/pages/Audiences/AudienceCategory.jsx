@@ -15,7 +15,7 @@ const AudienceCategory = ({ darkMode }) => {
   const [showModal, setShowModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [modalMode, setModalMode] = useState('create')
-  
+
   // 🔥 Match ContactCategory model fields exactly
   const [currentCategory, setCurrentCategory] = useState({
     name: "",
@@ -35,7 +35,7 @@ const AudienceCategory = ({ darkMode }) => {
     setLoading(true)
     try {
       const res = await axiosInstance.get('/contact-categories')
-      
+
       // Match backend response: { success, count, data: { categories } }
       const list = res?.data?.data?.categories || res?.data?.categories || []
       const count = res?.data?.count || list.length
@@ -60,7 +60,7 @@ const AudienceCategory = ({ darkMode }) => {
       const totalContactsCalc = normalized.reduce((sum, cat) => sum + (cat.contactCount || 0), 0)
       const activeCalc = normalized.filter(c => c.active).length
       const inactiveCalc = normalized.filter(c => !c.active).length
-      
+
       setTotalContacts(totalContactsCalc)
       setActiveCategories(activeCalc)
       setInactiveCategories(inactiveCalc)
@@ -144,7 +144,7 @@ const AudienceCategory = ({ darkMode }) => {
       if (modalMode === 'edit') {
         // 🔥 Backend uses PATCH for updates
         await axiosInstance.patch(`/contact-categories/${currentCategory._id}`, payload)
-        
+
         Swal.fire({
           icon: "success",
           title: "Category Updated",
@@ -154,7 +154,7 @@ const AudienceCategory = ({ darkMode }) => {
         })
       } else {
         await axiosInstance.post('/contact-categories', payload)
-        
+
         Swal.fire({
           icon: "success",
           title: "Category Created",
@@ -185,7 +185,7 @@ const AudienceCategory = ({ darkMode }) => {
 
     Swal.fire({
       title: 'Delete Category?',
-      text: cat.contactCount > 0 
+      text: cat.contactCount > 0
         ? `This category has ${cat.contactCount} contacts. They will need to be reassigned.`
         : "This action cannot be undone.",
       icon: 'warning',
@@ -212,32 +212,40 @@ const AudienceCategory = ({ darkMode }) => {
   // ─────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading categories...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-[var(--light-text)] dark:text-[var(--dark-text)]">Loading categories...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="audience-segmentation-container">
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="page-header-section">
-        <div className="page-header-content">
-          <div className="page-title-wrapper">
-            <div className="page-icon">
-              <MdCategory />
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center">
+              <MdCategory className="text-2xl text-purple-500" />
             </div>
             <div>
-              <h1 className="page-title">Contact Categories</h1>
-              <p className="page-subtitle">Manage business-defined contact classifications</p>
+              <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Contact Categories</h1>
+              <p className="text-sm text-[var(--text-secondary)]">Manage business-defined contact classifications</p>
             </div>
           </div>
-          <div className="page-actions">
-            <button className="action-button secondary-action" onClick={fetchCategories}>
+          <div className="flex items-center gap-2">
+            <button 
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)] flex items-center gap-2" 
+              onClick={fetchCategories}
+            >
               <MdRefresh /> Refresh
             </button>
-            <button className="action-button primary-action" onClick={handleCreateCategory}>
+            <button 
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2" 
+              onClick={handleCreateCategory}
+            >
               <MdAdd /> Create Category
             </button>
           </div>
@@ -245,122 +253,130 @@ const AudienceCategory = ({ darkMode }) => {
       </div>
 
       {/* Stats Section */}
-      <div className="stats-section">
-        <div className="stat-card primary-card">
-          <div className="stat-icon">
-            <MdCategory />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{categories.length}</div>
-            <div className="stat-label">Total Categories</div>
-          </div>
-        </div>
-        <div className="stat-card success-card">
-          <div className="stat-icon">
-            <MdCheckCircle />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{activeCategories}</div>
-            <div className="stat-label">Active</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center">
+              <MdCategory className="text-2xl text-purple-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{categories.length}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Total Categories</p>
+            </div>
           </div>
         </div>
-        <div className="stat-card info-card">
-          <div className="stat-icon">
-            <MdPeople />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{totalContacts.toLocaleString()}</div>
-            <div className="stat-label">Total Contacts</div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+              <MdCheckCircle className="text-2xl text-green-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{activeCategories}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Active</p>
+            </div>
           </div>
         </div>
-        <div className="stat-card warning-card">
-          <div className="stat-icon">
-            <MdBlock />
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+              <MdPeople className="text-2xl text-blue-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{totalContacts.toLocaleString()}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Total Contacts</p>
+            </div>
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{inactiveCategories}</div>
-            <div className="stat-label">Inactive</div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center">
+              <MdBlock className="text-2xl text-orange-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{inactiveCategories}</p>
+              <p className="text-sm text-[var(--text-secondary)]">Inactive</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Categories List Section */}
-      <div className="section-card segments-list-section">
-        <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 p-4 border-bottom">
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <div>
-            <h2 className="section-title">All Categories</h2>
-            <p className="section-subtitle">View and manage contact categories</p>
+            <h2 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">All Categories</h2>
+            <p className="text-sm text-[var(--text-secondary)]">View and manage contact categories</p>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="data-table w-full">
-            <thead>
+          <table className="w-full">
+            <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
               <tr>
-                <th>Category Name</th>
-                <th className="hidden sm:table-cell">Description</th>
-                <th>Type</th>
-                <th>Contacts</th>
-                <th className="hidden lg:table-cell">Status</th>
-                <th>Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Category Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider hidden sm:table-cell">Description</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Contacts</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider hidden lg:table-cell">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[var(--light-border)] dark:divide-[var(--dark-border)]">
               {categories.map((category) => (
-                <tr key={category._id}>
-                  <td>
-                    <div className="segment-name">
-                      {category.name}
+                <tr key={category._id} className="hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{category.name}</span>
                       {category.isDefault && (
-                        <span className="badge bg-secondary ms-2" style={{ fontSize: '10px' }}>Default</span>
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-500 text-white">Default</span>
                       )}
                     </div>
-                    <div className="segment-date">
+                    <div className="text-xs text-[var(--text-secondary)] mt-1">
                       Created: {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
                     </div>
                   </td>
-                  <td className="hidden sm:table-cell">
-                    <div className="segment-description">
+                  <td className="px-4 py-4 hidden sm:table-cell">
+                    <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
                       {category.description || '-'}
                     </div>
                   </td>
-                  <td>
-                    <span className={`badge ${category.type === 'internal' ? 'bg-info' : 'bg-primary'}`}>
+                  <td className="px-4 py-4">
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${category.type === 'internal' ? 'bg-[var(--info-color)] text-white' : 'bg-[var(--primary-color)] text-white'}`}>
                       {category.type}
                     </span>
                   </td>
-                  <td>
-                    <div className="segment-size">{(category.contactCount || 0).toLocaleString()}</div>
-                    <div className="size-label">contacts</div>
+                  <td className="px-4 py-4">
+                    <div className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{(category.contactCount || 0).toLocaleString()}</div>
+                    <div className="text-xs text-[var(--text-secondary)]">contacts</div>
                   </td>
-                  <td className="hidden lg:table-cell">
-                    <span className={`status-badge ${category.active ? 'active-status' : 'draft-status'}`}>
+                  <td className="px-4 py-4 hidden lg:table-cell">
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${category.active ? 'bg-[var(--success-color)] text-white' : 'bg-gray-500 text-white'}`}>
                       {category.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td>
+                  <td className="px-4 py-4">
                     <div className="flex items-center gap-1">
-                      <button 
-                        className="action-btn view-btn" 
-                        title="View Details" 
+                      <button
+                        className="p-2 rounded-md hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)] text-[var(--info-color)] transition-colors"
+                        title="View Details"
                         onClick={() => handleView(category)}
                       >
-                        <MdVisibility />
+                        <MdVisibility className="text-lg" />
                       </button>
                       {!category.isDefault && (
                         <>
-                          <button 
-                            className="action-btn edit-btn" 
-                            title="Edit" 
+                          <button
+                            className="p-2 rounded-md hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)] text-[var(--primary-color)] transition-colors"
+                            title="Edit"
                             onClick={() => handleEdit(category)}
                           >
-                            <MdEdit />
+                            <MdEdit className="text-lg" />
                           </button>
                           <button
-                            className="action-btn delete-btn"
+                            className="p-2 rounded-md hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)] text-[var(--danger-color)] transition-colors"
                             title="Delete"
                             onClick={() => handleDelete(category)}
                           >
-                            <MdDelete />
+                            <MdDelete className="text-lg" />
                           </button>
                         </>
                       )}
@@ -370,7 +386,7 @@ const AudienceCategory = ({ darkMode }) => {
               ))}
               {categories.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="text-center py-4">
+                  <td colSpan="6" className="px-4 py-8 text-center text-[var(--text-secondary)]">
                     No categories found. Create your first category!
                   </td>
                 </tr>
@@ -378,7 +394,7 @@ const AudienceCategory = ({ darkMode }) => {
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <Pagination
             current={pagination.page}
             total={pagination.total}
@@ -391,25 +407,28 @@ const AudienceCategory = ({ darkMode }) => {
 
       {/* Create/Edit Category Modal */}
       {showModal && (
-        <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="d-flex align-items-center justify-content-between p-4 border-bottom">
-              <h2 className="modal-title d-flex align-items-center gap-2">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50" onClick={() => setShowModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-xl max-w-2xl w-full border border-[var(--light-border)] dark:border-[var(--dark-border)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h2 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] flex items-center gap-2">
                 {modalMode === 'create' ? <MdAdd /> : <MdEdit />}
                 {modalMode === 'create' ? 'Create Category' : 'Edit Category'}
               </h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
+              <button 
+                className="text-2xl text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors" 
+                onClick={() => setShowModal(false)}
+              >
                 ×
               </button>
             </div>
             <div className="p-4">
-              <form className="segment-form flex flex-col gap-4">
+              <form className="flex flex-col gap-4">
                 {/* Name - Required */}
-                <div className="form-group">
-                  <label className="form-label">Category Name *</label>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Category Name *</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     placeholder="e.g., Clients, Partners, Vendors"
                     value={currentCategory.name}
                     onChange={(e) => setCurrentCategory({ ...currentCategory, name: e.target.value })}
@@ -417,10 +436,10 @@ const AudienceCategory = ({ darkMode }) => {
                 </div>
 
                 {/* Description - Optional */}
-                <div className="form-group">
-                  <label className="form-label">Description</label>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Description</label>
                   <textarea
-                    className="form-textarea"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     rows={2}
                     placeholder="Brief description of this category"
                     value={currentCategory.description}
@@ -429,10 +448,10 @@ const AudienceCategory = ({ darkMode }) => {
                 </div>
 
                 {/* Type - Required */}
-                <div className="form-group">
-                  <label className="form-label">Type</label>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Type</label>
                   <select
-                    className="form-select"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                     value={currentCategory.type}
                     onChange={(e) => setCurrentCategory({ ...currentCategory, type: e.target.value })}
                   >
@@ -443,10 +462,10 @@ const AudienceCategory = ({ darkMode }) => {
 
                 {/* Active Status - Only for Edit */}
                 {modalMode === 'edit' && (
-                  <div className="form-group">
-                    <label className="form-label">Status</label>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Status</label>
                     <select
-                      className="form-select"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                       value={currentCategory.active ? 'true' : 'false'}
                       onChange={(e) => setCurrentCategory({ ...currentCategory, active: e.target.value === 'true' })}
                     >
@@ -457,15 +476,15 @@ const AudienceCategory = ({ darkMode }) => {
                 )}
               </form>
             </div>
-            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-2 p-4 border-top">
-              <button 
-                className="modal-cancel-btn d-flex align-items-center justify-content-center gap-2" 
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)] flex items-center justify-center gap-2"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
               </button>
-              <button 
-                className="modal-submit-btn d-flex align-items-center justify-content-center gap-2" 
+              <button
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center justify-center gap-2"
                 onClick={handleSaveCategory}
               >
                 {modalMode === 'create' ? <MdAdd /> : <MdEdit />}
@@ -478,64 +497,70 @@ const AudienceCategory = ({ darkMode }) => {
 
       {/* View Category Modal */}
       {showViewModal && viewCategory && (
-        <div className="modal-overlay flex items-center justify-center p-4" onClick={() => setShowViewModal(false)}>
-          <div className="modal-container max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="d-flex items-center justify-content-between p-4 border-b">
-              <h2 className="modal-title d-flex items-center gap-2">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50" onClick={() => setShowViewModal(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-xl max-w-2xl w-full border border-[var(--light-border)] dark:border-[var(--dark-border)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h2 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] flex items-center gap-2">
                 <MdVisibility /> Category Details
               </h2>
-              <button className="modal-close" onClick={() => setShowViewModal(false)}>
+              <button 
+                className="text-2xl text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors" 
+                onClick={() => setShowViewModal(false)}
+              >
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Name</label>
-                <div className="form-text">{viewCategory.name}</div>
+            <div className="p-4 space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Name</label>
+                <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{viewCategory.name}</div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Description</label>
-                <div className="form-text">{viewCategory.description || '-'}</div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Description</label>
+                <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{viewCategory.description || '-'}</div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Type</label>
-                <div className="form-text">
-                  <span className={`badge ${viewCategory.type === 'internal' ? 'bg-info' : 'bg-primary'}`}>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Type</label>
+                <div className="text-sm">
+                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${viewCategory.type === 'internal' ? 'bg-[var(--info-color)] text-white' : 'bg-[var(--primary-color)] text-white'}`}>
                     {viewCategory.type}
                   </span>
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Status</label>
-                <div className="form-text">
-                  <span className={`badge ${viewCategory.active ? 'bg-success' : 'bg-secondary'}`}>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Status</label>
+                <div className="text-sm">
+                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${viewCategory.active ? 'bg-[var(--success-color)] text-white' : 'bg-gray-500 text-white'}`}>
                     {viewCategory.active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Contacts</label>
-                <div className="form-text">{(viewCategory.contactCount || 0).toLocaleString()}</div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Contacts</label>
+                <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{(viewCategory.contactCount || 0).toLocaleString()}</div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Default Category</label>
-                <div className="form-text">{viewCategory.isDefault ? 'Yes' : 'No'}</div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Default Category</label>
+                <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{viewCategory.isDefault ? 'Yes' : 'No'}</div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Created</label>
-                <div className="form-text">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Created</label>
+                <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
                   {viewCategory.createdAt ? new Date(viewCategory.createdAt).toLocaleString() : 'N/A'}
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Last Updated</label>
-                <div className="form-text">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Last Updated</label>
+                <div className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
                   {viewCategory.updatedAt ? new Date(viewCategory.updatedAt).toLocaleString() : 'N/A'}
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="modal-cancel-btn" onClick={() => setShowViewModal(false)}>
+            <div className="p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <button 
+                className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-border)] dark:hover:bg-[var(--dark-border)]" 
+                onClick={() => setShowViewModal(false)}
+              >
                 Close
               </button>
             </div>

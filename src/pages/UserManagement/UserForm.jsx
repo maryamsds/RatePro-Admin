@@ -1,7 +1,6 @@
 // src/pages/UserManagement/UserForm.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Row, Col, Form, Button, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
 import {
   MdSave,
@@ -88,7 +87,6 @@ const UserForm = () => {
     if (currentUserRole === "admin" && user.role === "companyAdmin" && !user.tenantName.trim())
       newErrors.tenantName = "Company name is required";
 
-    // Department is always required for members
     if ((currentUserRole === "companyAdmin" || currentUserRole === "member") && user.role === "member" && !user.departmentId)
       newErrors.departmentId = "Department is required";
 
@@ -234,28 +232,27 @@ const UserForm = () => {
   };
 
   return (
-    <div className="user-form-container">
-      {/* ... PAGE HEADER ... */}
-      <div className="user-form-header">
-        <div className="header-content">
-          <div className="header-left">
-            <Button
-              variant="outline-secondary"
-              className="back-btn"
+    <div className="max-w-5xl mx-auto p-6">
+      {/* PAGE HEADER */}
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              className="px-4 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors font-medium inline-flex items-center gap-2"
               onClick={() => navigate("/app/users")}
             >
-              <MdArrowBack className="me-2" /> Back
-            </Button>
+              <MdArrowBack /> Back
+            </button>
 
-            <div className="page-title-section">
-              <div className="page-icon">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-2xl">
                 {isEditMode ? <MdPerson /> : <MdGroup />}
               </div>
               <div>
-                <h1 className="page-title">
+                <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                   {isEditMode ? 'Edit User' : 'Create User'}
                 </h1>
-                <p className="page-subtitle">
+                <p className="text-sm text-[var(--text-secondary)] mt-1">
                   {isEditMode ? 'Update user information and settings' : 'Add a new user to the system'}
                 </p>
               </div>
@@ -263,392 +260,426 @@ const UserForm = () => {
           </div>
 
           {formChanged && (
-            <div className="form-status-indicator">
-              <MdInfo className="me-1" />
-              <span>Unsaved changes</span>
+            <div className="bg-[var(--warning-light)] border border-[var(--warning-color)] text-[var(--warning-color)] px-4 py-2 rounded-md flex items-center gap-2">
+              <MdInfo />
+              <span className="text-sm font-medium">Unsaved changes</span>
             </div>
           )}
 
           {saveSuccess && (
-            <div className="success-indicator animate-fade-in">
-              <MdCheckCircle className="me-1" />
-              <span>Saved successfully!</span>
+            <div className="bg-[var(--success-light)] border border-[var(--success-color)] text-[var(--success-color)] px-4 py-2 rounded-md flex items-center gap-2 animate-pulse">
+              <MdCheckCircle />
+              <span className="text-sm font-medium">Saved successfully!</span>
             </div>
           )}
         </div>
       </div>
-      <div className="form-content">
-        <div className="form-wrapper">
-          <Form onSubmit={handleSubmit} className="user-form">
-            {/* BASIC INFO */}
-            <div className="form-section animate-slide-up" style={{ '--delay': '0.1s' }}>
-              <div className="section-header">
-                <div className="section-icon">
-                  <MdPerson />
-                </div>
-                <div>
-                  <h3 className="section-title" style={{ color: '#1fdae4' }}>Basic Information</h3>
-                  <p className="section-subtitle">Personal details and identification</p>
-                </div>
+      {/* FORM CONTENT */}
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* BASIC INFO */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-xl">
+                <MdPerson />
               </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--primary-color)]">Basic Information</h3>
+                <p className="text-sm text-[var(--text-secondary)]">Personal details and identification</p>
+              </div>
+            </div>
 
-              <div className="section-content">
-                <Row className="g-3">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {isEditMode && (
-                    <Col md={6}>
-                      <div className="form-group">
-                        <label className="form-label">User ID</label>
-                        <div className="input-wrapper">
-                          <Form.Control
-                            type="text"
-                            value={user._id || ""}
-                            disabled
-                            className="form-input disabled"
-                          />
-                        </div>
-                      </div>
-                    </Col>
-                  )}
-
-                  <Col md={isEditMode ? 6 : 12}>
-                    <div className="form-group">
-                      <label className="form-label required">Full Name</label>
-                      <div className={`input-wrapper ${validationState.name ? 'has-validation' : ''}`}>
-                        <MdPerson className="input-icon" />
-                        <Form.Control
-                          type="text"
-                          name="name"
-                          autoComplete="name"
-                          value={user.name}
-                          onChange={handleChange}
-                          placeholder="Enter full name"
-                          className={`form-input ${validationState.name === 'valid' ? 'is-valid' :
-                            validationState.name === 'invalid' ? 'is-invalid' : ''
-                            }`}
-                        />
-                        {validationState.name === 'valid' && (
-                          <MdCheckCircle className="validation-icon valid" />
-                        )}
-                        {validationState.name === 'invalid' && (
-                          <MdError className="validation-icon invalid" />
-                        )}
-                      </div>
-                      {errors.name && <div className="field-error">{errors.name}</div>}
-                    </div>
-                  </Col>
-                </Row>
-              </div>
-            </div>
-            {/* ACCOUNT INFO */}
-            <div className="form-section animate-slide-up" style={{ '--delay': '0.2s' }}>
-              <div className="section-header">
-                <div className="section-icon">
-                  <MdKey />
-                </div>
-                <div>
-                  <h3 className="section-title" style={{ color: '#1fdae4' }}>Account Information</h3>
-                  <p className="section-subtitle">Login credentials and access details</p>
-                </div>
-              </div>
-
-              <div className="section-content">
-                <Row className="g-3">
-                  <Col md={6}>
-                    <div className="form-group">
-                      <label className="form-label required">Email Address</label>
-                      <div className={`input-wrapper ${validationState.email ? 'has-validation' : ''}`}>
-                        <MdEmail className="input-icon" />
-                        <Form.Control
-                          type="email"
-                          name="email"
-                          autoComplete="email"
-                          value={user.email}
-                          onChange={handleChange}
-                          placeholder={isEditMode ? user.email : "user@example.com"}
-                          disabled={isEditMode}
-                          className={`form-input ${isEditMode ? 'disabled' : ''
-                            } ${validationState.email === 'valid' ? 'is-valid' :
-                              validationState.email === 'invalid' ? 'is-invalid' : ''
-                            }`}
-                        />
-                        {!isEditMode && validationState.email === 'valid' && (
-                          <MdCheckCircle className="validation-icon valid" />
-                        )}
-                        {!isEditMode && validationState.email === 'invalid' && (
-                          <MdError className="validation-icon invalid" />
-                        )}
-                      </div>
-                      {errors.email && <div className="field-error">{errors.email}</div>}
-                      {isEditMode && (
-                        <div className="field-help">Email cannot be changed after registration</div>
-                      )}
-                    </div>
-                  </Col>
-
-                  <Col md={6}>
-                    <div className="form-group">
-                      <label className="form-label required">Password</label>
-                      <div className={`input-wrapper password-wrapper ${validationState.password ? 'has-validation' : ''}`}>
-                        <MdKey className="input-icon" />
-                        <Form.Control
-                          type={showPassword ? "text" : "password"}
-                          name="password"
-                          autoComplete="new-password"
-                          value={user.password}
-                          onChange={handleChange}
-                          placeholder={isEditMode ? "Password unchanged" : "Minimum 8 characters"}
-                          disabled={isEditMode}
-                          className={`form-input password-input ${isEditMode ? 'disabled' : ''
-                            } ${validationState.password === 'valid' ? 'is-valid' :
-                              validationState.password === 'invalid' ? 'is-invalid' : ''
-                            }`}
-                        />
-                        {!isEditMode && (
-                          <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <MdVisibilityOff /> : <MdVisibility />}
-                          </button>
-                        )}
-                        {!isEditMode && validationState.password === 'valid' && (
-                          <MdCheckCircle className="validation-icon valid with-toggle" />
-                        )}
-                        {!isEditMode && validationState.password === 'invalid' && (
-                          <MdError className="validation-icon invalid with-toggle" />
-                        )}
-                      </div>
-                      {errors.password && <div className="field-error">{errors.password}</div>}
-                      {!isEditMode && (
-                        <div className="field-help">Must be at least 8 characters long</div>
-                      )}
-                      {isEditMode && (
-                        <div className="field-help">Leave empty to keep current password</div>
-                      )}
-                    </div>
-                  </Col>
-                </Row>
-              </div>
-            </div>
-
-            {/* ROLE & STATUS */}
-            <div className="form-section animate-slide-up" style={{ '--delay': '0.3s' }}>
-              <div className="section-header">
-                <div className="section-icon">
-                  <MdGroup />
-                </div>
-                <div>
-                  <h3 className="section-title" style={{ color: '#1fdae4' }}>Role & Permissions</h3>
-                  <p className="section-subtitle">User access level and account status</p>
-                </div>
-              </div>
-
-              <div className="section-content">
-                <Row className="g-3">
-                  <Col md={6}>
-                    <div className="form-group">
-                      <label className="form-label required">User Role</label>
-                      <div className="input-wrapper">
-                        <MdGroup className="input-icon" />
-                        <Form.Select
-                          name="role"
-                          value={user.role}
-                          onChange={handleChange}
-                          autoComplete="off"
-                          className="form-input form-select"
-                        >
-                          <option value="">Select Role</option>
-                          {currentUserRole === "admin" && (
-                            <>
-                              <option value="companyAdmin">Company Admin</option>
-                              <option value="user">User</option>
-                            </>
-                          )}
-                          {(currentUserRole === "companyAdmin" || memberCanCreate) && (
-                            <option value="member">Member</option>
-                          )}
-                        </Form.Select>
-                      </div>
-                      {errors.role && <div className="field-error">{errors.role}</div>}
-                      <div className="field-help">
-                        {user.role === 'companyAdmin' && 'Full administrative access to company resources'}
-                        {user.role === 'member' && 'Limited access based on department permissions'}
-                        {user.role === 'user' && 'Standard user with basic permissions'}
-                        {!user.role && 'Select the appropriate role for this user'}
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={6}>
-                    <div className="form-group">
-                      <label className="form-label required">Account Status</label>
-                      <div className="status-toggle-wrapper">
-                        <div className="status-options">
-                          <div
-                            className={`status-option ${user.isActive === 'true' ? 'active' : ''}`}
-                            onClick={() => {
-                              setUser(prev => ({ ...prev, isActive: 'true' }));
-                              setFormChanged(true);
-                            }}
-                          >
-                            <div className="status-icon active">
-                              <MdToggleOn />
-                            </div>
-                            <div className="status-content">
-                              <div className="status-label">Active</div>
-                              <div className="status-description">User can login and access system</div>
-                            </div>
-                          </div>
-
-                          <div
-                            className={`status-option ${user.isActive === 'false' ? 'active' : ''}`}
-                            onClick={() => {
-                              setUser(prev => ({ ...prev, isActive: 'false' }));
-                              setFormChanged(true);
-                            }}
-                          >
-                            <div className="status-icon inactive">
-                              <MdToggleOff />
-                            </div>
-                            <div className="status-content">
-                              <div className="status-label">Inactive</div>
-                              <div className="status-description">User login is disabled</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {errors.isActive && <div className="field-error">{errors.isActive}</div>}
-                    </div>
-                  </Col>
-                </Row>
-              </div>
-            </div>
-
-            {/* COMPANY INFO - For Admin creating CompanyAdmin */}
-            {currentUserRole === "admin" && user.role === "companyAdmin" && (
-              <div className="form-section animate-slide-up" style={{ '--delay': '0.4s' }}>
-                <div className="section-header">
-                  <div className="section-icon">
-                    <MdBusiness />
-                  </div>
-                  <div>
-                    <h3 className="section-title" style={{ color: '#1fdae4' }}>Company Information</h3>
-                    <p className="section-subtitle">Organization details for company admin</p>
-                  </div>
-                </div>
-
-                <div className="section-content">
-                  <Row className="g-3">
-                    <Col md={6}>
-                      <div className="form-group">
-                        <label className="form-label required">Company Name</label>
-                        <div className="input-wrapper">
-                          <MdBusiness className="input-icon" />
-                          <Form.Control
-                            type="text"
-                            name="tenantName"
-                            value={user.tenantName}
-                            onChange={handleChange}
-                            placeholder="e.g. Acme Corp"
-                            className="form-input"
-                          />
-                        </div>
-                        {errors.tenantName && <div className="field-error">{errors.tenantName}</div>}
-                        <div className="field-help">This will create a new company organization</div>
-                      </div>
-                    </Col>
-                  </Row>
-                </div>
-              </div>
-            )}
-
-            {/* DEPARTMENT ASSIGNMENT - Always visible for members */}
-            {(currentUserRole === "companyAdmin" || memberCanCreate) && user.role === "member" && (
-              <div className="form-section animate-slide-up" style={{ '--delay': '0.5s' }}>
-                <div className="section-header">
-                  <div className="section-icon">
-                    <MdBusiness />
-                  </div>
-                  <div>
-                    <h3 className="section-title" style={{ color: '#1fdae4' }}>Department Assignment</h3>
-                    <p className="section-subtitle">Assign user to a department</p>
-                  </div>
-                </div>
-
-                <div className="section-content">
-                  <Row className="g-3">
-                    <Col md={6}>
-                      <div className="form-group">
-                        <label className="form-label required">Department</label>
-                        <div className="input-wrapper">
-                          <MdGroup className="input-icon" />
-                          <Form.Select
-                            name="departmentId"
-                            value={user.departmentId}
-                            onChange={handleChange}
-                            className="form-input form-select"
-                          >
-                            <option value="">Select Department</option>
-                            {user.departments.map(dept => (
-                              <option key={dept._id} value={dept._id}>{dept.name}</option>
-                            ))}
-                          </Form.Select>
-                        </div>
-                        {errors.departmentId && <div className="field-error">{errors.departmentId}</div>}
-                      </div>
-                    </Col>
-                  </Row>
-                </div>
-              </div>
-            )}
-
-            {/* FORM ACTIONS */}
-            <div className="form-actions animate-slide-up" style={{ '--delay': '0.6s' }}>
-              <div className="actions-wrapper">
-                <div className="actions-left">
-                  {formChanged && (
-                    <div className="unsaved-indicator">
-                      <MdInfo className="me-1" />
-                      <span>You have unsaved changes</span>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">User ID</label>
+                      <input
+                        type="text"
+                        value={user._id || ""}
+                        disabled
+                        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50 cursor-not-allowed"
+                      />
                     </div>
                   )}
-                </div>
 
-                <div className="actions-right">
-                  <Button
-                    type="button"
-                    variant="outline-secondary"
-                    onClick={() => navigate("/app/users", { replace: true })}
-                    disabled={isSubmitting}
-                    className="cancel-btn"
-                  >
-                    Cancel
-                  </Button>
-
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={isSubmitting || (!formChanged && isEditMode)}
-                    className={`submit-btn ${isSubmitting ? 'submitting' : ''}`}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Spinner size="sm" className="me-2" animation="border" />
-                        {isEditMode ? 'Updating...' : 'Creating...'}
-                      </>
-                    ) : (
-                      <>
-                        <MdSave className="me-2" />
-                        {isEditMode ? "Update User" : "Create User"}
-                      </>
+                  <div className={isEditMode ? '' : 'md:col-span-2'}>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                      Full Name <span className="text-[var(--danger-color)]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="name"
+                        autoComplete="name"
+                        value={user.name}
+                        onChange={handleChange}
+                        placeholder="Enter full name"
+                        className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${
+                          validationState.name === 'valid' ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
+                          validationState.name === 'invalid' ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' : 
+                          'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
+                        }`}
+                      />
+                      {validationState.name === 'valid' && (
+                        <MdCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
+                      )}
+                      {validationState.name === 'invalid' && (
+                        <MdError className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
+                      )}
+                    </div>
+                    {errors.name && (
+                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                        <MdError /> {errors.name}
+                      </div>
                     )}
-                  </Button>
+                  </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ACCOUNT INFO */ }
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-xl">
+                <MdKey />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--primary-color)]">Account Information</h3>
+                <p className="text-sm text-[var(--text-secondary)]">Login credentials and access details</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                      Email Address <span className="text-[var(--danger-color)]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        name="email"
+                        autoComplete="email"
+                        value={user.email}
+                        onChange={handleChange}
+                        placeholder={isEditMode ? user.email : "user@example.com"}
+                        disabled={isEditMode}
+                        className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${
+                          isEditMode ? 'opacity-50 cursor-not-allowed' : ''
+                        } ${
+                          validationState.email === 'valid' && !isEditMode ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
+                          validationState.email === 'invalid' && !isEditMode ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' : 
+                          'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
+                        }`}
+                      />
+                      {!isEditMode && validationState.email === 'valid' && (
+                        <MdCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
+                      )}
+                      {!isEditMode && validationState.email === 'invalid' && (
+                        <MdError className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
+                      )}
+                    </div>
+                    {errors.email && (
+                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                        <MdError /> {errors.email}
+                      </div>
+                    )}
+                    {isEditMode && (
+                      <div className="text-sm text-[var(--text-secondary)] mt-1">Email cannot be changed after registration</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                      Password <span className="text-[var(--danger-color)]">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        autoComplete="new-password"
+                        value={user.password}
+                        onChange={handleChange}
+                        placeholder={isEditMode ? "Password unchanged" : "Minimum 8 characters"}
+                        disabled={isEditMode}
+                        className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${
+                          isEditMode ? 'opacity-50 cursor-not-allowed' : ''
+                        } ${
+                          validationState.password === 'valid' && !isEditMode ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
+                          validationState.password === 'invalid' && !isEditMode ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' : 
+                          'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
+                        }`}
+                      />
+                      {!isEditMode && (
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <MdVisibilityOff className="text-xl" /> : <MdVisibility className="text-xl" />}
+                        </button>
+                      )}
+                      {!isEditMode && validationState.password === 'valid' && (
+                        <MdCheckCircle className="absolute right-10 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
+                      )}
+                      {!isEditMode && validationState.password === 'invalid' && (
+                        <MdError className="absolute right-10 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
+                      )}
+                    </div>
+                    {errors.password && (
+                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                        <MdError /> {errors.password}
+                      </div>
+                    )}
+                    {!isEditMode && (
+                      <div className="text-sm text-[var(--text-secondary)] mt-1">Must be at least 8 characters long</div>
+                    )}
+                    {isEditMode && (
+                      <div className="text-sm text-[var(--text-secondary)] mt-1">Leave empty to keep current password</div>
+                    )}
+                  </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ROLE & STATUS */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-xl">
+                <MdGroup />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--primary-color)]">Role & Permissions</h3>
+                <p className="text-sm text-[var(--text-secondary)]">User access level and account status</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                      User Role <span className="text-[var(--danger-color)]">*</span>
+                    </label>
+                    <select
+                      name="role"
+                      value={user.role}
+                      onChange={handleChange}
+                      autoComplete="off"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 transition-all"
+                    >
+                      <option value="">Select Role</option>
+                      {currentUserRole === "admin" && (
+                        <>
+                          <option value="companyAdmin">Company Admin</option>
+                          <option value="user">User</option>
+                        </>
+                      )}
+                      {(currentUserRole === "companyAdmin" || memberCanCreate) && (
+                        <option value="member">Member</option>
+                      )}
+                    </select>
+                    {errors.role && (
+                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                        <MdError /> {errors.role}
+                      </div>
+                    )}
+                    <div className="text-sm text-[var(--text-secondary)] mt-1">
+                      {user.role === 'companyAdmin' && 'Full administrative access to company resources'}
+                      {user.role === 'member' && 'Limited access based on department permissions'}
+                      {user.role === 'user' && 'Standard user with basic permissions'}
+                      {!user.role && 'Select the appropriate role for this user'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                      Account Status <span className="text-[var(--danger-color)]">*</span>
+                    </label>
+                    <div className="space-y-3">
+                      <div
+                        className={`p-4 rounded-md border cursor-pointer transition-all ${
+                          user.isActive === 'true' 
+                            ? 'border-[var(--success-color)] bg-[var(--success-light)]' 
+                            : 'border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--success-color)]'
+                        }`}
+                        onClick={() => {
+                          setUser(prev => ({ ...prev, isActive: 'true' }));
+                          setFormChanged(true);
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`text-2xl ${
+                            user.isActive === 'true' ? 'text-[var(--success-color)]' : 'text-[var(--text-secondary)]'
+                          }`}>
+                            <MdToggleOn />
+                          </div>
+                          <div>
+                            <div className={`font-medium ${
+                              user.isActive === 'true' ? 'text-[var(--success-color)]' : 'text-[var(--light-text)] dark:text-[var(--dark-text)]'
+                            }`}>Active</div>
+                            <div className="text-sm text-[var(--text-secondary)]">User can login and access system</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`p-4 rounded-md border cursor-pointer transition-all ${
+                          user.isActive === 'false' 
+                            ? 'border-[var(--danger-color)] bg-[var(--danger-light)]' 
+                            : 'border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--danger-color)]'
+                        }`}
+                        onClick={() => {
+                          setUser(prev => ({ ...prev, isActive: 'false' }));
+                          setFormChanged(true);
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`text-2xl ${
+                            user.isActive === 'false' ? 'text-[var(--danger-color)]' : 'text-[var(--text-secondary)]'
+                          }`}>
+                            <MdToggleOff />
+                          </div>
+                          <div>
+                            <div className={`font-medium ${
+                              user.isActive === 'false' ? 'text-[var(--danger-color)]' : 'text-[var(--light-text)] dark:text-[var(--dark-text)]'
+                            }`}>Inactive</div>
+                            <div className="text-sm text-[var(--text-secondary)]">User login is disabled</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {errors.isActive && (
+                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                        <MdError /> {errors.isActive}
+                      </div>
+                    )}
+                  </div>
+              </div>
+            </div>
+          </div>
+
+          {/* COMPANY INFO - For Admin creating CompanyAdmin */ }
+          {currentUserRole === "admin" && user.role === "companyAdmin" && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-xl">
+                  <MdBusiness />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--primary-color)]">Company Information</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">Organization details for company admin</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                      Company Name <span className="text-[var(--danger-color)]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="tenantName"
+                      value={user.tenantName}
+                      onChange={handleChange}
+                      placeholder="e.g. Acme Corp"
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 transition-all"
+                    />
+                    {errors.tenantName && (
+                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                        <MdError /> {errors.tenantName}
+                      </div>
+                    )}
+                    <div className="text-sm text-[var(--text-secondary)] mt-1">This will create a new company organization</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </Form>
-        </div>
+          )}
+
+          {/* DEPARTMENT ASSIGNMENT - Always visible for members */}
+          {(currentUserRole === "companyAdmin" || memberCanCreate) && user.role === "member" && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-xl">
+                  <MdBusiness />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--primary-color)]">Department Assignment</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">Assign user to a department</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                      Department <span className="text-[var(--danger-color)]">*</span>
+                    </label>
+                    <select
+                      name="departmentId"
+                      value={user.departmentId}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 transition-all"
+                    >
+                      <option value="">Select Department</option>
+                      {user.departments.map(dept => (
+                        <option key={dept._id} value={dept._id}>{dept.name}</option>
+                      ))}
+                    </select>
+                    {errors.departmentId && (
+                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                        <MdError /> {errors.departmentId}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FORM ACTIONS */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div>
+              {formChanged && (
+                <div className="bg-[var(--warning-light)] border border-[var(--warning-color)] text-[var(--warning-color)] px-4 py-2 rounded-md flex items-center gap-2">
+                  <MdInfo />
+                  <span className="text-sm font-medium">You have unsaved changes</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/app/users", { replace: true })}
+                disabled={isSubmitting}
+                className="px-6 py-2.5 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSubmitting || (!formChanged && isEditMode)}
+                className="px-6 py-2.5 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    {isEditMode ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  <>
+                    <MdSave />
+                    {isEditMode ? "Update User" : "Create User"}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );

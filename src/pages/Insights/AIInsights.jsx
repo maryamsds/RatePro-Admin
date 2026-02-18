@@ -1,12 +1,7 @@
-// src\pages\Insights\AIInsights.jsx
+// src/pages/Insights/AIInsights.jsx
 "use client"
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container, Row, Col, Card, Button, Badge, Tab, Tabs,
-  Form, Modal, Alert, Spinner, ProgressBar, Table,
-  ListGroup, InputGroup, OverlayTrigger, Tooltip
-} from 'react-bootstrap';
 import {
   MdInsights, MdAutoAwesome, MdTrendingUp, MdTrendingDown,
   MdSentimentSatisfied, MdSentimentDissatisfied, MdSentimentNeutral,
@@ -53,14 +48,14 @@ ChartJS.register(
 
 const AIInsights = () => {
   const navigate = useNavigate();
-  
+
   // State Management
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('sentiment');
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [generatingInsights, setGeneratingInsights] = useState(false);
-  
+
   // Fetch Insights
   useEffect(() => {
     fetchInsights();
@@ -73,7 +68,7 @@ const AIInsights = () => {
       setInsights(response.data || mockInsights);
     } catch (error) {
       console.error('Error fetching AI insights:', error);
-      setInsights(mockInsights); // Fallback to mock data
+      setInsights(mockInsights);
     } finally {
       setLoading(false);
     }
@@ -232,14 +227,14 @@ const AIInsights = () => {
           insights?.sentiment.overview.negative || 0
         ],
         backgroundColor: [
-          'rgba(var(--bs-success-rgb), 0.8)',
-          'rgba(var(--bs-warning-rgb), 0.8)', 
-          'rgba(var(--bs-danger-rgb), 0.8)'
+          'rgba(34, 197, 94, 0.8)',
+          'rgba(234, 179, 8, 0.8)',
+          'rgba(239, 68, 68, 0.8)'
         ],
         borderColor: [
-          'rgb(var(--bs-success-rgb))',
-          'rgb(var(--bs-warning-rgb))',
-          'rgb(var(--bs-danger-rgb))'
+          '#22c55e',
+          '#eab308',
+          '#ef4444'
         ],
         borderWidth: 2
       }]
@@ -261,24 +256,24 @@ const AIInsights = () => {
         {
           label: 'Positive',
           data: insights?.sentiment.trends.positive || [],
-          borderColor: 'rgb(var(--bs-success-rgb))',
-          backgroundColor: 'rgba(var(--bs-success-rgb), 0.1)',
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
           tension: 0.4,
           fill: true
         },
         {
           label: 'Neutral',
           data: insights?.sentiment.trends.neutral || [],
-          borderColor: 'rgb(var(--bs-warning-rgb))',
-          backgroundColor: 'rgba(var(--bs-warning-rgb), 0.1)',
+          borderColor: '#eab308',
+          backgroundColor: 'rgba(234, 179, 8, 0.1)',
           tension: 0.4,
           fill: true
         },
         {
           label: 'Negative',
           data: insights?.sentiment.trends.negative || [],
-          borderColor: 'rgb(var(--bs-danger-rgb))',
-          backgroundColor: 'rgba(var(--bs-danger-rgb), 0.1)',
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
           tension: 0.4,
           fill: true
         }
@@ -303,466 +298,407 @@ const AIInsights = () => {
   // Helper functions
   const getPredictionIcon = (type) => {
     switch (type) {
-      case 'warning': return <MdWarning className="text-warning" />;
-      case 'opportunity': return <MdLightbulb className="text-success" />;
-      case 'alert': return <MdFlag className="text-danger" />;
+      case 'warning': return <MdWarning className="text-[var(--warning-color)]" />;
+      case 'opportunity': return <MdLightbulb className="text-[var(--success-color)]" />;
+      case 'alert': return <MdFlag className="text-[var(--danger-color)]" />;
       default: return <MdInsights />;
     }
   };
 
   const getPriorityBadge = (priority) => {
     const variants = {
-      High: 'danger',
-      Medium: 'warning',
-      Low: 'info'
+      High: 'bg-[var(--danger-color)]',
+      Medium: 'bg-[var(--warning-color)]',
+      Low: 'bg-[var(--info-color)]'
     };
-    return <Badge bg={variants[priority]}>{priority}</Badge>;
+    return <span className={`px-2 py-0.5 text-white rounded-full text-xs font-medium ${variants[priority] || 'bg-[var(--text-secondary)]'}`}>{priority}</span>;
   };
 
   const getTrendIcon = (trend) => {
     switch (trend) {
-      case 'increasing': return <FaArrowUp className="text-danger" />;
-      case 'decreasing': return <FaArrowDown className="text-success" />;
-      case 'stable': return <FaEquals className="text-muted" />;
+      case 'increasing': return <FaArrowUp className="text-[var(--danger-color)]" />;
+      case 'decreasing': return <FaArrowDown className="text-[var(--success-color)]" />;
+      case 'stable': return <FaEquals className="text-[var(--text-secondary)]" />;
       default: return null;
     }
   };
 
+  const tabs = [
+    { key: 'sentiment', icon: <MdSentimentSatisfied className="mr-2" />, label: 'Sentiment Analysis' },
+    { key: 'categories', icon: <MdCategory className="mr-2" />, label: 'Category Analysis' },
+    { key: 'actionable', icon: <MdLightbulb className="mr-2" />, label: 'Actionable Insights' },
+    { key: 'recommendations', icon: <FaBrain className="mr-2" />, label: 'AI Recommendations' }
+  ];
+
   if (loading) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" size="lg" />
-          <p className="mt-3 text-muted">Analyzing feedback with AI...</p>
-        </div>
-      </Container>
+      <div className="w-full py-12 text-center">
+        <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="mt-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Analyzing feedback with AI...</p>
+      </div>
     );
   }
 
   return (
-    <Container fluid className="py-4 ai-insights">
+    <div className="w-full px-4 py-4">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="insights-header shadow-sm">
-            <Card.Body className="p-4">
-              <div className="d-flex justify-content-between align-items-start">
-                <div className="d-flex align-items-center">
-                  <div className="ai-icon-wrapper me-3">
-                    <FaRobot className="text-primary" size={32} />
-                  </div>
-                  <div>
-                    <h1 className="h3 mb-1 fw-bold">AI Insights</h1>
-                    <p className="text-muted mb-0">
-                      Intelligent analysis and predictions from customer feedback
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="d-flex gap-2">
-                  <Form.Select
-                    size="sm"
-                    value={selectedTimeframe}
-                    onChange={(e) => setSelectedTimeframe(e.target.value)}
-                  >
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="quarter">This Quarter</option>
-                  </Form.Select>
-                  
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={fetchInsights}
-                  >
-                    <MdRefresh className="me-1" />
-                    Refresh
-                  </Button>
-                  
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={generateNewInsights}
-                    disabled={generatingInsights}
-                  >
-                    {generatingInsights ? (
-                      <Spinner animation="border" size="sm" className="me-1" />
-                    ) : (
-                      <MdAutoAwesome className="me-1" />
-                    )}
-                    {generatingInsights ? 'Analyzing...' : 'Generate Insights'}
-                  </Button>
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-4">
+        <div className="flex justify-between items-start flex-wrap gap-3">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center mr-3">
+              <FaRobot className="text-2xl text-blue-500" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">AI Insights</h1>
+              <p className="text-sm text-[var(--text-secondary)] mb-0">
+                Intelligent analysis and predictions from customer feedback
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 items-center">
+            <select
+              className="px-3 py-2 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] outline-none focus:border-[var(--primary-color)] transition-colors"
+              value={selectedTimeframe}
+              onChange={(e) => setSelectedTimeframe(e.target.value)}
+            >
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+            </select>
+
+            <button onClick={fetchInsights} className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] text-sm flex items-center gap-1">
+              <MdRefresh /> Refresh
+            </button>
+
+            <button
+              onClick={generateNewInsights}
+              disabled={generatingInsights}
+              className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90 text-sm disabled:opacity-50 flex items-center gap-1"
+            >
+              {generatingInsights ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                <MdAutoAwesome />
+              )}
+              {generatingInsights ? 'Analyzing...' : 'Generate Insights'}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* AI Predictions */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="predictions-card">
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <Card.Title className="mb-0">
-                <MdPsychology className="me-2 text-primary" />
-                AI Predictions & Alerts
-              </Card.Title>
-              <Badge bg="primary" className="rounded-pill">
-                <FaBrain className="me-1" />
-                AI Powered
-              </Badge>
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                {insights?.predictions.map(prediction => (
-                  <Col lg={4} key={prediction.id} className="mb-3">
-                    <Card className={`prediction-card h-100 border-start border-4 ${
-                      prediction.type === 'alert' ? 'border-danger' : 
-                      prediction.type === 'warning' ? 'border-warning' : 'border-success'
-                    }`}>
-                      <Card.Body className="p-3">
-                        <div className="d-flex align-items-start mb-2">
-                          {getPredictionIcon(prediction.type)}
-                          <div className="ms-2 flex-grow-1">
-                            <h6 className="mb-1">{prediction.title}</h6>
-                            <p className="small text-muted mb-2">{prediction.description}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="mb-2">
-                          <div className="d-flex justify-content-between small mb-1">
-                            <span>Confidence:</span>
-                            <span className="fw-bold">{prediction.confidence}%</span>
-                          </div>
-                          <ProgressBar 
-                            now={prediction.confidence} 
-                            variant={prediction.confidence > 80 ? 'success' : prediction.confidence > 60 ? 'warning' : 'danger'}
-                            size="sm"
-                          />
-                        </div>
-                        
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <Badge bg={prediction.impact === 'Critical' ? 'danger' : prediction.impact === 'High' ? 'warning' : 'info'} className="me-1">
-                              {prediction.impact}
-                            </Badge>
-                            <small className="text-muted">{prediction.timeline}</small>
-                          </div>
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={() => navigate('/actions', { 
-                              state: { 
-                                createAction: true, 
-                                prediction: prediction 
-                              } 
-                            })}
-                          >
-                            <MdAssignment className="me-1" />
-                            Create Action
-                          </Button>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-4">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <h5 className="font-semibold m-0 flex items-center gap-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+            <MdPsychology className="text-blue-500 text-xl" />
+            AI Predictions & Alerts
+          </h5>
+          <span className="px-3 py-1 bg-blue-500 text-white rounded-full text-xs font-medium flex items-center gap-1">
+            <FaBrain /> AI Powered
+          </span>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {insights?.predictions.map(prediction => (
+              <div key={prediction.id} className={`bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] border-l-4 h-full ${prediction.type === 'alert' ? 'border-l-[var(--danger-color)]' :
+                  prediction.type === 'warning' ? 'border-l-[var(--warning-color)]' : 'border-l-[var(--success-color)]'
+                }`}>
+                <div className="p-4">
+                  <div className="flex items-start mb-2">
+                    {getPredictionIcon(prediction.type)}
+                    <div className="ml-2 flex-grow">
+                      <h6 className="font-semibold text-sm mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">{prediction.title}</h6>
+                      <p className="text-xs text-[var(--text-secondary)] mb-2">{prediction.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                      <span>Confidence:</span>
+                      <span className="font-bold">{prediction.confidence}%</span>
+                    </div>
+                    <div className="w-full bg-[var(--light-border)] dark:bg-[var(--dark-border)] rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${prediction.confidence > 80 ? 'bg-[var(--success-color)]' : prediction.confidence > 60 ? 'bg-[var(--warning-color)]' : 'bg-[var(--danger-color)]'
+                          }`}
+                        style={{ width: `${prediction.confidence}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 text-white rounded-full text-xs font-medium ${prediction.impact === 'Critical' ? 'bg-[var(--danger-color)]' : prediction.impact === 'High' ? 'bg-[var(--warning-color)]' : 'bg-[var(--info-color)]'
+                        }`}>
+                        {prediction.impact}
+                      </span>
+                      <small className="text-[var(--text-secondary)]">{prediction.timeline}</small>
+                    </div>
+                    <button
+                      onClick={() => navigate('/actions', {
+                        state: { createAction: true, prediction }
+                      })}
+                      className="px-2 py-1 border border-[var(--primary-color)] text-[var(--primary-color)] rounded text-xs hover:bg-[var(--primary-color)]/10 dark:hover:bg-[var(--primary-color)]/20 transition-colors"
+                    >
+                      <MdAssignment className="inline mr-1" />
+                      Create Action
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Main Insights Tabs */}
-      <Row>
-        <Col>
-          <Card>
-            <Card.Body className="p-0">
-              <Tabs
-                activeKey={activeTab}
-                onSelect={setActiveTab}
-                className="insights-tabs"
-              >
-                {/* Sentiment Analysis Tab */}
-                <Tab eventKey="sentiment" title={
-                  <span><MdSentimentSatisfied className="me-2" />Sentiment Analysis</span>
-                }>
-                  <div className="p-4">
-                    <Row>
-                      <Col lg={6} className="mb-4">
-                        <Card className="h-100">
-                          <Card.Header>
-                            <Card.Title className="mb-0">Overall Sentiment</Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <Doughnut {...sentimentOverviewChart} />
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      <Col lg={6} className="mb-4">
-                        <Card className="h-100">
-                          <Card.Header>
-                            <Card.Title className="mb-0">Sentiment Trends</Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <Line {...sentimentTrendsChart} />
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-                    
-                    <Row>
-                      <Col>
-                        <Card>
-                          <Card.Header>
-                            <Card.Title className="mb-0">Sentiment by Category</Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <Table responsive>
-                              <thead>
-                                <tr>
-                                  <th>Category</th>
-                                  <th>Positive</th>
-                                  <th>Neutral</th>
-                                  <th>Negative</th>
-                                  <th>Overall Score</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {insights?.sentiment.categories.map((cat, index) => {
-                                  const score = (cat.positive * 1 + cat.neutral * 0.5 + cat.negative * 0) / 100;
-                                  return (
-                                    <tr key={index}>
-                                      <td className="fw-semibold">{cat.category}</td>
-                                      <td>
-                                        <span className="text-success">{cat.positive}%</span>
-                                      </td>
-                                      <td>
-                                        <span className="text-warning">{cat.neutral}%</span>
-                                      </td>
-                                      <td>
-                                        <span className="text-danger">{cat.negative}%</span>
-                                      </td>
-                                      <td>
-                                        <Badge bg={score > 0.7 ? 'success' : score > 0.5 ? 'warning' : 'danger'}>
-                                          {(score * 5).toFixed(1)}/5
-                                        </Badge>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </Table>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-                  </div>
-                </Tab>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-[var(--light-border)] dark:border-[var(--dark-border)] overflow-x-auto">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${activeTab === tab.key
+                  ? 'border-b-[var(--primary-color)] text-[var(--primary-color)]'
+                  : 'border-b-transparent text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)]'
+                }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-                {/* Category Analysis Tab */}
-                <Tab eventKey="categories" title={
-                  <span><MdCategory className="me-2" />Category Analysis</span>
-                }>
-                  <div className="p-4">
-                    <Row>
-                      <Col lg={6} className="mb-4">
-                        <Card>
-                          <Card.Header className="d-flex justify-content-between align-items-center">
-                            <Card.Title className="mb-0 text-danger">
-                              <MdFlag className="me-2" />
-                              Top Issues
-                            </Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <ListGroup variant="flush">
-                              {insights?.categoryAnalysis.topIssues.map((issue, index) => (
-                                <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center px-0">
-                                  <div>
-                                    <div className="fw-semibold">{issue.issue}</div>
-                                    <small className="text-muted">{issue.mentions} mentions</small>
-                                  </div>
-                                  <div className="d-flex align-items-center">
-                                    <Badge bg={issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warning' : 'info'} className="me-2">
-                                      {issue.severity}
-                                    </Badge>
-                                    {getTrendIcon(issue.trend)}
-                                  </div>
-                                </ListGroup.Item>
-                              ))}
-                            </ListGroup>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      <Col lg={6} className="mb-4">
-                        <Card>
-                          <Card.Header>
-                            <Card.Title className="mb-0 text-success">
-                              <MdCheckCircle className="me-2" />
-                              Top Praises
-                            </Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <ListGroup variant="flush">
-                              {insights?.categoryAnalysis.topPraises.map((praise, index) => (
-                                <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center px-0">
-                                  <div>
-                                    <div className="fw-semibold">{praise.praise}</div>
-                                    <small className="text-muted">{praise.mentions} mentions</small>
-                                  </div>
-                                  <div>
-                                    {getTrendIcon(praise.trend)}
-                                  </div>
-                                </ListGroup.Item>
-                              ))}
-                            </ListGroup>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
+        {/* Tab Content */}
+        <div className="p-6">
+          {/* Sentiment Analysis Tab */}
+          {activeTab === 'sentiment' && (
+            <div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <h5 className="font-semibold m-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Overall Sentiment</h5>
                   </div>
-                </Tab>
+                  <div className="p-4">
+                    <Doughnut {...sentimentOverviewChart} />
+                  </div>
+                </div>
 
-                {/* Actionable Insights Tab */}
-                <Tab eventKey="actionable" title={
-                  <span><MdLightbulb className="me-2" />Actionable Insights</span>
-                }>
-                  <div className="p-4">
-                    <Row>
-                      {insights?.actionableInsights.map(insight => (
-                        <Col lg={4} key={insight.id} className="mb-4">
-                          <Card className="insight-card h-100">
-                            <Card.Body>
-                              <div className="d-flex align-items-start mb-2">
-                                <FaLightbulb className="text-warning me-2 mt-1" />
-                                <div className="flex-grow-1">
-                                  <h6 className="mb-1">{insight.title}</h6>
-                                  <p className="small text-muted mb-2">{insight.description}</p>
-                                </div>
-                              </div>
-                              
-                              <div className="mb-3">
-                                <div className="d-flex justify-content-between small mb-1">
-                                  <span>Priority:</span>
-                                  {getPriorityBadge(insight.priority)}
-                                </div>
-                                <div className="d-flex justify-content-between small mb-1">
-                                  <span>Impact:</span>
-                                  <span className="text-success fw-bold">{insight.estimatedImpact}</span>
-                                </div>
-                                <div className="d-flex justify-content-between small mb-1">
-                                  <span>Department:</span>
-                                  <Badge bg="light" text="dark">{insight.department}</Badge>
-                                </div>
-                              </div>
-                              
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                className="w-100"
-                                onClick={() => navigate('/actions', { 
-                                  state: { 
-                                    createAction: true, 
-                                    insight: insight 
-                                  } 
-                                })}
-                              >
-                                <MdAssignment className="me-1" />
-                                Create Action Item
-                              </Button>
-                            </Card.Body>
-                          </Card>
-                        </Col>
-                      ))}
-                    </Row>
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <h5 className="font-semibold m-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Sentiment Trends</h5>
                   </div>
-                </Tab>
+                  <div className="p-4">
+                    <Line {...sentimentTrendsChart} />
+                  </div>
+                </div>
+              </div>
 
-                {/* AI Recommendations Tab */}
-                <Tab eventKey="recommendations" title={
-                  <span><FaBrain className="me-2" />AI Recommendations</span>
-                }>
-                  <div className="p-4">
-                    <Row>
-                      <Col lg={4} className="mb-4">
-                        <Card className="h-100 border-danger">
-                          <Card.Header className="bg-danger bg-opacity-10">
-                            <Card.Title className="mb-0 text-danger">
-                              <MdSchedule className="me-2" />
-                              Immediate Actions
-                            </Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <ListGroup variant="flush">
-                              {insights?.aiRecommendations.immediate.map((rec, index) => (
-                                <ListGroup.Item key={index} className="px-0 py-2 border-0">
-                                  <div className="d-flex align-items-start">
-                                    <MdFlag className="text-danger me-2 mt-1" size={14} />
-                                    <span className="small">{rec}</span>
-                                  </div>
-                                </ListGroup.Item>
-                              ))}
-                            </ListGroup>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      <Col lg={4} className="mb-4">
-                        <Card className="h-100 border-warning">
-                          <Card.Header className="bg-warning bg-opacity-10">
-                            <Card.Title className="mb-0 text-warning">
-                              <MdTimeline className="me-2" />
-                              Short Term (1-4 weeks)
-                            </Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <ListGroup variant="flush">
-                              {insights?.aiRecommendations.shortTerm.map((rec, index) => (
-                                <ListGroup.Item key={index} className="px-0 py-2 border-0">
-                                  <div className="d-flex align-items-start">
-                                    <MdWarning className="text-warning me-2 mt-1" size={14} />
-                                    <span className="small">{rec}</span>
-                                  </div>
-                                </ListGroup.Item>
-                              ))}
-                            </ListGroup>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                      
-                      <Col lg={4} className="mb-4">
-                        <Card className="h-100 border-primary">
-                          <Card.Header className="bg-primary bg-opacity-10">
-                            <Card.Title className="mb-0 text-primary">
-                              <MdTrendingUp className="me-2" />
-                              Long Term (1-6 months)
-                            </Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <ListGroup variant="flush">
-                              {insights?.aiRecommendations.longTerm.map((rec, index) => (
-                                <ListGroup.Item key={index} className="px-0 py-2 border-0">
-                                  <div className="d-flex align-items-start">
-                                    <MdLightbulb className="text-primary me-2 mt-1" size={14} />
-                                    <span className="small">{rec}</span>
-                                  </div>
-                                </ListGroup.Item>
-                              ))}
-                            </ListGroup>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <h5 className="font-semibold m-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Sentiment by Category</h5>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse">
+                    <thead className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <tr>
+                        <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Category</th>
+                        <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Positive</th>
+                        <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Neutral</th>
+                        <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Negative</th>
+                        <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Overall Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+                      {insights?.sentiment.categories.map((cat, index) => {
+                        const score = (cat.positive * 1 + cat.neutral * 0.5 + cat.negative * 0) / 100;
+                        return (
+                          <tr key={index} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                            <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">{cat.category}</td>
+                            <td className="p-3">
+                              <span className="text-[var(--success-color)]">{cat.positive}%</span>
+                            </td>
+                            <td className="p-3">
+                              <span className="text-[var(--warning-color)]">{cat.neutral}%</span>
+                            </td>
+                            <td className="p-3">
+                              <span className="text-[var(--danger-color)]">{cat.negative}%</span>
+                            </td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 text-white rounded-full text-xs font-medium ${score > 0.7 ? 'bg-[var(--success-color)]' : score > 0.5 ? 'bg-[var(--warning-color)]' : 'bg-[var(--danger-color)]'
+                                }`}>
+                                {(score * 5).toFixed(1)}/5
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Category Analysis Tab */}
+          {activeTab === 'categories' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <h5 className="font-semibold m-0 text-[var(--danger-color)] flex items-center gap-2">
+                    <MdFlag />
+                    Top Issues
+                  </h5>
+                </div>
+                <div className="p-4">
+                  {insights?.categoryAnalysis.topIssues.map((issue, index) => (
+                    <div key={index} className="flex justify-between items-center py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] last:border-0">
+                      <div>
+                        <div className="font-semibold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{issue.issue}</div>
+                        <small className="text-[var(--text-secondary)]">{issue.mentions} mentions</small>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-white rounded-full text-xs font-medium ${issue.severity === 'high' ? 'bg-[var(--danger-color)]' : issue.severity === 'medium' ? 'bg-[var(--warning-color)]' : 'bg-[var(--info-color)]'
+                          }`}>
+                          {issue.severity}
+                        </span>
+                        {getTrendIcon(issue.trend)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <h5 className="font-semibold m-0 text-[var(--success-color)] flex items-center gap-2">
+                    <MdCheckCircle />
+                    Top Praises
+                  </h5>
+                </div>
+                <div className="p-4">
+                  {insights?.categoryAnalysis.topPraises.map((praise, index) => (
+                    <div key={index} className="flex justify-between items-center py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] last:border-0">
+                      <div>
+                        <div className="font-semibold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{praise.praise}</div>
+                        <small className="text-[var(--text-secondary)]">{praise.mentions} mentions</small>
+                      </div>
+                      <div>
+                        {getTrendIcon(praise.trend)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Actionable Insights Tab */}
+          {activeTab === 'actionable' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {insights?.actionableInsights.map(insight => (
+                <div key={insight.id} className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] h-full flex flex-col">
+                  <div className="p-4 flex-grow">
+                    <div className="flex items-start mb-2">
+                      <FaLightbulb className="text-[var(--warning-color)] mr-2 mt-1" />
+                      <div className="flex-grow">
+                        <h6 className="font-semibold text-sm mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">{insight.title}</h6>
+                        <p className="text-xs text-[var(--text-secondary)] mb-2">{insight.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-3 space-y-1">
+                      <div className="flex justify-between text-xs text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                        <span>Priority:</span>
+                        {getPriorityBadge(insight.priority)}
+                      </div>
+                      <div className="flex justify-between text-xs text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                        <span>Impact:</span>
+                        <span className="text-[var(--success-color)] font-bold">{insight.estimatedImpact}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                        <span>Department:</span>
+                        <span className="px-2 py-0.5 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] rounded-full text-xs border border-[var(--light-border)] dark:border-[var(--dark-border)]">{insight.department}</span>
+                      </div>
+                    </div>
                   </div>
-                </Tab>
-              </Tabs>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+
+                  <div className="px-4 pb-4">
+                    <button
+                      onClick={() => navigate('/actions', {
+                        state: { createAction: true, insight }
+                      })}
+                      className="w-full px-3 py-2 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-md text-sm hover:bg-[var(--primary-color)]/10 dark:hover:bg-[var(--primary-color)]/20 transition-colors"
+                    >
+                      <MdAssignment className="inline mr-1" />
+                      Create Action Item
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* AI Recommendations Tab */}
+          {activeTab === 'recommendations' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--danger-color)]/30 dark:border-[var(--danger-color)]/50 h-full">
+                <div className="px-4 py-3 bg-[var(--danger-color)]/10 dark:bg-[var(--danger-color)]/20 border-b border-[var(--danger-color)]/30 dark:border-[var(--danger-color)]/50 rounded-t-md">
+                  <h5 className="font-semibold m-0 text-[var(--danger-color)] flex items-center gap-2">
+                    <MdSchedule />
+                    Immediate Actions
+                  </h5>
+                </div>
+                <div className="p-4">
+                  {insights?.aiRecommendations.immediate.map((rec, index) => (
+                    <div key={index} className="flex items-start py-2">
+                      <MdFlag className="text-[var(--danger-color)] mr-2 mt-0.5 flex-shrink-0" size={14} />
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{rec}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--warning-color)]/30 dark:border-[var(--warning-color)]/50 h-full">
+                <div className="px-4 py-3 bg-[var(--warning-color)]/10 dark:bg-[var(--warning-color)]/20 border-b border-[var(--warning-color)]/30 dark:border-[var(--warning-color)]/50 rounded-t-md">
+                  <h5 className="font-semibold m-0 text-[var(--warning-color)] flex items-center gap-2">
+                    <MdTimeline />
+                    Short Term (1-4 weeks)
+                  </h5>
+                </div>
+                <div className="p-4">
+                  {insights?.aiRecommendations.shortTerm.map((rec, index) => (
+                    <div key={index} className="flex items-start py-2">
+                      <MdWarning className="text-[var(--warning-color)] mr-2 mt-0.5 flex-shrink-0" size={14} />
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{rec}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-blue-500/30 dark:border-blue-500/50 h-full">
+                <div className="px-4 py-3 bg-blue-500/10 dark:bg-blue-500/20 border-b border-blue-500/30 dark:border-blue-500/50 rounded-t-md">
+                  <h5 className="font-semibold m-0 text-blue-500 flex items-center gap-2">
+                    <MdTrendingUp />
+                    Long Term (1-6 months)
+                  </h5>
+                </div>
+                <div className="p-4">
+                  {insights?.aiRecommendations.longTerm.map((rec, index) => (
+                    <div key={index} className="flex items-start py-2">
+                      <MdLightbulb className="text-blue-500 mr-2 mt-0.5 flex-shrink-0" size={14} />
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{rec}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

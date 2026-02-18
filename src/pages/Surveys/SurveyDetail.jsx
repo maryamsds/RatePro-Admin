@@ -3,11 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container, Row, Col, Card, Button, Badge, Tab, Tabs,
-  Form, Modal, Alert, Spinner, Toast, ToastContainer,
-  OverlayTrigger, Tooltip, Dropdown, ProgressBar
-} from 'react-bootstrap';
-import {
   MdEdit, MdDelete, MdShare, MdQrCode, MdAnalytics,
   MdSettings, MdVisibility, MdContentCopy, MdDownload,
   MdNotifications, MdPeople, MdTrendingUp, MdFlag,
@@ -174,13 +169,13 @@ const SurveyDetail = () => {
 
   // Get Status Badge
   const getStatusBadge = (status) => {
-    const variants = {
-      active: 'success',
-      completed: 'primary',
-      draft: 'secondary',
-      paused: 'warning'
+    const colorMap = {
+      active: 'bg-[var(--success-color)]',
+      completed: 'bg-[var(--primary-color)]',
+      draft: 'bg-[var(--text-secondary)]',
+      paused: 'bg-[var(--warning-color)]'
     };
-    return <Badge bg={variants[status] || 'secondary'} className="status-badge">{status?.toUpperCase()}</Badge>;
+    return <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white ${colorMap[status] || 'bg-[var(--text-secondary)]'}`}>{status?.toUpperCase()}</span>;
   };
 
   // Get Question Type Icon
@@ -204,734 +199,702 @@ const SurveyDetail = () => {
 
   if (loading) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center">
-          <Spinner animation="border" variant="primary" size="lg" />
-          <p className="mt-3 text-muted">Loading survey details...</p>
+      <div className="w-full py-4 px-4">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div>
+            <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="mt-3 text-[var(--text-secondary)]">Loading survey details...</p>
+          </div>
         </div>
-      </Container>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container fluid className="py-4">
-        <Alert variant="danger" className="text-center">
-          <MdFlag className="me-2" size={24} />
-          {error}
-          <div className="mt-3">
-            <Button variant="outline-danger" onClick={() => navigate('/app/surveys')}>
-              Back to Surveys
-            </Button>
+      <div className="w-full py-4 px-4">
+        <div className="bg-[var(--danger-light)] border border-[var(--danger-color)] rounded-md p-6">
+          <div className="text-center">
+            <MdFlag className="inline mr-2 text-[var(--danger-color)]" size={24} />
+            <span className="text-[var(--danger-color)]">{error}</span>
+            <div className="mt-3">
+              <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--danger-color)] text-[var(--danger-color)] hover:bg-[var(--danger-color)] hover:text-white" onClick={() => navigate('/app/surveys')}>
+                Back to Surveys
+              </button>
+            </div>
           </div>
-        </Alert>
-      </Container>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container fluid className="py-4">
+    <div className="w-full py-4 px-4">
       {/* Header Section */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="survey-detail-header shadow-sm">
-            <Card.Body className="p-4">
-              <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
-                <div className="flex-grow-1 w-50">
-                  <div className="d-flex align-items-center mb-2">
-                    <Button
-                      variant="link"
-                      className="p-0 me-3 text-primary"
-                      onClick={() => navigate('/app/surveys')}
-                    >
-                      <i className="fas fa-arrow-left me-2"></i>
-                      Back to Surveys
-                    </Button>
-                  </div>
+      <div className="mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex flex-col lg:flex-row justify-between items-start gap-3">
+            <div className="flex-1">
+              <div className="flex items-center mb-2">
+                <button
+                  className="text-[var(--primary-color)] hover:underline bg-transparent border-none cursor-pointer"
+                  onClick={() => navigate('/app/surveys')}
+                >
+                  <i className="fas fa-arrow-left mr-2"></i>
+                  Back to Surveys
+                </button>
+              </div>
 
-                  <div className="d-flex align-items-center mb-2">
-                    {survey?.logo && (
-                      <img
-                        src={survey.logo.url}
-                        alt="Survey Logo"
-                        className="survey-logo me-3"
-                        style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '8px' }}
-                      />
-                    )}
-                    <div>
-                      <h1 className="h3 mb-1 fw-bold">{survey?.title}</h1>
-                      <p className="text-muted mb-0 w-70">{survey?.description}</p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex flex-wrap align-items-center gap-3 mt-3">
-                    {getStatusBadge(survey?.status)}
-                    <Badge bg="light" text="dark" className="d-flex align-items-center">
-                      <MdLanguage className="me-1" />
-                      {survey?.language === 'both' ? 'Bilingual' : survey?.language?.toUpperCase()}
-                    </Badge>
-                    <Badge bg="light" text="dark" className="d-flex align-items-center">
-                      <MdPeople className="me-1" />
-                      {survey?.questions?.length || 0} Questions
-                    </Badge>
-                    <Badge bg="light" text="dark" className="d-flex align-items-center">
-                      <FaUsers className="me-1" />
-                      {stats?.totalResponses} Responses
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="d-flex flex-wrap gap-2">
-                  {/* Edit button - only shown for draft surveys */}
-                  {survey.status === 'draft' && (
-                    <OverlayTrigger overlay={<Tooltip>Edit Survey</Tooltip>}>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => navigate(`/app/surveys/builder/edit/${id}`)}
-                      >
-                        <MdEdit />
-                      </Button>
-                    </OverlayTrigger>
-                  )}
-
-                  <OverlayTrigger overlay={<Tooltip>Share Survey</Tooltip>}>
-                    {survey.status !== "inactive" && survey.status !== "draft" ? (
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => navigate(`/app/surveys/${id}/distribution`)}
-                      >
-                        <MdShare />
-                      </Button>
-                    ) : (
-                      <span />
-                    )}
-                  </OverlayTrigger>
-
+              <div className="flex items-center mb-2">
+                {survey?.logo && (
+                  <img
+                    src={survey.logo.url}
+                    alt="Survey Logo"
+                    className="w-[50px] h-[50px] object-cover rounded-md mr-3"
+                  />
+                )}
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">{survey?.title}</h1>
+                  <p className="text-[var(--text-secondary)] mb-0 max-w-[70%]">{survey?.description}</p>
                 </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+
+              <div className="flex flex-wrap items-center gap-3 mt-3">
+                {getStatusBadge(survey?.status)}
+                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                  <MdLanguage className="mr-1" />
+                  {survey?.language === 'both' ? 'Bilingual' : survey?.language?.toUpperCase()}
+                </span>
+                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                  <MdPeople className="mr-1" />
+                  {survey?.questions?.length || 0} Questions
+                </span>
+                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                  <FaUsers className="mr-1" />
+                  {stats?.totalResponses} Responses
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {/* Edit button - only shown for draft surveys */}
+              {survey.status === 'draft' && (
+                <button
+                  title="Edit Survey"
+                  className="p-2 rounded-md transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                  onClick={() => navigate(`/app/surveys/builder/edit/${id}`)}
+                >
+                  <MdEdit />
+                </button>
+              )}
+
+              {survey.status !== "inactive" && survey.status !== "draft" && (
+                <button
+                  title="Share Survey"
+                  className="p-2 rounded-md transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                  onClick={() => navigate(`/app/surveys/${id}/distribution`)}
+                >
+                  <MdShare />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col lg={3} md={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3">
-              <div className="d-flex align-items-center">
-                <div className="stats-icon bg-info bg-opacity-10 text-primary rounded-circle p-3 me-3">
-                  <FaEye size={24} />
-                </div>
-                <div>
-                  {/* Read from survey.totalResponses first, then stats, fallback to — */}
-                  <h5 className="mb-0">
-                    {survey?.totalResponses ?? stats?.totalResponses ?? '—'}
-                  </h5>
-                  <small className="text-muted">Total Responses</small>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mr-3">
+              <FaEye size={24} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {survey?.totalResponses ?? stats?.totalResponses ?? '—'}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+              <div className="text-sm text-[var(--text-secondary)]">Total Responses</div>
+            </div>
+          </div>
+        </div>
 
-        <Col lg={3} md={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3">
-              <div className="d-flex align-items-center">
-                <div className="stats-icon bg-success bg-opacity-10 text-success rounded-circle p-3 me-3">
-                  <FaStar size={24} />
-                </div>
-                <div>
-                  {/* Read from survey.averageRating (root level), then stats, fallback to — */}
-                  <h5 className="mb-0">
-                    {survey?.averageRating != null && survey?.averageRating > 0
-                      ? survey.averageRating.toFixed(1)
-                      : (stats?.avgRating != null && stats?.avgRating > 0
-                        ? stats.avgRating.toFixed(1)
-                        : '—')}
-                  </h5>
-                  <small className="text-muted">Average Rating</small>
-                </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mr-3">
+              <FaStar size={24} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {survey?.averageRating != null && survey?.averageRating > 0
+                  ? survey.averageRating.toFixed(1)
+                  : (stats?.avgRating != null && stats?.avgRating > 0
+                    ? stats.avgRating.toFixed(1)
+                    : '—')}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+              <div className="text-sm text-[var(--text-secondary)]">Average Rating</div>
+            </div>
+          </div>
+        </div>
 
-        <Col lg={3} md={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3">
-              <div className="d-flex align-items-center">
-                <div className="stats-icon bg-info bg-opacity-10 text-info rounded-circle p-3 me-3">
-                  <MdTrendingUp size={24} />
-                </div>
-                <div>
-                  {/* Average Score - read from survey.averageScore (root level) */}
-                  <h5 className="mb-0">
-                    {survey?.averageScore != null && survey?.averageScore > 0
-                      ? survey.averageScore.toFixed(1)
-                      : (stats?.completionRate != null && stats?.completionRate > 0
-                        ? `${stats.completionRate}%`
-                        : '—')}
-                  </h5>
-                  <small className="text-muted">Average Score</small>
-                </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 mr-3">
+              <MdTrendingUp size={24} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {survey?.averageScore != null && survey?.averageScore > 0
+                  ? survey.averageScore.toFixed(1)
+                  : (stats?.completionRate != null && stats?.completionRate > 0
+                    ? `${stats.completionRate}%`
+                    : '—')}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+              <div className="text-sm text-[var(--text-secondary)]">Average Score</div>
+            </div>
+          </div>
+        </div>
 
-        <Col lg={3} md={6} className="mb-3">
-          <Card className="stats-card h-100">
-            <Card.Body className="p-3">
-              <div className="d-flex align-items-center">
-                <div className="stats-icon bg-warning bg-opacity-10 text-warning rounded-circle p-3 me-3">
-                  <FaChartLine size={24} />
-                </div>
-                <div>
-                  {/* NPS score - from stats API only, fallback to — */}
-                  <h5 className="mb-0">
-                    {stats?.npsScore != null && stats?.npsScore !== 0
-                      ? stats.npsScore
-                      : '—'}
-                  </h5>
-                  <small className="text-muted">NPS Score</small>
-                </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mr-3">
+              <FaChartLine size={24} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {stats?.npsScore != null && stats?.npsScore !== 0
+                  ? stats.npsScore
+                  : '—'}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+              <div className="text-sm text-[var(--text-secondary)]">NPS Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content Tabs */}
-      <Row>
-        <Col>
-          <Card className="survey-detail-content">
-            <Card.Body className="p-0">
-              <Tabs
-                activeKey={activeTab}
-                onSelect={setActiveTab}
-                className="survey-tabs"
+      <div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          {/* Tab Navigation */}
+          <div className="flex border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            {[
+              { key: 'overview', icon: <MdVisibility className="mr-2" />, label: 'Overview' },
+              { key: 'settings', icon: <MdSettings className="mr-2" />, label: 'Settings' },
+              { key: 'analytics', icon: <MdAnalytics className="mr-2" />, label: 'Analytics' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                className={`flex items-center px-4 py-3 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-b-2 border-[var(--primary-color)] text-[var(--primary-color)]'
+                    : 'border-b-2 border-transparent text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)]'
+                }`}
+                onClick={() => setActiveTab(tab.key)}
               >
-                {/* Overview Tab */}
-                <Tab eventKey="overview" title={
-                  <span><MdVisibility className="me-2" />Overview</span>
-                }>
-                  <div className="p-4">
-                    <Row>
-                      <Col lg={8}>
-                        <Card className="mb-4">
-                          <Card.Header>
-                            <Card.Title className="mb-0">Survey Questions</Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            {survey?.questions && survey.questions.length > 0 ? (
-                              <div className="questions-list">
-                                {survey?.questions?.map((question, index) => (
-                                  <div key={question._id || index} className="question-item mb-4 p-3 border rounded">
-                                    <div className="d-flex align-items-start">
-                                      <span className="question-number me-3">{index + 1}</span>
-                                      <div className="flex-grow-1">
-                                        <div className="d-flex align-items-center mb-2">
-                                          <i className={`${getQuestionIcon(question.type)} me-2 text-primary`}></i>
-                                          <h6 className="mb-0">{question.questionText || question.title || question.label || "Untitled Question"}</h6>
-                                          {question.required && (
-                                            <Badge bg="danger" className="ms-2 rounded-pill">Required</Badge>
-                                          )}
-                                        </div>
-                                        {question.description && (
-                                          <p className="text-muted small mb-2">{question.description}</p>
-                                        )}
-                                        {question.options && question.options.length > 0 && (
-                                          <div className="options-preview">
-                                            <small className="text-muted">Options:</small>
-                                            <ul className="list-unstyled ms-3 mb-0">
-                                              {question.options.map((option, optIndex) => (
-                                                <li key={optIndex} className="small text-muted">
-                                                  • {option}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-center py-4">
-                                <i className="fas fa-question-circle fa-3x text-muted mb-3"></i>
-                                <p className="text-muted">No questions added yet</p>
-                              </div>
-                            )}
-                          </Card.Body>
-                        </Card>
-                      </Col>
+                {tab.icon}{tab.label}
+              </button>
+            ))}
+          </div>
 
-                      <Col lg={4}>
-                        <Card className="mb-4">
-                          <Card.Header>
-                            <Card.Title className="mb-0">Survey Details</Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <div className="detail-item mb-3 d-flex justify-content-between align-items-center">
-                              <strong>Created:</strong>
-                              <span className="ms-2">{new Date(survey?.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <div className="detail-item mb-3 d-flex justify-content-between align-items-center">
-                              <strong>Last Updated:</strong>
-                              <span className="ms-2">{new Date(survey?.updatedAt).toLocaleDateString()}</span>
-                            </div>
-                            <div className="detail-item mb-3 d-flex justify-content-between align-items-center">
-                              <strong>Theme Color:</strong>
-                              <div>
-                                <span
-                                  className="ms-2 theme-color-preview"
-                                  style={{
-                                    backgroundColor: survey?.themeColor,
-                                    display: 'inline-block',
-                                    width: '20px',
-                                    height: '20px',
-                                    borderRadius: '4px',
-                                    border: '1px solid #dee2e6'
-                                  }}
-                                ></span>
-                                <span className="ms-2">{survey?.themeColor}</span>
-                              </div>
-                            </div>
-                            {survey?.settings && (
-                              <>
-                                <div className="detail-item mb-3 d-flex align-items-center justify-content-between">
-                                  <strong>Access:</strong>
-                                  <div className="ms-2">
-                                    {survey?.settings.requireLogin && (
-                                      <Badge bg="warning" className="me-1">Login Required</Badge>
+          {/* Tab Content */}
+          <div>
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
+              <div className="p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="lg:col-span-8">
+                    <div className="mb-4 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Questions</strong>
+                      </div>
+                      <div className="p-4">
+                        {survey?.questions && survey.questions.length > 0 ? (
+                          <div className="space-y-4">
+                            {survey?.questions?.map((question, index) => (
+                              <div key={question._id || index} className="mb-4 p-3 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md">
+                                <div className="flex items-start">
+                                  <span className="text-[var(--primary-color)] font-bold mr-3">{index + 1}</span>
+                                  <div className="flex-1">
+                                    <div className="flex items-center mb-2">
+                                      <i className={`${getQuestionIcon(question.type)} mr-2 text-[var(--primary-color)]`}></i>
+                                      <h6 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">{question.questionText || question.title || question.label || "Untitled Question"}</h6>
+                                      {question.required && (
+                                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white bg-[var(--danger-color)]">Required</span>
+                                      )}
+                                    </div>
+                                    {question.description && (
+                                      <p className="text-[var(--text-secondary)] text-sm mb-2">{question.description}</p>
                                     )}
-                                    {survey?.settings.isPasswordProtected && (
-                                      <Badge bg="danger" className="me-1">Password Protected</Badge>
-                                    )}
-                                    {survey?.settings.isAnonymous && (
-                                      <Badge bg="success" className="me-1">Anonymous Allowed</Badge>
+                                    {question.options && question.options.length > 0 && (
+                                      <div>
+                                        <small className="text-[var(--text-secondary)]">Options:</small>
+                                        <ul className="list-none ml-3 mb-0">
+                                          {question.options.map((option, optIndex) => (
+                                            <li key={optIndex} className="text-sm text-[var(--text-secondary)]">
+                                              • {option}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
-                              </>
-                            )}
-                          </Card.Body>
-                        </Card>
-
-                        <Card>
-                          <Card.Header>
-                            <Card.Title className="mb-0">Quick Actions</Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <div className="d-grid gap-2">
-                              <Button
-                                variant="outline-primary"
-                                onClick={() => navigate(`/app/surveys/${id}/responses`)}
-                              >
-                                <MdAnalytics className="me-2" />
-                                View Responses
-                              </Button>
-                              <Button
-                                variant="outline-success"
-                                onClick={() => navigate(`/app/surveys/${id}/analytics`)}
-                              >
-                                <MdTrendingUp className="me-2" />
-                                View Analytics
-                              </Button>
-                              <Button
-                                variant="outline-warning"
-                                onClick={() => navigate(`/app/surveys/${id}/distribution`)}
-                              >
-                                <MdShare className="me-2" />
-                                Distribution & QR
-                              </Button>
-                              <Button
-                                variant="outline-info"
-                                onClick={handleCopyLink}
-                              >
-                                <MdContentCopy className="me-2" />
-                                Copy Survey Link
-                              </Button>
-                            </div>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-                  </div>
-                </Tab>
-
-                {/* Settings Tab */}
-                <Tab eventKey="settings" title={
-                  <span><MdSettings className="me-2" />Settings</span>
-                }>
-                  <div className="p-4">
-                    <Row>
-                      <Col lg={8}>
-                        <Card>
-                          <Card.Header>
-                            <Card.Title className="mb-0">Survey Configuration</Card.Title>
-                          </Card.Header>
-                          <Card.Body>
-                            <Form>
-                              <Row>
-                                <Col md={6}>
-                                  <Form.Group className="mb-3">
-                                    <Form.Label>Survey Status</Form.Label>
-                                    <div className="d-flex align-items-center">
-                                      {getStatusBadge(survey?.status)}
-                                      <Button
-                                        variant="outline-primary"
-                                        size="sm"
-                                        className="ms-2"
-                                        onClick={handleToggleStatus}
-                                      >
-                                        {survey?.status === 'active' ? 'Deactivate' : 'Activate'}
-                                      </Button>
-                                    </div>
-                                  </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                  <Form.Group className="mb-3">
-                                    <Form.Label>Language</Form.Label>
-                                    <div className="d-flex align-items-center">
-                                      <Badge bg="light" text="dark">
-                                        <MdLanguage className="me-1" />
-                                        {survey?.language === 'both' ? 'Bilingual' : survey?.language?.toUpperCase()}
-                                      </Badge>
-                                    </div>
-                                  </Form.Group>
-                                </Col>
-                              </Row>
-
-                              <hr />
-
-                              <h6 className="mb-3">Access Settings</h6>
-                              <Row>
-                                <Col md={6}>
-                                  <div className="mb-3">
-                                    <Form.Check
-                                      type="switch"
-                                      id="allowAnonymous"
-                                      label="Allow anonymous responses"
-                                      checked={survey?.settings?.allowAnonymous || false}
-                                      disabled
-                                    />
-                                  </div>
-                                  <div className="mb-3">
-                                    <Form.Check
-                                      type="switch"
-                                      id="requireLogin"
-                                      label="Require login to participate"
-                                      checked={survey?.settings?.requireLogin || false}
-                                      disabled
-                                    />
-                                  </div>
-                                </Col>
-                                <Col md={6}>
-                                  <div className="mb-3">
-                                    <Form.Check
-                                      type="switch"
-                                      id="multipleResponses"
-                                      label="Allow multiple responses per user"
-                                      checked={survey?.settings?.multipleResponses || false}
-                                      disabled
-                                    />
-                                  </div>
-                                  <div className="mb-3">
-                                    <Form.Check
-                                      type="switch"
-                                      id="isPasswordProtected"
-                                      label="Password protected"
-                                      checked={survey?.settings?.isPasswordProtected || false}
-                                      disabled
-                                    />
-                                  </div>
-                                </Col>
-                              </Row>
-
-                              <div className="text-muted">
-                                <small>
-                                  <i className="fas fa-info-circle me-1"></i>
-                                  To modify settings, use the Edit Survey button
-                                </small>
                               </div>
-                            </Form>
-                          </Card.Body>
-                        </Card>
-                      </Col>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-4">
+                            <i className="fas fa-question-circle text-[var(--text-secondary)] mb-3" style={{fontSize: '3rem'}}></i>
+                            <p className="text-[var(--text-secondary)]">No questions added yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                      <Col lg={4}>
-                        <Card>
-                          <Card.Header>
-                            <Card.Title className="mb-0">Survey Theme</Card.Title>
-                          </Card.Header>
-                          <Card.Body className="text-center">
-                            {survey?.logo && (
+                  <div className="lg:col-span-4">
+                    <div className="mb-4 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Details</strong>
+                      </div>
+                      <div className="p-4">
+                        <div className="mb-3 flex justify-between items-center">
+                          <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Created:</strong>
+                          <span className="ml-2 text-[var(--text-secondary)]">{new Date(survey?.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="mb-3 flex justify-between items-center">
+                          <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Last Updated:</strong>
+                          <span className="ml-2 text-[var(--text-secondary)]">{new Date(survey?.updatedAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="mb-3 flex justify-between items-center">
+                          <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Theme Color:</strong>
+                          <div className="flex items-center">
+                            <span
+                              className="ml-2 inline-block w-5 h-5 rounded border border-[var(--light-border)] dark:border-[var(--dark-border)]"
+                              style={{
+                                backgroundColor: survey?.themeColor
+                              }}
+                            ></span>
+                            <span className="ml-2 text-[var(--text-secondary)]">{survey?.themeColor}</span>
+                          </div>
+                        </div>
+                        {survey?.settings && (
+                          <>
+                            <div className="mb-3 flex items-center justify-between">
+                              <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Access:</strong>
+                              <div className="ml-2 flex flex-wrap gap-1">
+                                {survey?.settings.requireLogin && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white bg-[var(--warning-color)]">Login Required</span>
+                                )}
+                                {survey?.settings.isPasswordProtected && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white bg-[var(--danger-color)]">Password Protected</span>
+                                )}
+                                {survey?.settings.isAnonymous && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white bg-[var(--success-color)]">Anonymous Allowed</span>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Quick Actions</strong>
+                      </div>
+                      <div className="p-4">
+                        <div className="space-y-2">
+                          <button
+                            className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                            onClick={() => navigate(`/app/surveys/${id}/responses`)}
+                          >
+                            <MdAnalytics className="mr-2 inline" />
+                            View Responses
+                          </button>
+                          <button
+                            className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white"
+                            onClick={() => navigate(`/app/surveys/${id}/analytics`)}
+                          >
+                            <MdTrendingUp className="mr-2 inline" />
+                            View Analytics
+                          </button>
+                          <button
+                            className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--warning-color)] text-[var(--warning-color)] hover:bg-[var(--warning-color)] hover:text-white"
+                            onClick={() => navigate(`/app/surveys/${id}/distribution`)}
+                          >
+                            <MdShare className="mr-2 inline" />
+                            Distribution & QR
+                          </button>
+                          <button
+                            className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--info-color)] text-[var(--info-color)] hover:bg-[var(--info-color)] hover:text-white"
+                            onClick={handleCopyLink}
+                          >
+                            <MdContentCopy className="mr-2 inline" />
+                            Copy Survey Link
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
+              <div className="p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="lg:col-span-8">
+                    <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Configuration</strong>
+                      </div>
+                      <div className="p-4">
+                        <form>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
                               <div className="mb-3">
-                                <img
-                                  src={survey?.logo.url}
-                                  alt="Survey Logo"
-                                  className="survey-logo-large"
-                                  style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover', borderRadius: '8px' }}
-                                />
+                                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Status</label>
+                                <div className="flex items-center">
+                                  {getStatusBadge(survey?.status)}
+                                  <button
+                                    type="button"
+                                    className="ml-2 px-3 py-1 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                                    onClick={handleToggleStatus}
+                                  >
+                                    {survey?.status === 'active' ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                </div>
                               </div>
-                            )}
-                            <div className="mb-3">
-                              <strong>Theme Color:</strong>
-                              <div
-                                className="theme-color-large mx-auto mt-2"
-                                style={{
-                                  backgroundColor: survey?.themeColor,
-                                  width: '60px',
-                                  height: '60px',
-                                  borderRadius: '8px',
-                                  border: '2px solid #dee2e6'
-                                }}
-                              ></div>
-                              <small className="text-muted d-block mt-1">{survey?.themeColor}</small>
                             </div>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-                  </div>
-                </Tab>
+                            <div>
+                              <div className="mb-3">
+                                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Language</label>
+                                <div className="flex items-center">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                    <MdLanguage className="mr-1" />
+                                    {survey?.language === 'both' ? 'Bilingual' : survey?.language?.toUpperCase()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
 
-                {/* Analytics Tab */}
-                <Tab eventKey="analytics" title={
-                  <span><MdAnalytics className="me-2" />Analytics</span>
-                }>
-                  <div className="p-4">
-                    <Row>
-                      <Col md={6} className="mb-4">
-                        <Card>
-                          <Card.Body className="text-center">
-                            <h5>Response Rate</h5>
-                            <div className="position-relative">
-                              <ProgressBar
-                                now={stats?.responseRate}
-                                variant="success"
-                                className="mb-2"
-                                style={{ height: '20px' }}
-                              />
-                              <span className="position-absolute top-50 start-50 translate-middle fw-bold">
-                                {stats?.responseRate}%
-                              </span>
+                          <hr className="my-4 border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+
+                          <h6 className="mb-3 text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Access Settings</h6>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <div className="mb-3">
+                                <label className="flex items-center gap-2 cursor-default text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                  <input
+                                    type="checkbox"
+                                    checked={survey?.settings?.allowAnonymous || false}
+                                    disabled
+                                    className="w-4 h-4"
+                                  />
+                                  <span>Allow anonymous responses</span>
+                                </label>
+                              </div>
+                              <div className="mb-3">
+                                <label className="flex items-center gap-2 cursor-default text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                  <input
+                                    type="checkbox"
+                                    checked={survey?.settings?.requireLogin || false}
+                                    disabled
+                                    className="w-4 h-4"
+                                  />
+                                  <span>Require login to participate</span>
+                                </label>
+                              </div>
                             </div>
-                            <small className="text-muted">
-                              {stats?.totalResponses} responses collected
+                            <div>
+                              <div className="mb-3">
+                                <label className="flex items-center gap-2 cursor-default text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                  <input
+                                    type="checkbox"
+                                    checked={survey?.settings?.multipleResponses || false}
+                                    disabled
+                                    className="w-4 h-4"
+                                  />
+                                  <span>Allow multiple responses per user</span>
+                                </label>
+                              </div>
+                              <div className="mb-3">
+                                <label className="flex items-center gap-2 cursor-default text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                  <input
+                                    type="checkbox"
+                                    checked={survey?.settings?.isPasswordProtected || false}
+                                    disabled
+                                    className="w-4 h-4"
+                                  />
+                                  <span>Password protected</span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-[var(--text-secondary)]">
+                            <small>
+                              <i className="fas fa-info-circle mr-1"></i>
+                              To modify settings, use the Edit Survey button
                             </small>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-
-                      <Col md={6} className="mb-4">
-                        <Card>
-                          <Card.Body className="text-center">
-                            <h5>Completion Rate</h5>
-                            <div className="position-relative">
-                              <ProgressBar
-                                now={stats?.completionRate}
-                                variant="info"
-                                className="mb-2"
-                                style={{ height: '20px' }}
-                              />
-                              <span className="position-absolute top-50 start-50 translate-middle fw-bold">
-                                {stats?.completionRate}%
-                              </span>
-                            </div>
-                            <small className="text-muted">
-                              Average completion rate
-                            </small>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
-
-                    <Row>
-                      <Col>
-                        <Card>
-                          <Card.Body className="text-center py-5">
-                            <MdAnalytics size={64} className="text-muted mb-3" />
-                            <h5>Detailed Analytics</h5>
-                            <p className="text-muted mb-3">
-                              View comprehensive analytics including charts, trends, and insights
-                            </p>
-                            <Button
-                              variant="primary"
-                              onClick={() => navigate(`/app/surveys/${id}/analytics`)}
-                            >
-                              <MdTrendingUp className="me-2" />
-                              View Full Analytics
-                            </Button>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    </Row>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
                   </div>
-                </Tab>
-              </Tabs>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+
+                  <div className="lg:col-span-4">
+                    <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Theme</strong>
+                      </div>
+                      <div className="p-4 text-center">
+                        {survey?.logo && (
+                          <div className="mb-3">
+                            <img
+                              src={survey?.logo.url}
+                              alt="Survey Logo"
+                              className="max-w-[150px] max-h-[150px] object-cover rounded-md mx-auto"
+                            />
+                          </div>
+                        )}
+                        <div className="mb-3">
+                          <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Theme Color:</strong>
+                          <div
+                            className="w-[60px] h-[60px] rounded-md border-2 border-[var(--light-border)] dark:border-[var(--dark-border)] mx-auto mt-2"
+                            style={{
+                              backgroundColor: survey?.themeColor
+                            }}
+                          ></div>
+                          <small className="text-[var(--text-secondary)] block mt-1">{survey?.themeColor}</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Analytics Tab */}
+            {activeTab === 'analytics' && (
+              <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <div className="p-4 text-center">
+                      <h5 className="text-xl font-bold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Response Rate</h5>
+                      <div className="relative">
+                        <div className="w-full h-5 bg-gray-200 dark:bg-gray-700 rounded-full mb-2">
+                          <div className="h-full bg-[var(--success-color)] rounded-full" style={{ width: `${stats?.responseRate || 0}%` }}></div>
+                        </div>
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {stats?.responseRate}%
+                        </span>
+                      </div>
+                      <small className="text-[var(--text-secondary)]">
+                        {stats?.totalResponses} responses collected
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <div className="p-4 text-center">
+                      <h5 className="text-xl font-bold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Completion Rate</h5>
+                      <div className="relative">
+                        <div className="w-full h-5 bg-gray-200 dark:bg-gray-700 rounded-full mb-2">
+                          <div className="h-full bg-[var(--info-color)] rounded-full" style={{ width: `${stats?.completionRate || 0}%` }}></div>
+                        </div>
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                          {stats?.completionRate}%
+                        </span>
+                      </div>
+                      <small className="text-[var(--text-secondary)]">
+                        Average completion rate
+                      </small>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <div className="p-4 text-center py-12">
+                      <MdAnalytics size={64} className="text-[var(--text-secondary)] mb-3 mx-auto" />
+                      <h5 className="text-xl font-bold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Detailed Analytics</h5>
+                      <p className="text-[var(--text-secondary)] mb-3">
+                        View comprehensive analytics including charts, trends, and insights
+                      </p>
+                      <button
+                        className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
+                        onClick={() => navigate(`/app/surveys/${id}/analytics`)}
+                      >
+                        <MdTrendingUp className="mr-2 inline" />
+                        View Full Analytics
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* QR Code Modal */}
-      <Modal show={showQRModal} onHide={() => setShowQRModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <MdQrCode className="me-2" />
-            Survey QR Code
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center">
-          <div className="mb-3">
-            {/* <QRCodeSVG
-              value={`${window.location.origin}/survey/${survey?.shareableLink || id}`}
-              size={256}
-              level="H"
-              includeMargin={true}
-            /> */}
-            <QRCodeSVG
-              value={`${window.location.origin}/survey/${survey?.shareableLink || id || ""}`}
-              size={256}
-              level="H" // high error correction taake logo hone ke bawajood QR scan ho jaye
-              includeMargin={true}
-              bgColor="var(--bs-primary)" // primary background color
-              fgColor="var(--bs-dark)" // QR foreground color
-              imageSettings={{
-                src: "/images/logo.png", // yahan apna logo ka path de do (e.g. public folder me rakho)
-                x: undefined,
-                y: undefined,
-                height: 50, // logo size adjust kro
-                width: 50,
-                excavate: true, // ye QR ke bich se background nikal deta hai logo ke liye
-              }}
-            />
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowQRModal(false)}>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="mb-0 flex items-center text-[var(--light-text)] dark:text-[var(--dark-text)] text-xl font-bold"><MdQrCode className="mr-2" /> Survey QR Code</h5>
+              <button className="p-2 rounded-md transition-colors hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] text-[var(--text-secondary)]" onClick={() => setShowQRModal(false)}>&times;</button>
+            </div>
+            <div className="p-4 text-center">
+              <div className="mb-3">
+                <QRCodeSVG
+                  value={`${window.location.origin}/survey/${survey?.shareableLink || id || ""}`}
+                  size={256}
+                  level="H"
+                  includeMargin={true}
+                  bgColor="var(--bs-primary)"
+                  fgColor="var(--bs-dark)"
+                  imageSettings={{
+                    src: "/images/logo.png",
+                    x: undefined,
+                    y: undefined,
+                    height: 50,
+                    width: 50,
+                    excavate: true,
+                  }}
+                />
+              </div>
+              <p className="text-[var(--text-secondary)]">
+                Scan this QR code to access the survey directly
+              </p>
+              <div className="space-y-2">
+                <button
+                  className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                  onClick={() => {
+                    const canvas = document.querySelector('#qr-code canvas');
+                    const link = document.createElement('a');
+                    link.download = `${survey?.title}_qr.png`;
+                    link.href = canvas.toDataURL();
+                    link.click();
+                  }}
+                >
+                  <MdDownload className="mr-2 inline" />
+                  Download QR Code
+                </button>
+              </div>
+            </div>
           </div>
-          <p className="text-muted">
-            Scan this QR code to access the survey directly
-          </p>
-          <div className="d-grid gap-2">
-            <Button
-              variant="outline-primary"
-              onClick={() => {
-                // Download QR code logic here
-                const canvas = document.querySelector('#qr-code canvas');
-                const link = document.createElement('a');
-                link.download = `${survey?.title}_qr.png`;
-                link.href = canvas.toDataURL();
-                link.click();
-              }}
-            >
-              <MdDownload className="me-2" />
-              Download QR Code
-            </Button>
-          </div>
-        </Modal.Body>
-      </Modal>
+        </div>
+      )}
 
       {/* Share Modal */}
-      <Modal show={showShareModal} onHide={() => setShowShareModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <MdShare className="me-2" />
-            Share Survey
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Survey Link</Form.Label>
-            <div className="d-flex">
-              <Form.Control
-                type="text"
-                value={`${window.location.origin}/survey/${survey?.shareableLink || id}`}
-                readOnly
-              />
-              <Button
-                variant="outline-primary"
-                className="ms-2"
-                onClick={handleCopyLink}
-              >
-                <MdContentCopy />
-              </Button>
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowShareModal(false)}>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="mb-0 flex items-center text-[var(--light-text)] dark:text-[var(--dark-text)] text-xl font-bold"><MdShare className="mr-2" /> Share Survey</h5>
+              <button className="p-2 rounded-md transition-colors hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] text-[var(--text-secondary)]" onClick={() => setShowShareModal(false)}>&times;</button>
             </div>
-          </Form.Group>
+            <div className="p-4">
+              <div className="mb-3">
+                <label className="block mb-1 font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Survey Link</label>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={`${window.location.origin}/survey/${survey?.shareableLink || id}`}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)]"
+                  />
+                  <button
+                    className="ml-2 px-3 py-2 rounded-md transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                    onClick={handleCopyLink}
+                  >
+                    <MdContentCopy />
+                  </button>
+                </div>
+              </div>
 
-          <div className="d-grid gap-2">
-            <Button
-              variant="success"
-              onClick={() => {
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`Please take our survey: ${window.location.origin}/survey/${survey?.shareableLink || id}`)}`;
-                window.open(whatsappUrl, '_blank');
-              }}
-            >
-              <i className="fab fa-whatsapp me-2"></i>
-              Share via WhatsApp
-            </Button>
+              <div className="space-y-2">
+                <button
+                  className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:bg-[var(--success-hover)]"
+                  onClick={() => {
+                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`Please take our survey: ${window.location.origin}/survey/${survey?.shareableLink || id}`)}`;
+                    window.open(whatsappUrl, '_blank');
+                  }}
+                >
+                  <i className="fab fa-whatsapp mr-2"></i>
+                  Share via WhatsApp
+                </button>
 
-            <Button
-              variant="primary"
-              onClick={() => {
-                const emailSubject = encodeURIComponent(`Survey: ${survey.title}`);
-                const emailBody = encodeURIComponent(`Please take our survey: ${window.location.origin}/survey/${survey?.shareableLink || id}`);
-                window.open(`mailto:?subject=${emailSubject}&body=${emailBody}`);
-              }}
-            >
-              <i className="fas fa-envelope me-2"></i>
-              Share via Email
-            </Button>
+                <button
+                  className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
+                  onClick={() => {
+                    const emailSubject = encodeURIComponent(`Survey: ${survey.title}`);
+                    const emailBody = encodeURIComponent(`Please take our survey: ${window.location.origin}/survey/${survey?.shareableLink || id}`);
+                    window.open(`mailto:?subject=${emailSubject}&body=${emailBody}`);
+                  }}
+                >
+                  <i className="fas fa-envelope mr-2"></i>
+                  Share via Email
+                </button>
+              </div>
+            </div>
           </div>
-        </Modal.Body>
-      </Modal>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton className="border-0">
-          <Modal.Title className="text-danger">
-            <MdDelete className="me-2" />
-            Confirm Delete
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Alert variant="warning">
-            <i className="fas fa-exclamation-triangle me-2"></i>
-            Are you sure you want to delete "<strong>{survey?.title}</strong>"?
-            This action cannot be undone and will permanently delete all survey data and responses.
-          </Alert>
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button variant="light" onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            <MdDelete className="me-2" />
-            Delete Survey
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowDeleteModal(false)}>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h5 className="mb-0 text-[var(--danger-color)] flex items-center text-xl font-bold"><MdDelete className="mr-2" /> Confirm Delete</h5>
+              <button className="p-2 rounded-md transition-colors hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] text-[var(--text-secondary)]" onClick={() => setShowDeleteModal(false)}>&times;</button>
+            </div>
+            <div className="p-4">
+              <div className="p-3 bg-[var(--warning-light)] border border-[var(--warning-color)] rounded-md">
+                <i className="fas fa-exclamation-triangle mr-2 text-[var(--warning-color)]"></i>
+                <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  Are you sure you want to delete "<strong>{survey?.title}</strong>"?
+                  This action cannot be undone and will permanently delete all survey data and responses.
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-4 pt-0">
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--danger-color)] text-white hover:bg-[var(--danger-hover)] flex items-center" onClick={handleDelete}>
+                <MdDelete className="mr-2" />
+                Delete Survey
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notifications */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-          bg={toastVariant}
-        >
-          <Toast.Body className="text-white">
-            {toastMessage}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
-    </Container>
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50 p-3">
+          <div className={`px-4 py-3 rounded-md shadow-lg text-white ${
+            toastVariant === 'success' 
+              ? 'bg-[var(--success-color)]' 
+              : toastVariant === 'danger' 
+                ? 'bg-[var(--danger-color)]' 
+                : 'bg-[var(--primary-color)]'
+          }`}>
+            <div className="flex items-center justify-between">
+              <span>{toastMessage}</span>
+              <button className="ml-3 text-white/80 hover:text-white" onClick={() => setShowToast(false)}>&times;</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

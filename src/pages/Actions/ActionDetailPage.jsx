@@ -2,22 +2,18 @@
 // ============================================================================
 // Action Detail Page - Full-page workspace for action management
 // Implements human confirmation workflow for action plans
-// Uses Bootstrap 5 components per theme.md guidelines
+// Uses Tailwind v4 with theme.md design system
 // ============================================================================
 "use client"
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-    Container, Row, Col, Card, Button, Badge, Spinner,
-    Alert, Modal, Form, ProgressBar, ListGroup
-} from "react-bootstrap";
 import {
     MdAssignment, MdCheckCircle, MdSchedule, MdTimer,
     MdPriorityHigh, MdWarning, MdFlag, MdPerson,
     MdPlayArrow, MdArrowBack, MdAdd, MdError,
     MdTrendingUp, MdTrendingDown, MdRemove,
     MdDescription, MdTrackChanges, MdComment,
-    MdGroup, MdCalendarToday, MdDone, MdRefresh
+    MdGroup, MdCalendarToday, MdDone, MdRefresh, MdClose
 } from "react-icons/md";
 import { FiTarget, FiFileText } from "react-icons/fi";
 import {
@@ -38,46 +34,61 @@ import {
 } from "../../constants/actionConstants";
 
 // ============================================================================
-// Sub-components (Bootstrap 5 themed)
+// Sub-components (Tailwind v4 + theme.md)
 // ============================================================================
 
 // Priority Badge
 const PriorityBadge = ({ priority }) => {
     const config = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG[ACTION_PRIORITIES.MEDIUM];
+    const colorMap = {
+        danger: "bg-[var(--danger-color)] text-white",
+        warning: "bg-[var(--warning-color)] text-white",
+        info: "bg-[var(--info-color)] text-white",
+        primary: "bg-[var(--primary-color)] text-white",
+        success: "bg-[var(--success-color)] text-white",
+    };
     return (
-        <Badge bg={config.color} className="d-flex align-items-center gap-1">
+        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${colorMap[config.color] || "bg-gray-500 text-white"}`}>
             <MdPriorityHigh size={14} />
             {config.label?.toUpperCase() || priority?.toUpperCase() || "MEDIUM"}
-        </Badge>
+        </span>
     );
 };
 
 // Status Badge
 const StatusBadge = ({ status }) => {
     const config = STATUS_CONFIG[status] || STATUS_CONFIG[ACTION_STATUSES.PENDING];
+    const colorMap = {
+        danger: "bg-[var(--danger-color)] text-white",
+        warning: "bg-[var(--warning-color)] text-white",
+        info: "bg-[var(--info-color)] text-white",
+        primary: "bg-[var(--primary-color)] text-white",
+        success: "bg-[var(--success-color)] text-white",
+        secondary: "bg-gray-500 text-white",
+    };
     return (
-        <Badge bg={config.color} className="d-flex align-items-center gap-1">
+        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${colorMap[config.color] || "bg-gray-500 text-white"}`}>
             <MdSchedule size={14} />
             {config.label?.toUpperCase() || status?.replace("-", " ").toUpperCase() || "PENDING"}
-        </Badge>
+        </span>
     );
 };
 
 // Plan Status Badge
 const PlanStatusBadge = ({ status }) => {
     const statusConfig = {
-        draft: { bg: "secondary", label: "Draft" },
-        approved: { bg: "success", label: "Approved" },
-        in_progress: { bg: "primary", label: "In Progress" },
-        completed: { bg: "info", label: "Completed" },
-        cancelled: { bg: "danger", label: "Cancelled" },
+        draft: { color: "bg-gray-500 text-white", label: "Draft" },
+        approved: { color: "bg-[var(--success-color)] text-white", label: "Approved" },
+        in_progress: { color: "bg-[var(--primary-color)] text-white", label: "In Progress" },
+        completed: { color: "bg-[var(--info-color)] text-white", label: "Completed" },
+        cancelled: { color: "bg-[var(--danger-color)] text-white", label: "Cancelled" },
     };
     const config = statusConfig[status] || statusConfig.draft;
     return (
-        <Badge bg={config.bg} className="d-flex align-items-center gap-1">
+        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${config.color}`}>
             <MdTrackChanges size={14} />
             Plan: {config.label}
-        </Badge>
+        </span>
     );
 };
 
@@ -96,95 +107,94 @@ const TrendIndicator = ({ trendData }) => {
     };
 
     return (
-        <div className="d-flex align-items-center gap-2 mt-3 small">
-            {isUp && <MdTrendingUp size={16} className="text-danger" />}
-            {isDown && <MdTrendingDown size={16} className="text-success" />}
-            {!isUp && !isDown && <MdRemove size={16} className="text-muted" />}
-            <span className={isUp ? "text-danger" : isDown ? "text-success" : "text-muted"}>
+        <div className="flex items-center gap-2 mt-3 text-sm">
+            {isUp && <MdTrendingUp size={16} className="text-[var(--danger-color)]" />}
+            {isDown && <MdTrendingDown size={16} className="text-[var(--success-color)]" />}
+            {!isUp && !isDown && <MdRemove size={16} className="text-[var(--text-secondary)]" />}
+            <span className={isUp ? "text-[var(--danger-color)]" : isDown ? "text-[var(--success-color)]" : "text-[var(--text-secondary)]"}>
                 {Math.abs(trendData.changePercent)}% vs {trendData.comparisonPeriod}
             </span>
             {trendData.issueStatus && (
-                <Badge bg="light" text="dark" className="ms-1">
+                <span className="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-[var(--light-text)] dark:text-[var(--dark-text)] text-xs ml-1">
                     {statusLabels[trendData.issueStatus] || trendData.issueStatus}
-                </Badge>
+                </span>
             )}
         </div>
     );
 };
 
-// Checklist Step Item (Bootstrap styled)
+// Checklist Step Item (Tailwind styled)
 const ChecklistStep = ({ step, onStatusChange, isLoading }) => {
-    const statusVariants = {
-        pending: "secondary",
-        in_progress: "primary",
-        completed: "success",
-        skipped: "light",
-    };
-
     const stepTypeVariants = {
-        review: "info",
-        analysis: "primary",
-        action: "warning",
-        communication: "success",
-        measurement: "secondary",
+        review: "bg-[var(--info-color)] text-white",
+        analysis: "bg-[var(--primary-color)] text-white",
+        action: "bg-[var(--warning-color)] text-white",
+        communication: "bg-[var(--success-color)] text-white",
+        measurement: "bg-gray-500 text-white",
     };
 
     const handleComplete = () => onStatusChange(step._id, "completed");
     const handleStart = () => onStatusChange(step._id, "in_progress");
 
     return (
-        <ListGroup.Item
-            className={`d-flex align-items-start gap-3 ${step.status === "completed" ? "bg-light opacity-75" : ""}`}
-        >
+        <div className={`flex items-start gap-3 p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] ${step.status === "completed" ? "bg-gray-50 dark:bg-gray-800 opacity-75" : "bg-[var(--light-card)] dark:bg-[var(--dark-card)]"}`}>
             {/* Status Icon */}
             <div className="mt-1">
                 {isLoading ? (
-                    <Spinner animation="border" size="sm" />
+                    <div className="w-5 h-5 border-2 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
                 ) : step.status === "completed" ? (
-                    <MdCheckCircle size={20} className="text-success" />
+                    <MdCheckCircle size={20} className="text-[var(--success-color)]" />
                 ) : step.status === "in_progress" ? (
-                    <MdPlayArrow size={20} className="text-primary" />
+                    <MdPlayArrow size={20} className="text-[var(--primary-color)]" />
                 ) : (
-                    <MdSchedule size={20} className="text-muted" />
+                    <MdSchedule size={20} className="text-[var(--text-secondary)]" />
                 )}
             </div>
 
             {/* Content */}
-            <div className="flex-grow-1">
-                <div className="d-flex align-items-center gap-2 mb-1">
-                    <span className="fw-semibold">{step.stepNumber}. {step.title}</span>
-                    <Badge bg={stepTypeVariants[step.stepType] || "secondary"} className="small">
+            <div className="flex-grow">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">{step.stepNumber}. {step.title}</span>
+                    <span className={`px-2 py-1 rounded text-xs ${stepTypeVariants[step.stepType] || "bg-gray-500 text-white"}`}>
                         {step.stepType}
-                    </Badge>
-                    {step.isRequired && <Badge bg="danger" className="small">Required</Badge>}
+                    </span>
+                    {step.isRequired && <span className="px-2 py-1 rounded text-xs bg-[var(--danger-color)] text-white">Required</span>}
                 </div>
-                {step.description && <p className="text-muted small mb-1">{step.description}</p>}
+                {step.description && <p className="text-[var(--text-secondary)] text-sm mb-1">{step.description}</p>}
                 {step.assignedTo?.name && (
-                    <small className="text-muted">
-                        <MdPerson size={14} className="me-1" />
+                    <small className="text-[var(--text-secondary)] flex items-center gap-1">
+                        <MdPerson size={14} />
                         Assigned to: {step.assignedTo.name}
                     </small>
                 )}
             </div>
 
             {/* Actions */}
-            <div className="d-flex gap-2">
+            <div className="flex gap-2">
                 {step.status === "pending" && (
-                    <Button variant="outline-primary" size="sm" onClick={handleStart} disabled={isLoading}>
+                    <button
+                        onClick={handleStart}
+                        disabled={isLoading}
+                        className="px-3 py-1 rounded-md text-sm font-medium border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white transition-colors disabled:opacity-50"
+                    >
                         Start
-                    </Button>
+                    </button>
                 )}
                 {step.status === "in_progress" && (
-                    <Button variant="outline-success" size="sm" onClick={handleComplete} disabled={isLoading}>
+                    <button
+                        onClick={handleComplete}
+                        disabled={isLoading}
+                        className="px-3 py-1 rounded-md text-sm font-medium border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white transition-colors disabled:opacity-50"
+                    >
                         Complete
-                    </Button>
+                    </button>
                 )}
             </div>
-        </ListGroup.Item>
+        </div>
     );
 };
 
-// Create Plan Modal (Bootstrap Modal)
+// Create Plan Modal (Tailwind Modal)
 const CreatePlanModal = ({ show, onClose, onSubmit, isLoading }) => {
     const [formData, setFormData] = useState({
         whatWillBeDone: "",
@@ -201,72 +211,98 @@ const CreatePlanModal = ({ show, onClose, onSubmit, isLoading }) => {
         onSubmit(formData);
     };
 
+    if (!show) return null;
+
     return (
-        <Modal show={show} onHide={onClose} centered size="lg">
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    <MdAdd className="me-2" />
-                    Create Action Plan
-                </Modal.Title>
-            </Modal.Header>
-            <Form onSubmit={handleSubmit}>
-                <Modal.Body>
-                    <p className="text-muted small mb-4">
-                        Define what will be done and the expected outcome
-                    </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <h3 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] flex items-center gap-2">
+                        <MdAdd />
+                        Create Action Plan
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors"
+                    >
+                        <MdClose size={24} />
+                    </button>
+                </div>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label>
-                            What will be done? <span className="text-danger">*</span>
-                        </Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={formData.whatWillBeDone}
-                            onChange={(e) => setFormData({ ...formData, whatWillBeDone: e.target.value })}
-                            placeholder="Describe the action plan..."
-                            required
-                        />
-                    </Form.Group>
+                {/* Body */}
+                <form onSubmit={handleSubmit}>
+                    <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+                        <p className="text-[var(--text-secondary)] text-sm mb-4">
+                            Define what will be done and the expected outcome
+                        </p>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label>
-                            Expected Outcome <span className="text-danger">*</span>
-                        </Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={2}
-                            value={formData.expectedOutcome}
-                            onChange={(e) => setFormData({ ...formData, expectedOutcome: e.target.value })}
-                            placeholder="What result do you expect?"
-                            required
-                        />
-                    </Form.Group>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                What will be done? <span className="text-[var(--danger-color)]">*</span>
+                            </label>
+                            <textarea
+                                rows={3}
+                                value={formData.whatWillBeDone}
+                                onChange={(e) => setFormData({ ...formData, whatWillBeDone: e.target.value })}
+                                placeholder="Describe the action plan..."
+                                required
+                                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                            />
+                        </div>
 
-                    <Form.Group className="mb-3">
-                        <Form.Label>Target Audience</Form.Label>
-                        <Form.Select
-                            value={formData.targetAudience.type}
-                            onChange={(e) => setFormData({ ...formData, targetAudience: { type: e.target.value } })}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                Expected Outcome <span className="text-[var(--danger-color)]">*</span>
+                            </label>
+                            <textarea
+                                rows={2}
+                                value={formData.expectedOutcome}
+                                onChange={(e) => setFormData({ ...formData, expectedOutcome: e.target.value })}
+                                placeholder="What result do you expect?"
+                                required
+                                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                                Target Audience
+                            </label>
+                            <select
+                                value={formData.targetAudience.type}
+                                onChange={(e) => setFormData({ ...formData, targetAudience: { type: e.target.value } })}
+                                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                            >
+                                <option value="all_employees">All Employees</option>
+                                <option value="department">Specific Department</option>
+                                <option value="segment">Segment</option>
+                                <option value="individuals">Specific Individuals</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 rounded-md font-medium transition-colors bg-gray-500 text-white hover:bg-gray-600"
                         >
-                            <option value="all_employees">All Employees</option>
-                            <option value="department">Specific Department</option>
-                            <option value="segment">Segment</option>
-                            <option value="individuals">Specific Individuals</option>
-                        </Form.Select>
-                    </Form.Group>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={onClose}>
-                        Cancel
-                    </Button>
-                    <Button variant="primary" type="submit" disabled={isLoading}>
-                        {isLoading && <Spinner animation="border" size="sm" className="me-2" />}
-                        Create Plan
-                    </Button>
-                </Modal.Footer>
-            </Form>
-        </Modal>
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                            Create Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 };
 
@@ -384,29 +420,32 @@ const ActionDetailPage = () => {
     // Loading state
     if (loading) {
         return (
-            <Container fluid className="py-4">
+            <div className="py-8">
                 <div className="text-center">
-                    <Spinner animation="border" variant="primary" size="lg" />
-                    <p className="mt-3 text-muted">Loading action...</p>
+                    <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="mt-3 text-[var(--text-secondary)]">Loading action...</p>
                 </div>
-            </Container>
+            </div>
         );
     }
 
     // Error state
     if (error || !action) {
         return (
-            <Container fluid className="py-4">
-                <Alert variant="danger" className="text-center">
-                    <MdError size={48} className="mb-3 d-block mx-auto" />
-                    <h5>Action Not Found</h5>
-                    <p>{error || "The requested action could not be loaded."}</p>
-                    <Button variant="outline-danger" onClick={() => navigate("/app/actions")}>
-                        <MdArrowBack className="me-2" />
+            <div className="py-8">
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--danger-color)] text-center">
+                    <MdError size={48} className="text-[var(--danger-color)] mb-3 mx-auto" />
+                    <h5 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Action Not Found</h5>
+                    <p className="text-[var(--text-secondary)] mb-4">{error || "The requested action could not be loaded."}</p>
+                    <button
+                        onClick={() => navigate("/app/actions")}
+                        className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--danger-color)] text-[var(--danger-color)] hover:bg-[var(--danger-color)] hover:text-white inline-flex items-center gap-2"
+                    >
+                        <MdArrowBack />
                         Back to Actions
-                    </Button>
-                </Alert>
-            </Container>
+                    </button>
+                </div>
+            </div>
         );
     }
 
@@ -414,182 +453,174 @@ const ActionDetailPage = () => {
     const progressPercent = plan?.progress?.percentComplete || 0;
 
     return (
-        <Container fluid className="py-4">
+        <div className="py-4">
             {/* Header Card */}
-            <Row className="mb-4">
-                <Col>
-                    <Card className="shadow-sm">
-                        <Card.Body className="p-4">
-                            <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
-                                <div className="flex-grow-1">
-                                    {/* Back Button */}
-                                    <div className="d-flex align-items-center mb-2">
-                                        <Button
-                                            variant="link"
-                                            className="p-0 me-3 text-primary"
-                                            onClick={() => navigate("/app/actions")}
-                                        >
-                                            <MdArrowBack className="me-1" />
-                                            Back to Actions
-                                        </Button>
-                                    </div>
-
-                                    {/* Title */}
-                                    <h3 className="fw-bold mb-2">{action.title}</h3>
-
-                                    {/* Badges Row */}
-                                    <div className="d-flex flex-wrap align-items-center gap-2">
-                                        <PriorityBadge priority={action.priority} />
-                                        <StatusBadge status={action.status} />
-                                        {plan && <PlanStatusBadge status={plan.status} />}
-                                        {action.department && (
-                                            <Badge bg="light" text="dark" className="d-flex align-items-center">
-                                                <MdGroup className="me-1" />
-                                                {action.department || action.category}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="d-flex flex-wrap gap-2">
-                                    {!plan && (
-                                        <Button
-                                            variant="primary"
-                                            onClick={() => setShowCreateModal(true)}
-                                            className="d-flex align-items-center gap-2"
-                                        >
-                                            <MdAdd size={16} />
-                                            Create Plan
-                                        </Button>
-                                    )}
-                                    {plan?.status === "draft" && isCompanyAdmin && (
-                                        <Button
-                                            variant="success"
-                                            onClick={handleConfirmPlan}
-                                            disabled={actionLoading}
-                                            className="d-flex align-items-center gap-2"
-                                        >
-                                            {actionLoading ? (
-                                                <Spinner animation="border" size="sm" />
-                                            ) : (
-                                                <MdDone size={16} />
-                                            )}
-                                            Confirm Plan
-                                        </Button>
-                                    )}
-                                    {plan?.status === "approved" && (
-                                        <Button
-                                            variant="primary"
-                                            onClick={handleStartPlan}
-                                            disabled={actionLoading}
-                                            className="d-flex align-items-center gap-2"
-                                        >
-                                            {actionLoading ? (
-                                                <Spinner animation="border" size="sm" />
-                                            ) : (
-                                                <MdPlayArrow size={16} />
-                                            )}
-                                            Start Execution
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="outline-secondary"
-                                        onClick={() => fetchData()}
-                                        className="d-flex align-items-center gap-1"
-                                    >
-                                        <MdRefresh size={16} />
-                                    </Button>
-                                </div>
+            <div className="mb-4">
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <div className="flex flex-col lg:flex-row justify-between items-start gap-4">
+                        <div className="flex-grow">
+                            {/* Back Button */}
+                            <div className="flex items-center mb-2">
+                                <button
+                                    onClick={() => navigate("/app/actions")}
+                                    className="p-0 text-[var(--primary-color)] hover:underline flex items-center gap-1"
+                                >
+                                    <MdArrowBack />
+                                    Back to Actions
+                                </button>
                             </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+
+                            {/* Title */}
+                            <h3 className="text-2xl font-bold mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">{action.title}</h3>
+
+                            {/* Badges Row */}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <PriorityBadge priority={action.priority} />
+                                <StatusBadge status={action.status} />
+                                {plan && <PlanStatusBadge status={plan.status} />}
+                                {action.department && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-gray-200 dark:bg-gray-700 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                                        <MdGroup />
+                                        {action.department || action.category}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap gap-2">
+                            {!plan && (
+                                <button
+                                    onClick={() => setShowCreateModal(true)}
+                                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2"
+                                >
+                                    <MdAdd size={16} />
+                                    Create Plan
+                                </button>
+                            )}
+                            {plan?.status === "draft" && isCompanyAdmin && (
+                                <button
+                                    onClick={handleConfirmPlan}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:bg-green-600 disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {actionLoading ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <MdDone size={16} />
+                                    )}
+                                    Confirm Plan
+                                </button>
+                            )}
+                            {plan?.status === "approved" && (
+                                <button
+                                    onClick={handleStartPlan}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {actionLoading ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <MdPlayArrow size={16} />
+                                    )}
+                                    Start Execution
+                                </button>
+                            )}
+                            <button
+                                onClick={() => fetchData()}
+                                className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] flex items-center gap-1"
+                            >
+                                <MdRefresh size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* Main Content */}
-            <Row>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Left Column - Action Details */}
-                <Col lg={8} className="mb-4">
+                <div className="lg:col-span-2 space-y-4">
                     {/* Problem Statement */}
-                    <Card className="mb-4 shadow-sm">
-                        <Card.Header className="d-flex align-items-center gap-2">
-                            <MdWarning size={20} className="text-warning" />
-                            <Card.Title className="mb-0">Problem Statement</Card.Title>
-                        </Card.Header>
-                        <Card.Body>
-                            <p className="mb-0">
+                    <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center gap-2">
+                            <MdWarning size={20} className="text-[var(--warning-color)]" />
+                            <h4 className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Problem Statement</h4>
+                        </div>
+                        <div className="p-6">
+                            <p className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                                 {action.problemStatement || action.description || "No problem statement defined."}
                             </p>
 
                             {action.rootCause?.summary && (
-                                <div className="mt-3 p-3 bg-light rounded">
-                                    <strong className="small text-muted">Root Cause: </strong>
-                                    <span className="small">{action.rootCause.summary}</span>
+                                <div className="mt-3 p-3 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] rounded">
+                                    <strong className="text-sm text-[var(--text-secondary)]">Root Cause: </strong>
+                                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{action.rootCause.summary}</span>
                                     {action.rootCause.category && (
-                                        <Badge bg="secondary" className="ms-2 small">
+                                        <span className="ml-2 px-2 py-1 rounded text-xs bg-gray-500 text-white">
                                             {action.rootCause.category}
-                                        </Badge>
+                                        </span>
                                     )}
                                 </div>
                             )}
 
                             {action.trendData && <TrendIndicator trendData={action.trendData} />}
-                        </Card.Body>
-                    </Card>
+                        </div>
+                    </div>
 
                     {/* Action Plan */}
                     {plan ? (
-                        <Card className="shadow-sm">
-                            <Card.Header>
-                                <div className="d-flex align-items-center justify-content-between">
-                                    <div className="d-flex align-items-center gap-2">
-                                        <FiTarget size={20} className="text-primary" />
-                                        <Card.Title className="mb-0">Action Plan</Card.Title>
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <FiTarget size={20} className="text-[var(--primary-color)]" />
+                                        <h4 className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Action Plan</h4>
                                     </div>
                                 </div>
-                            </Card.Header>
-                            <Card.Body>
+                            </div>
+                            <div className="p-6">
                                 {/* Progress */}
                                 <div className="mb-4">
-                                    <div className="d-flex justify-content-between small mb-1">
-                                        <span className="text-muted">Progress</span>
-                                        <span className="fw-semibold">{progressPercent}%</span>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-[var(--text-secondary)]">Progress</span>
+                                        <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">{progressPercent}%</span>
                                     </div>
-                                    <ProgressBar
-                                        now={progressPercent}
-                                        variant="primary"
-                                        className="mb-1"
-                                    />
-                                    <small className="text-muted">
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-1">
+                                        <div
+                                            className="bg-[var(--primary-color)] h-2 rounded-full transition-all"
+                                            style={{ width: `${progressPercent}%` }}
+                                        ></div>
+                                    </div>
+                                    <small className="text-[var(--text-secondary)]">
                                         {plan.progress?.completedSteps || 0} of {plan.progress?.totalSteps || 0} steps completed
                                     </small>
                                 </div>
 
                                 {/* Plan Details */}
-                                <Row className="mb-4">
-                                    <Col md={6}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
                                         <div className="mb-3">
-                                            <strong className="small text-muted d-block mb-1">What will be done</strong>
-                                            <p className="mb-0">{plan.whatWillBeDone}</p>
+                                            <strong className="text-sm text-[var(--text-secondary)] block mb-1">What will be done</strong>
+                                            <p className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">{plan.whatWillBeDone}</p>
                                         </div>
-                                    </Col>
-                                    <Col md={6}>
+                                    </div>
+                                    <div>
                                         <div className="mb-3">
-                                            <strong className="small text-muted d-block mb-1">Expected Outcome</strong>
-                                            <p className="mb-0">{plan.expectedOutcome}</p>
+                                            <strong className="text-sm text-[var(--text-secondary)] block mb-1">Expected Outcome</strong>
+                                            <p className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">{plan.expectedOutcome}</p>
                                         </div>
-                                    </Col>
-                                </Row>
+                                    </div>
+                                </div>
 
                                 {/* Checklist */}
                                 {steps.length > 0 && (
                                     <>
-                                        <h6 className="fw-semibold d-flex align-items-center gap-2 mb-3">
+                                        <h6 className="font-semibold flex items-center gap-2 mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
                                             <FiFileText size={16} />
                                             Checklist ({steps.length} steps)
                                         </h6>
-                                        <ListGroup variant="flush">
+                                        <div className="border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-md overflow-hidden">
                                             {steps.map((step) => (
                                                 <ChecklistStep
                                                     key={step._id}
@@ -598,124 +629,127 @@ const ActionDetailPage = () => {
                                                     isLoading={stepLoading === step._id}
                                                 />
                                             ))}
-                                        </ListGroup>
+                                        </div>
                                     </>
                                 )}
-                            </Card.Body>
-                        </Card>
+                            </div>
+                        </div>
                     ) : (
-                        <Card className="shadow-sm">
-                            <Card.Body className="text-center py-5">
-                                <FiTarget size={48} className="text-muted mb-3 d-block mx-auto" />
-                                <h5>No Action Plan Yet</h5>
-                                <p className="text-muted mb-3">
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <div className="p-6 text-center py-12">
+                                <FiTarget size={48} className="text-[var(--text-secondary)] mb-3 mx-auto" />
+                                <h5 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">No Action Plan Yet</h5>
+                                <p className="text-[var(--text-secondary)] mb-4">
                                     Create an action plan to define what will be done and track progress.
                                 </p>
-                                <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-                                    <MdAdd className="me-2" />
+                                <button
+                                    onClick={() => setShowCreateModal(true)}
+                                    className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] inline-flex items-center gap-2"
+                                >
+                                    <MdAdd />
                                     Create Action Plan
-                                </Button>
-                            </Card.Body>
-                        </Card>
+                                </button>
+                            </div>
+                        </div>
                     )}
-                </Col>
+                </div>
 
                 {/* Right Column - Sidebar */}
-                <Col lg={4}>
+                <div className="space-y-4">
                     {/* Meta Info */}
-                    <Card className="mb-4 shadow-sm">
-                        <Card.Header>
-                            <Card.Title className="mb-0">Details</Card.Title>
-                        </Card.Header>
-                        <Card.Body>
-                            <div className="mb-3 d-flex align-items-center gap-2 small">
-                                <MdPerson size={16} className="text-muted" />
-                                <span className="text-muted">Assigned to:</span>
-                                <span className="fw-semibold">
+                    <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                        <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <h4 className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Details</h4>
+                        </div>
+                        <div className="p-6">
+                            <div className="mb-3 flex items-center gap-2 text-sm">
+                                <MdPerson size={16} className="text-[var(--text-secondary)]" />
+                                <span className="text-[var(--text-secondary)]">Assigned to:</span>
+                                <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                                     {action.assignedTo?.name || action.assigneeName || "Unassigned"}
                                 </span>
                             </div>
-                            <div className="mb-3 d-flex align-items-center gap-2 small">
-                                <MdCalendarToday size={16} className="text-muted" />
-                                <span className="text-muted">Due:</span>
-                                <span className="fw-semibold">
+                            <div className="mb-3 flex items-center gap-2 text-sm">
+                                <MdCalendarToday size={16} className="text-[var(--text-secondary)]" />
+                                <span className="text-[var(--text-secondary)]">Due:</span>
+                                <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                                     {action.dueDate
                                         ? new Date(action.dueDate).toLocaleDateString()
                                         : "No due date"}
                                 </span>
                             </div>
-                            <div className="mb-3 d-flex align-items-center gap-2 small">
-                                <MdCalendarToday size={16} className="text-muted" />
-                                <span className="text-muted">Created:</span>
-                                <span className="fw-semibold">
+                            <div className="mb-3 flex items-center gap-2 text-sm">
+                                <MdCalendarToday size={16} className="text-[var(--text-secondary)]" />
+                                <span className="text-[var(--text-secondary)]">Created:</span>
+                                <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
                                     {action.createdAt
                                         ? new Date(action.createdAt).toLocaleDateString()
                                         : "—"}
                                 </span>
                             </div>
                             {plan?.primaryOwner && (
-                                <div className="d-flex align-items-center gap-2 small">
-                                    <MdGroup size={16} className="text-muted" />
-                                    <span className="text-muted">Plan Owner:</span>
-                                    <span className="fw-semibold">{plan.primaryOwner.name}</span>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <MdGroup size={16} className="text-[var(--text-secondary)]" />
+                                    <span className="text-[var(--text-secondary)]">Plan Owner:</span>
+                                    <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">{plan.primaryOwner.name}</span>
                                 </div>
                             )}
-                        </Card.Body>
-                    </Card>
+                        </div>
+                    </div>
 
                     {/* Evidence */}
                     {action.evidence?.respondentCount > 0 && (
-                        <Card className="mb-4 shadow-sm">
-                            <Card.Header className="d-flex align-items-center gap-2">
-                                <MdComment size={16} />
-                                <Card.Title className="mb-0">Evidence</Card.Title>
-                            </Card.Header>
-                            <Card.Body>
-                                <h3 className="text-primary fw-bold mb-1">
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center gap-2">
+                                <MdComment size={16} className="text-[var(--primary-color)]" />
+                                <h4 className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Evidence</h4>
+                            </div>
+                            <div className="p-6">
+                                <h3 className="text-3xl font-bold mb-1 text-[var(--primary-color)]">
                                     {action.evidence.respondentCount}
                                 </h3>
-                                <p className="text-muted small mb-0">respondents affected</p>
+                                <p className="text-[var(--text-secondary)] text-sm mb-0">respondents affected</p>
 
                                 {action.evidence.commentExcerpts?.length > 0 && (
                                     <div className="mt-3">
-                                        <strong className="small text-muted d-block mb-2">Sample Comments:</strong>
+                                        <strong className="text-sm text-[var(--text-secondary)] block mb-2">Sample Comments:</strong>
                                         {action.evidence.commentExcerpts.slice(0, 3).map((excerpt, idx) => (
-                                            <div key={idx} className="bg-light p-2 rounded mb-2">
-                                                <small className="text-muted fst-italic">
+                                            <div key={idx} className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] p-2 rounded mb-2">
+                                                <small className="text-[var(--text-secondary)] italic">
                                                     "{excerpt.text}"
                                                 </small>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-                            </Card.Body>
-                        </Card>
+                            </div>
+                        </div>
                     )}
 
                     {/* Priority Rationale */}
                     {(action.priorityReason || action.urgencyReason) && (
-                        <Card className="shadow-sm">
-                            <Card.Header>
-                                <Card.Title className="mb-0">Priority Rationale</Card.Title>
-                            </Card.Header>
-                            <Card.Body>
+                        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                            <div className="p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                                <h4 className="text-lg font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Priority Rationale</h4>
+                            </div>
+                            <div className="p-6">
                                 {action.priorityReason && (
                                     <div className="mb-3">
-                                        <strong className="small text-muted d-block mb-1">Why this priority?</strong>
-                                        <p className="small mb-0">{action.priorityReason}</p>
+                                        <strong className="text-sm text-[var(--text-secondary)] block mb-1">Why this priority?</strong>
+                                        <p className="text-sm mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">{action.priorityReason}</p>
                                     </div>
                                 )}
                                 {action.urgencyReason && (
                                     <div>
-                                        <strong className="small text-muted d-block mb-1">Why urgent?</strong>
-                                        <p className="small mb-0">{action.urgencyReason}</p>
+                                        <strong className="text-sm text-[var(--text-secondary)] block mb-1">Why urgent?</strong>
+                                        <p className="text-sm mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">{action.urgencyReason}</p>
                                     </div>
                                 )}
-                            </Card.Body>
-                        </Card>
+                            </div>
+                        </div>
                     )}
-                </Col>
-            </Row>
+                </div>
+            </div>
 
             {/* Create Plan Modal */}
             <CreatePlanModal
@@ -724,7 +758,7 @@ const ActionDetailPage = () => {
                 onSubmit={handleCreatePlan}
                 isLoading={actionLoading}
             />
-        </Container>
+        </div>
     );
 };
 

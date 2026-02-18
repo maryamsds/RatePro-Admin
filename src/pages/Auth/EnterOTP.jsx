@@ -1,168 +1,17 @@
-// // EnterOTP.jsx
-
-// import { useState } from "react";
-// import Swal from "sweetalert2";
-// import { MdVpnKey } from "react-icons/md";
-// import axios from "axios";
-// import logo from "../assets/images/RATEPRO.png"
-
-// const EnterOTP = ({ email, onVerified }) => {
-//     const [otp, setOtp] = useState("");
-//     const [loading, setLoading] = useState(false);
-
-//     const handleSubmit = async (e) => {
-//         e.preventDefault();
-//         setLoading(true);
-//         console.log("Sending OTP verification request:", { email, code: otp });
-
-//         try {
-//             const res = await axios.post("http://localhost:5000/api/auth/verify-reset-code", {
-//                 email,
-//                 code: otp,
-//             });
-
-//             Swal.fire("✅ Verified", res.data.message, "success");
-//             onVerified(email, otp);
-//         } catch (error) {
-//             Swal.fire("❌ Failed", error.response?.data?.message || "Invalid code", "error");
-//         } finally {
-//             setLoading(false);
-//         }
-//     };
-
-//     return (
-//         <section className="login-section">
-//         <div className="container">
-//           <div className="row justify-content-center">
-//             <div className="col-md-6 col-lg-5">
-//               <div className="login-card text-center">
-//                 <img src={logo} alt="Logo" height="50" className="mb-4" />
-//                 <h2>Forgot Password</h2>
-//                 <p>Enter your OTP to reset password</p>
-
-//                 <form onSubmit={handleSubmit}>
-//                   <div className="mb-3 text-start">
-//                     <label className="form-label">OTP Code</label>
-//                     <div className="input-group">
-//                       <span className="input-group-text">
-//                         <MdVpnKey />
-//                       </span>
-//                       <input
-//                         type="text"
-//                         className="form-control"
-//                         placeholder="Enter OTP"
-//                         value={otp}
-//                         onChange={(e) => setOtp(e.target.value)}
-//                         required
-//                       />
-//                     </div>
-//                   </div>
-
-//                   <button
-//                     type="submit"
-//                     className="btn btn-primary w-100"
-//                     disabled={loading}
-//                   >
-//                     {loading ? "Verifying..." : "Verify OTP"}
-//                   </button>
-//                 </form>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </section>
-//     );
-// };
-
-// export default EnterOTP;
-// import { useState } from "react";
-// import Swal from "sweetalert2";
-// import { MdVpnKey } from "react-icons/md";
-// import axios from "axios";
-// import logo from "../assets/images/RATEPRO.png";
-
-// const EnterOTP = ({ email, purpose = "forgot", onVerified }) => {
-//   const [otp, setOtp] = useState("");
-//   const [loading, setLoading] = useState(false);
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-
-//     try {
-//       // Select API route based on purpose
-//       const endpoint =
-//         purpose === "security"
-//           ? "/api/auth/verify-security-otp"
-//           : "/api/auth/verify-reset-code";
-
-//       const res = await axios.post(`http://localhost:5000${endpoint}`, {
-//         email,
-//         code: otp,
-//       });
-
-//       Swal.fire("✅ Verified", res.data.message, "success");
-//       if (onVerified) onVerified(email, otp);
-//     } catch (error) {
-//       Swal.fire("❌ Failed", error.response?.data?.message || "Invalid code", "error");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <section className="login-section">
-//       <div className="container">
-//         <div className="row justify-content-center">
-//           <div className="col-md-6 col-lg-5">
-//             <div className="login-card text-center">
-//               <img src={logo} alt="Logo" height="50" className="mb-4" />
-//               <h2>{purpose === "security" ? "Security Verification" : "Forgot Password"}</h2>
-//               <p>Enter the OTP sent to your email</p>
-
-//               <form onSubmit={handleSubmit}>
-//                 <div className="mb-3 text-start">
-//                   <label className="form-label">OTP Code</label>
-//                   <div className="input-group">
-//                     <span className="input-group-text">
-//                       <MdVpnKey />
-//                     </span>
-//                     <input
-//                       type="text"
-//                       className="form-control"
-//                       placeholder="Enter OTP"
-//                       value={otp}
-//                       onChange={(e) => setOtp(e.target.value)}
-//                       required
-//                     />
-//                   </div>
-//                 </div>
-
-//                 <button
-//                   type="submit"
-//                   className="btn btn-primary w-100"
-//                   disabled={loading}
-//                 >
-//                   {loading ? "Verifying..." : "Verify OTP"}
-//                 </button>
-//               </form>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-//     </section>
-//   );
-// };
-
-// export default EnterOTP;
-import { useState } from "react";
-import { Form, Button, Alert } from "react-bootstrap";
+// src\pages\Auth\EnterOTP.jsx
+import { useState, useEffect } from "react";
 import { FaKey } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import AuthLayout from "../../layouts/AuthLayout";
-import { useEffect } from "react";
-import Swal from "sweetalert2"
+import Swal from "sweetalert2";
 import { verifyResetCode } from "../../api/axiosInstance";
+
+const inputClass = `w-full px-3 py-2.5 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                    bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]
+                    focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
+                    transition-all duration-200 text-base`
+
+const labelClass = "block text-sm font-medium mb-1.5 text-[var(--light-text)] dark:text-[var(--dark-text)]"
 
 const EnterOTP = ({ email: propEmail, onVerified }) => {
   const [otp, setOtp] = useState("");
@@ -181,42 +30,15 @@ const EnterOTP = ({ email: propEmail, onVerified }) => {
     }
   }, [email, navigate]);
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-
-  //   try {
-  //     console.log("Verifying with:", { email, code: otp });
-
-  //     const res = await verifyResetCode({ email, code: otp });
-
-  //     Swal.fire("✅ Verified", res.data.message, "success");
-  //     if (onVerified) {
-  //       onVerified(email, otp); // flow mode
-  //     } else {
-  //       navigate(`/reset-password?email=${email}&otp=${otp}`); // standalone mode
-  //     }
-  //   } catch (error) {
-  //     const msg = error.response?.data?.message || "Something went wrong";
-  //     console.log("OTP verify error:", msg);
-  //     Swal.fire("❌ Failed", msg, "error");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     console.log("handleSubmit triggered");
     console.log("Email:", email);
     console.log("OTP:", otp);
-    
 
     try {
-
       const res = await verifyResetCode({ email, code: otp });
-
       Swal.fire("✅ Verified", res.data.message, "success");
 
       if (onVerified) {
@@ -239,34 +61,45 @@ const EnterOTP = ({ email: propEmail, onVerified }) => {
       subtitle="Check your email for the 6-digit code"
       icon={<FaKey className="text-white" size={28} />}
     >
-      {error && <Alert variant="danger">{error}</Alert>}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+          {error}
+        </div>
+      )}
 
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
-          <Form.Label>OTP Code</Form.Label>
-          <Form.Control
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className={labelClass}>OTP Code</label>
+          <input
             type="text"
             placeholder="Enter 6-digit code"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
             required
+            className={inputClass}
           />
-        </Form.Group>
+        </div>
 
-        <Button type="submit" variant="primary" className="w-100" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2.5 text-base font-medium rounded-lg
+                     bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white
+                     transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
+                     focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:ring-offset-2"
+        >
           {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Verifying...
-            </>
+            </span>
           ) : (
             "Verify OTP"
           )}
-        </Button>
-      </Form>
+        </button>
+      </form>
     </AuthLayout>
   );
 };
 
 export default EnterOTP;
-

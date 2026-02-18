@@ -2,8 +2,7 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
-import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Modal, Dropdown } from "react-bootstrap"
+import { useState, useEffect, useRef } from "react"
 import {
   MdEmail,
   MdAdd,
@@ -21,14 +20,26 @@ import {
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 
-const EmailManagement = ({ darkMode }) => {
+const EmailManagement = () => {
   const [emails, setEmails] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedEmail, setSelectedEmail] = useState(null)
-  const [pagination, setPagination] = useState({ page: 1, limit: 1, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 })
+  const [openDropdownId, setOpenDropdownId] = useState(null)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpenDropdownId(null)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   useEffect(() => {
     setTimeout(() => {
@@ -129,16 +140,16 @@ const EmailManagement = ({ darkMode }) => {
   }, [])
 
   const getStatusBadge = (status) => {
-    const variants = {
-      Sent: "success",
-      Draft: "secondary",
-      Scheduled: "warning",
-      Failed: "danger",
+    const colors = {
+      Sent: "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200",
+      Draft: "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200",
+      Scheduled: "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200",
+      Failed: "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200",
     }
     return (
-      <Badge bg={variants[status] || "secondary"} className="badge-enhanced">
+      <span className={`px-2 py-1 rounded text-xs font-medium ${colors[status] || "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"}`}>
         {status}
-      </Badge>
+      </span>
     )
   }
 
@@ -158,6 +169,7 @@ const EmailManagement = ({ darkMode }) => {
   const handleDelete = (email) => {
     setSelectedEmail(email)
     setShowDeleteModal(true)
+    setOpenDropdownId(null)
   }
 
   const confirmDelete = () => {
@@ -168,285 +180,263 @@ const EmailManagement = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container d-flex justify-content-center align-items-center" style={{ height: "50vh" }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="flex justify-center items-center" style={{ height: "50vh" }}>
+        <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
 
   return (
-    <Container fluid className="email-management-container py-4 fade-in">
+    <div className="py-4 px-3">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center flex-wrap">
-            <div className="d-flex align-items-center">
-              <MdEmail size={32} className="text-primary me-3" />
-              <div>
-                <h2 className={`mb-1 ${darkMode ? "text-white" : "text-dark"}`}>Email Management</h2>
-                <p className="text-muted mb-0">Manage email campaigns and communications</p>
-              </div>
-            </div>
-            <div className="d-flex gap-2 mt-2 mt-md-0">
-              <Button variant="outline-primary" size="sm" className="btn-enhanced">
-                <MdRefresh className="me-1" />
-                Refresh
-              </Button>
-              <Button variant="primary" size="sm" className="btn-enhanced">
-                <MdAdd className="me-1" />
-                Compose Email
-              </Button>
+      <div className="mb-4">
+        <div className="flex justify-between items-center flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <MdEmail size={32} style={{ color: "var(--primary-color)" }} />
+            <div>
+              <h2 className="mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)] text-2xl font-bold">Email Management</h2>
+              <p className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 mb-0 text-sm">Manage email campaigns and communications</p>
             </div>
           </div>
-        </Col>
-      </Row>
+          <div className="flex gap-2">
+            <button className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white flex items-center gap-1">
+              <MdRefresh />
+              Refresh
+            </button>
+            <button className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90 flex items-center gap-1">
+              <MdAdd />
+              Compose Email
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--primary-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Total Emails</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>{emails.length}</div>
-                </div>
-                <MdEmail size={24} style={{ color: "var(--primary-color)" }} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]" style={{ borderLeft: "4px solid var(--primary-color)" }}>
+          <div className="flex items-center">
+            <div className="flex-grow">
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 text-sm mb-1">Total Emails</div>
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] text-2xl font-bold">{emails.length}</div>
+            </div>
+            <MdEmail size={24} style={{ color: "var(--primary-color)" }} />
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]" style={{ borderLeft: "4px solid var(--success-color)" }}>
+          <div className="flex items-center">
+            <div className="flex-grow">
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 text-sm mb-1">Sent Emails</div>
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] text-2xl font-bold">
+                {emails.filter((e) => e.status === "Sent").length}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--success-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Sent Emails</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {emails.filter((e) => e.status === "Sent").length}
-                  </div>
-                </div>
-                <MdSend size={24} style={{ color: "var(--success-color)" }} />
+            </div>
+            <MdSend size={24} style={{ color: "var(--success-color)" }} />
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]" style={{ borderLeft: "4px solid var(--warning-color)" }}>
+          <div className="flex items-center">
+            <div className="flex-grow">
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 text-sm mb-1">Scheduled</div>
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] text-2xl font-bold">
+                {emails.filter((e) => e.status === "Scheduled").length}
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--warning-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Scheduled</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {emails.filter((e) => e.status === "Scheduled").length}
-                  </div>
-                </div>
-                <MdSchedule size={24} style={{ color: "var(--warning-color)" }} />
+            </div>
+            <MdSchedule size={24} style={{ color: "var(--warning-color)" }} />
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]" style={{ borderLeft: "4px solid var(--info-color)" }}>
+          <div className="flex items-center">
+            <div className="flex-grow">
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 text-sm mb-1">Avg Open Rate</div>
+              <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] text-2xl font-bold">
+                {Math.round(
+                  emails.filter((e) => e.openRate > 0).reduce((sum, e) => sum + e.openRate, 0) /
+                  emails.filter((e) => e.openRate > 0).length || 0,
+                )}
+                %
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card
-            className="stat-card border-0 shadow-sm card-enhanced"
-            style={{ borderLeft: "4px solid var(--info-color)" }}
-          >
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-grow-1">
-                  <div className={`text-muted small mb-1 ${darkMode ? "text-light" : ""}`}>Avg Open Rate</div>
-                  <div className={`h4 mb-0 fw-bold ${darkMode ? "text-white" : "text-dark"}`}>
-                    {Math.round(
-                      emails.filter((e) => e.openRate > 0).reduce((sum, e) => sum + e.openRate, 0) /
-                        emails.filter((e) => e.openRate > 0).length || 0,
-                    )}
-                    %
-                  </div>
-                </div>
-                <MdTrendingUp size={24} style={{ color: "var(--info-color)" }} />
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+            <MdTrendingUp size={24} style={{ color: "var(--info-color)" }} />
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
-      <Row className="mb-4">
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="py-3">
-              <Row className="align-items-center">
-                <Col md={6} lg={4} className="mb-2 mb-md-0">
-                  <InputGroup className="form-enhanced">
-                    <InputGroup.Text>
-                      <MdSearch />
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search emails..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
-                </Col>
-                <Col md={3} lg={2} className="mb-2 mb-md-0">
-                  <Form.Select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="form-enhanced"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="sent">Sent</option>
-                    <option value="draft">Draft</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="failed">Failed</option>
-                  </Form.Select>
-                </Col>
-                <Col md={3} lg={2}>
-                  <Button variant="outline-secondary" className="w-100 btn-enhanced">
-                    <MdFilterList className="me-1" />
-                    More Filters
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Emails Table */}
-      <Row>
-        <Col>
-          <Card className="border-0 shadow-sm card-enhanced">
-            <Card.Body className="p-0">
-              <div className="table-responsive">
-                <Table className="mb-0 table-enhanced" hover>
-                  <thead className="table-light">
-                    <tr>
-                      <th className="border-0 py-3 px-4">
-                        <div className="d-flex align-items-center">
-                          <MdEmail className="me-2" size={16} />
-                          Subject
-                        </div>
-                      </th>
-                      <th className="border-0 py-3">
-                        <div className="d-flex align-items-center">
-                          <MdPeople className="me-2" size={16} />
-                          Recipient
-                        </div>
-                      </th>
-                      <th className="border-0 py-3">Status</th>
-                      <th className="border-0 py-3">Sent Date</th>
-                      <th className="border-0 py-3">Open Rate</th>
-                      <th className="border-0 py-3">Click Rate</th>
-                      <th className="border-0 py-3 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentEmails.map((email) => (
-                      <tr key={email.id}>
-                        <td className="py-3 px-4 border-0">
-                          <div>
-                            <div className={`fw-medium mb-1 ${darkMode ? "text-white" : "text-dark"}`}>
-                              {email.subject}
-                            </div>
-                            <div className="small text-muted">{email.campaign}</div>
-                          </div>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{email.recipient}</span>
-                        </td>
-                        <td className="py-3 border-0">{getStatusBadge(email.status)}</td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{email.sentDate || "Not sent"}</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{email.openRate}%</span>
-                        </td>
-                        <td className="py-3 border-0">
-                          <span className={darkMode ? "text-white" : "text-dark"}>{email.clickRate}%</span>
-                        </td>
-                        <td className="py-3 text-center border-0">
-                          <Dropdown align="end">
-                            <Dropdown.Toggle
-                              variant="link"
-                              className="p-0 border-0"
-                              style={{ color: darkMode ? "var(--dark-text)" : "var(--light-text)" }}
-                            >
-                              <MdMoreVert />
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdOpenInNew className="me-2" />
-                                View
-                              </Dropdown.Item>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdEdit className="me-2" />
-                                Edit
-                              </Dropdown.Item>
-                              <Dropdown.Item className="d-flex align-items-center">
-                                <MdSend className="me-2" />
-                                Resend
-                              </Dropdown.Item>
-                              <Dropdown.Divider />
-                              <Dropdown.Item
-                                className="d-flex align-items-center text-danger"
-                                onClick={() => handleDelete(email)}
-                              >
-                                <MdDelete className="me-2" />
-                                Delete
-                              </Dropdown.Item>
-                            </Dropdown.Menu>
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-              <div className="p-3 border-top">
-                <Pagination
-                  current={pagination.page}
-                  total={filteredEmails.length}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-                  darkMode={darkMode}
+      <div className="mb-4">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            <div className="md:col-span-6 lg:col-span-4">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+                <MdSearch className="text-[var(--light-text)] dark:text-[var(--dark-text)]" />
+                <input
+                  type="text"
+                  className="flex-1 bg-transparent border-none outline-none text-[var(--light-text)] dark:text-[var(--dark-text)] placeholder:text-[var(--light-text)] placeholder:dark:text-[var(--dark-text)] placeholder:opacity-50"
+                  placeholder="Search emails..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+            <div className="md:col-span-3 lg:col-span-2">
+              <select
+                className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="sent">Sent</option>
+                <option value="draft">Draft</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+            <div className="md:col-span-3 lg:col-span-2">
+              <button className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] flex items-center justify-center gap-1">
+                <MdFilterList />
+                More Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Emails Table */}
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <tr>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">
+                  <div className="flex items-center gap-2">
+                    <MdEmail size={16} />
+                    Subject
+                  </div>
+                </th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">
+                  <div className="flex items-center gap-2">
+                    <MdPeople size={16} />
+                    Recipient
+                  </div>
+                </th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Status</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Sent Date</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Open Rate</th>
+                <th className="p-3 text-left text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Click Rate</th>
+                <th className="p-3 text-center text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-[var(--light-card)] dark:bg-[var(--dark-card)]">
+              {currentEmails.map((email) => (
+                <tr key={email.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors">
+                  <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    <div>
+                      <div className="font-medium mb-1">
+                        {email.subject}
+                      </div>
+                      <div className="text-sm opacity-70">{email.campaign}</div>
+                    </div>
+                  </td>
+                  <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    {email.recipient}
+                  </td>
+                  <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{getStatusBadge(email.status)}</td>
+                  <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    {email.sentDate || "Not sent"}
+                  </td>
+                  <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    {email.openRate}%
+                  </td>
+                  <td className="p-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    {email.clickRate}%
+                  </td>
+                  <td className="p-3 text-center text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    <div className="relative inline-block" ref={openDropdownId === email.id ? dropdownRef : null}>
+                      <button
+                        className="p-0 border-none bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer hover:opacity-70 transition-opacity"
+                        onClick={() => setOpenDropdownId(openDropdownId === email.id ? null : email.id)}
+                      >
+                        <MdMoreVert />
+                      </button>
+                      {openDropdownId === email.id && (
+                        <div className="absolute right-0 top-full mt-1 bg-[var(--light-card)] dark:bg-[var(--dark-card)] shadow-lg rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] py-1 min-w-[160px] z-50">
+                          <button className="w-full text-left flex items-center gap-2 px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors border-none bg-transparent" onClick={() => setOpenDropdownId(null)}>
+                            <MdOpenInNew />
+                            View
+                          </button>
+                          <button className="w-full text-left flex items-center gap-2 px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors border-none bg-transparent" onClick={() => setOpenDropdownId(null)}>
+                            <MdEdit />
+                            Edit
+                          </button>
+                          <button className="w-full text-left flex items-center gap-2 px-3 py-2 text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors border-none bg-transparent" onClick={() => setOpenDropdownId(null)}>
+                            <MdSend />
+                            Resend
+                          </button>
+                          <hr className="my-1 border-[var(--light-border)] dark:border-[var(--dark-border)]" />
+                          <button
+                            className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors border-none bg-transparent"
+                            style={{ color: "var(--danger-color)" }}
+                            onClick={() => handleDelete(email)}
+                          >
+                            <MdDelete />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="p-3 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <Pagination
+            current={pagination.page}
+            total={filteredEmails.length}
+            limit={pagination.limit}
+            onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          />
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered className="modal-enhanced">
-        <Modal.Header closeButton>
-          <Modal.Title className={darkMode ? "text-white" : "text-dark"}>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete "{selectedEmail?.subject}"? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} className="btn-enhanced">
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete} className="btn-enhanced">
-            Delete Email
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+      {showDeleteModal && (
+        <div>
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setShowDeleteModal(false)}></div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-md w-full border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <div className="flex justify-between items-center p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <h5 className="text-[var(--light-text)] dark:text-[var(--dark-text)] font-semibold text-lg mb-0">Confirm Delete</h5>
+                <button 
+                  className="text-[var(--light-text)] dark:text-[var(--dark-text)] hover:opacity-70 transition-opacity text-2xl leading-none border-none bg-transparent cursor-pointer"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-4 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                Are you sure you want to delete "{selectedEmail?.subject}"? This action cannot be undone.
+              </div>
+              <div className="flex justify-end gap-2 p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                <button 
+                  className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="px-4 py-2 rounded-md font-medium transition-colors text-white hover:opacity-90"
+                  style={{ backgroundColor: "var(--danger-color)" }}
+                  onClick={confirmDelete}
+                >
+                  Delete Email
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

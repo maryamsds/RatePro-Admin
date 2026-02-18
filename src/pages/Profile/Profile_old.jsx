@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { 
+import {
   MdPerson, MdSecurity, MdNotifications, MdEdit, MdSave, MdCancel,
   MdCheck, MdClose, MdEmail, MdPhone, MdWork, MdInfo,
   MdBusiness, MdLanguage, MdAccessTime, MdLock, MdRefresh,
@@ -391,7 +391,7 @@ const Profile = () => {
     }
   };
 
-  const tabClass = (tab) => `nav-link d-flex align-items-center ${activeTab === tab ? "active" : ""}`;
+  const tabClass = (tab) => `nav-link flex align-items-center ${activeTab === tab ? "active" : ""}`;
 
   return (
     <div className="profile-container">
@@ -467,7 +467,7 @@ const Profile = () => {
           >
             <Card.Body className="text-center">
               <div
-                className="profile-avatar mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center position-relative"
+                className="profile-avatar mx-auto mb-3 rounded-circle flex align-items-center justify-content-center position-relative"
                 style={{
                   width: "120px",
                   height: "120px",
@@ -827,7 +827,7 @@ const Profile = () => {
                   {Object.entries(notifications).map(([key, value]) => (
                     <div
                       key={key}
-                      className="col-12 d-flex justify-content-between align-items-center"
+                      className="col-12 flex justify-content-between align-items-center"
                     >
                       <label className="form-check-label">
                         {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
@@ -852,7 +852,7 @@ const Profile = () => {
           </Card>
         </Col>
       </Row>
-    </Container>
+    </div>
   )
 }
 

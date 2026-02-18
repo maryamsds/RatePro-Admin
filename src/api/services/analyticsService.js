@@ -156,12 +156,21 @@ export const getQuickSummary = async () => {
 
 /**
  * Get all trends in one call
- * @param {Object} params - { range, surveyId }
+ * @param {Object} params - { days: number (positive integer), surveyId?: string }
  * @returns {Promise<Object>}
+ * @throws {Error} If days is not a positive integer
  */
 export const getAllTrends = async (params = {}) => {
-  const { range = "30d", surveyId } = params;
-  const queryParams = new URLSearchParams({ range });
+  const { days = 30, surveyId } = params;
+
+  // Strict validation — prevent silent fallback when callers pass range strings
+  if (!Number.isInteger(days) || days <= 0) {
+    throw new Error(
+      `getAllTrends requires a positive integer 'days' parameter. Received: ${JSON.stringify(days)}`
+    );
+  }
+
+  const queryParams = new URLSearchParams({ days: String(days) });
   if (surveyId) queryParams.append("surveyId", surveyId);
 
   const response = await axiosInstance.get(`/analytics/trends/all?${queryParams.toString()}`);

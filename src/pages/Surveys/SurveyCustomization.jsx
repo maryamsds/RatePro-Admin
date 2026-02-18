@@ -3,47 +3,35 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { Container, Row, Col, Card, Form, Button, Tab, Nav, Alert } from "react-bootstrap"
 import { MdSave, MdPreview, MdPalette, MdImage, MdBrush } from "react-icons/md"
 
 const SurveyCustomization = () => {
   const { id } = useParams()
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
+  const [activeTab, setActiveTab] = useState("branding")
   const [customization, setCustomization] = useState({
-    // Branding
     logo: "",
     companyName: "Rate Pro",
-    primaryColor: "var(--bs-primary)",
-    secondaryColor: "var(--bs-secondary)",
-    backgroundColor: "var(--bs-body-bg)",
-    textColor: "var(--bs-body-color)",
-
-    // Layout
+    primaryColor: "#0d6efd",
+    secondaryColor: "#6c757d",
+    backgroundColor: "#ffffff",
+    textColor: "#212529",
     theme: "modern",
     layout: "centered",
     progressBar: true,
     questionNumbers: true,
-
-    // Custom CSS
     customCss: "",
-
-    // Survey Settings
     welcomeMessage: "Welcome to our survey",
     thankYouMessage: "Thank you for your participation",
     footerText: "Powered by Rate Pro",
-
-    // Advanced
     favicon: "",
     customDomain: "",
     embedCode: "",
   })
 
   useEffect(() => {
-    // Simulate loading customization data
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+    setTimeout(() => setLoading(false), 1000)
   }, [id])
 
   const handleChange = (field, value) => {
@@ -74,397 +62,322 @@ const SurveyCustomization = () => {
     { id: "full-width", name: "Full Width", description: "Questions span full width" },
   ]
 
+  const tabs = [
+    { key: "branding", label: "Branding", icon: MdPalette },
+    { key: "layout", label: "Layout", icon: MdBrush },
+    { key: "content", label: "Content", icon: MdImage },
+    { key: "advanced", label: "Advanced", icon: null },
+  ]
+
   if (loading) {
     return (
-      <Container fluid className="py-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p>Loading customization options...</p>
+      <div className="p-6">
+        <div className="text-center py-12">
+          <span className="inline-block w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-[var(--secondary-color)]">Loading customization options...</p>
         </div>
-      </Container>
+      </div>
     )
   }
 
   return (
-    <Container fluid className="py-4">
+    <div className="p-6">
       {/* Header */}
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">Survey Customization</h1>
-              <p className="text-muted mb-0">Customize the look and feel of your survey</p>
-            </div>
-            <div className="d-flex gap-2">
-              <Button variant="outline-primary">
-                <MdPreview className="me-2" />
-                Preview
-              </Button>
-              <Button variant="primary" onClick={handleSave}>
-                <MdSave className="me-2" />
-                Save Changes
-              </Button>
-            </div>
-          </div>
-        </Col>
-      </Row>
+      <div className="flex justify-between items-center flex-wrap gap-3 mb-6">
+        <div>
+          <h1 className="text-xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Survey Customization</h1>
+          <p className="text-[var(--secondary-color)] text-sm">Customize the look and feel of your survey</p>
+        </div>
+        <div className="flex gap-2">
+          <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10 transition-all duration-200">
+            <MdPreview size={16} />
+            Preview
+          </button>
+          <button onClick={handleSave} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary-color)] hover:bg-[var(--primary-hover)] text-white transition-all duration-200">
+            <MdSave size={16} />
+            Save Changes
+          </button>
+        </div>
+      </div>
 
       {saved && (
-        <Alert variant="success" className="mb-4">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm">
           Customization settings saved successfully!
-        </Alert>
+        </div>
       )}
 
-      <Row>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Customization Options */}
-        <Col lg={8}>
-          <Tab.Container defaultActiveKey="branding">
-            <Card className="border-0 shadow-sm">
-              <Card.Header className="bg-transparent">
-                <Nav variant="tabs" className="border-0">
-                  <Nav.Item>
-                    <Nav.Link eventKey="branding" className="d-flex align-items-center">
-                      <MdPalette className="me-2" />
-                      Branding
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="layout" className="d-flex align-items-center">
-                      <MdBrush className="me-2" />
-                      Layout
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="content" className="d-flex align-items-center">
-                      <MdImage className="me-2" />
-                      Content
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="advanced">Advanced</Nav.Link>
-                  </Nav.Item>
-                </Nav>
-              </Card.Header>
+        <div className="lg:col-span-2">
+          <div className="card border-0 shadow-sm rounded-xl overflow-hidden">
+            {/* Tabs */}
+            <div className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent px-4">
+              <div className="flex gap-1 -mb-px">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`inline-flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200
+                      ${activeTab === tab.key
+                        ? "border-[var(--primary-color)] text-[var(--primary-color)]"
+                        : "border-transparent text-[var(--secondary-color)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)]"
+                      }`}
+                  >
+                    {tab.icon && <tab.icon size={16} />}
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <Card.Body>
-                <Tab.Content>
-                  {/* Branding Tab */}
-                  <Tab.Pane eventKey="branding">
-                    <Row>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Company Logo</Form.Label>
-                          <Form.Control
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleChange("logo", e.target.files[0])}
-                          />
-                          <Form.Text className="text-muted">Upload your company logo (PNG, JPG, SVG)</Form.Text>
-                        </Form.Group>
-                      </Col>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Company Name</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={customization.companyName}
-                            onChange={(e) => handleChange("companyName", e.target.value)}
-                          />
-                        </Form.Group>
-                      </Col>
-                    </Row>
-
-                    <Row>
-                      <Col md={3}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Primary Color</Form.Label>
-                          <Form.Control
-                            type="color"
-                            value={customization.primaryColor}
-                            onChange={(e) => handleChange("primaryColor", e.target.value)}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={3}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Secondary Color</Form.Label>
-                          <Form.Control
-                            type="color"
-                            value={customization.secondaryColor}
-                            onChange={(e) => handleChange("secondaryColor", e.target.value)}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={3}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Background Color</Form.Label>
-                          <Form.Control
-                            type="color"
-                            value={customization.backgroundColor}
-                            onChange={(e) => handleChange("backgroundColor", e.target.value)}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={3}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Text Color</Form.Label>
-                          <Form.Control
-                            type="color"
-                            value={customization.textColor}
-                            onChange={(e) => handleChange("textColor", e.target.value)}
-                          />
-                        </Form.Group>
-                      </Col>
-                    </Row>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Theme</Form.Label>
-                      <Row>
-                        {themes.map((theme) => (
-                          <Col key={theme.id} md={6} className="mb-3">
-                            <Card
-                              className={`cursor-pointer ${customization.theme === theme.id ? "border-primary" : ""}`}
-                              onClick={() => handleChange("theme", theme.id)}
-                            >
-                              <Card.Body className="text-center">
-                                <h6>{theme.name}</h6>
-                                <p className="text-muted small mb-0">{theme.preview}</p>
-                                <Form.Check
-                                  type="radio"
-                                  name="theme"
-                                  checked={customization.theme === theme.id}
-                                  onChange={() => handleChange("theme", theme.id)}
-                                  className="mt-2"
-                                />
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        ))}
-                      </Row>
-                    </Form.Group>
-                  </Tab.Pane>
-
-                  {/* Layout Tab */}
-                  <Tab.Pane eventKey="layout">
-                    <Form.Group className="mb-4">
-                      <Form.Label>Layout Style</Form.Label>
-                      <Row>
-                        {layouts.map((layout) => (
-                          <Col key={layout.id} md={4} className="mb-3">
-                            <Card
-                              className={`cursor-pointer ${customization.layout === layout.id ? "border-primary" : ""}`}
-                              onClick={() => handleChange("layout", layout.id)}
-                            >
-                              <Card.Body className="text-center">
-                                <h6>{layout.name}</h6>
-                                <p className="text-muted small mb-2">{layout.description}</p>
-                                <Form.Check
-                                  type="radio"
-                                  name="layout"
-                                  checked={customization.layout === layout.id}
-                                  onChange={() => handleChange("layout", layout.id)}
-                                />
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        ))}
-                      </Row>
-                    </Form.Group>
-
-                    <Row>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Check
-                            type="checkbox"
-                            label="Show Progress Bar"
-                            checked={customization.progressBar}
-                            onChange={(e) => handleChange("progressBar", e.target.checked)}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Check
-                            type="checkbox"
-                            label="Show Question Numbers"
-                            checked={customization.questionNumbers}
-                            onChange={(e) => handleChange("questionNumbers", e.target.checked)}
-                          />
-                        </Form.Group>
-                      </Col>
-                    </Row>
-                  </Tab.Pane>
-
-                  {/* Content Tab */}
-                  <Tab.Pane eventKey="content">
-                    <Form.Group className="mb-3">
-                      <Form.Label>Welcome Message</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={3}
-                        value={customization.welcomeMessage}
-                        onChange={(e) => handleChange("welcomeMessage", e.target.value)}
+            <div className="p-6">
+              {/* Branding Tab */}
+              {activeTab === "branding" && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Company Logo</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleChange("logo", e.target.files[0])}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-sm file:mr-3 file:px-3 file:py-1 file:rounded file:border-0 file:bg-[var(--primary-color)]/10 file:text-[var(--primary-color)] file:text-sm"
                       />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Thank You Message</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={3}
-                        value={customization.thankYouMessage}
-                        onChange={(e) => handleChange("thankYouMessage", e.target.value)}
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Footer Text</Form.Label>
-                      <Form.Control
+                      <small className="text-[var(--secondary-color)] text-xs mt-1 block">Upload your company logo (PNG, JPG, SVG)</small>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Company Name</label>
+                      <input
                         type="text"
-                        value={customization.footerText}
-                        onChange={(e) => handleChange("footerText", e.target.value)}
+                        value={customization.companyName}
+                        onChange={(e) => handleChange("companyName", e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
                       />
-                    </Form.Group>
-                  </Tab.Pane>
+                    </div>
+                  </div>
 
-                  {/* Advanced Tab */}
-                  <Tab.Pane eventKey="advanced">
-                    <Form.Group className="mb-3">
-                      <Form.Label>Custom CSS</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={8}
-                        value={customization.customCss}
-                        onChange={(e) => handleChange("customCss", e.target.value)}
-                        placeholder="/* Add your custom CSS here */"
-                        className="font-monospace"
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Custom Domain</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={customization.customDomain}
-                        onChange={(e) => handleChange("customDomain", e.target.value)}
-                        placeholder="surveys.yourcompany.com"
-                      />
-                      <Form.Text className="text-muted">
-                        Use your own domain for surveys (requires DNS configuration)
-                      </Form.Text>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <Form.Label className="mb-0">Embed Code</Form.Label>
-                        <Button variant="outline-primary" size="sm" onClick={generateEmbedCode}>
-                          Generate Code
-                        </Button>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    {[
+                      { label: "Primary Color", field: "primaryColor" },
+                      { label: "Secondary Color", field: "secondaryColor" },
+                      { label: "Background Color", field: "backgroundColor" },
+                      { label: "Text Color", field: "textColor" },
+                    ].map((item) => (
+                      <div key={item.field}>
+                        <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{item.label}</label>
+                        <input
+                          type="color"
+                          value={customization[item.field]}
+                          onChange={(e) => handleChange(item.field, e.target.value)}
+                          className="w-full h-10 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] cursor-pointer"
+                        />
                       </div>
-                      <Form.Control
-                        as="textarea"
-                        rows={3}
-                        value={customization.embedCode}
-                        readOnly
-                        className="font-monospace"
-                        placeholder="Click 'Generate Code' to create embed code"
+                    ))}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Theme</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {themes.map((theme) => (
+                        <div
+                          key={theme.id}
+                          onClick={() => handleChange("theme", theme.id)}
+                          className={`p-4 rounded-lg border-2 cursor-pointer text-center transition-all duration-200
+                            ${customization.theme === theme.id
+                              ? "border-[var(--primary-color)] bg-[var(--primary-color)]/5"
+                              : "border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--primary-color)]/50"
+                            }`}
+                        >
+                          <h6 className="font-semibold text-sm mb-1">{theme.name}</h6>
+                          <p className="text-[var(--secondary-color)] text-xs mb-2">{theme.preview}</p>
+                          <input
+                            type="radio"
+                            name="theme"
+                            checked={customization.theme === theme.id}
+                            onChange={() => handleChange("theme", theme.id)}
+                            className="accent-[var(--primary-color)]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Layout Tab */}
+              {activeTab === "layout" && (
+                <>
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Layout Style</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {layouts.map((layout) => (
+                        <div
+                          key={layout.id}
+                          onClick={() => handleChange("layout", layout.id)}
+                          className={`p-4 rounded-lg border-2 cursor-pointer text-center transition-all duration-200
+                            ${customization.layout === layout.id
+                              ? "border-[var(--primary-color)] bg-[var(--primary-color)]/5"
+                              : "border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--primary-color)]/50"
+                            }`}
+                        >
+                          <h6 className="font-semibold text-sm mb-1">{layout.name}</h6>
+                          <p className="text-[var(--secondary-color)] text-xs mb-2">{layout.description}</p>
+                          <input type="radio" name="layout" checked={customization.layout === layout.id} onChange={() => handleChange("layout", layout.id)} className="accent-[var(--primary-color)]" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={customization.progressBar} onChange={(e) => handleChange("progressBar", e.target.checked)} className="w-4 h-4 accent-[var(--primary-color)]" />
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">Show Progress Bar</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={customization.questionNumbers} onChange={(e) => handleChange("questionNumbers", e.target.checked)} className="w-4 h-4 accent-[var(--primary-color)]" />
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">Show Question Numbers</span>
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {/* Content Tab */}
+              {activeTab === "content" && (
+                <>
+                  {[
+                    { label: "Welcome Message", field: "welcomeMessage", rows: 3 },
+                    { label: "Thank You Message", field: "thankYouMessage", rows: 3 },
+                  ].map((item) => (
+                    <div key={item.field} className="mb-4">
+                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{item.label}</label>
+                      <textarea
+                        rows={item.rows}
+                        value={customization[item.field]}
+                        onChange={(e) => handleChange(item.field, e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 resize-y"
                       />
-                      <Form.Text className="text-muted">Use this code to embed the survey on your website</Form.Text>
-                    </Form.Group>
-                  </Tab.Pane>
-                </Tab.Content>
-              </Card.Body>
-            </Card>
-          </Tab.Container>
-        </Col>
+                    </div>
+                  ))}
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Footer Text</label>
+                    <input
+                      type="text"
+                      value={customization.footerText}
+                      onChange={(e) => handleChange("footerText", e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Advanced Tab */}
+              {activeTab === "advanced" && (
+                <>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Custom CSS</label>
+                    <textarea
+                      rows={8}
+                      value={customization.customCss}
+                      onChange={(e) => handleChange("customCss", e.target.value)}
+                      placeholder="/* Add your custom CSS here */"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 resize-y"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">Custom Domain</label>
+                    <input
+                      type="text"
+                      value={customization.customDomain}
+                      onChange={(e) => handleChange("customDomain", e.target.value)}
+                      placeholder="surveys.yourcompany.com"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                    />
+                    <small className="text-[var(--secondary-color)] text-xs mt-1 block">Use your own domain for surveys (requires DNS configuration)</small>
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Embed Code</label>
+                      <button onClick={generateEmbedCode} className="text-xs px-3 py-1 rounded-lg border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10 transition-all">
+                        Generate Code
+                      </button>
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={customization.embedCode}
+                      readOnly
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-gray-50 dark:bg-gray-800 text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm font-mono"
+                      placeholder="Click 'Generate Code' to create embed code"
+                    />
+                    <small className="text-[var(--secondary-color)] text-xs mt-1 block">Use this code to embed the survey on your website</small>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Preview */}
-        <Col lg={4}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header>
-              <h6 className="mb-0">Live Preview</h6>
-            </Card.Header>
-            <Card.Body>
+        <div>
+          <div className="card border-0 shadow-sm rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+              <h6 className="font-semibold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] m-0">Live Preview</h6>
+            </div>
+            <div className="p-4">
               <div
-                className="border rounded p-3"
+                className="border rounded-lg p-4"
                 style={{
                   backgroundColor: customization.backgroundColor,
                   color: customization.textColor,
                   minHeight: "400px",
                 }}
               >
-                {/* Header */}
-                <div className="text-center mb-3">
+                <div className="text-center mb-4">
                   {customization.logo && (
                     <div className="mb-2">
-                      <div
-                        className="bg-light rounded d-inline-block px-3 py-2"
-                        style={{ color: customization.primaryColor }}
-                      >
+                      <div className="inline-block px-3 py-2 bg-gray-100 rounded" style={{ color: customization.primaryColor }}>
                         Logo
                       </div>
                     </div>
                   )}
-                  <h5 style={{ color: customization.primaryColor }}>{customization.companyName}</h5>
+                  <h5 className="font-semibold" style={{ color: customization.primaryColor }}>{customization.companyName}</h5>
                 </div>
-
-                {/* Welcome Message */}
                 <div className="mb-3">
-                  <p className="small">{customization.welcomeMessage}</p>
+                  <p className="text-sm">{customization.welcomeMessage}</p>
                 </div>
-
-                {/* Progress Bar */}
                 {customization.progressBar && (
                   <div className="mb-3">
-                    <div className="progress" style={{ height: "6px" }}>
-                      <div
-                        className="progress-bar"
-                        style={{
-                          width: "60%",
-                          backgroundColor: customization.primaryColor,
-                        }}
-                      />
+                    <div className="w-full bg-gray-200 rounded-full" style={{ height: "6px" }}>
+                      <div className="h-full rounded-full" style={{ width: "60%", backgroundColor: customization.primaryColor }} />
                     </div>
-                    <small className="text-muted">Question 3 of 5</small>
+                    <small className="text-gray-500 text-xs">Question 3 of 5</small>
                   </div>
                 )}
-
-                {/* Sample Question */}
                 <div className="mb-3">
                   {customization.questionNumbers && (
-                    <span className="badge me-2" style={{ backgroundColor: customization.primaryColor }}>
-                      1
-                    </span>
+                    <span className="inline-block px-2 py-0.5 rounded text-white text-xs mr-2" style={{ backgroundColor: customization.primaryColor }}>1</span>
                   )}
-                  <h6>How satisfied are you with our service?</h6>
-                  <div className="mt-2">
+                  <h6 className="inline font-semibold text-sm">How satisfied are you with our service?</h6>
+                  <div className="mt-2 flex flex-wrap gap-1">
                     {[1, 2, 3, 4, 5].map((rating) => (
                       <button
                         key={rating}
-                        className="btn btn-outline-primary btn-sm me-2 mb-2"
-                        style={{
-                          borderColor: customization.primaryColor,
-                          color: customization.primaryColor,
-                        }}
+                        className="px-2 py-1 text-xs rounded border"
+                        style={{ borderColor: customization.primaryColor, color: customization.primaryColor }}
                       >
                         {rating}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Footer */}
-                <div className="text-center mt-4 pt-3 border-top">
-                  <small className="text-muted">{customization.footerText}</small>
+                <div className="text-center mt-6 pt-3 border-t border-gray-200">
+                  <small className="text-gray-500">{customization.footerText}</small>
                 </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

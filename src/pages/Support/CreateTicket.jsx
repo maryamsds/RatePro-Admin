@@ -1,7 +1,6 @@
 // src/pages/Support/CreateTicket.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Row, Col, Form, Button, Spinner } from "react-bootstrap";
 import {
   MdSupport,
   MdSave,
@@ -16,7 +15,6 @@ import Swal from "sweetalert2";
 import { createTicket, getTicketCategories } from "../../api/ticketApi";
 import { useAuth } from '../../context/AuthContext';
 
-// ✅ Validation helpers (since imports were commented out)
 const validateRequired = (value) => {
   if (!value || value.trim() === "") {
     return { valid: false, error: "This field is required" };
@@ -39,7 +37,7 @@ const CreateTicket = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formChanged, setFormChanged] = useState(false);
   const [validationState, setValidationState] = useState({});
-   const { user, setGlobalLoading } = useAuth();
+  const { user, setGlobalLoading } = useAuth();
 
   const [ticket, setTicket] = useState({
     subject: "",
@@ -52,17 +50,14 @@ const CreateTicket = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Get categories
   const categoryOptions = getTicketCategories();
 
-  // ✅ handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setTicket((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
     setFormChanged(true);
 
-    // Real-time validation
     if (name === "email" && value) {
       const result = validateEmail(value);
       setValidationState((prev) => ({
@@ -82,7 +77,6 @@ const CreateTicket = () => {
     setFormChanged(true);
   };
 
-  // ✅ Form validation before submit
   const validateForm = () => {
     const newErrors = {};
 
@@ -102,7 +96,6 @@ const CreateTicket = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -126,16 +119,15 @@ const CreateTicket = () => {
       };
 
       const response = await createTicket(ticketData, ticket.attachments);
-      
+
       Swal.fire({
         icon: "success",
         title: "Ticket Created Successfully!",
         text: "Your support ticket has been submitted.",
-        timer: 2000, // optional
+        timer: 2000,
         showConfirmButton: false,
       });
 
-      // redirect after small delay to let Swal show
       setTimeout(() => {
         navigate("/app/support");
       }, 2000);
@@ -158,32 +150,18 @@ const CreateTicket = () => {
   };
 
   return (
-    <div className="create-ticket-container">
+    <div className="w-full">
       {/* Header */}
-      <div
-        className="bg-light border-bottom mb-4"
-        style={{
-          backgroundColor: "var(--light-card)",
-          borderColor: "var(--light-border)",
-        }}
-      >
-        <div className="container-fluid px-3 px-md-4 py-3">
-          <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
-            <div className="d-flex align-items-center gap-3 flex-grow-1">
-              <div
-                className="d-flex align-items-center justify-content-center rounded"
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#1fdae4",
-                }}
-              >
-                <MdSupport size={24} />
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+        <div className="w-full px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+            <div className="flex items-center gap-3 flex-grow">
+              <div className="flex items-center justify-center rounded-lg w-12 h-12 bg-[var(--primary-color)]">
+                <MdSupport size={24} className="text-white" />
               </div>
-
-              <div className="flex-grow-1">
-                <h1 className="h4 mb-0">Create Support Ticket</h1>
-                <p className="page-subtitle">Submit a new support request</p>
+              <div className="flex-grow">
+                <h1 className="text-xl font-bold mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)]">Create Support Ticket</h1>
+                <p className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70 text-sm mb-0">Submit a new support request</p>
               </div>
             </div>
           </div>
@@ -191,246 +169,244 @@ const CreateTicket = () => {
       </div>
 
       {/* Form */}
-      <div className="form-content px-0">
-        <div className="form-wrapper">
-          <Form onSubmit={handleSubmit} className="ticket-form">
+      <div className="px-4 md:px-6">
+        <div className="max-w-4xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* --- Ticket Info --- */}
-            <div className="form-section animate-slide-up" style={{ "--delay": "0.1s" }}>
-              <div className="section-header">
-                <div className="section-icon">
-                  <MdInfo />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] opacity-0 animate-[slideUp_0.5s_ease-out_0.1s_forwards]">
+              <div className="flex items-start gap-3 mb-6">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--primary-color)] bg-opacity-10 text-[var(--primary-color)]">
+                  <MdInfo size={20} />
                 </div>
                 <div>
-                  <h3 className="section-title" style={{ color: "#1fdae4" }}>
+                  <h3 className="text-lg font-semibold mb-1 text-[var(--primary-color)]">
                     Ticket Information
                   </h3>
-                  <p className="section-subtitle">Provide details about your issue</p>
+                  <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Provide details about your issue</p>
                 </div>
               </div>
 
-              <div className="section-content">
-                <Row className="g-3">
-                  {/* Subject */}
-                  <Col md={12}>
-                    <Form.Group className="form-group">
-                      <label className="form-label required">Subject</label>
-                      <div className="input-wrapper">
-                        <MdDescription className="input-icon" />
-                        <Form.Control
-                          type="text"
-                          name="subject"
-                          value={ticket.subject}
-                          onChange={handleChange}
-                          placeholder="Brief description of the issue"
-                          className={`form-input ${
-                            validationState.subject === "valid"
-                              ? "is-valid"
-                              : validationState.subject === "invalid"
-                              ? "is-invalid"
-                              : ""
-                          }`}
-                        />
-                        {validationState.subject === "valid" && (
-                          <MdCheckCircle className="validation-icon valid" />
-                        )}
-                        {validationState.subject === "invalid" && (
-                          <MdError className="validation-icon invalid" />
-                        )}
-                      </div>
-                      {errors.subject && <div className="field-error">{errors.subject}</div>}
-                    </Form.Group>
-                  </Col>
+              <div className="space-y-4">
+                {/* Subject */}
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    Subject <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50">
+                      <MdDescription size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      name="subject"
+                      value={ticket.subject}
+                      onChange={handleChange}
+                      placeholder="Brief description of the issue"
+                      className={`w-full pl-10 pr-10 py-2 rounded-md border bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 transition-all ${
+                        validationState.subject === "valid"
+                          ? "border-[var(--success-color)] focus:ring-[var(--success-color)]"
+                          : validationState.subject === "invalid"
+                            ? "border-[var(--danger-color)] focus:ring-[var(--danger-color)]"
+                            : "border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-[var(--primary-color)]"
+                      }`}
+                    />
+                    {validationState.subject === "valid" && (
+                      <MdCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--success-color)]" size={18} />
+                    )}
+                    {validationState.subject === "invalid" && (
+                      <MdError className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--danger-color)]" size={18} />
+                    )}
+                  </div>
+                  {errors.subject && (
+                    <div className="text-[var(--danger-color)] text-sm mt-1">{errors.subject}</div>
+                  )}
+                </div>
 
-                  {/* Description */}
-                  <Col md={12}>
-                    <Form.Group className="form-group">
-                      <label className="form-label required">Description</label>
-                      <Form.Control
-                        as="textarea"
-                        name="description"
-                        rows={6}
-                        value={ticket.description}
-                        onChange={handleChange}
-                        placeholder="Provide detailed information..."
-                        className={`form-input ${
-                          validationState.description === "valid"
-                            ? "is-valid"
-                            : validationState.description === "invalid"
-                            ? "is-invalid"
-                            : ""
-                        }`}
-                      />
-                      {errors.description && (
-                        <div className="field-error">{errors.description}</div>
-                      )}
-                      <div className="field-help">
-                        Include steps to reproduce, error messages, or any relevant details
-                      </div>
-                    </Form.Group>
-                  </Col>
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    Description <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={6}
+                    value={ticket.description}
+                    onChange={handleChange}
+                    placeholder="Provide detailed information..."
+                    className={`w-full px-3 py-2 rounded-md border bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 transition-all resize-y ${
+                      validationState.description === "valid"
+                        ? "border-[var(--success-color)] focus:ring-[var(--success-color)]"
+                        : validationState.description === "invalid"
+                          ? "border-[var(--danger-color)] focus:ring-[var(--danger-color)]"
+                          : "border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-[var(--primary-color)]"
+                    }`}
+                  />
+                  {errors.description && (
+                    <div className="text-[var(--danger-color)] text-sm mt-1">{errors.description}</div>
+                  )}
+                  <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 text-xs mt-1">
+                    Include steps to reproduce, error messages, or any relevant details
+                  </div>
+                </div>
 
-                  {/* Email */}
-                  <Col md={6}>
-                    <Form.Group className="form-group">
-                      <label className="form-label required">Contact Email</label>
-                      <Form.Control
-                        type="email"
-                        name="email"
-                        value={ticket.email}
-                        onChange={handleChange}
-                        disabled
-                        placeholder="your.email@example.com"
-                        className={`form-input ${
-                          validationState.email === "valid"
-                            ? "is-valid"
-                            : validationState.email === "invalid"
-                            ? "is-invalid"
-                            : ""
-                        }`}
-                      />
-                      {validationState.email === "valid" && (
-                        <MdCheckCircle className="validation-icon valid" />
-                      )}
-                      {validationState.email === "invalid" && (
-                        <MdError className="validation-icon invalid" />
-                      )}
-                      {errors.email && <div className="field-error">{errors.email}</div>}
-                      <div className="field-help">We'll send updates to this email</div>
-                    </Form.Group>
-                  </Col>
-                </Row>
+                {/* Email */}
+                <div className="md:w-1/2">
+                  <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                    Contact Email <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={ticket.email}
+                    onChange={handleChange}
+                    disabled
+                    placeholder="your.email@example.com"
+                    className={`w-full px-3 py-2 rounded-md border bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      validationState.email === "valid"
+                        ? "border-[var(--success-color)] focus:ring-[var(--success-color)]"
+                        : validationState.email === "invalid"
+                          ? "border-[var(--danger-color)] focus:ring-[var(--danger-color)]"
+                          : "border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-[var(--primary-color)]"
+                    }`}
+                  />
+                  {errors.email && (
+                    <div className="text-[var(--danger-color)] text-sm mt-1">{errors.email}</div>
+                  )}
+                  <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 text-xs mt-1">
+                    We'll send updates to this email
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* --- Classification --- */}
-            <div className="form-section animate-slide-up" style={{ "--delay": "0.2s" }}>
-              <div className="section-header">
-                <div className="section-icon">
-                  <MdCategory />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] opacity-0 animate-[slideUp_0.5s_ease-out_0.2s_forwards]">
+              <div className="flex items-start gap-3 mb-6">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--primary-color)] bg-opacity-10 text-[var(--primary-color)]">
+                  <MdCategory size={20} />
                 </div>
                 <div>
-                  <h3 className="section-title" style={{ color: "#1fdae4" }}>
+                  <h3 className="text-lg font-semibold mb-1 text-[var(--primary-color)]">
                     Classification
                   </h3>
-                  <p className="section-subtitle">Help us route your ticket efficiently</p>
+                  <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">Help us route your ticket efficiently</p>
                 </div>
               </div>
 
-              <div className="section-content">
-                <Row className="g-3">
-                  <Col md={12}>
-                    <Form.Group className="form-group">
-                      <label className="form-label required">Category</label>
-                      <div className="input-wrapper">
-                        <MdCategory className="input-icon" />
-                        <Form.Select
-                          name="category"
-                          value={ticket.category}
-                          onChange={handleChange}
-                          className="form-input form-select"
-                        >
-                          <option value="">Select Category</option>
-                          {categoryOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </div>
-                      {errors.category && <div className="field-error">{errors.category}</div>}
-                      <div className="field-help">
-                        Choose the category that best fits your issue
-                      </div>
-                    </Form.Group>
-                  </Col>
-                </Row>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  Category <span className="text-[var(--danger-color)]">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50 pointer-events-none">
+                    <MdCategory size={18} />
+                  </div>
+                  <select
+                    name="category"
+                    value={ticket.category}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all"
+                  >
+                    <option value="">Select Category</option>
+                    {categoryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {errors.category && (
+                  <div className="text-[var(--danger-color)] text-sm mt-1">{errors.category}</div>
+                )}
+                <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 text-xs mt-1">
+                  Choose the category that best fits your issue
+                </div>
               </div>
             </div>
 
             {/* --- Attachments --- */}
-            <div className="form-section animate-slide-up" style={{ "--delay": "0.3s" }}>
-              <div className="section-header">
-                <div className="section-icon">
-                  <MdAttachFile />
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] opacity-0 animate-[slideUp_0.5s_ease-out_0.3s_forwards]">
+              <div className="flex items-start gap-3 mb-6">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--primary-color)] bg-opacity-10 text-[var(--primary-color)]">
+                  <MdAttachFile size={20} />
                 </div>
                 <div>
-                  <h3 className="section-title" style={{ color: "#1fdae4" }}>
+                  <h3 className="text-lg font-semibold mb-1 text-[var(--primary-color)]">
                     Attachments
                   </h3>
-                  <p className="section-subtitle">
+                  <p className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
                     Add screenshots or relevant files (optional)
                   </p>
                 </div>
               </div>
 
-              <div className="section-content">
-                <Form.Group className="form-group">
-                  <label className="form-label">Upload Files</label>
-                  <Form.Control
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="form-input file-input"
-                    accept="image/*,.pdf,.doc,.docx,.txt"
-                  />
-                  {ticket.attachments.length > 0 && (
-                    <ul className="file-list mt-2">
-                      {ticket.attachments.map((file, index) => (
-                        <li key={index}>
-                          <MdAttachFile className="me-1" />
-                          {file.name} ({(file.size / 1024).toFixed(2)} KB)
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="field-help">
-                    Supported: Images, PDF, DOC, TXT (Max 5MB per file)
-                  </div>
-                </Form.Group>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  Upload Files
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all file:mr-4 file:py-1 file:px-3 file:rounded-md file:border file:border-[var(--light-border)] dark:file:border-[var(--dark-border)] file:text-sm file:bg-[var(--light-bg)] dark:file:bg-[var(--dark-bg)] file:text-[var(--light-text)] dark:file:text-[var(--dark-text)] file:cursor-pointer"
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                />
+                {ticket.attachments.length > 0 && (
+                  <ul className="mt-3 space-y-1 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-70">
+                    {ticket.attachments.map((file, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <MdAttachFile size={16} />
+                        <span>{file.name} ({(file.size / 1024).toFixed(2)} KB)</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-60 text-xs mt-2">
+                  Supported: Images, PDF, DOC, TXT (Max 5MB per file)
+                </div>
               </div>
             </div>
 
             {/* --- Actions --- */}
-            <div className="form-actions animate-slide-up" style={{ "--delay": "0.4s" }}>
-              <div className="actions-wrapper d-flex justify-content-between align-items-center">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] opacity-0 animate-[slideUp_0.5s_ease-out_0.4s_forwards]">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {formChanged && (
-                  <div className="unsaved-indicator">
-                    <MdInfo className="me-1" />
+                  <div className="flex items-center gap-2 text-[var(--warning-color)] text-sm font-medium">
+                    <MdInfo size={18} />
                     <span>You have unsaved changes</span>
                   </div>
                 )}
 
-                <div className="d-flex gap-2">
-                  <Button
+                <div className="flex gap-3 ml-auto w-full sm:w-auto">
+                  <button
                     type="button"
-                    variant="outline-secondary"
                     onClick={() => navigate("/app/support")}
                     disabled={isSubmitting}
+                    className="flex-1 sm:flex-none px-6 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="submit"
-                    variant="primary"
                     disabled={isSubmitting}
-                    className={`submit-btn ${isSubmitting ? "submitting" : ""}`}
+                    className="flex-1 sm:flex-none px-6 py-2 rounded-md bg-[var(--primary-color)] text-white hover:opacity-90 transition-all font-medium inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
-                        <Spinner size="sm" className="me-2" animation="border" />
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         Submitting...
                       </>
                     ) : (
                       <>
-                        <MdSave className="me-2" />
+                        <MdSave size={18} />
                         Create Ticket
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
-          </Form>
+          </form>
         </div>
       </div>
     </div>

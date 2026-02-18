@@ -1,12 +1,8 @@
 // src/pages/AccessManagement/AccessManagement.jsx
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Link } from "react-router-dom"
-import {
-  Container, Row, Col, Card, Table, Badge, Button,
-  Form, InputGroup, Dropdown
-} from "react-bootstrap"
 import {
   MdAdd, MdEdit, MdDelete, MdSearch, MdFilterList,
   MdSecurity, MdGroup, MdVpnKey, MdMoreVert, MdRefresh,
@@ -228,465 +224,431 @@ const AccessManagement = () => {
 
   if (loading) {
     return (
-      <div className="access-management-container">
-        <div className="access-management-loading">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p>Loading access management...</p>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[var(--text-secondary)]">Loading access management...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="access-management-container">
-      <Container fluid className="p-0">
-        {/* Modern Header Section */}
-        <div className="page-header-section">
-          <div className="header-content">
-            <div className="header-main">
-              <div className="page-title-section">
-                <div className="page-icon">
-                  <MdSecurity />
-                </div>
-                <div className="page-info">
-                  <h1 className="page-title">Access Management</h1>
-                  <p className="page-subtitle">Manage user roles, permissions and system access</p>
-                </div>
-              </div>
-              <div className="header-actions d-flex align-items-center gap-2">
-                <Button variant="outline-secondary" size="sm" className="d-none d-md-flex">
-                  <MdRefresh className="me-1" />
-                  Refresh
-                </Button>
-                <Button as={Link} to="/app/roles" variant="outline-primary" className="d-none d-sm-flex">
-                  <MdGroup className="me-1" />
-                  Manage Roles
-                </Button>
-                <Button as={Link} to="/app/users/form" variant="primary">
-                  <MdPersonAdd className="me-1" />
-                  <span className="d-none d-sm-inline">Add User</span>
-                  <span className="d-sm-none">Add</span>
-                </Button>
-                <Dropdown className="d-md-none">
-                  <Dropdown.Toggle variant="outline-secondary" size="sm">
-                    <MdMoreVert />
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu align="end">
-                    <Dropdown.Item as={Link} to="/app/roles">
-                      <MdGroup className="me-2" />
-                      Manage Roles
-                    </Dropdown.Item>
-                    <Dropdown.Item onClick={() => window.location.reload()}>
-                      <MdRefresh className="me-2" />
-                      Refresh
-                    </Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-              </div>
+    <div className="p-6">
+      {/* Modern Header Section */}
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center text-[var(--primary-color)] text-2xl">
+              <MdSecurity />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Access Management</h1>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">Manage user roles, permissions and system access</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button className="hidden md:flex px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] items-center gap-2">
+              <MdRefresh />
+              Refresh
+            </button>
+            <Link to="/app/roles" className="hidden sm:flex px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white items-center gap-2">
+              <MdGroup />
+              Manage Roles
+            </Link>
+            <Link to="/app/users/form" className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
+              <MdPersonAdd />
+              <span className="hidden sm:inline">Add User</span>
+              <span className="sm:hidden">Add</span>
+            </Link>
+            <div className="md:hidden relative">
+              <button className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]" onClick={() => { }}>
+                <MdMoreVert />
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Stats Section */}
-        <div className="stats-section">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-users">
-                <MdGroup />
-              </div>
-              <div className="stat-content">
-                <div className="stat-number">{users.length}</div>
-                <div className="stat-label">Total Users</div>
-              </div>
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xl">
+              <MdGroup />
             </div>
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-roles">
-                <MdSecurity />
-              </div>
-              <div className="stat-content">
-                <div className="stat-number">{roles.length}</div>
-                <div className="stat-label">Active Roles</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-permissions">
-                <MdVpnKey />
-              </div>
-              <div className="stat-content">
-                <div className="stat-number">{permissionCount}</div>
-                <div className="stat-label">Permissions</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon stat-icon-active">
-                <MdSecurity />
-              </div>
-              <div className="stat-content">
-                <div className="stat-number">{users.filter((u) => u.status === "Active").length}</div>
-                <div className="stat-label">Active Users</div>
-              </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{users.length}</div>
+              <div className="text-sm text-[var(--text-secondary)]">Total Users</div>
             </div>
           </div>
         </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xl">
+              <MdSecurity />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{roles.length}</div>
+              <div className="text-sm text-[var(--text-secondary)]">Active Roles</div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xl">
+              <MdVpnKey />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{permissionCount}</div>
+              <div className="text-sm text-[var(--text-secondary)]">Permissions</div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 text-xl">
+              <MdSecurity />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{users.filter((u) => u.status === "Active").length}</div>
+              <div className="text-sm text-[var(--text-secondary)]">Active Users</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Main Content Grid */}
-        <div className="content-grid">
-          {/* Users Management Section */}
-          <div className="users-section">
-            <div className="section-card">
-              <div className="section-header">
-                <div className="section-title">
-                  <h3>User Access Management</h3>
-                  <p>Manage user roles, permissions, and access levels</p>
-                </div>
-                <div className="section-actions d-none d-md-flex">
-                  <Button variant="outline-secondary" size="sm">
-                    <MdFilterList className="me-1" />
-                    Filter
-                  </Button>
-                </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Users Management Section */}
+        <div className="lg:col-span-2">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">User Access Management</h3>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">Manage user roles, permissions, and access levels</p>
               </div>
-              
-              {/* Search and Filter Bar */}
-              <div className="search-filter-section">
-                <div className="search-input-group">
-                  <div className="search-icon">
-                    <MdSearch />
-                  </div>
-                  <input
-                    type="text"
-                    className="search-input"
-                    placeholder="Search users by name, email, or role..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <div className="filter-actions">
-                  <Button variant="outline-secondary" size="sm" className="d-md-none">
-                    <MdFilterList />
-                  </Button>
-                </div>
+              <div className="hidden md:flex">
+                <button className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-1">
+                  <MdFilterList />
+                  Filter
+                </button>
               </div>
+            </div>
 
-              {/* Desktop Table View */}
-              <div className="users-table d-none d-md-block">
-                <div className="modern-table">
-                  <div className="table-header">
-                    <div className="table-row">
-                      <div className="table-cell">User</div>
-                      <div className="table-cell">Role</div>
-                      <div className="table-cell">Status</div>
-                      <div className="table-cell">Last Login</div>
-                      <div className="table-cell text-center">Actions</div>
-                    </div>
-                  </div>
-                  <div className="table-body">
-                    {paginatedUsers.map((user) => (
-                      <div key={user.id} className="table-row">
-                        <div className="table-cell">
-                          <div className="user-info">
-                            <div className="user-avatar">
-                              {user.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="user-details">
-                              <div className="user-name">{user.name}</div>
-                              <div className="user-email">{user.email}</div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="table-cell">
-                          <span className={`role-badge role-${user.role.toLowerCase().replace(/\s+/g, '-')}`}>
-                            {user.role}
-                          </span>
-                        </div>
-                        <div className="table-cell">
-                          <span className={`status-badge status-${user.status.toLowerCase()}`}>
-                            {user.status}
-                          </span>
-                        </div>
-                        <div className="table-cell">
-                          <span className="last-login">{formatLocalDateTime(user.lastLogin)}</span>
-                        </div>
-                        <div className="table-cell">
-                          <div className="action-buttons">
-                            <Button as={Link} to={`/app/users/${user.id}/edit`} 
-                                   variant="outline-primary" size="sm" className="action-btn">
-                              <MdEdit />
-                            </Button>
-                            <Button variant="outline-danger" size="sm" className="action-btn">
-                              <MdDelete />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {/* Search and Filter Bar */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">
+                  <MdSearch />
                 </div>
-              </div>
-
-              {/* Mobile Cards View */}
-              <div className="users-cards d-md-none">
-                {paginatedUsers.map((user) => (
-                  <div key={user.id} className="user-card">
-                    <div className="user-card-header">
-                      <div className="user-avatar">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="user-info">
-                        <div className="user-name">{user.name}</div>
-                        <div className="user-email">{user.email}</div>
-                      </div>
-                      <div className="user-actions">
-                        <Dropdown>
-                          <Dropdown.Toggle variant="link" size="sm">
-                            <MdMoreVert />
-                          </Dropdown.Toggle>
-                          <Dropdown.Menu align="end">
-                            <Dropdown.Item as={Link} to={`/app/users/${user.id}/edit`}>
-                              <MdEdit className="me-2" />
-                              Edit
-                            </Dropdown.Item>
-                            <Dropdown.Item className="text-danger">
-                              <MdDelete className="me-2" />
-                              Delete
-                            </Dropdown.Item>
-                          </Dropdown.Menu>
-                        </Dropdown>
-                      </div>
-                    </div>
-                    <div className="user-card-content">
-                      <div className="user-meta">
-                        <div className="meta-item">
-                          <span className="meta-label">Role:</span>
-                          <span className={`role-badge role-${user.role.toLowerCase().replace(/\s+/g, '-')}`}>
-                            {user.role}
-                          </span>
-                        </div>
-                        <div className="meta-item">
-                          <span className="meta-label">Status:</span>
-                          <span className={`status-badge status-${user.status.toLowerCase()}`}>
-                            {user.status}
-                          </span>
-                        </div>
-                        <div className="meta-item">
-                          <span className="meta-label">Last Login:</span>
-                          <span className="meta-value">{formatLocalDateTime(user.lastLogin)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination */}
-              <div className="pagination-section">
-                <Pagination
-                  current={pagination.page}
-                  total={pagination.total}
-                  limit={pagination.limit}
-                  onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 pl-10 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                  placeholder="Search users by name, email, or role..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Sidebar: Roles & Quick Actions */}
-          <div className="sidebar-section">
-            {/* Roles Overview */}
-            <div className="section-card">
-              <div className="section-header">
-                <div className="section-title">
-                  <h3>Roles Overview</h3>
-                </div>
-                <Button as={Link} to="/app/roles" variant="outline-primary" size="sm">
-                  View All
-                </Button>
+              <div className="md:hidden">
+                <button className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                  <MdFilterList />
+                </button>
               </div>
-              <div className="roles-list">
-                {roles.map((role) => (
-                  <div key={role.id} className="role-item">
-                    <div className="role-info">
-                      <div className="role-name">{role.name}</div>
-                      <div className="role-description">{role.description || "No description"}</div>
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+              <table className="min-w-full border-collapse">
+                <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">User</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Role</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Last Login</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedUsers.map((user) => (
+                    <tr key={user.id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]">
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center font-medium">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{user.name}</div>
+                            <div className="text-xs text-[var(--text-secondary)]">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          user.status === 'Active' 
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                        }`}>
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">{formatLocalDateTime(user.lastLogin)}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center justify-center gap-2">
+                          <Link to={`/app/users/${user.id}/edit`}
+                            className="p-2 rounded-md border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white transition-colors">
+                            <MdEdit />
+                          </Link>
+                          <button className="p-2 rounded-md border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors">
+                            <MdDelete />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="md:hidden space-y-4 mb-6">
+              {paginatedUsers.map((user) => (
+                <div key={user.id} className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[var(--primary-color)] text-white flex items-center justify-center font-medium">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{user.name}</div>
+                        <div className="text-xs text-[var(--text-secondary)]">{user.email}</div>
+                      </div>
                     </div>
-                    <div className="role-count">
-                      {role.userCount} users
-                    </div>
+                    <button className="text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                      <MdMoreVert />
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="section-card">
-              <div className="section-header">
-                <div className="section-title">
-                  <h3>Quick Actions</h3>
-                </div>
-              </div>
-              <div className="quick-actions">
-                <Button as={Link} to="/app/users/form" variant="primary" className="w-100 mb-2">
-                  <MdPersonAdd className="me-2" />
-                  Add New User
-                </Button>
-                <Button as={Link} to="/app/roles" variant="outline-primary" className="w-100 mb-2">
-                  <MdGroup className="me-2" />
-                  Manage Roles
-                </Button>
-                <Button variant="outline-secondary" className="w-100">
-                  <MdSettings className="me-2" />
-                  Settings
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Task Assignment Section */}
-        <div className="task-assignment-section">
-          <div className="section-card">
-            <div className="section-header">
-              <div className="section-title">
-                <h3>System Task Assignments</h3>
-                <p>Assign specific system tasks and permissions to users</p>
-              </div>
-            </div>
-            
-            {/* Permission Assignment Cards */}
-            <div className="permission-assignment-grid">
-              {permissions.map((perm, index) => (
-                <div key={perm._id} className="permission-card">
-                  <div className="permission-header">
-                    <div className="permission-checkbox">
-                      <input
-                        type="checkbox"
-                        id={`perm-${index}`}
-                        checked={taskAssignments.some((a) => a.permissionId === perm._id)}
-                        onChange={(e) => {
-                          if (!e.target.checked) {
-                            const assignment = taskAssignments.find((a) => a.permissionId === perm._id)
-                            if (assignment) {
-                              handleRemoveTask(assignment._id)
-                            }
-                          }
-                        }}
-                      />
-                      <label htmlFor={`perm-${index}`} className="permission-label">
-                        {perm.description || perm.name}
-                      </label>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--text-secondary)]">Role:</span>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                        {user.role}
+                      </span>
                     </div>
-                  </div>
-                  <div className="permission-content">
-                    <div className="user-select-wrapper">
-                      <select
-                        className="user-select"
-                        value={taskAssignments.find((a) => a.permissionId === perm._id)?.userId || ""}
-                        onChange={(e) => handleAssignTask(perm._id, e.target.value)}
-                      >
-                        <option value="">-- Assign to User --</option>
-                        {users
-                          .filter((u) => u.role !== "companyAdmin")
-                          .map((u) => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
-                          ))}
-                      </select>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--text-secondary)]">Status:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        user.status === 'Active' 
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                      }`}>
+                        {user.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--text-secondary)]">Last Login:</span>
+                      <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{formatLocalDateTime(user.lastLogin)}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Pagination */}
+            <div className="mt-6">
+              <Pagination
+                current={pagination.page}
+                total={pagination.total}
+                limit={pagination.limit}
+                onChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Task Assignments Overview */}
-        <div className="assignments-overview-section">
-          <div className="section-card">
-            <div className="section-header">
-              <div className="section-title">
-                <h3>Active Task Assignments</h3>
-                <p>Overview of currently assigned permissions and tasks</p>
-              </div>
+        {/* Sidebar: Roles & Quick Actions */}
+        <div className="space-y-6">
+          {/* Roles Overview */}
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Roles Overview</h3>
+              <Link to="/app/roles" className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white">
+                View All
+              </Link>
             </div>
-            
-            {/* Desktop Table */}
-            <div className="assignments-table d-none d-md-block">
-              <div className="modern-table">
-                <div className="table-header">
-                  <div className="table-row">
-                    <div className="table-cell">Permission</div>
-                    <div className="table-cell">Assigned User</div>
-                    <div className="table-cell text-center">Actions</div>
+            <div className="space-y-3">
+              {roles.map((role) => (
+                <div key={role.id} className="flex items-center justify-between p-3 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]">
+                  <div>
+                    <div className="font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">{role.name}</div>
+                    <div className="text-xs text-[var(--text-secondary)] mt-1">{role.description || "No description"}</div>
+                  </div>
+                  <div className="text-sm text-[var(--text-secondary)] font-medium">
+                    {role.userCount} users
                   </div>
                 </div>
-                <div className="table-body">
-                  {taskAssignments.map((entry) => {
-                    const permission = permissions.find((p) => p._id === entry.permissionId)
-                    return (
-                      <div key={entry._id} className="table-row">
-                        <div className="table-cell">
-                          <div className="permission-info">
-                            <MdAssignment className="permission-icon" />
-                            <span>{permission?.description || permission?.name || entry.permission}</span>
-                          </div>
-                        </div>
-                        <div className="table-cell">
-                          <span className="assigned-user">{entry.userName || "Unknown"}</span>
-                        </div>
-                        <div className="table-cell">
-                          <div className="action-buttons">
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              className="action-btn"
-                              onClick={() => handleRemoveTask(entry._id)}
-                            >
-                              <MdDelete />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <h3 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-4">Quick Actions</h3>
+            <div className="space-y-2">
+              <Link to="/app/users/form" className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
+                <MdPersonAdd />
+                Add New User
+              </Link>
+              <Link to="/app/roles" className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white flex items-center gap-2">
+                <MdGroup />
+                Manage Roles
+              </Link>
+              <button className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-2">
+                <MdSettings />
+                Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Task Assignment Section */}
+      <div className="mt-6">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">System Task Assignments</h3>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">Assign specific system tasks and permissions to users</p>
+          </div>
+
+          {/* Permission Assignment Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {permissions.map((perm, index) => (
+              <div key={perm._id} className="p-4 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]">
+                <div className="mb-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`perm-${index}`}
+                      checked={taskAssignments.some((a) => a.permissionId === perm._id)}
+                      onChange={(e) => {
+                        if (!e.target.checked) {
+                          const assignment = taskAssignments.find((a) => a.permissionId === perm._id)
+                          if (assignment) {
+                            handleRemoveTask(assignment._id)
+                          }
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--primary-color)] focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                    />
+                    <label htmlFor={`perm-${index}`} className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer">
+                      {perm.description || perm.name}
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <select
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                    value={taskAssignments.find((a) => a.permissionId === perm._id)?.userId || ""}
+                    onChange={(e) => handleAssignTask(perm._id, e.target.value)}
+                  >
+                    <option value="">-- Assign to User --</option>
+                    {users
+                      .filter((u) => u.role !== "companyAdmin")
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                  </select>
                 </div>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-            {/* Mobile Cards */}
-            <div className="assignments-cards d-md-none">
-              {taskAssignments.map((entry) => {
-                const permission = permissions.find((p) => p._id === entry.permissionId)
-                return (
-                  <div key={entry._id} className="assignment-card">
-                    <div className="assignment-header">
-                      <div className="assignment-icon">
+      {/* Task Assignments Overview */}
+      <div className="mt-6">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Active Task Assignments</h3>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">Overview of currently assigned permissions and tasks</p>
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Permission</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Assigned User</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {taskAssignments.map((entry) => {
+                  const permission = permissions.find((p) => p._id === entry.permissionId)
+                  return (
+                    <tr key={entry._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]">
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          <MdAssignment className="text-[var(--primary-color)]" />
+                          <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">{permission?.description || permission?.name || entry.permission}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{entry.userName || "Unknown"}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex items-center justify-center">
+                          <button
+                            onClick={() => handleRemoveTask(entry._id)}
+                            className="p-2 rounded-md border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                          >
+                            <MdDelete />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {taskAssignments.map((entry) => {
+              const permission = permissions.find((p) => p._id === entry.permissionId)
+              return (
+                <div key={entry._id} className="p-4 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="text-[var(--primary-color)]">
                         <MdAssignment />
                       </div>
-                      <div className="assignment-title">
+                      <div className="text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">
                         {permission?.description || permission?.name || entry.permission}
                       </div>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleRemoveTask(entry._id)}
-                      >
-                        <MdDelete />
-                      </Button>
                     </div>
-                    <div className="assignment-content">
-                      <div className="assigned-to">
-                        <span className="label">Assigned to:</span>
-                        <span className="user-name">{entry.userName || "Unknown"}</span>
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => handleRemoveTask(entry._id)}
+                      className="p-2 rounded-md border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                    >
+                      <MdDelete />
+                    </button>
                   </div>
-                )
-              })}
-            </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-secondary)]">Assigned to:</span>
+                    <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{entry.userName || "Unknown"}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
-      </Container>
+      </div>
     </div>
   )
 }

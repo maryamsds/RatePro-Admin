@@ -3,8 +3,14 @@
 
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
-import { Table, Badge } from "react-bootstrap"
 import { MdVisibility } from "react-icons/md"
+
+const badgeColors = {
+  success: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  primary: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  warning: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  danger: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+}
 
 const RecentResponses = ({ limit = 5 }) => {
   const [responses, setResponses] = useState([])
@@ -73,12 +79,12 @@ const RecentResponses = ({ limit = 5 }) => {
   }
 
   if (loading) {
-    return <div className="text-center py-4">Loading responses...</div>
+    return <div className="text-center py-4 text-[var(--secondary-color)]">Loading responses...</div>
   }
 
   return (
-    <div className="table-responsive">
-      <Table hover className="mb-0">
+    <div className="overflow-x-auto">
+      <table className="custom-table w-full mb-0">
         <thead>
           <tr>
             <th>Survey</th>
@@ -92,29 +98,37 @@ const RecentResponses = ({ limit = 5 }) => {
           {responses.map((response) => (
             <tr key={response.id}>
               <td>
-                <Link to={`/surveys/${response.surveyId}`} className="text-primary text-decoration-none fw-medium">
+                <Link to={`/surveys/${response.surveyId}`} className="text-[var(--primary-color)] no-underline font-medium">
                   {response.surveyTitle}
                 </Link>
               </td>
               <td>
                 <div>
-                  <div className="fw-medium">{response.respondent}</div>
-                  <small className="text-muted">{response.email}</small>
+                  <div className="font-medium">{response.respondent}</div>
+                  <small className="text-[var(--secondary-color)]">{response.email}</small>
                 </div>
               </td>
               <td>{response.submittedAt}</td>
               <td className="text-center">
-                <Badge bg={getSatisfactionVariant(response.satisfaction)}>{response.satisfaction.toFixed(1)}</Badge>
+                <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full ${badgeColors[getSatisfactionVariant(response.satisfaction)]}`}>
+                  {response.satisfaction.toFixed(1)}
+                </span>
               </td>
               <td className="text-center">
-                <button className="btn btn-sm btn-outline-primary" title="View Response">
+                <button
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                             border border-[var(--light-border)] dark:border-[var(--dark-border)]
+                             text-[var(--primary-color)] hover:bg-[var(--primary-color)]/10
+                             bg-transparent cursor-pointer transition-all duration-200"
+                  title="View Response"
+                >
                   <MdVisibility />
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
-      </Table>
+      </table>
     </div>
   )
 }

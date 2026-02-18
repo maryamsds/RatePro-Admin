@@ -1,30 +1,19 @@
 // src\components\Header\Header.jsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import {
-  Navbar,
-  Dropdown,
-  Form,
-  InputGroup,
-  Button,
-  Badge,
-  Offcanvas,
-} from "react-bootstrap";
 import {
   MdMenu,
   MdLightMode,
   MdDarkMode,
   MdNotifications,
-  MdPerson,
   MdClose,
   MdSearch,
   MdSettings,
   MdExitToApp,
   MdAccountCircle,
-  MdMoreVert,
   MdFullscreen,
   MdFullscreenExit,
 } from "react-icons/md";
@@ -40,26 +29,28 @@ const Header = ({
   toggleTheme,
   toggleSidebar,
   sidebarOpen,
-  sidebarCollapsed: _sidebarCollapsed, // Marked as unused for mobile behavior
-  screenSize: _screenSize, // Kept for compatibility
+  sidebarCollapsed: _sidebarCollapsed,
+  screenSize: _screenSize,
 }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
+  const notifRef = useRef(null);
+  const profileRef = useRef(null);
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
   // Handle scroll effect with performance optimization
   useEffect(() => {
     let ticking = false;
-
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
@@ -69,20 +60,31 @@ const Header = ({
         ticking = true;
       }
     };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Fetch notifications from backend
   const fetchNotifications = useCallback(async () => {
     try {
       setLoadingNotifications(true);
-      // ✅ FIX: Don't pass status filter to get all notifications
       const response = await notificationAPI.getMyNotifications({
         limit: 10,
         sort: '-createdAt'
-        // Remove status filter - we want all notifications
       });
       if (response?.data?.success) {
         const notifs = response.data.data?.notifications || response.data.notifications || [];
@@ -113,7 +115,6 @@ const Header = ({
   const handleMarkAsRead = useCallback(async (notificationId) => {
     try {
       await notificationAPI.markAsRead(notificationId);
-      // Update local state
       setNotifications(prev =>
         prev.map(n => n._id === notificationId ? { ...n, status: 'read', read: true } : n)
       );
@@ -154,7 +155,6 @@ const Header = ({
   useEffect(() => {
     fetchNotifications();
     fetchUnreadCount();
-    // Poll for new notifications every 30 seconds
     const notifInterval = setInterval(fetchNotifications, 30000);
     const countInterval = setInterval(fetchUnreadCount, 15000);
     return () => {
@@ -199,18 +199,15 @@ const Header = ({
         setShowMobileSearch(false);
       }
     };
-
     const handleClickOutside = (e) => {
       const searchContainer = document.querySelector(".search-container");
       if (searchContainer && !searchContainer.contains(e.target)) {
         setShowMobileSearch(false);
       }
     };
-
     if (showMobileSearch) {
       document.addEventListener("keydown", handleKeyDown);
       document.addEventListener("mousedown", handleClickOutside);
-
       return () => {
         document.removeEventListener("keydown", handleKeyDown);
         document.removeEventListener("mousedown", handleClickOutside);
@@ -218,456 +215,265 @@ const Header = ({
     }
   }, [showMobileSearch]);
 
+  // Icon button helper – reduces boilerplate
+  const IconButton = ({ onClick, title, children, className = "" }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`flex items-center justify-center w-10 h-10 rounded-full border-0 bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] transition-all duration-200 hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] hover:scale-105 ${className}`}
+    >
+      {children}
+    </button>
+  );
+
   return (
-    <>
-      <Navbar
-        expand="lg"
-        fixed="top"
-        className={`header-navbar ${scrolled ? "scrolled" : ""} ${darkMode ? "dark" : "light"
-          }`}
-        style={{
-          height: "var(--header-height)",
-          backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
-          borderBottom: `1px solid ${darkMode ? "var(--dark-border)" : "var(--light-border)"
-            }`,
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          backdropFilter: scrolled ? "blur(10px)" : "none",
-          zIndex: 1050,
-        }}
-      >
-        <div className="header-content d-flex align-items-center w-100">
-          {/* Mobile hamburger button - only visible on mobile (≤ 767px) */}
-          {/* {isMobile && (
-            <Button
-              id="mobile-hamburger"
-              variant="link"
-              className="sidebar-toggle me-2 p-2 text-decoration-none rounded-circle"
-              onClick={toggleSidebar}
-              title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-              aria-controls="mobile-sidebar"
-              aria-expanded={sidebarOpen}
-              aria-label={sidebarOpen ? "Close navigation menu" : "Open navigation menu"}
-              style={{
-                color: darkMode ? "#fff" : "#000",
-                minWidth: "44px",
-                minHeight: "44px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-            >
-              <MdMenu size={22} />
-            </Button>
-          )} */}
+    <nav
+      className={`top-0 right-0 left-0 h-[var(--header-height)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)] transition-all duration-300 z-[1050] ${scrolled ? 'backdrop-blur-[10px]' : ''}`}
+    >
+      <div className="flex items-center justify-between w-full h-full px-4 ps-16">
+        {/* Brand/Logo */}
+        <span
+          className={`mb-0 font-semibold select-none text-[var(--light-text)] dark:text-[var(--dark-text)] ${isMobile ? 'flex-none text-lg' : 'flex-1 text-xl'}`}
+        >
+          Rate Pro
+        </span>
 
-          {/* Brand/Logo - responsive visibility */}
-          <Navbar.Brand
-            className={`brand-logo mb-0`}
-            style={{
-              flex: isMobile ? 0 : 1,
-              color: darkMode ? "#fff" : "#000",
-              fontSize: isMobile ? "1.1rem" : "1.25rem",
-              fontWeight: "600",
-
-            }}
-          >
-            Rate Pro
-          </Navbar.Brand>
-
-          {/* Enhanced Search bar */}
-          <div
-            className={`search-container ${isMobile || isTablet
-              ? showMobileSearch
-                ? "search-active d-flex"
-                : "d-none d-md-flex"
-              : "d-flex"
-              }`}
-            style={{
-              flex:
-                (isMobile || isTablet) && showMobileSearch ? 1 : "0 1 400px",
-              maxWidth:
-                (isMobile || isTablet) && showMobileSearch ? "none" : "400px",
-              marginLeft: isMobile ? "0" : "auto",
-              marginRight: isMobile ? "0" : "1rem",
-              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            }}
-          >
-            <Form onSubmit={handleSearch} className="w-100">
-              <InputGroup
-                className={`search-input-group ${searchFocused ? "focused" : ""
-                  }`}
-                style={{
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  boxShadow: searchFocused
-                    ? "0 0 0 2px rgba(31, 218, 228, 0.25)"
-                    : scrolled
-                      ? "0 2px 8px rgba(0,0,0,0.1)"
-                      : "none",
-                }}
-              >
-                <InputGroup.Text
-                  className="search-icon border-end-0"
-                  style={{
-                    borderColor: darkMode
-                      ? "var(--dark-border)"
-                      : "var(--light-border)",
-                    backgroundColor: darkMode
-                      ? "var(--dark-card)"
-                      : "var(--light-card)",
-                    color: darkMode ? "var(--dark-text)" : "var(--light-text)",
-                    cursor: "pointer",
-                  }}
-                  onClick={handleSearch}
-                >
-                  <MdSearch size={18} />
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder={
-                    isMobile ? "Search" : "Search surveys, responses..."
-                  }
-                  className="search-input border-start-0"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    backgroundColor: darkMode
-                      ? "var(--dark-card)"
-                      : "var(--light-card)",
-                    color: darkMode ? "var(--dark-text)" : "var(--light-text)",
-                    borderColor: darkMode
-                      ? "var(--dark-border)"
-                      : "var(--light-border)",
-                    fontSize: isMobile ? "16px" : "14px", // Prevents zoom on iOS
-                    minHeight: isMobile ? "44px" : "38px",
-                    paddingLeft: "45px",
-                  }}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                />
-              </InputGroup>
-            </Form>
-          </div>
-
-          <div className="d-flex gap-2">
-            {/* Mobile search toggle */}
-            {(isMobile || isTablet) && !showMobileSearch && (
-              <Button
-                variant="link"
-                className="search-toggle me-2 p-2 text-decoration-none d-md-none rounded-circle"
-                onClick={() => setShowMobileSearch(true)}
-                title="Search"
-                style={{
-                  color: darkMode ? "#fff" : "#000",
-                  minWidth: "44px",
-                  minHeight: "44px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MdSearch size={20} />
-              </Button>
-            )}
-
-            {/* Close search button */}
-            {(isMobile || isTablet) && showMobileSearch && (
-              <Button
-                variant="link"
-                className="search-close text-decoration-none rounded-circle"
-                onClick={() => setShowMobileSearch(false)}
-                title="Close search"
-                style={{
-                  color: darkMode ? "#fff" : "#000",
-                  minWidth: "44px",
-                  minHeight: "44px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MdClose size={20} />
-              </Button>
-            )}
-
-            {/* Header controls */}
+        {/* Search bar */}
+        <div
+          className={`transition-all duration-300 ${isMobile || isTablet ? (showMobileSearch ? 'flex flex-1' : 'hidden md:flex md:flex-[0_1_400px] md:max-w-[400px]') : 'flex flex-[0_1_400px] max-w-[400px]'} ${isMobile ? '' : 'ml-auto mr-4'}`}
+        >
+          <form onSubmit={handleSearch} className="w-full">
             <div
-              className={`header-controls d-flex align-items-center ${showMobileSearch ? "d-none d-md-flex" : ""
-                }`}
+              className={`flex items-center rounded-xl overflow-hidden transition-shadow duration-200 ${searchFocused ? 'shadow-[0_0_0_2px_rgba(31,218,228,0.25)]' : (scrolled ? 'shadow-[0_2px_8px_rgba(0,0,0,0.1)]' : '')}`}
             >
-              {/* Language selector - responsive visibility */}
-              <div className="language-selector me-2 d-none d-lg-block">
-                <LanguageSelector />
-              </div>
-
-              {/* Fullscreen toggle - desktop only */}
-              {isDesktop && (
-                <Button
-                  variant="link"
-                  className="fullscreen-toggle p-2 me-2 text-decoration-none rounded-circle"
-                  onClick={toggleFullscreen}
-                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                  style={{
-                    color: darkMode ? "#fff" : "#000",
-                    minWidth: "40px",
-                    minHeight: "40px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "4rem",
-                  }}
-                >
-                  {isFullscreen ? (
-                    <MdFullscreenExit size={18} />
-                  ) : (
-                    <MdFullscreen size={18} />
-                  )}
-                </Button>
-              )}
-
-              {/* Theme toggle - enhanced */}
-              <Button
-                variant="link"
-                className="theme-toggle p-2 me-2 text-decoration-none rounded-circle"
-                onClick={toggleTheme}
-                title={
-                  darkMode ? "Switch to light mode" : "Switch to dark mode"
-                }
-                style={{
-                  color: darkMode ? "#fff" : "#000",
-                  minWidth: "40px",
-                  minHeight: "40px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.2s ease",
-                }}
+              <span
+                className="flex items-center justify-center px-3 cursor-pointer bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)]"
+                onClick={handleSearch}
               >
-                {darkMode ? (
-                  <MdLightMode size={18} />
-                ) : (
-                  <MdDarkMode size={18} />
+                <MdSearch size={18} />
+              </span>
+              <input
+                type="text"
+                placeholder={isMobile ? "Search" : "Search surveys, responses..."}
+                className={`flex-1 outline-none border-0 bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] p-2 ${isMobile ? 'text-base min-h-[44px]' : 'text-sm min-h-[38px]'}`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+              />
+            </div>
+          </form>
+        </div>
+
+        <div className="flex gap-2 items-center">
+          {/* Mobile search toggle */}
+          {(isMobile || isTablet) && !showMobileSearch && (
+            <IconButton onClick={() => setShowMobileSearch(true)} title="Search" className="md:hidden">
+              <MdSearch size={20} />
+            </IconButton>
+          )}
+
+          {/* Close search button */}
+          {(isMobile || isTablet) && showMobileSearch && (
+            <IconButton onClick={() => setShowMobileSearch(false)} title="Close search">
+              <MdClose size={20} />
+            </IconButton>
+          )}
+
+          {/* Header controls */}
+          <div className={`header-controls flex items-center ${showMobileSearch ? "hidden md:flex" : ""}`}>
+            {/* Language selector */}
+            <div className="language-selector mr-2 hidden lg:block">
+              <LanguageSelector />
+            </div>
+
+            {/* Fullscreen toggle */}
+            {isDesktop && (
+              <IconButton onClick={toggleFullscreen} title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
+                {isFullscreen ? <MdFullscreenExit size={18} /> : <MdFullscreen size={18} />}
+              </IconButton>
+            )}
+
+            {/* Theme toggle */}
+            <IconButton onClick={toggleTheme} title={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
+              {darkMode ? <MdLightMode size={18} /> : <MdDarkMode size={18} />}
+            </IconButton>
+
+            {/* Notifications dropdown */}
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                className="flex items-center justify-center w-10 h-10 rounded-full border-0 bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] transition-all duration-200 relative hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] hover:scale-105"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                <MdNotifications size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-[var(--danger-color)] text-white text-[10px] leading-none px-1.5 py-0.5 rounded-full font-medium min-w-[18px] text-center">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
                 )}
-              </Button>
-              {/* Notifications dropdown */}
-              <Dropdown
-                align="end"
-                show={showNotifications}
-                onToggle={(nextShow) => setShowNotifications(nextShow)}
-              >
-                <Dropdown.Toggle
-                  variant="link"
-                  className="notifications-toggle p-2 text-decoration-none rounded-circle position-relative"
-                  style={{
-                    color: darkMode ? "#fff" : "#000",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    minWidth: "40px",
-                    minHeight: "40px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  onClick={() => setShowNotifications(!showNotifications)}
-                >
-                  <MdNotifications size={18} />
-                  {unreadCount > 0 && (
-                    <Badge
-                      bg="danger"
-                      className="position-absolute top-0 start-100 translate-middle rounded-pill"
-                      style={{ fontSize: "10px", padding: "2px 6px" }}
-                    >
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </Badge>
-                  )}
-                </Dropdown.Toggle>
+              </button>
 
-                <Dropdown.Menu
-                  style={{
-                    width: "320px",
-                    maxHeight: "400px",
-                    overflowY: "auto",
-                    backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
-                    borderColor: darkMode ? "var(--dark-border)" : "var(--light-border)"
-                  }}
+              {showNotifications && (
+                <div
+                  className={`absolute right-0 mt-2 rounded-lg shadow-lg overflow-hidden z-50 bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] max-h-[400px] overflow-y-auto animate-slideDown ${isMobile ? 'fixed top-[calc(var(--header-height)+0.5rem)] left-2 right-2 w-[calc(100vw-1rem)]' : 'w-[320px]'}`}
                 >
-                  <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                    <span className="fw-semibold" style={{ color: darkMode ? "#fff" : "#000" }}>Notifications</span>
+                  {/* Header */}
+                  <div className="flex justify-between items-center px-3 py-2 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                    <span className="font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Notifications</span>
                     {unreadCount > 0 && (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="p-0 text-primary"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleMarkAllAsRead();
-                        }}
+                      <button
+                        type="button"
+                        className="text-[var(--primary-color)] text-sm bg-transparent border-0 cursor-pointer hover:underline transition-colors duration-200"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMarkAllAsRead(); }}
                       >
                         Mark all read
-                      </Button>
+                      </button>
                     )}
                   </div>
+
+                  {/* Notification items */}
                   {loadingNotifications ? (
                     <div className="text-center py-3">
-                      <span className="text-muted">Loading...</span>
+                      <span className="text-[var(--secondary-color)]">Loading...</span>
                     </div>
                   ) : notifications.length > 0 ? (
                     <>
                       {notifications.slice(0, 5).map((notif) => (
-                        <Dropdown.Item
+                        <button
                           key={notif._id || notif.id}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (notif.status !== 'read' && !notif.read) {
-                              handleMarkAsRead(notif._id || notif.id);
-                            }
-                            if (notif.link) {
-                              navigate(notif.link);
-                            } else {
-                              navigate('/app/notifications');
-                            }
+                          type="button"
+                          className={`w-full text-left px-3 py-2 border-0 cursor-pointer transition-colors duration-200
+                                      hover:bg-[var(--primary-light)]
+                                      ${notif.status !== 'read' && !notif.read ? "bg-[var(--primary-light)]" : "bg-transparent"}`}
+                          onClick={() => {
+                            if (notif.status !== 'read' && !notif.read) handleMarkAsRead(notif._id || notif.id);
+                            navigate(notif.link || '/app/notifications');
                             setShowNotifications(false);
                           }}
-                          className={`py-2 ${notif.status !== 'read' && !notif.read ? "bg-primary bg-opacity-10" : ""}`}
-                          style={{ cursor: 'pointer' }}
                         >
-                          <div>
-                            <div className="d-flex justify-content-between align-items-start">
-                              <h6 className="mb-1 small fw-bold" style={{ color: darkMode ? "#fff" : "#000" }}>
-                                {notif.title}
-                              </h6>
-                              {notif.priority === 'high' && (
-                                <Badge bg="danger" className="ms-2" style={{ fontSize: '9px' }}>High</Badge>
-                              )}
-                            </div>
-                            <p className="mb-1 small text-muted text-truncate" style={{ maxWidth: '260px' }}>
-                              {notif.message || notif.body}
-                            </p>
-                            <small className="text-muted">
-                              {formatNotificationTime(notif.createdAt)}
-                            </small>
+                          <div className="flex justify-between items-start">
+                            <h6 className="mb-1 text-sm font-bold" style={{ color: darkMode ? "#fff" : "#000" }}>
+                              {notif.title}
+                            </h6>
+                            {notif.priority === 'high' && (
+                              <span className="bg-[var(--danger-color)] text-white text-[9px] px-1.5 py-0.5 rounded ml-2">High</span>
+                            )}
                           </div>
-                        </Dropdown.Item>
+                          <p className="mb-1 text-sm text-[var(--secondary-color)] truncate max-w-[260px]">
+                            {notif.message || notif.body}
+                          </p>
+                          <small className="text-[var(--secondary-color)]">
+                            {formatNotificationTime(notif.createdAt)}
+                          </small>
+                        </button>
                       ))}
-                      <Dropdown.Divider className="my-0" />
-                      <Dropdown.Item
-                        as={Link}
+                      <div className="border-t" style={{ borderColor: darkMode ? "var(--dark-border)" : "var(--light-border)" }} />
+                      <Link
                         to="/app/notifications"
-                        className="text-center py-2 text-primary"
+                        className="block text-center py-2 text-[var(--primary-color)] hover:bg-[var(--primary-light)] transition-colors duration-200 no-underline"
                         onClick={() => setShowNotifications(false)}
                       >
                         View all notifications
-                      </Dropdown.Item>
+                      </Link>
                     </>
                   ) : (
                     <div className="text-center py-4">
-                      <MdNotifications size={32} className="text-muted mb-2" />
-                      <p className="text-muted mb-0 small">No notifications</p>
+                      <MdNotifications size={32} className="text-[var(--secondary-color)] mb-2 mx-auto block" />
+                      <p className="text-[var(--secondary-color)] mb-0 text-sm">No notifications</p>
                     </div>
                   )}
-                </Dropdown.Menu>
-              </Dropdown>
+                </div>
+              )}
+            </div>
 
-
-              {/* User profile dropdown */}
-              <Dropdown align="end">
-                <Dropdown.Toggle
-                  variant="link"
-                  className="d-flex align-items-center p-1 text-decoration-none"
-                  style={{
-                    color: darkMode ? "#fff" : "#000",
-                    border: "none",
-                    backgroundColor: "transparent",
-                  }}
+            {/* User profile dropdown */}
+            <div className="relative" ref={profileRef}>
+              <button
+                type="button"
+                className="flex items-center p-1 border-0 bg-transparent cursor-pointer"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                style={{ color: darkMode ? "#fff" : "#000" }}
+              >
+                <div
+                  className="w-9 h-9 rounded-full bg-[var(--light-bg)] dark:bg-[var(--dark-border)] flex items-center justify-center overflow-hidden"
                 >
-                  <div
-                    className="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                    style={{ width: "36px", height: "36px" }}
-                  >
-                    {user?.avatar?.url ? (
-                      <img
-                        src={user.avatar.url}
-                        alt="avatar"
-                        className="rounded-circle"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <span
-                        className={`fw-bold ${darkMode ? "text-white" : "text-secondary"
-                          }`}
-                        style={{ fontSize: "1rem" }}
-                      >
-                        {user?.name?.charAt(0)?.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <span className="d-none d-lg-inline ms-2">
-                    {capitalize(user?.name?.split(" ")[0])}
-                  </span>
-                </Dropdown.Toggle>
+                  {user?.avatar?.url ? (
+                    <img
+                      src={user.avatar.url}
+                      alt="avatar"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <span className={`font-bold text-base ${darkMode ? "text-white" : "text-[var(--secondary-color)]"}`}>
+                      {user?.name?.charAt(0)?.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden lg:inline ml-2">
+                  {capitalize(user?.name?.split(" ")[0])}
+                </span>
+              </button>
 
-                <Dropdown.Menu
+              {showProfileMenu && (
+                <div
+                  className="absolute right-0 mt-2 rounded-lg shadow-lg overflow-hidden z-50"
                   style={{
-                    backgroundColor: darkMode
-                      ? "var(--dark-card)"
-                      : "var(--light-card)",
-                    borderColor: darkMode
-                      ? "var(--dark-border)"
-                      : "var(--light-border)",
-                    marginTop: "0.5rem",
+                    backgroundColor: darkMode ? "var(--dark-card)" : "var(--light-card)",
+                    border: `1px solid ${darkMode ? "var(--dark-border)" : "var(--light-border)"}`,
                     minWidth: "200px",
+                    animation: "slideDown 0.2s ease-out",
                   }}
                 >
-                  <Dropdown.Header
-                    style={{ color: darkMode ? "#fff" : "#000" }}
-                  >
-                    <h6 className="mb-0">{capitalize(user?.role)}</h6>
-                    <small className="text-muted">{user.email}</small>
-                  </Dropdown.Header>
-                  <Dropdown.Item
-                    as={Link}
-                    to="/app/profile"
-                    className="d-flex align-items-center"
-                    style={{ color: darkMode ? "#fff" : "#000" }}
-                  >
-                    <MdAccountCircle className="me-2" />
-                    Profile
-                  </Dropdown.Item>
-                  <Dropdown.Item
-                    as={Link}
-                    to="/app/settings"
-                    className="d-flex align-items-center"
-                    style={{ color: darkMode ? "#fff" : "#000" }}
-                  >
-                    <MdSettings className="me-2" />
-                    Settings
-                  </Dropdown.Item>
-                  <Dropdown.Divider
+                  {/* User info header */}
+                  <div
+                    className="px-3 py-2 border-b"
                     style={{
-                      backgroundColor: darkMode
-                        ? "var(--dark-border)"
-                        : "var(--light-border)",
+                      borderColor: darkMode ? "var(--dark-border)" : "var(--light-border)",
+                      color: darkMode ? "#fff" : "#000",
                     }}
-                  />
-                  <Dropdown.Item
-                    onClick={handleLogout}
-                    className="d-flex align-items-center text-danger"
                   >
-                    <MdExitToApp className="me-2" />
-                    Logout
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
+                    <h6 className="mb-0 font-semibold text-sm">{capitalize(user?.role)}</h6>
+                    <small className="text-[var(--secondary-color)]">{user?.email}</small>
+                  </div>
+
+                  {/* Menu items */}
+                  <Link
+                    to="/app/profile"
+                    className="flex items-center px-3 py-2.5 no-underline transition-colors duration-200 hover:bg-[var(--primary-light)]"
+                    style={{ color: darkMode ? "#fff" : "#000" }}
+                    onClick={() => setShowProfileMenu(false)}
+                  >
+                    <MdAccountCircle className="mr-2" /> Profile
+                  </Link>
+                  <Link
+                    to="/app/settings"
+                    className="flex items-center px-3 py-2.5 no-underline transition-colors duration-200 hover:bg-[var(--primary-light)]"
+                    style={{ color: darkMode ? "#fff" : "#000" }}
+                    onClick={() => setShowProfileMenu(false)}
+                  >
+                    <MdSettings className="mr-2" /> Settings
+                  </Link>
+                  <div
+                    className="border-t"
+                    style={{ borderColor: darkMode ? "var(--dark-border)" : "var(--light-border)" }}
+                  />
+                  <button
+                    type="button"
+                    className="flex items-center px-3 py-2.5 w-full text-left border-0 bg-transparent cursor-pointer
+                               text-[var(--danger-color)] transition-colors duration-200 hover:bg-[var(--danger-light)]"
+                    onClick={() => { setShowProfileMenu(false); handleLogout(); }}
+                  >
+                    <MdExitToApp className="mr-2" /> Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </Navbar>
-    </>
+      </div>
+    </nav>
   );
 };
 

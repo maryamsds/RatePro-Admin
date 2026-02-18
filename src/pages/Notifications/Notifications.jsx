@@ -3,7 +3,6 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
-import "./Notifications.css"
 import {
   MdNotifications,
   MdSearch,
@@ -24,7 +23,6 @@ import {
   MdSchedule,
   MdInbox,
 } from "react-icons/md"
-import { Button, Badge, Form } from "react-bootstrap"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 import { notificationAPI } from "../../api/axiosInstance.js"
 import { useAuth } from "../../context/AuthContext.jsx"
@@ -33,14 +31,13 @@ import Swal from "sweetalert2"
 const Notifications = ({ darkMode }) => {
   const navigate = useNavigate()
   const { setGlobalLoading } = useAuth()
-  
+
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [filterType, setFilterType] = useState("all")
   const [filterPriority, setFilterPriority] = useState("all")
-  const [selectedNotifications, setSelectedNotifications] = useState([])
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 })
 
   // Fetch notifications
@@ -56,7 +53,7 @@ const Notifications = ({ darkMode }) => {
       }
 
       const response = await notificationAPI.getMyNotifications(params)
-      
+
       if (response?.data?.success) {
         const notifs = response.data.data?.notifications || response.data.notifications || []
         setNotifications(notifs)
@@ -102,33 +99,34 @@ const Notifications = ({ darkMode }) => {
   // Get notification icon based on type
   const getNotificationIcon = (type) => {
     const icons = {
-      info: <MdInfo className="text-info" />,
-      success: <MdCheckCircle className="text-success" />,
-      warning: <MdWarning className="text-warning" />,
-      error: <MdError className="text-danger" />,
-      alert: <MdCampaign className="text-primary" />,
-      system: <MdNotifications className="text-secondary" />,
+      info: <MdInfo className="text-[var(--info-color)]" />,
+      success: <MdCheckCircle className="text-[var(--success-color)]" />,
+      warning: <MdWarning className="text-[var(--warning-color)]" />,
+      error: <MdError className="text-[var(--danger-color)]" />,
+      alert: <MdCampaign className="text-[var(--primary-color)]" />,
+      system: <MdNotifications className="text-[var(--secondary-color)]" />,
     }
     return icons[type] || icons.info
   }
 
   // Get priority badge
   const getPriorityBadge = (priority) => {
-    const badges = {
-      low: <Badge bg="secondary">Low</Badge>,
-      normal: <Badge bg="info">Normal</Badge>,
-      high: <Badge bg="warning">High</Badge>,
-      urgent: <Badge bg="danger">Urgent</Badge>,
+    const colors = {
+      low: "bg-[var(--secondary-color)]",
+      normal: "bg-[var(--info-color)]",
+      high: "bg-[var(--warning-color)]",
+      urgent: "bg-[var(--danger-color)]",
     }
-    return badges[priority] || badges.normal
+    const labels = { low: "Low", normal: "Normal", high: "High", urgent: "Urgent" }
+    return <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${colors[priority] || colors.normal} text-white`}>{labels[priority] || "Normal"}</span>
   }
 
   // Get status badge
   const getStatusBadge = (status) => {
-    const statusClass = status?.toLowerCase().replace(" ", "-") || "unread"
+    const isRead = status === "read"
     return (
-      <span className={`status-badge status-${statusClass}`}>
-        {status === "read" ? "Read" : "Unread"}
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${isRead ? "bg-[var(--success-color)]" : "bg-[var(--primary-color)]"} text-white`}>
+        {isRead ? "Read" : "Unread"}
       </span>
     )
   }
@@ -303,38 +301,49 @@ const Notifications = ({ darkMode }) => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading notifications...</p>
+      <div className="flex items-center justify-center min-h-screen bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">Loading notifications...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="notifications-container">
+    <div className="p-4 md:p-6 bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] min-h-screen">
       {/* Page Header */}
-      <div className="page-header-section">
-        <div className="page-header-content">
-          <div className="page-header-left">
-            <div className="page-header-icon">
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--primary-light)] text-[var(--primary-color)] text-2xl">
               <MdNotifications />
             </div>
-            <div className="page-header-text">
-              <h1>Notifications</h1>
-              <p>Stay updated with all your alerts and messages</p>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Notifications</h1>
+              <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70">Stay updated with all your alerts and messages</p>
             </div>
           </div>
-          <div className="page-header-actions">
-            <button className="secondary-action" onClick={fetchNotifications}>
+          <div className="flex flex-wrap items-center gap-2">
+            <button 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]"
+              onClick={fetchNotifications}
+            >
               <MdRefresh /> Refresh
             </button>
             {stats.unread > 0 && (
-              <button className="secondary-action" onClick={handleMarkAllAsRead}>
+              <button 
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] bg-transparent text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white"
+                onClick={handleMarkAllAsRead}
+              >
                 <MdDoneAll /> Mark All Read
               </button>
             )}
             {notifications.length > 0 && (
-              <button className="danger-action" onClick={handleDeleteAll}>
+              <button 
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors border border-[var(--danger-color)] bg-transparent text-[var(--danger-color)] hover:bg-[var(--danger-color)] hover:text-white"
+                onClick={handleDeleteAll}
+              >
                 <MdDeleteSweep /> Clear All
               </button>
             )}
@@ -343,185 +352,191 @@ const Notifications = ({ darkMode }) => {
       </div>
 
       {/* Stats Section */}
-      <div className="stats-section">
-        <div className="stat-card stat-card-primary">
-          <div className="stat-icon">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--primary-light)] text-[var(--primary-color)] text-2xl">
             <MdNotifications />
           </div>
-          <div className="stat-details">
-            <div className="stat-value">{stats.total}</div>
-            <div className="stat-label">Total</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.total}</div>
+            <div className="text-sm text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70">Total</div>
           </div>
         </div>
-        <div className="stat-card stat-card-danger">
-          <div className="stat-icon">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--danger-light)] text-[var(--danger-color)] text-2xl">
             <MdInbox />
           </div>
-          <div className="stat-details">
-            <div className="stat-value">{stats.unread}</div>
-            <div className="stat-label">Unread</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.unread}</div>
+            <div className="text-sm text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70">Unread</div>
           </div>
         </div>
-        <div className="stat-card stat-card-warning">
-          <div className="stat-icon">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--warning-light)] text-[var(--warning-color)] text-2xl">
             <MdWarning />
           </div>
-          <div className="stat-details">
-            <div className="stat-value">{stats.high}</div>
-            <div className="stat-label">High Priority</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.high}</div>
+            <div className="text-sm text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70">High Priority</div>
           </div>
         </div>
-        <div className="stat-card stat-card-success">
-          <div className="stat-icon">
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--success-light)] text-[var(--success-color)] text-2xl">
             <MdSchedule />
           </div>
-          <div className="stat-details">
-            <div className="stat-value">{stats.today}</div>
-            <div className="stat-label">Today</div>
+          <div>
+            <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">{stats.today}</div>
+            <div className="text-sm text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70">Today</div>
           </div>
         </div>
       </div>
 
       {/* Filters Section */}
-      <div className="filters-section">
-        <div className="search-input-container">
-          <MdSearch className="search-icon" />
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search notifications..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-4 border border-[var(--light-border)] dark:border-[var(--dark-border)] mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70" />
+            <input
+              type="text"
+              className="w-full pl-10 pr-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all"
+              placeholder="Search notifications..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all"
+            value={filterStatus}
+            onChange={(e) => {
+              setFilterStatus(e.target.value)
+              setPagination(prev => ({ ...prev, page: 1 }))
+            }}
+          >
+            <option value="all">All Status</option>
+            <option value="unread">Unread</option>
+            <option value="read">Read</option>
+          </select>
+          <select
+            className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all"
+            value={filterType}
+            onChange={(e) => {
+              setFilterType(e.target.value)
+              setPagination(prev => ({ ...prev, page: 1 }))
+            }}
+          >
+            <option value="all">All Types</option>
+            <option value="info">Info</option>
+            <option value="success">Success</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+            <option value="alert">Alert</option>
+            <option value="system">System</option>
+          </select>
+          <select
+            className="px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] transition-all"
+            value={filterPriority}
+            onChange={(e) => {
+              setFilterPriority(e.target.value)
+              setPagination(prev => ({ ...prev, page: 1 }))
+            }}
+          >
+            <option value="all">All Priority</option>
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
         </div>
-        <select
-          className="filter-select"
-          value={filterStatus}
-          onChange={(e) => {
-            setFilterStatus(e.target.value)
-            setPagination(prev => ({ ...prev, page: 1 }))
-          }}
-        >
-          <option value="all">All Status</option>
-          <option value="unread">Unread</option>
-          <option value="read">Read</option>
-        </select>
-        <select
-          className="filter-select"
-          value={filterType}
-          onChange={(e) => {
-            setFilterType(e.target.value)
-            setPagination(prev => ({ ...prev, page: 1 }))
-          }}
-        >
-          <option value="all">All Types</option>
-          <option value="info">Info</option>
-          <option value="success">Success</option>
-          <option value="warning">Warning</option>
-          <option value="error">Error</option>
-          <option value="alert">Alert</option>
-          <option value="system">System</option>
-        </select>
-        <select
-          className="filter-select"
-          value={filterPriority}
-          onChange={(e) => {
-            setFilterPriority(e.target.value)
-            setPagination(prev => ({ ...prev, page: 1 }))
-          }}
-        >
-          <option value="all">All Priority</option>
-          <option value="low">Low</option>
-          <option value="normal">Normal</option>
-          <option value="high">High</option>
-          <option value="urgent">Urgent</option>
-        </select>
       </div>
 
       {/* Notifications List */}
-      <div className="section-card">
-        <div className="section-header">
-          <h2>All Notifications</h2>
-          <span className="section-count">{filteredNotifications.length} notification(s)</span>
+      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <h2 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">All Notifications</h2>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[var(--primary-light)] text-[var(--primary-color)]">
+            {filteredNotifications.length} notification(s)
+          </span>
         </div>
 
         {filteredNotifications.length > 0 ? (
-          <div className="notifications-list">
+          <div className="divide-y divide-[var(--light-border)] dark:divide-[var(--dark-border)]">
             {filteredNotifications.map((notification) => (
               <div
                 key={notification._id}
-                className={`notification-item ${notification.status !== "read" ? "unread" : ""}`}
+                className={`flex items-start gap-4 p-4 transition-all hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] ${
+                  notification.status !== "read" 
+                    ? "bg-[var(--primary-light)] border-l-4 border-[var(--primary-color)]" 
+                    : ""
+                }`}
               >
-                <div className="notification-icon">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] flex items-center justify-center text-xl">
                   {getNotificationIcon(notification.type)}
                 </div>
                 <div
-                  className="notification-content"
+                  className="flex-1 min-w-0 cursor-pointer"
                   onClick={() => handleNotificationClick(notification)}
-                  style={{ cursor: notification.link ? "pointer" : "default" }}
                 >
-                  <div className="notification-header">
-                    <h4 className="notification-title">{notification.title}</h4>
-                    <div className="notification-meta">
+                  <div className="flex items-start justify-between gap-4 mb-1">
+                    <h4 className="text-base font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                      {notification.title}
+                    </h4>
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {getPriorityBadge(notification.priority)}
                       {getStatusBadge(notification.status)}
                     </div>
                   </div>
-                  <p className="notification-message">
+                  <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-80 mb-2 line-clamp-2">
                     {notification.message || notification.body}
                   </p>
-                  <div className="notification-footer">
-                    <span className="notification-time">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70">
                       <MdSchedule size={14} /> {formatTime(notification.createdAt)}
                     </span>
                     {notification.category && (
-                      <Badge bg="light" text="dark" className="ms-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--text-secondary)] dark:text-[var(--dark-text)]">
                         {notification.category}
-                      </Badge>
+                      </span>
                     )}
                   </div>
                 </div>
-                <div className="notification-actions">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {notification.status !== "read" && (
-                    <Button
-                      size="sm"
-                      variant="outline-success"
+                    <button
                       title="Mark as Read"
                       onClick={() => handleMarkAsRead(notification._id)}
+                      className="p-2 rounded-md border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white transition-colors"
                     >
                       <MdMarkEmailRead />
-                    </Button>
+                    </button>
                   )}
-                  <Button
-                    size="sm"
-                    variant="outline-secondary"
+                  <button
                     title="Archive"
                     onClick={() => handleArchive(notification._id)}
+                    className="p-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--text-secondary)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)] transition-colors"
                   >
                     <MdArchive />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline-danger"
+                  </button>
+                  <button
                     title="Delete"
                     onClick={() => handleDelete(notification._id)}
+                    className="p-2 rounded-md border border-[var(--danger-color)] text-[var(--danger-color)] hover:bg-[var(--danger-color)] hover:text-white transition-colors"
                   >
                     <MdDelete />
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="empty-state">
-            <MdNotifications size={64} className="empty-icon" />
-            <h3>No Notifications</h3>
-            <p>You're all caught up! No notifications to display.</p>
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <MdNotifications size={64} className="text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-30 mb-4" />
+            <h3 className="text-xl font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">No Notifications</h3>
+            <p className="text-sm text-[var(--text-secondary)] dark:text-[var(--dark-text)] opacity-70">You're all caught up! No notifications to display.</p>
           </div>
         )}
 
         {filteredNotifications.length > 0 && (
-          <div className="table-footer">
+          <div className="p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
             <Pagination
               current={pagination.page}
               total={pagination.total}

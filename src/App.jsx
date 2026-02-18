@@ -117,7 +117,7 @@ function App() {
     <div>
       <>
         {(authLoading || globalLoading) && <FullScreenLoader />}
-        <div className={`app-container ${darkMode ? "dark" : "light"}`}>
+        <div className="min-h-screen bg-[var(--light-bg)] text-[var(--light-text)] dark:bg-[var(--dark-bg)] dark:text-[var(--dark-text)] transition-colors duration-300">
           <Routes>
             <Route path="/auth-redirect" element={<TokenRedirector />} />
             {/* Auth Pages */}
@@ -234,7 +234,7 @@ function App() {
               <Route path="analytics/custom-reports" element={<TenantGuard><CustomReports /></TenantGuard>} />
               <Route path="analytics/real-time" element={<TenantGuard><RealTimeResults /></TenantGuard>} />
               <Route path="analytics/trends" element={<TenantGuard><TrendAnalysis /></TenantGuard>} />
-              <Route path="analytics/response-overview" element={<TenantGuard><ResponseOverview /></TenantGuard>} />
+              {/* <Route path="analytics/response-overview" element={<TenantGuard><ResponseOverview /></TenantGuard>} /> */}
 
               {/* Actions - CompanyAdmin Only */}
               <Route path="actions" element={<TenantGuard><ActionManagement /></TenantGuard>} />

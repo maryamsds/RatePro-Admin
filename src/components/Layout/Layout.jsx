@@ -2,10 +2,8 @@
 "use client"
 import { useState, useEffect, useCallback } from "react"
 import { Outlet } from "react-router-dom"
-import { Container } from "react-bootstrap"
 import Sidebar from "../Sidebar/Sidebar.jsx"
 import Header from "../Header/Header.jsx"
-
 
 const Layout = ({ darkMode, toggleTheme }) => {
   // Responsive breakpoints
@@ -15,7 +13,7 @@ const Layout = ({ darkMode, toggleTheme }) => {
     isDesktop: false,
     width: typeof window !== 'undefined' ? window.innerWidth : 1200
   })
-  
+
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -24,17 +22,16 @@ const Layout = ({ darkMode, toggleTheme }) => {
   const updateScreenSize = useCallback(() => {
     const width = window.innerWidth
     const newScreenSize = {
-      isMobile: width <= 767, // Changed to match requirement: ≤ 767px
+      isMobile: width <= 767,
       isTablet: width >= 768 && width < 1024,
       isDesktop: width >= 1024,
       width
     }
-    
+
     setScreenSize(prevSize => {
-      // Only update if values actually changed
       if (prevSize.isMobile !== newScreenSize.isMobile ||
-          prevSize.isTablet !== newScreenSize.isTablet ||
-          prevSize.isDesktop !== newScreenSize.isDesktop) {
+        prevSize.isTablet !== newScreenSize.isTablet ||
+        prevSize.isDesktop !== newScreenSize.isDesktop) {
         return newScreenSize
       }
       return prevSize
@@ -60,7 +57,7 @@ const Layout = ({ darkMode, toggleTheme }) => {
   useEffect(() => {
     updateScreenSize()
     setIsInitialized(true)
-    
+
     const handleResize = () => {
       updateScreenSize()
     }
@@ -74,22 +71,20 @@ const Layout = ({ darkMode, toggleTheme }) => {
     if (!isInitialized) return
 
     if (screenSize.isMobile) {
-      // Mobile: Sidebar is overlay, closed by default
+      // On mobile, sidebar should NEVER be collapsed (always show full menu when open)
+      setSidebarCollapsed(false)
       setSidebarOpen(false)
     } else if (screenSize.isTablet) {
-      // Tablet: Sidebar is collapsed by default, but visible
       setSidebarCollapsed(true)
-      setSidebarOpen(true) // Always "open" but in collapsed state
+      setSidebarOpen(true)
     } else {
-      // Desktop: Load saved collapsed state
       const savedState = localStorage.getItem('sidebarCollapsed')
       if (savedState !== null) {
         setSidebarCollapsed(JSON.parse(savedState))
       } else {
-        // Auto-collapse on smaller desktop screens
         setSidebarCollapsed(screenSize.width < 1200)
       }
-      setSidebarOpen(true) // Always open on desktop
+      setSidebarOpen(true)
     }
   }, [screenSize.isMobile, screenSize.isTablet, screenSize.width, isInitialized])
 
@@ -102,69 +97,23 @@ const Layout = ({ darkMode, toggleTheme }) => {
 
   // Enhanced sidebar control functions
   const toggleSidebar = useCallback(() => {
-    // console.log('toggleSidebar called:', { screenSize, sidebarOpen }); // Debug log
     if (screenSize.isMobile) {
       setSidebarOpen(prev => !prev)
     } else {
       setSidebarCollapsed(prev => !prev)
     }
-  }, [screenSize, sidebarOpen])
+  }, [screenSize])
 
   const closeSidebar = useCallback(() => {
-    // console.log('closeSidebar called:', { screenSize, sidebarOpen }); // Debug log
     if (screenSize.isMobile) {
       setSidebarOpen(false)
     } else {
       setSidebarCollapsed(true)
     }
-  }, [screenSize, sidebarOpen])
-
-  // Enhanced content styling with better responsive behavior
-  const getContentStyle = useCallback(() => {
-    const baseStyle = {
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      minHeight: "100vh",
-      position: "relative"
-    }
-
-    if (screenSize.isMobile) {
-      return {
-        ...baseStyle,
-        marginLeft: 0,
-        width: "100%",
-        padding: "0"
-      }
-    }
-
-    if (screenSize.isTablet) {
-      // Tablet: Always account for collapsed sidebar
-      return {
-        ...baseStyle,
-        // marginLeft: "var(--sidebar-collapsed-width, 0px)",
-        width: "calc(100% - var(--sidebar-collapsed-width, 70px))",
-        padding: "0 8px"
-      }
-    }
-
-    // Desktop
-    // const sidebarWidth = sidebarCollapsed ? "var(--sidebar-collapsed-width, 70px)" : "var(--sidebar-width, 280px)"
-    // return {
-    //   ...baseStyle,
-    //   marginLeft: sidebarWidth,
-    //   width: `calc(100% - ${sidebarWidth})`,
-    //   padding: "0"
-    // }
-  }, [screenSize.isMobile, screenSize.isTablet])
-
-  // Get container padding based on screen size
-  const getContainerPadding = useCallback(() => {
-    if (screenSize.isMobile) return "p-2 p-sm-3"
-    if (screenSize.isTablet) return "p-3 p-md-4"
-    return "p-3 p-lg-4"
-  }, [screenSize.isMobile, screenSize.isTablet])
+  }, [screenSize])
 
   return (
-    <div className={`layout-container ${darkMode ? "dark" : "light"}`}>
+    <div className={`flex min-h-screen w-full bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] ${darkMode ? "dark" : ""}`}>
       <Sidebar
         isOpen={sidebarOpen}
         isMobile={screenSize.isMobile}
@@ -177,42 +126,57 @@ const Layout = ({ darkMode, toggleTheme }) => {
         screenSize={screenSize}
       />
 
-      <div className="content-wrapper" style={getContentStyle()}>
+      <div 
+        className={`
+          flex flex-col w-full min-h-screen relative
+          transition-all duration-300
+          ${screenSize.isMobile 
+            ? 'ml-0' 
+            : screenSize.isTablet 
+              ? 'ml-[var(--sidebar-collapsed-width)]' 
+              : sidebarCollapsed 
+                ? 'ml-[var(--sidebar-collapsed-width)]' 
+                : 'ml-[var(--sidebar-width)]'
+          }
+        `}
+      >
         <Header
           darkMode={darkMode}
           toggleTheme={toggleTheme}
-          {...screenSize}
+          isMobile={screenSize.isMobile}
+          isTablet={screenSize.isTablet}
+          isDesktop={screenSize.isDesktop}
+          width={screenSize.width}
           sidebarOpen={sidebarOpen}
           sidebarCollapsed={sidebarCollapsed}
           toggleSidebar={toggleSidebar}
           screenSize={screenSize}
         />
 
-        <main className="main-content">
-          <Container 
-            fluid 
-            className={`main-container ${getContainerPadding()}`}
-            style={{ 
-              marginTop: "var(--header-height)",
-              minHeight: `calc(100vh - var(--header-height))`
-            }}
+        <main className="flex-1 w-full">
+          <div
+            className={`
+              w-full
+              mt-[var(--header-height)]
+              min-h-[calc(100vh-var(--header-height))]
+              p-[var(--container-padding-mobile)]
+              md:p-[var(--container-padding-tablet)]
+              lg:p-[var(--container-padding-desktop)]
+            `}
           >
-            <div className="content-area">
-              <Outlet />
-            </div>
-          </Container>
+            <Outlet />
+          </div>
         </main>
       </div>
 
       {/* Mobile overlay - only for screens ≤ 767px */}
       {screenSize.isMobile && sidebarOpen && (
         <div
-          id="sidebar-overlay"
-          className="sidebar-overlay"
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
           onClick={closeSidebar}
           onTouchStart={(e) => {
-            e.preventDefault();
-            closeSidebar();
+            e.preventDefault()
+            closeSidebar()
           }}
           role="button"
           tabIndex={-1}
@@ -220,11 +184,14 @@ const Layout = ({ darkMode, toggleTheme }) => {
         />
       )}
 
-      {/* Loading state for better UX */}
+      {/* Loading state */}
       {!isInitialized && (
-        <div className="layout-loading">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
+        <div className="fixed inset-0 flex items-center justify-center bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] z-50">
+          <div 
+            className="w-8 h-8 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin" 
+            role="status"
+          >
+            <span className="sr-only">Loading...</span>
           </div>
         </div>
       )}
@@ -232,4 +199,4 @@ const Layout = ({ darkMode, toggleTheme }) => {
   )
 }
 
-export default Layout;
+export default Layout
