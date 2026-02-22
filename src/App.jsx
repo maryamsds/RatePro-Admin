@@ -92,7 +92,7 @@ import Unauthorized from "./pages/Unauthorized/Unauthorized"
 
 function App() {
   // const navigate = useNavigate();
-  const { authLoading, globalLoading } = useAuth();
+  const { authLoading, globalLoading, user } = useAuth();
   const [darkMode, setDarkMode] = useState(() => {
     try {
       const saved = localStorage.getItem("darkMode")
@@ -150,7 +150,11 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Dashboard />} />
+              <Route index element={
+                user?.role === 'admin'
+                  ? <Navigate to="/app/platform" replace />
+                  : <Navigate to="/app/dashboard" replace />
+              } />
 
               {/* ============================================================================ */}
               {/* � PLATFORM LAYER - Admin Only (System/Platform Level)                      */}
@@ -178,10 +182,10 @@ function App() {
               <Route path="subscription/plans" element={<PlatformGuard><PlanBuilder /></PlatformGuard>} />
               <Route path="subscription/tenants" element={<PlatformGuard><TenantSubscriptions /></PlatformGuard>} />
 
-              {/* Support Management - Admin Only */}
-              <Route path="support" element={<PlatformGuard><SupportTickets /></PlatformGuard>} />
-              <Route path="support/create" element={<PlatformGuard><CreateTicket /></PlatformGuard>} />
-              <Route path="support/tickets/:id" element={<PlatformGuard><TicketDetail /></PlatformGuard>} />
+              {/* Support Management - Shared (Admin + CompanyAdmin) */}
+              <Route path="support" element={<SharedGuard><SupportTickets /></SharedGuard>} />
+              <Route path="support/create" element={<SharedGuard><CreateTicket /></SharedGuard>} />
+              <Route path="support/tickets/:id" element={<SharedGuard><TicketDetail /></SharedGuard>} />
 
               {/* ============================================================================ */}
               {/* � SHARED LAYER - Admin & CompanyAdmin (Different Responsibilities)         */}
@@ -260,11 +264,11 @@ function App() {
               <Route path="access" element={<CompanyAdminGuard><AccessManagement /></CompanyAdminGuard>} />
               <Route path="roles" element={<CompanyAdminGuard><RoleManagement /></CompanyAdminGuard>} />
 
-              {/* Profile - CompanyAdmin Only */}
-              <Route path="profile" element={<TenantGuard><Profile /></TenantGuard>} />
+              {/* Profile - All Authenticated Users */}
+              <Route path="profile" element={<Profile />} />
 
-              {/* Notifications - CompanyAdmin Only */}
-              <Route path="notifications" element={<TenantGuard><Notifications /></TenantGuard>} />
+              {/* Notifications - All Authenticated Users (backend filters by role) */}
+              <Route path="notifications" element={<Notifications />} />
 
               {/* Content Management - CompanyAdmin Only */}
               <Route path="content/features" element={<TenantGuard><Features /></TenantGuard>} />
