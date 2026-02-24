@@ -51,14 +51,14 @@ body {
   --light-text: #212529;
   --light-border: #dee2e6;
   --light-card: #ffffff;
-  --light-hover: #1fdae4;
+  --light-hover: #a1cfd1;
 
   /* Dark Theme Variables */
   --dark-bg: #1a1d23;
   --dark-text: #ffff;
   --dark-border: #343a40;
   --dark-card: #2a2e35;
-  --dark-hover: #1fdae4;
+  --dark-hover: #a1cfd1;
 
   /* Layout Variables */
   --sidebar-width: 280px;

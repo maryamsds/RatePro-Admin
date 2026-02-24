@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import axiosInstance from '../../../api/axiosInstance';
-import { 
-  API_ENDPOINTS, 
-  QUESTION_TYPE_MAP, 
+import {
+  API_ENDPOINTS,
+  QUESTION_TYPE_MAP,
   LANGUAGES,
-  SURVEY_STATUS 
+  SURVEY_STATUS
 } from '../constants/surveyBuilderConstants';
 
 /**
@@ -24,16 +25,16 @@ export const useSurveyAPI = () => {
    */
   const normalizeLanguage = useCallback((lang) => {
     if (!lang) return LANGUAGES.ENGLISH;
-    
+
     if (Array.isArray(lang)) {
       const first = lang[0];
       if (first === 'Arabic' || first === 'ar') return LANGUAGES.ARABIC;
       return LANGUAGES.ENGLISH;
     }
-    
+
     if (lang === 'Arabic' || lang === 'ar') return LANGUAGES.ARABIC;
     if (lang === 'English' || lang === 'en') return LANGUAGES.ENGLISH;
-    
+
     return LANGUAGES.ENGLISH;
   }, []);
 
@@ -65,9 +66,9 @@ export const useSurveyAPI = () => {
       themeColor: survey.branding?.primaryColor?.startsWith('#')
         ? survey.branding.primaryColor
         : getComputedStyle(document.documentElement)
-            .getPropertyValue('--bs-primary')
-            .trim() || '#0047AB',
-      
+          .getPropertyValue('--bs-primary')
+          .trim() || '#0047AB',
+
       questions: questions.map((q, index) => ({
         id: q.id?.toString() || (index + 1).toString(),
         questionText: q.title,
@@ -79,7 +80,7 @@ export const useSurveyAPI = () => {
         logicRules: q.logicRules || [],
         translations: q.translations || {}
       })),
-      
+
       settings: {
         isPublic: survey.isPublic !== false,
         isAnonymous: survey.allowAnonymous !== false,
@@ -88,23 +89,23 @@ export const useSurveyAPI = () => {
         isPasswordProtected: false,
         password: ''
       },
-      
+
       thankYouPage: {
         message: survey.thankYouMessage || 'Thank you for your feedback!',
         redirectUrl: survey.redirectUrl || null
       },
-      
+
       branding: survey.branding,
       targetAudience,
       selectedContacts,
-      
+
       publishSettings: {
         publishNow: publishSettings.publishNow !== false,
         scheduleDate: publishSettings.scheduleDate || null,
         scheduleTime: publishSettings.scheduleTime || null,
         expiryDate: publishSettings.expiryDate || null,
-        maxResponses: publishSettings.maxResponses 
-          ? parseInt(publishSettings.maxResponses) 
+        maxResponses: publishSettings.maxResponses
+          ? parseInt(publishSettings.maxResponses)
           : null
       }
     };
@@ -136,9 +137,9 @@ export const useSurveyAPI = () => {
         },
         translations: surveyData.translations || { en: {}, ar: {} }
       },
-      
+
       questions: (surveyData.questions || []).map((q, index) => ({
-        id: q.id || `q${Date.now() + index}`,
+        id: q.id || uuidv4(),
         type: mapQuestionTypeFromBackend(q.type),
         title: q.questionText || q.title || `Question ${index + 1}`,
         description: q.description || '',
@@ -148,11 +149,11 @@ export const useSurveyAPI = () => {
         logicRules: q.logicRules || [],
         translations: q.translations || {}
       })),
-      
+
       targetAudience: surveyData.targetAudience && Array.isArray(surveyData.targetAudience)
         ? surveyData.targetAudience
         : [],
-      
+
       publishSettings: {
         publishNow: surveyData.publishSettings?.publishNow !== false,
         scheduleDate: surveyData.publishSettings?.scheduleDate || '',
@@ -161,7 +162,7 @@ export const useSurveyAPI = () => {
         maxResponses: surveyData.publishSettings?.maxResponses || '',
         notificationEmails: surveyData.publishSettings?.notificationEmails || []
       },
-      
+
       logicRules: surveyData.logicRules || [],
       currentStep: surveyData.currentStep || 1,
       status: surveyData.status || SURVEY_STATUS.DRAFT
@@ -178,7 +179,7 @@ export const useSurveyAPI = () => {
   const fetchSurvey = useCallback(async (surveyId) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await axiosInstance.get(API_ENDPOINTS.SURVEYS.GET(surveyId));
       const surveyData = response.data.survey || response.data;
@@ -198,26 +199,26 @@ export const useSurveyAPI = () => {
   const saveDraft = useCallback(async (survey, questions, options = {}) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const surveyData = {
         ...transformSurveyToBackend(survey, questions, options),
         status: SURVEY_STATUS.DRAFT,
         currentStep: options.currentStep || 1
       };
-      
+
       let response;
       if (options.surveyId) {
         // Update existing draft
         response = await axiosInstance.put(
-          API_ENDPOINTS.SURVEYS.UPDATE(options.surveyId), 
+          API_ENDPOINTS.SURVEYS.UPDATE(options.surveyId),
           surveyData
         );
       } else {
         // Create new draft
         response = await axiosInstance.post(API_ENDPOINTS.SURVEYS.CREATE, surveyData);
       }
-      
+
       return response.data;
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to save draft';
@@ -234,12 +235,12 @@ export const useSurveyAPI = () => {
   const publishSurvey = useCallback(async (survey, questions, options = {}) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const surveyData = {
         ...transformSurveyToBackend(survey, questions, options),
-        status: options.publishSettings?.publishNow !== false 
-          ? SURVEY_STATUS.ACTIVE 
+        status: options.publishSettings?.publishNow !== false
+          ? SURVEY_STATUS.ACTIVE
           : SURVEY_STATUS.SCHEDULED,
         metadata: {
           createdAt: new Date().toISOString(),
@@ -248,7 +249,7 @@ export const useSurveyAPI = () => {
           estimatedCompletionTime: `${Math.ceil(questions.length * 1.5)} minutes`
         }
       };
-      
+
       let response;
       if (options.surveyId) {
         // Update existing survey and trigger publish
@@ -260,7 +261,7 @@ export const useSurveyAPI = () => {
         // Create and publish new survey
         response = await axiosInstance.post(API_ENDPOINTS.SURVEYS.PUBLISH, surveyData);
       }
-      
+
       return response.data;
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to publish survey';
@@ -281,16 +282,16 @@ export const useSurveyAPI = () => {
   const fetchTemplate = useCallback(async (templateId) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await axiosInstance.get(API_ENDPOINTS.TEMPLATES.GET(templateId));
-      
+
       if (response.data.success && response.data.template) {
         return response.data.template;
       } else if (response.data.success && response.data.data) {
         return response.data.data;
       }
-      
+
       throw new Error('Invalid template response format');
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to load template';
@@ -324,7 +325,7 @@ export const useSurveyAPI = () => {
           showBranding: true
         }
       },
-      
+
       questions: (template.questions || []).map((q, index) => ({
         id: q.id || `q${index + 1}`,
         type: mapQuestionTypeFromBackend(q.type),
@@ -344,14 +345,14 @@ export const useSurveyAPI = () => {
   const saveTemplate = useCallback(async (survey, questions, options = {}) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const templateData = {
         name: survey.title,
         description: survey.description,
         category: survey.category || 'general',
-        categoryName: survey.category 
-          ? survey.category.charAt(0).toUpperCase() + survey.category.slice(1) 
+        categoryName: survey.category
+          ? survey.category.charAt(0).toUpperCase() + survey.category.slice(1)
           : 'General',
         estimatedTime: Math.ceil(questions.length * 1.5) * 60, // seconds
         questions: questions.map((q, index) => ({
@@ -369,7 +370,7 @@ export const useSurveyAPI = () => {
         tags: [],
         isPremium: false
       };
-      
+
       let response;
       if (options.templateId) {
         response = await axiosInstance.put(
@@ -379,7 +380,7 @@ export const useSurveyAPI = () => {
       } else {
         response = await axiosInstance.post(API_ENDPOINTS.TEMPLATES.CREATE, templateData);
       }
-      
+
       return response.data;
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to save template';
@@ -400,7 +401,7 @@ export const useSurveyAPI = () => {
   const generateAISurvey = useCallback(async (companyProfile) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const requestPayload = {
         industry: companyProfile.industry || 'general',
@@ -410,7 +411,7 @@ export const useSurveyAPI = () => {
         targetAudience: companyProfile.targetAudience || 'customers',
         goal: companyProfile.surveyGoal || 'customer feedback',
         questionCount: Math.min(
-          Math.max(companyProfile.questionCount || 8, 3), 
+          Math.max(companyProfile.questionCount || 8, 3),
           20 // AI_LIMITS.MAX_QUESTIONS
         ),
         includeNPS: companyProfile.includeNPS !== false,
@@ -418,25 +419,25 @@ export const useSurveyAPI = () => {
         tone: companyProfile.tone || 'friendly-professional',
         additionalInstructions: companyProfile.additionalInstructions || ''
       };
-      
+
       console.log('🤖 AI Survey Generation Request:', requestPayload);
-      
+
       const response = await axiosInstance.post(
-        API_ENDPOINTS.AI.GENERATE_FROM_PROFILE, 
+        API_ENDPOINTS.AI.GENERATE_FROM_PROFILE,
         requestPayload
       );
-      
+
       if (!response.data || (!response.data.success && !response.data.data)) {
         throw new Error('Invalid AI response format');
       }
-      
+
       const aiData = response.data.data || response.data;
       const aiSurvey = aiData.survey || {};
       const aiQuestions = aiData.questions || [];
-      
+
       // Transform AI questions to frontend format
       const transformedQuestions = aiQuestions.map((q, index) => ({
-        id: Date.now() + index,
+        id: uuidv4(),
         type: mapQuestionTypeFromBackend(q.type),
         title: q.title || q.text || `Question ${index + 1}`,
         description: q.description || '',
@@ -445,7 +446,7 @@ export const useSurveyAPI = () => {
         settings: q.settings || {},
         translations: q.translations || {}
       }));
-      
+
       return {
         survey: {
           title: aiSurvey.title || `${companyProfile.industry} Customer Survey`,
@@ -474,11 +475,11 @@ export const useSurveyAPI = () => {
   const fetchSegments = useCallback(async () => {
     try {
       const response = await axiosInstance.get(`${API_ENDPOINTS.AUDIENCE.SEGMENTS}?withCounts=true`);
-      
+
       if (response.data?.success && Array.isArray(response.data?.data?.segments)) {
         return response.data.data.segments.filter(seg => (seg.contactCount || 0) > 0);
       }
-      
+
       return [];
     } catch (err) {
       console.error('Error fetching segments:', err);
@@ -492,11 +493,11 @@ export const useSurveyAPI = () => {
   const fetchCategories = useCallback(async () => {
     try {
       const response = await axiosInstance.get(API_ENDPOINTS.AUDIENCE.CATEGORIES);
-      
+
       if (response.data?.success && Array.isArray(response.data?.data?.categories)) {
         return response.data.data.categories.filter(cat => (cat.contactCount || 0) > 0);
       }
-      
+
       return [];
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -512,10 +513,10 @@ export const useSurveyAPI = () => {
       const response = await axiosInstance.get(API_ENDPOINTS.AUDIENCE.CONTACTS, {
         params: { page, limit, search }
       });
-      
+
       const contactsData = response.data?.data?.contacts || response.data?.contacts || [];
       const totalCount = response.data?.data?.total ?? response.data?.total ?? 0;
-      
+
       return {
         contacts: Array.isArray(contactsData) ? contactsData : [],
         total: Number(totalCount),
@@ -547,26 +548,26 @@ export const useSurveyAPI = () => {
     // State
     loading,
     error,
-    
+
     // Survey Methods
     fetchSurvey,
     saveDraft,
     publishSurvey,
     checkSurveyAccess,
-    
+
     // Template Methods
     fetchTemplate,
     transformTemplateToSurvey,
     saveTemplate,
-    
+
     // AI Methods
     generateAISurvey,
-    
+
     // Audience Methods
     fetchSegments,
     fetchCategories,
     fetchContacts,
-    
+
     // Utilities
     normalizeLanguage,
     mapQuestionTypeToBackend,

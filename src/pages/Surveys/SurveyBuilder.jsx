@@ -1,7 +1,6 @@
 // src/pages/Surveys/SurveyBuilder.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-// react-bootstrap removed — using native HTML + Tailwind CSS
 import {
   MdAdd, MdClose, MdDelete, MdEdit, MdPreview, MdSave, MdPublish,
   MdDragHandle, MdContentCopy, MdSettings,
@@ -9,9 +8,6 @@ import {
   MdLinearScale, MdDateRange, MdToggleOn,
   MdViewList, MdGridOn, MdSmartToy, MdAutoAwesome,
   MdTune, MdCode, MdBusiness, MdBuild,
-  MdSchool, MdLocalHospital, MdHotel, MdSports,
-  MdAccountBalance, MdShoppingCart, MdLocationCity,
-  MdConstruction, MdDirectionsCar, MdComputer,
   MdOutlineAccessTime, MdEvent, MdBarChart, MdAlternateEmail, MdImage,
   Md123, MdQuestionAnswer, MdPeople, MdGroup, MdHandshake,
   MdSchedule, MdArrowForward, MdArrowBack,
@@ -23,6 +19,15 @@ import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
 import useDropdownOptions from '../../hooks/useDropdownOptions';
 import Swal from 'sweetalert2';
+
+// ── Extracted hooks ──────────────────────────────────────────────
+import useQuestions from './hooks/useQuestions';
+import useAudience from './hooks/useAudience';
+
+// ── Extracted components ─────────────────────────────────────────
+import QuestionTypeSidebar from './components/QuestionTypeSidebar';
+import QuestionList from './components/QuestionList';
+import ResponsibleUserDropdown from './components/ResponsibleUserDropdown';
 
 const SurveyBuilder = () => {
   const navigate = useNavigate();
@@ -75,11 +80,7 @@ const SurveyBuilder = () => {
     }
   });
 
-  const [questions, setQuestions] = useState([]);
-  const [activeTab, setActiveTab] = useState('builder');
-  const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [showQuestionModal, setShowQuestionModal] = useState(false);
-  const [questionModalMode, setQuestionModalMode] = useState('create');
+
   const [showAIModal, setShowAIModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showSettingsOffcanvas, setShowSettingsOffcanvas] = useState(false);
@@ -87,10 +88,17 @@ const SurveyBuilder = () => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('builder');
+
+  // ── Unsaved changes tracking ─────────────────────────────────
+  const [isDirty, setIsDirty] = useState(false);
+  const initialLoadRef = useRef(true);
+
+  // ── Validation state ─────────────────────────────────────
+  const [validationErrors, setValidationErrors] = useState([]);
 
   // Multi-step Wizard States
   const [currentStep, setCurrentStep] = useState(1);
-  const [targetAudience, setTargetAudience] = useState([]);
   const [publishSettings, setPublishSettings] = useState({
     publishNow: true,
     scheduleDate: '',
@@ -99,22 +107,21 @@ const SurveyBuilder = () => {
     maxResponses: '',
     notificationEmails: []
   });
+  // ── Audience management via extracted hook ────────────────────
+  const {
+    targetAudience, setTargetAudience,
+    audienceSegments, contactCategories,
+    loadingSegments, loadingCategories,
+    contacts, selectedContacts, setSelectedContacts,
+    showCustomContactModal, setShowCustomContactModal,
+    loadingContacts, contactSearch, contactPage,
+    contactTotal, contactLimit,
+    toggleAudience, toggleContactSelection,
+    saveSelectedContacts, handleContactSearch,
+    handleContactPageChange, fetchContacts,
+    fetchAudienceSegments, fetchContactCategories
+  } = useAudience({ user, isTemplateMode });
 
-  // ✅ NEW: Target Audience Enhancement States
-  const [audienceSegments, setAudienceSegments] = useState([]);
-  const [contactCategories, setContactCategories] = useState([]);
-  const [contacts, setContacts] = useState([]);
-  const [selectedContacts, setSelectedContacts] = useState([]);
-  const [showCustomContactModal, setShowCustomContactModal] = useState(false);
-  const [loadingSegments, setLoadingSegments] = useState(false);
-  const [loadingCategories, setLoadingCategories] = useState(false);
-  const [loadingContacts, setLoadingContacts] = useState(false);
-
-  // Contact Modal States
-  const [contactSearch, setContactSearch] = useState('');
-  const [contactPage, setContactPage] = useState(1);
-  const [contactTotal, setContactTotal] = useState(0);
-  const [contactLimit] = useState(10);
 
   // AI Workflow States
   const [surveyMode, setSurveyMode] = useState('user-defined');
@@ -129,6 +136,42 @@ const SurveyBuilder = () => {
   });
 
   const [aiPrompt, setAIPrompt] = useState('');
+
+  // ── beforeunload — warn on browser close / refresh ────────────
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  // ── Guarded navigate — prompt on in-app navigation when dirty ──
+  const guardedNavigate = useCallback((path) => {
+    if (!isDirty) {
+      navigate(path);
+      return;
+    }
+    Swal.fire({
+      title: 'Unsaved Changes',
+      text: 'You have unsaved changes. Are you sure you want to leave?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: 'var(--bs-danger)',
+      cancelButtonColor: 'var(--bs-secondary)',
+      confirmButtonText: 'Leave',
+      cancelButtonText: 'Stay'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setIsDirty(false);
+        navigate(path);
+      }
+    });
+  }, [isDirty, navigate]);
+
   const [companyProfile, setCompanyProfile] = useState({
     industry: "",
     products: "",
@@ -325,6 +368,27 @@ const SurveyBuilder = () => {
     }
   ];
 
+  // ── Question management via extracted hook ──────────────────────
+  const {
+    questions, setQuestions,
+    selectedQuestion, setSelectedQuestion,
+    showQuestionModal, setShowQuestionModal,
+    questionModalMode, setQuestionModalMode,
+    addQuestion, updateQuestion, deleteQuestion,
+    duplicateQuestion, handleOnDragEnd,
+    addLogicRule, removeLogicRule, updateLogicRule,
+    setDefaultNextQuestion, openEditModal, closeQuestionModal
+  } = useQuestions(questionTypes);
+
+  // ── Mark dirty when survey or questions change (skip initial load) ─
+  useEffect(() => {
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+    setIsDirty(true);
+  }, [survey, questions]);
+
   // Dynamic industries from Admin-managed dropdown settings
   const { options: industryOptions, loading: industriesLoading } = useDropdownOptions('industry');
   const industries = industryOptions.map(opt => ({
@@ -416,88 +480,6 @@ const SurveyBuilder = () => {
       timer: 2000
     });
   };
-
-  // ✅ FIXED: Debug useEffect with correct dependencies
-  // useEffect(() => {
-  // }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
-
-
-  // useEffect(() => {
-  //   const initializeSurveyBuilder = async () => {
-  //     setGlobalLoading(true);
-  //     setLoading(true);
-
-  //     try {
-  //       // ✅ ADMIN CHECK: Agar admin template use karne try kare to redirect
-  //       if (isTemplateBasedSurvey && user?.role === 'admin') {
-  //         Swal.fire({
-  //           icon: 'warning',
-  //           title: 'Access Restricted',
-  //           text: 'Admins cannot use templates. Please create surveys directly.',
-  //           confirmButtonColor: '#007bff',
-  //         }).then(() => {
-  //           navigate('/app/surveys');
-  //         });
-  //         return;
-  //       }
-
-  //       // CASE 1: Editing existing survey
-  //       if (isEditing && surveyId && !isTemplateMode) {
-  //         await fetchExistingSurvey(surveyId);
-  //         setShowModeSelector(false);
-  //         setSurveyMode('user-defined');
-  //       }
-  //       // CASE 2: Creating from template
-  //       else if (templateData && !isTemplateMode) {
-  //         initializeFromTemplate(templateData);
-  //         setShowModeSelector(false);
-  //         setSurveyMode('user-defined');
-  //       }
-  //       // CASE 3: Admin editing template
-  //       else if (isTemplateMode && surveyId) {
-
-  //         // Agar state mein templateData hai → usko use karo
-  //         if (templateData) {
-  //           initializeFromTemplate(templateData); // Reuse existing function
-  //         } else {
-  //           // Warna backend se fetch karo
-  //           await fetchTemplateData(surveyId);
-  //         }
-
-  //         setShowModeSelector(false);
-  //         setSurveyMode('user-defined');
-  //       }
-  //       // CASE 4: Admin creating new template
-  //       else if (isTemplateMode && !surveyId) {
-  //         setShowModeSelector(false);
-  //         setSurveyMode('ai-assisted');
-  //         setShowAIModal(true);
-  //       }
-  //       // CASE 5: Creating new survey (manual/AI)
-  //       else {
-  //         setShowModeSelector(true);
-  //         setSurveyMode('user-defined');
-  //       }
-
-  //     } catch (error) {
-  //       console.error('Error initializing survey builder:', error);
-  //       setError(error.message);
-
-  //       Swal.fire({
-  //         icon: 'error',
-  //         title: 'Initialization Failed',
-  //         text: error.message || 'Failed to load survey data. Please try again.',
-  //         confirmButtonColor: '#dc3545',
-  //       });
-  //     } finally {
-  //       setLoading(false);
-  //       setGlobalLoading(false);
-  //     }
-  //   };
-
-  //   initializeSurveyBuilder();
-  // }, [surveyId, isTemplateMode, templateData, isEditing, user, navigate]);
-
   // ✅ FIXED: Fetch template data for admin editing
   const fetchTemplateData = async (templateId) => {
     try {
@@ -864,76 +846,9 @@ const SurveyBuilder = () => {
     }
   };
 
-  // Question Management
-  const addQuestion = (type) => {
-    const questionType = questionTypes.find(qt => qt.id === type);
+  // Question Management — provided by useQuestions hook above
+  // (addQuestion, updateQuestion, deleteQuestion, duplicateQuestion, handleOnDragEnd)
 
-    let defaultOptions = [];
-    if (type === 'single_choice' || type === 'multiple_choice') {
-      defaultOptions = ['Option 1', 'Option 2', 'Option 3'];
-    } else if (type === 'yes_no') {
-      defaultOptions = ['Yes', 'No'];
-    } else if (type === 'likert') {
-      defaultOptions = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
-    }
-
-    const newQuestion = {
-      id: Date.now(),
-      type: type,
-      title: `New ${questionType.name}`,
-      description: '',
-      required: false,
-      options: defaultOptions,
-      settings: type === 'rating' ? { scale: 5 } : type === 'nps' ? { scale: 10 } : {}
-    };
-
-    setQuestions([...questions, newQuestion]);
-    setSelectedQuestion(newQuestion);
-    setQuestionModalMode('create');
-    setShowQuestionModal(true);
-  };
-
-  const updateQuestion = (questionId, updates) => {
-    setQuestions(questions.map(q =>
-      q.id === questionId ? { ...q, ...updates } : q
-    ));
-  };
-
-  const deleteQuestion = (questionId) => {
-    Swal.fire({
-      title: 'Delete Question?',
-      text: 'This action cannot be undone.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: 'var(--bs-danger)',
-      cancelButtonColor: 'var(--bs-secondary)',
-      confirmButtonText: 'Yes, Delete'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setQuestions(questions.filter(q => q.id !== questionId));
-      }
-    });
-  };
-
-  const duplicateQuestion = (question) => {
-    const duplicated = {
-      ...question,
-      id: Date.now(),
-      title: `${question.title} (Copy)`
-    };
-    setQuestions([...questions, duplicated]);
-  };
-
-  // Drag and Drop Handler
-  const handleOnDragEnd = (result) => {
-    if (!result.destination) return;
-
-    const items = Array.from(questions);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setQuestions(items);
-  };
 
   // ✅ DEBUG: Check survey details before update
   const checkSurveyAccess = async () => {
@@ -1103,6 +1018,7 @@ const SurveyBuilder = () => {
       });
 
       setTimeout(() => {
+        setIsDirty(false);
         navigate(isTemplateMode ? '/app/surveys/templates' : '/app/surveys');
       }, 1500);
 
@@ -1201,7 +1117,7 @@ const SurveyBuilder = () => {
         let response;
         if (isEditMode && surveyId) {
           // Updating existing draft
-          response = await axiosInstance.post(`/surveys/${surveyId}/publish`, surveyData);
+          response = await axiosInstance.put(`/surveys/${surveyId}`, surveyData);
         } else {
           // Creating new draft
           response = await axiosInstance.post('/surveys/save-draft', surveyData);
@@ -1217,6 +1133,7 @@ const SurveyBuilder = () => {
           });
 
           setTimeout(() => {
+            setIsDirty(false);
             navigate('/app/surveys');
           }, 2000);
         }
@@ -1422,8 +1339,73 @@ const SurveyBuilder = () => {
     // Implementation remains same as before
   };
 
+  // ── Validation Helpers ────────────────────────────────────
+  const isValidUrl = useCallback((url) => {
+    if (!url || !url.trim()) return true; // Optional field
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const isScheduleDatePast = useCallback(() => {
+    if (publishSettings.publishNow || !publishSettings.scheduleDate) return false;
+    const now = new Date();
+    const scheduled = new Date(`${publishSettings.scheduleDate}T${publishSettings.scheduleTime || '00:00'}`);
+    return scheduled < now;
+  }, [publishSettings]);
+
+  const validateQuestions = useCallback(() => {
+    const errors = [];
+    const choiceTypes = ['radio', 'checkbox', 'single_choice', 'multiple_choice', 'select', 'ranking', 'imageChoice'];
+    questions.forEach((q, index) => {
+      if (!q.title || !q.title.trim()) {
+        errors.push(`Question ${index + 1}: Title is required`);
+      }
+      if (choiceTypes.includes(q.type) && (!q.options || q.options.length < 2)) {
+        errors.push(`Question ${index + 1}: Must have at least 2 options`);
+      }
+    });
+    return errors;
+  }, [questions]);
+
   // Step Navigation Functions
   const nextStep = () => {
+    // Validate before proceeding
+    if (currentStep === 1) {
+      const qErrors = validateQuestions();
+      if (qErrors.length > 0) {
+        setValidationErrors(qErrors);
+        Swal.fire({
+          icon: 'warning',
+          title: 'Validation Errors',
+          html: qErrors.map(e => `<li style="text-align:left">${e}</li>`).join(''),
+          confirmButtonText: 'Fix Issues'
+        });
+        return;
+      }
+      if (!isValidUrl(survey.redirectUrl)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Invalid URL',
+          text: 'Please enter a valid redirect URL (e.g., https://example.com) or leave it empty.',
+          confirmButtonText: 'Fix'
+        });
+        return;
+      }
+    }
+    if (currentStep === 3 && isScheduleDatePast()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Schedule Date',
+        text: 'The schedule date/time is in the past. Please select a future date and time.',
+        confirmButtonText: 'Fix'
+      });
+      return;
+    }
+    setValidationErrors([]);
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }
@@ -1462,65 +1444,21 @@ const SurveyBuilder = () => {
       (publishSettings.publishNow || (publishSettings.scheduleDate && publishSettings.scheduleTime));
   };
 
-  // ✅ FIXED: Fetch Audience Segments from /api/segments with counts
-  const fetchAudienceSegments = async () => {
-    try {
-      setLoadingSegments(true);
-      const response = await axiosInstance.get('/segments?withCounts=true');
+  // Audience management functions — provided by useAudience hook above
+  // (fetchAudienceSegments, fetchContactCategories, fetchContacts,
+  //  toggleAudience, toggleContactSelection, saveSelectedContacts,
+  //  handleContactSearch, handleContactPageChange)
 
-      if (response.data?.success && Array.isArray(response.data?.data?.segments)) {
-        // Filter only segments with contacts
-        const segmentsWithContacts = response.data.data.segments.filter(
-          (seg) => (seg.contactCount || 0) > 0
-        );
-        setAudienceSegments(segmentsWithContacts);
-      } else {
-        console.warn("Unexpected segments response format:", response.data);
-        setAudienceSegments([]);
-      }
-    } catch (error) {
-      console.error('Error fetching audience segments:', error);
-      setAudienceSegments([]);
-    } finally {
-      setLoadingSegments(false);
+  const normalizeLanguage = (lang) => {
+    if (Array.isArray(lang)) {
+      const first = lang[0];
+      if (first === 'Arabic' || first === 'ar') return 'ar';
+      return 'en';
     }
+    if (lang === 'Arabic' || lang === 'ar') return 'ar';
+    if (lang === 'English' || lang === 'en') return 'en';
+    return 'en'; // default
   };
-
-  // ✅ FIXED: Fetch Contact Categories from /api/contact-categories
-  const fetchContactCategories = async () => {
-    try {
-      setLoadingCategories(true);
-      const response = await axiosInstance.get('/contact-categories');
-
-      if (response.data?.success && Array.isArray(response.data?.data?.categories)) {
-        // Filter only categories with contacts
-        const categoriesWithContacts = response.data.data.categories.filter(
-          (cat) => (cat.contactCount || 0) > 0
-        );
-        setContactCategories(categoriesWithContacts);
-      } else {
-        console.warn("Unexpected categories response format:", response.data);
-        setContactCategories([]);
-      }
-    } catch (error) {
-      console.error('Error fetching contact categories:', error);
-      setContactCategories([]);
-    } finally {
-      setLoadingCategories(false);
-    }
-  };
-
-  // ✅ Load segments and categories when component mounts (skip in template mode)
-  useEffect(() => {
-    if (user && !isTemplateMode) {
-      fetchAudienceSegments();
-      fetchContactCategories();
-    }
-  }, [user, isTemplateMode]);
-
-  // ✅ FIXED: Debug useEffect with correct dependencies
-  // useEffect(() => {
-  // }, [surveyId, location.state, user, loading, isEditing, isTemplateMode]);
 
 
   useEffect(() => {
@@ -1598,106 +1536,6 @@ const SurveyBuilder = () => {
 
     initializeSurveyBuilder();
   }, [surveyId, isTemplateMode, templateData, isEditing, user, navigate]);
-
-  // Target Audience Functions
-
-  const fetchContacts = async (page = 1, search = '') => {
-    try {
-      setLoadingContacts(true);
-      const { data } = await axiosInstance.get('/contacts', {
-        params: { page, limit: contactLimit, search }
-      });
-      console.log('API Response:', data);
-      // Backend returns { success, data: { contacts, total, page, limit, totalPages } }
-      const contactsData = data?.data?.contacts || data?.contacts || [];
-      const totalCount = data?.data?.total ?? data?.total ?? 0;
-
-      setContacts(Array.isArray(contactsData) ? contactsData : []);
-      setContactTotal(Number(totalCount));
-      setContactPage(page);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-    } finally {
-      setLoadingContacts(false);
-    }
-  };
-  const normalizeCategories = (responseData = {}) => {
-    if (responseData.success && Array.isArray(responseData.segments)) {
-      return responseData.segments;
-    }
-    if (responseData.data?.segments) {
-      return responseData.data.segments;
-    }
-    if (responseData.data?.categories) {
-      return responseData.data.categories;
-    }
-    if (Array.isArray(responseData.data)) {
-      return responseData.data;
-    }
-    if (Array.isArray(responseData)) {
-      return responseData;
-    }
-    return [];
-  };
-
-  const normalizeLanguage = (lang) => {
-    if (Array.isArray(lang)) {
-      const first = lang[0];
-      if (first === 'Arabic' || first === 'ar') return 'ar';
-      return 'en';
-    }
-    if (lang === 'Arabic' || lang === 'ar') return 'ar';
-    if (lang === 'English' || lang === 'en') return 'en';
-    return 'en'; // default
-  };
-
-  const toggleAudience = (audienceId) => {
-    // Handle "custom" selection differently
-    if (audienceId === 'custom') {
-      setShowCustomContactModal(true);
-      // Fetch contacts when opening modal
-      fetchContacts(1, '');
-      return;
-    }
-
-    setTargetAudience(prev =>
-      prev.includes(audienceId)
-        ? prev.filter(id => id !== audienceId)
-        : [...prev, audienceId]
-    );
-  };
-
-  // ✅ NEW: Handle Contact Selection in Modal
-  const toggleContactSelection = (contactId) => {
-    setSelectedContacts(prev =>
-      prev.includes(contactId)
-        ? prev.filter(id => id !== contactId)
-        : [...prev, contactId]
-    );
-  };
-
-  // ✅ NEW: Save Selected Contacts and Close Modal
-  const saveSelectedContacts = () => {
-    if (selectedContacts.length > 0) {
-      // Add "custom" to target audience if not already added
-      if (!targetAudience.includes('custom')) {
-        setTargetAudience(prev => [...prev, 'custom']);
-      }
-    }
-    setShowCustomContactModal(false);
-  };
-
-  // ✅ NEW: Handle Contact Search
-  const handleContactSearch = (searchTerm) => {
-    setContactSearch(searchTerm);
-    setContactPage(1);
-    fetchContacts(1, searchTerm);
-  };
-
-  // ✅ NEW: Handle Contact Page Change
-  const handleContactPageChange = (newPage) => {
-    fetchContacts(newPage, contactSearch);
-  };
 
   // Handle Step Wizard Completion - Final Publish
   // This function is called when all 3 steps are complete and user clicks "Publish Survey"
@@ -1902,49 +1740,11 @@ const SurveyBuilder = () => {
   const renderSurveyDetailsStep = () => (
     <div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Question Types Sidebar */}
         <div className="lg:col-span-3">
-          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm sticky top-4">
-            <div className="flex items-center p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] font-semibold">
-              <MdAdd className="mr-2" />
-              <strong>Add Questions</strong>
-            </div>
-            <div className="p-0">
-              {['choice', 'rating', 'text', 'input', 'advanced'].map((category, idx) => (
-                <details key={category} open={idx === 0}>
-                  <summary className="cursor-pointer px-3 py-2.5 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-gray-50 dark:hover:bg-gray-800/50 font-semibold text-sm capitalize">
-                    {category} Questions
-                  </summary>
-                  <div className="p-2">
-                    {questionTypes
-                      .filter(qt => qt.category === category)
-                      .map(questionType => (
-                        <div
-                          key={questionType.id}
-                          className="mb-2 cursor-pointer rounded-lg hover:bg-[var(--light-hover)]/10 dark:hover:bg-[var(--dark-hover)]/10 transition-colors p-3 border border-[var(--light-border)] dark:border-[var(--dark-border)]"
-                          onClick={() => addQuestion(questionType.id)}
-                        >
-                          <div>
-                            <div className="flex items-center mb-2">
-                              <questionType.icon
-                                size={20}
-                                style={{ color: questionType.color }}
-                                className="mr-2"
-                              />
-                              <strong className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{questionType.name}</strong>
-                            </div>
-                            <p className="text-[var(--text-secondary)] text-sm mb-1">{questionType.description}</p>
-                            <div className="text-[var(--text-secondary)]" style={{ fontSize: '0.75rem' }}>
-                              {questionType.example}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </details>
-              ))}
-            </div>
-          </div>
+          <QuestionTypeSidebar
+            questionTypes={questionTypes}
+            onAddQuestion={addQuestion}
+          />
         </div>
 
         {/* Main Content */}
@@ -2019,187 +1819,43 @@ const SurveyBuilder = () => {
                       ))}
                     </div>
                   </div>
+
+                  {/* Responsible User - only shown for surveys, not templates */}
+                  {!isTemplateMode && (
+                    <div className="mb-3">
+                      <ResponsibleUserDropdown
+                        value={survey.responsibleUserId}
+                        onChange={(userId) => setSurvey({ ...survey, responsibleUserId: userId })}
+                        creatorId={user?._id}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Questions Section */}
-          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm">
-            <div className="flex items-center justify-between p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] font-semibold">
-              <div className="flex items-center">
-                <MdViewList className="mr-2" />
-                <strong>Questions ({questions.length})</strong>
-              </div>
-              <div className="flex items-center gap-2">
-                {questions.length > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={suggestNextQuestion}
-                      disabled={isGeneratingAI}
-                      className="inline-flex items-center px-2.5 py-1 text-sm border border-blue-400 text-blue-500 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50"
-                    >
-                      <MdAutoAwesome className="mr-1" />
-                      {isGeneratingAI ? <span className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></span> : 'Suggest'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={optimizeSurvey}
-                      disabled={isGeneratingAI}
-                      className="inline-flex items-center px-2.5 py-1 text-sm border border-yellow-500 text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors disabled:opacity-50"
-                    >
-                      <MdTune className="mr-1" />
-                      {isGeneratingAI ? <span className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></span> : 'Optimize'}
-                    </button>
-                  </>
-                )}
-                {questions.length > 0 && (
-                  <small className="text-muted">Drag to reorder</small>
-                )}
-              </div>
-            </div>
-            <div className="p-0">
-              {questions.length === 0 ? (
-                <div className="text-center py-10">
-                  <MdAdd size={48} className="text-muted mb-3 mx-auto" />
-                  <h5 className="font-semibold">No Questions Yet</h5>
-                  <p className="text-muted mb-4">
-                    Add questions from the sidebar or use AI to generate a complete survey
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowAIModal(true)}
-                    className="inline-flex items-center px-4 py-2 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors mx-auto"
-                  >
-                    <MdAutoAwesome className="mr-2" />
-                    Generate with AI
-                  </button>
-                </div>
-              ) : (
-                <DragDropContext onDragEnd={handleOnDragEnd}>
-                  <Droppable droppableId="questions">
-                    {(provided) => (
-                      <div {...provided.droppableProps} ref={provided.innerRef}>
-                        {questions.map((question, index) => (
-                          <Draggable
-                            key={question.id}
-                            draggableId={question.id.toString()}
-                            index={index}
-                          >
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={`question-item p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] ${snapshot.isDragging ? 'dragging' : ''}`}
-                              >
-                                <div className="flex items-start">
-                                  <div
-                                    {...provided.dragHandleProps}
-                                    className="drag-handle mr-3 mt-1"
-                                  >
-                                    <MdDragHandle className="text-muted" />
-                                  </div>
-
-                                  <div className="flex-grow">
-                                    <div className="flex items-center mb-2">
-                                      <span className="px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-800 mr-2">
-                                        Q{index + 1}
-                                      </span>
-                                      {questionTypes.find(qt => qt.id === question.type) && (
-                                        <>
-                                          {React.createElement(
-                                            questionTypes.find(qt => qt.id === question.type).icon,
-                                            {
-                                              size: 16,
-                                              className: 'mr-2',
-                                              style: {
-                                                color: questionTypes.find(qt => qt.id === question.type).color
-                                              }
-                                            }
-                                          )}
-                                          <small className="text-muted mr-3">
-                                            {questionTypes.find(qt => qt.id === question.type).name}
-                                          </small>
-                                        </>
-                                      )}
-                                      {question.required && (
-                                        <span className="px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800 mr-2">Required</span>
-                                      )}
-                                    </div>
-
-                                    <h6 className="font-semibold mb-1 text-[var(--light-text)] dark:text-[var(--dark-text)]">{question.title}</h6>
-                                    {question.description && (
-                                      <p className="text-[var(--text-secondary)] text-sm mb-2">{question.description}</p>
-                                    )}
-
-                                    {question.options.length > 0 && (
-                                      <div className="mt-2">
-                                        {question.type === 'single_choice' || question.type === 'multiple_choice' ? (
-                                          <div className="flex gap-2 flex-wrap">
-                                            {question.options.slice(0, 3).map((option, idx) => (
-                                              <span key={idx} className="px-2 py-0.5 text-xs rounded border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-                                                {option}
-                                              </span>
-                                            ))}
-                                            {question.options.length > 3 && (
-                                              <span className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-500">
-                                                +{question.options.length - 3} more
-                                              </span>
-                                            )}
-                                          </div>
-                                        ) : null}
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  <div className="flex gap-1 ml-3">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedQuestion(question);
-                                        setQuestionModalMode('edit');
-                                        setShowQuestionModal(true);
-                                      }}
-                                      className="p-1.5 border border-[var(--primary-color)] text-[var(--primary-color)] rounded hover:bg-[var(--primary-color)] hover:text-white transition-colors"
-                                    >
-                                      <MdEdit size={14} />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => duplicateQuestion(question)}
-                                      className="p-1.5 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--text-secondary)] rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                    >
-                                      <MdContentCopy size={14} />
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => deleteQuestion(question.id)}
-                                      className="p-1.5 border border-red-300 text-red-500 rounded hover:bg-red-50 transition-colors"
-                                    >
-                                      <MdDelete size={14} />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              )}
-            </div>
-          </div>
+          <QuestionList
+            questions={questions}
+            questionTypes={questionTypes}
+            onDragEnd={handleOnDragEnd}
+            onEdit={(question) => {
+              setSelectedQuestion(question);
+              setQuestionModalMode('edit');
+              setShowQuestionModal(true);
+            }}
+            onDuplicate={duplicateQuestion}
+            onDelete={deleteQuestion}
+            onSuggest={suggestNextQuestion}
+            onOptimize={optimizeSurvey}
+            onGenerateAI={() => setShowAIModal(true)}
+            isGeneratingAI={isGeneratingAI}
+          />
         </div>
 
         {/* LOGIC RULES PANEL - Right Sidebar */}
-        {currentStep === 1 && (
+        {/* {currentStep === 1 && (
           <div className="lg:col-span-3">
             <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm sticky top-4">
               <div className="flex justify-between items-center p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--primary-color)] text-white rounded-t-xl">
@@ -2249,7 +1905,7 @@ const SurveyBuilder = () => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
@@ -2624,25 +2280,6 @@ const SurveyBuilder = () => {
                 <p className="text-[var(--text-secondary)] mb-2">{questions.length} questions</p>
               </div>
 
-              {/* <div className="mb-3">
-                <strong>Target Audience:</strong>
-                <div className="mt-1">
-                  {targetAudience.length === 0 ? (
-                    <p className="text-muted text-sm">No audience selected</p>
-                  ) : (
-                    targetAudience.map(audienceId => {
-                      const audience = audienceTypes.find(a => a.id === audienceId);
-                      return (
-                        <span key={audienceId} className="px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-800 mr-1 mb-1 inline-block">
-                          {audience?.name}
-                        </span>
-                      );
-                    })
-                  )}
-                </div>
-              </div> */}
-
-
               <div className="mb-3">
                 <strong>Target Audience:</strong>
                 <div className="mt-1">
@@ -2719,7 +2356,7 @@ const SurveyBuilder = () => {
         {renderHeaderTitle()}
 
         {/* Mode Indicator */}
-        <div className={`rounded-lg p-3 mb-3 ${isTemplateMode ? 'bg-yellow-50' :
+        {/* <div className={`bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg p-3 mb-3 ${isTemplateMode ? 'bg-yellow-50' :
           isTemplateBasedSurvey ? 'bg-blue-50' :
             'bg-gray-50'
           }`}>
@@ -2744,7 +2381,7 @@ const SurveyBuilder = () => {
               </>
             )}
           </h6>
-          <p className="text-muted text-sm mb-0">
+          <p className="text-secondary text-sm mb-0">
             {isTemplateMode
               ? 'You are creating/editing a reusable survey template. Changes will affect all future surveys created from this template.'
               : isTemplateBasedSurvey
@@ -2752,11 +2389,11 @@ const SurveyBuilder = () => {
                 : 'You are updating a survey. Use AI assistance or build manually.'
             }
           </p>
-        </div>
+        </div> */}
 
         {/* Survey Mode Selector - Only for tenant creating new survey without template */}
         {showModeSelector && isCreateMode && !isTemplateMode && (
-          <div className="bg-gray-50 rounded-lg p-3 mb-3">
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg p-3 mb-3">
             <h6 className="font-bold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Choose Creation Method</h6>
             <p className="text-[var(--text-secondary)] text-sm mb-3">
               Select how you'd like to create your survey. You'll be guided through a 3-step process: Survey Details → Target Audience → Publish Settings.
@@ -2772,7 +2409,7 @@ const SurveyBuilder = () => {
                 <div className="p-4 text-center">
                   <MdBuild size={48} className="text-[var(--primary-color)] mb-3 mx-auto" />
                   <h6 className="font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">Manual Creation</h6>
-                  <p className="text-[var(--text-secondary)] text-sm">Build your survey step-by-step with full control.</p>
+                  <p className="text-[var(--text-secondary)] text-sm mb-2">Build your survey step-by-step with full control.</p>
                   <button
                     type="button"
                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${surveyMode === 'user-defined'
@@ -2795,7 +2432,7 @@ const SurveyBuilder = () => {
                 <div className="p-4 text-center">
                   <MdSmartToy size={48} className="text-green-500 mb-3 mx-auto" />
                   <h6 className="font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">AI-Powered Creation</h6>
-                  <p className="text-[var(--text-secondary)] text-sm">Let AI generate your survey based on your needs.</p>
+                  <p className="text-[var(--text-secondary)] text-sm mb-3">Let AI generate your survey based on your needs.</p>
                   <button
                     type="button"
                     className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${surveyMode === 'ai-assisted'
@@ -2957,47 +2594,10 @@ const SurveyBuilder = () => {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Question Types Sidebar */}
                 <div className="lg:col-span-3">
-                  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm sticky top-4">
-                    <div className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center">
-                      <MdAdd className="mr-2" />
-                      <strong>Add Questions</strong>
-                    </div>
-                    <div className="p-0">
-                      {['choice', 'rating', 'text', 'input', 'advanced'].map((category, idx) => (
-                        <details key={category} open={idx === 0}>
-                          <summary className="px-3 py-2 cursor-pointer font-semibold capitalize hover:bg-gray-50 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
-                            {category} Questions
-                          </summary>
-                          <div className="p-2">
-                            {questionTypes
-                              .filter(qt => qt.category === category)
-                              .map(questionType => (
-                                <div
-                                  key={questionType.id}
-                                  className="mb-2 cursor-pointer rounded-lg hover:bg-[var(--light-hover)]/10 dark:hover:bg-[var(--dark-hover)]/10 transition-colors p-3 border border-[var(--light-border)] dark:border-[var(--dark-border)]"
-                                  onClick={() => addQuestion(questionType.id)}
-                                >
-                                  <div>
-                                    <div className="flex items-center mb-2">
-                                      <questionType.icon
-                                        size={20}
-                                        style={{ color: questionType.color }}
-                                        className="mr-2"
-                                      />
-                                      <strong className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{questionType.name}</strong>
-                                    </div>
-                                    <p className="text-[var(--text-secondary)] text-sm mb-1">{questionType.description}</p>
-                                    <div className="text-[var(--text-secondary)]" style={{ fontSize: '0.75rem' }}>
-                                      {questionType.example}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        </details>
-                      ))}
-                    </div>
-                  </div>
+                  <QuestionTypeSidebar
+                    questionTypes={questionTypes}
+                    onAddQuestion={addQuestion}
+                  />
                 </div>
 
                 {/* Survey Content */}
@@ -3090,184 +2690,22 @@ const SurveyBuilder = () => {
                   </div>
 
                   {/* Questions List */}
-                  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm">
-                    <div className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] flex items-center justify-between">
-                      <div className="flex items-center">
-                        <MdViewList className="mr-2" />
-                        <strong>Questions ({questions.length})</strong>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {questions.length > 0 && (
-                          <>
-                            <button
-                              type="button"
-                              title="Get AI suggestions for next question"
-                              onClick={suggestNextQuestion}
-                              disabled={isGeneratingAI}
-                              className="inline-flex items-center px-2.5 py-1.5 text-sm border border-blue-400 text-blue-500 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50"
-                            >
-                              <MdAutoAwesome className="mr-1" />
-                              {isGeneratingAI ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div> : 'Suggest'}
-                            </button>
-
-                            <button
-                              type="button"
-                              title="Analyze and optimize survey structure"
-                              onClick={optimizeSurvey}
-                              disabled={isGeneratingAI}
-                              className="inline-flex items-center px-2.5 py-1.5 text-sm border border-yellow-400 text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors disabled:opacity-50"
-                            >
-                              <MdTune className="mr-1" />
-                              {isGeneratingAI ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500"></div> : 'Optimize'}
-                            </button>
-                          </>
-                        )}
-                        {questions.length > 0 && (
-                          <small className="text-muted">Drag to reorder</small>
-                        )}
-                      </div>
-                    </div>
-                    <div className="p-0">
-                      {questions.length === 0 ? (
-                        <div className="text-center py-5">
-                          <MdAdd size={48} className="text-muted mb-3" />
-                          <h5>No Questions Yet</h5>
-                          <p className="text-muted mb-4">
-                            Add questions from the sidebar or use AI to generate a complete survey
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setShowAIModal(true)}
-                            className="inline-flex items-center px-4 py-2 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors mx-auto"
-                          >
-                            <MdAutoAwesome className="mr-2" />
-                            Generate with AI
-                          </button>
-                        </div>
-                      ) : (
-                        <DragDropContext onDragEnd={handleOnDragEnd}>
-                          <Droppable droppableId="questions">
-                            {(provided) => (
-                              <div {...provided.droppableProps} ref={provided.innerRef}>
-                                {questions.map((question, index) => (
-                                  <Draggable
-                                    key={question.id}
-                                    draggableId={question.id.toString()}
-                                    index={index}
-                                  >
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        className={`question-item p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] ${snapshot.isDragging ? 'dragging' : ''
-                                          }`}
-                                      >
-                                        <div className="flex items-start">
-                                          <div
-                                            {...provided.dragHandleProps}
-                                            className="drag-handle mr-3 mt-1"
-                                          >
-                                            <MdDragHandle className="text-muted" />
-                                          </div>
-
-                                          <div className="flex-grow">
-                                            <div className="flex items-center mb-2">
-                                              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 rounded mr-2">
-                                                Q{index + 1}
-                                              </span>
-                                              {questionTypes.find(qt => qt.id === question.type) && (
-                                                <>
-                                                  {React.createElement(
-                                                    questionTypes.find(qt => qt.id === question.type).icon,
-                                                    {
-                                                      size: 16,
-                                                      className: 'mr-2',
-                                                      style: {
-                                                        color: questionTypes.find(qt => qt.id === question.type).color
-                                                      }
-                                                    }
-                                                  )}
-                                                  <small className="text-muted mr-3">
-                                                    {questionTypes.find(qt => qt.id === question.type).name}
-                                                  </small>
-                                                </>
-                                              )}
-                                              {question.required && (
-                                                <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded mr-2">Required</span>
-                                              )}
-                                            </div>
-
-                                            <h6 className="mb-1">{question.title}</h6>
-                                            {question.description && (
-                                              <p className="text-muted text-sm mb-2">{question.description}</p>
-                                            )}
-
-                                            {/* Question Preview */}
-                                            {question.options.length > 0 && (
-                                              <div className="mt-2">
-                                                {question.type === 'single_choice' || question.type === 'multiple_choice' ? (
-                                                  <div className="flex gap-2 flex-wrap">
-                                                    {question.options.slice(0, 3).map((option, idx) => (
-                                                      <span key={idx} className="inline-flex items-center px-2 py-0.5 text-xs bg-gray-100 text-gray-800 rounded border border-gray-200">
-                                                        {option}
-                                                      </span>
-                                                    ))}
-                                                    {question.options.length > 3 && (
-                                                      <span className="inline-flex items-center px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded">
-                                                        +{question.options.length - 3} more
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                ) : null}
-                                              </div>
-                                            )}
-                                          </div>
-
-                                          <div className="flex gap-1 ml-3">
-                                            <button
-                                              type="button"
-                                              title="Edit Question"
-                                              className="p-1.5 border border-[var(--primary-color)] text-[var(--primary-color)] rounded hover:bg-[var(--primary-color)] hover:text-white transition-colors"
-                                              onClick={() => {
-                                                setSelectedQuestion(question);
-                                                setQuestionModalMode('edit');
-                                                setShowQuestionModal(true);
-                                              }}
-                                            >
-                                              <MdEdit size={14} />
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              title="Duplicate"
-                                              className="p-1.5 border border-gray-400 text-gray-500 rounded hover:bg-gray-100 transition-colors"
-                                              onClick={() => duplicateQuestion(question)}
-                                            >
-                                              <MdContentCopy size={14} />
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              title="Delete Question"
-                                              className="p-1.5 border border-red-400 text-red-500 rounded hover:bg-red-50 transition-colors"
-                                              onClick={() => deleteQuestion(question.id)}
-                                            >
-                                              <MdDelete size={14} />
-                                            </button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </DragDropContext>
-                      )}
-                    </div>
-                  </div>
+                  <QuestionList
+                    questions={questions}
+                    questionTypes={questionTypes}
+                    onDragEnd={handleOnDragEnd}
+                    onEdit={(question) => {
+                      setSelectedQuestion(question);
+                      setQuestionModalMode('edit');
+                      setShowQuestionModal(true);
+                    }}
+                    onDuplicate={duplicateQuestion}
+                    onDelete={deleteQuestion}
+                    onSuggest={suggestNextQuestion}
+                    onOptimize={optimizeSurvey}
+                    onGenerateAI={() => setShowAIModal(true)}
+                    isGeneratingAI={isGeneratingAI}
+                  />
                 </div>
               </div>
             </>
@@ -3396,8 +2834,14 @@ const SurveyBuilder = () => {
                       value={survey.redirectUrl}
                       onChange={(e) => setSurvey({ ...survey, redirectUrl: e.target.value })}
                       placeholder="https://example.com"
-                      className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                      className={`w-full px-3 py-2 border rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent ${survey.redirectUrl && !isValidUrl(survey.redirectUrl)
+                        ? 'border-red-500'
+                        : 'border-[var(--light-border)] dark:border-[var(--dark-border)]'
+                        }`}
                     />
+                    {survey.redirectUrl && !isValidUrl(survey.redirectUrl) && (
+                      <p className="text-red-500 text-xs mt-1">Please enter a valid URL (e.g., https://example.com)</p>
+                    )}
                   </div>
                 </div>
               </div>
