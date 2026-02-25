@@ -87,6 +87,7 @@ import FullScreenLoader from "./components/Loader/FullScreenLoader"
 // PlanBuilder import moved above
 import ExecutiveDashboard from "./pages/Dashboard/ExecutiveDashboard"
 import PlatformDashboard from "./pages/Dashboard/PlatformDashboard"
+import ProfileUpdateRequests from "./pages/Platform/ProfileUpdateRequests"
 import Notifications from "./pages/Notifications/Notifications"
 import Unauthorized from "./pages/Unauthorized/Unauthorized"
 
@@ -166,6 +167,7 @@ function App() {
 
               {/* Platform Dashboard */}
               <Route path="platform" element={<PlatformGuard><PlatformDashboard darkMode={darkMode} /></PlatformGuard>} />
+              <Route path="platform/profile-updates" element={<PlatformGuard><ProfileUpdateRequests /></PlatformGuard>} />
 
               {/* Global Settings - Admin Only */}
               <Route path="settings" element={<PlatformGuard><Settings /></PlatformGuard>} />

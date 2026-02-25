@@ -3055,7 +3055,7 @@ const SurveyBuilder = () => {
                 </div>
               )}
 
-              <div className="flex items-start p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] flex items-start p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <FaLightbulb className="mr-2 mt-1 text-blue-500 flex-shrink-0" />
                 <div>
                   <strong>AI will generate:</strong>

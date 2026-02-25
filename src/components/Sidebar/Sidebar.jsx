@@ -482,6 +482,12 @@ const Sidebar = ({
       icon: <MdDashboard />,
       roles: ["admin"],
     },
+    {
+      path: "/app/platform/profile-updates",
+      name: "Profile Requests",
+      icon: <MdBusiness />,
+      roles: ["admin"],
+    },
     // Tenant Dashboard - Company Admin & Members
     {
       path: "/app",
