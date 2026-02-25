@@ -95,9 +95,9 @@ const UserForm = () => {
   };
 
   // === FETCH TENANT DATA ===
-  const fetchTenantData = async (tenantId) => {
+  const fetchTenantData = async () => {
     try {
-      const res = await axiosInstance.get(`/tenants/${tenantId}`, {
+      const res = await axiosInstance.get(`/tenants/me`, {
         withCredentials: true,
       });
       const tenant = res.data.tenant;
@@ -162,10 +162,7 @@ const UserForm = () => {
   // === FETCH TENANT DATA IF NOT ADMIN ===
   useEffect(() => {
     if (!isEditMode && (currentUserRole === "companyAdmin" || currentUserRole === "member")) {
-      const tenantId = currentUser?.tenant?._id || currentUser?.tenant;
-      if (tenantId) {
-        fetchTenantData(tenantId);
-      }
+      fetchTenantData();
     }
   }, [isEditMode, currentUserRole, currentUser]);
 
@@ -291,54 +288,53 @@ const UserForm = () => {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {isEditMode && (
-                    <div>
-                      <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">User ID</label>
-                      <input
-                        type="text"
-                        value={user._id || ""}
-                        disabled
-                        className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50 cursor-not-allowed"
-                      />
-                    </div>
-                  )}
+                {isEditMode && (
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">User ID</label>
+                    <input
+                      type="text"
+                      value={user._id || ""}
+                      disabled
+                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] opacity-50 cursor-not-allowed"
+                    />
+                  </div>
+                )}
 
-                  <div className={isEditMode ? '' : 'md:col-span-2'}>
-                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
-                      Full Name <span className="text-[var(--danger-color)]">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="name"
-                        autoComplete="name"
-                        value={user.name}
-                        onChange={handleChange}
-                        placeholder="Enter full name"
-                        className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${
-                          validationState.name === 'valid' ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
-                          validationState.name === 'invalid' ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' : 
+                <div className={isEditMode ? '' : 'md:col-span-2'}>
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                    Full Name <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="name"
+                      autoComplete="name"
+                      value={user.name}
+                      onChange={handleChange}
+                      placeholder="Enter full name"
+                      className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${validationState.name === 'valid' ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
+                        validationState.name === 'invalid' ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' :
                           'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
                         }`}
-                      />
-                      {validationState.name === 'valid' && (
-                        <MdCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
-                      )}
-                      {validationState.name === 'invalid' && (
-                        <MdError className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
-                      )}
-                    </div>
-                    {errors.name && (
-                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
-                        <MdError /> {errors.name}
-                      </div>
+                    />
+                    {validationState.name === 'valid' && (
+                      <MdCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
+                    )}
+                    {validationState.name === 'invalid' && (
+                      <MdError className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
                     )}
                   </div>
+                  {errors.name && (
+                    <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                      <MdError /> {errors.name}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ACCOUNT INFO */ }
+          {/* ACCOUNT INFO */}
           <div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-[var(--primary-light)] flex items-center justify-center text-[var(--primary-color)] text-xl">
@@ -352,93 +348,89 @@ const UserForm = () => {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
-                      Email Address <span className="text-[var(--danger-color)]">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="email"
-                        name="email"
-                        autoComplete="email"
-                        value={user.email}
-                        onChange={handleChange}
-                        placeholder={isEditMode ? user.email : "user@example.com"}
-                        disabled={isEditMode}
-                        className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${
-                          isEditMode ? 'opacity-50 cursor-not-allowed' : ''
-                        } ${
-                          validationState.email === 'valid' && !isEditMode ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
-                          validationState.email === 'invalid' && !isEditMode ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' : 
-                          'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
+                <div>
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                    Email Address <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      name="email"
+                      autoComplete="email"
+                      value={user.email}
+                      onChange={handleChange}
+                      placeholder={isEditMode ? user.email : "user@example.com"}
+                      disabled={isEditMode}
+                      className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''
+                        } ${validationState.email === 'valid' && !isEditMode ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
+                          validationState.email === 'invalid' && !isEditMode ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' :
+                            'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
                         }`}
-                      />
-                      {!isEditMode && validationState.email === 'valid' && (
-                        <MdCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
-                      )}
-                      {!isEditMode && validationState.email === 'invalid' && (
-                        <MdError className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
-                      )}
-                    </div>
-                    {errors.email && (
-                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
-                        <MdError /> {errors.email}
-                      </div>
+                    />
+                    {!isEditMode && validationState.email === 'valid' && (
+                      <MdCheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
                     )}
-                    {isEditMode && (
-                      <div className="text-sm text-[var(--text-secondary)] mt-1">Email cannot be changed after registration</div>
+                    {!isEditMode && validationState.email === 'invalid' && (
+                      <MdError className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
                     )}
                   </div>
+                  {errors.email && (
+                    <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                      <MdError /> {errors.email}
+                    </div>
+                  )}
+                  {isEditMode && (
+                    <div className="text-sm text-[var(--text-secondary)] mt-1">Email cannot be changed after registration</div>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
-                      Password <span className="text-[var(--danger-color)]">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        name="password"
-                        autoComplete="new-password"
-                        value={user.password}
-                        onChange={handleChange}
-                        placeholder={isEditMode ? "Password unchanged" : "Minimum 8 characters"}
-                        disabled={isEditMode}
-                        className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${
-                          isEditMode ? 'opacity-50 cursor-not-allowed' : ''
-                        } ${
-                          validationState.password === 'valid' && !isEditMode ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
-                          validationState.password === 'invalid' && !isEditMode ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' : 
-                          'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
+                <div>
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                    Password <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      autoComplete="new-password"
+                      value={user.password}
+                      onChange={handleChange}
+                      placeholder={isEditMode ? "Password unchanged" : "Minimum 8 characters"}
+                      disabled={isEditMode}
+                      className={`w-full px-3 py-2 pr-10 rounded-md border bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none transition-all ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''
+                        } ${validationState.password === 'valid' && !isEditMode ? 'border-[var(--success-color)] focus:ring-2 focus:ring-[var(--success-color)]/30' :
+                          validationState.password === 'invalid' && !isEditMode ? 'border-[var(--danger-color)] focus:ring-2 focus:ring-[var(--danger-color)]/30' :
+                            'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-2 focus:ring-[var(--primary-color)]/30'
                         }`}
-                      />
-                      {!isEditMode && (
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <MdVisibilityOff className="text-xl" /> : <MdVisibility className="text-xl" />}
-                        </button>
-                      )}
-                      {!isEditMode && validationState.password === 'valid' && (
-                        <MdCheckCircle className="absolute right-10 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
-                      )}
-                      {!isEditMode && validationState.password === 'invalid' && (
-                        <MdError className="absolute right-10 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
-                      )}
-                    </div>
-                    {errors.password && (
-                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
-                        <MdError /> {errors.password}
-                      </div>
-                    )}
+                    />
                     {!isEditMode && (
-                      <div className="text-sm text-[var(--text-secondary)] mt-1">Must be at least 8 characters long</div>
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <MdVisibilityOff className="text-xl" /> : <MdVisibility className="text-xl" />}
+                      </button>
                     )}
-                    {isEditMode && (
-                      <div className="text-sm text-[var(--text-secondary)] mt-1">Leave empty to keep current password</div>
+                    {!isEditMode && validationState.password === 'valid' && (
+                      <MdCheckCircle className="absolute right-10 top-1/2 -translate-y-1/2 text-[var(--success-color)] text-xl" />
+                    )}
+                    {!isEditMode && validationState.password === 'invalid' && (
+                      <MdError className="absolute right-10 top-1/2 -translate-y-1/2 text-[var(--danger-color)] text-xl" />
                     )}
                   </div>
+                  {errors.password && (
+                    <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                      <MdError /> {errors.password}
+                    </div>
+                  )}
+                  {!isEditMode && (
+                    <div className="text-sm text-[var(--text-secondary)] mt-1">Must be at least 8 characters long</div>
+                  )}
+                  {isEditMode && (
+                    <div className="text-sm text-[var(--text-secondary)] mt-1">Leave empty to keep current password</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -457,109 +449,103 @@ const UserForm = () => {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
-                      User Role <span className="text-[var(--danger-color)]">*</span>
-                    </label>
-                    <select
-                      name="role"
-                      value={user.role}
-                      onChange={handleChange}
-                      autoComplete="off"
-                      className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 transition-all"
+                <div>
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                    User Role <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <select
+                    name="role"
+                    value={user.role}
+                    onChange={handleChange}
+                    autoComplete="off"
+                    className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 transition-all"
+                  >
+                    <option value="">Select Role</option>
+                    {currentUserRole === "admin" && (
+                      <>
+                        <option value="companyAdmin">Company Admin</option>
+                        <option value="user">User</option>
+                      </>
+                    )}
+                    {(currentUserRole === "companyAdmin" || memberCanCreate) && (
+                      <option value="member">Member</option>
+                    )}
+                  </select>
+                  {errors.role && (
+                    <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                      <MdError /> {errors.role}
+                    </div>
+                  )}
+                  <div className="text-sm text-[var(--text-secondary)] mt-1">
+                    {user.role === 'companyAdmin' && 'Full administrative access to company resources'}
+                    {user.role === 'member' && 'Limited access based on department permissions'}
+                    {user.role === 'user' && 'Standard user with basic permissions'}
+                    {!user.role && 'Select the appropriate role for this user'}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
+                    Account Status <span className="text-[var(--danger-color)]">*</span>
+                  </label>
+                  <div className="space-y-3">
+                    <div
+                      className={`p-4 rounded-md border cursor-pointer transition-all ${user.isActive === 'true'
+                        ? 'border-[var(--success-color)] bg-[var(--success-light)]'
+                        : 'border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--success-color)]'
+                        }`}
+                      onClick={() => {
+                        setUser(prev => ({ ...prev, isActive: 'true' }));
+                        setFormChanged(true);
+                      }}
                     >
-                      <option value="">Select Role</option>
-                      {currentUserRole === "admin" && (
-                        <>
-                          <option value="companyAdmin">Company Admin</option>
-                          <option value="user">User</option>
-                        </>
-                      )}
-                      {(currentUserRole === "companyAdmin" || memberCanCreate) && (
-                        <option value="member">Member</option>
-                      )}
-                    </select>
-                    {errors.role && (
-                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
-                        <MdError /> {errors.role}
-                      </div>
-                    )}
-                    <div className="text-sm text-[var(--text-secondary)] mt-1">
-                      {user.role === 'companyAdmin' && 'Full administrative access to company resources'}
-                      {user.role === 'member' && 'Limited access based on department permissions'}
-                      {user.role === 'user' && 'Standard user with basic permissions'}
-                      {!user.role && 'Select the appropriate role for this user'}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">
-                      Account Status <span className="text-[var(--danger-color)]">*</span>
-                    </label>
-                    <div className="space-y-3">
-                      <div
-                        className={`p-4 rounded-md border cursor-pointer transition-all ${
-                          user.isActive === 'true' 
-                            ? 'border-[var(--success-color)] bg-[var(--success-light)]' 
-                            : 'border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--success-color)]'
-                        }`}
-                        onClick={() => {
-                          setUser(prev => ({ ...prev, isActive: 'true' }));
-                          setFormChanged(true);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`text-2xl ${
-                            user.isActive === 'true' ? 'text-[var(--success-color)]' : 'text-[var(--text-secondary)]'
+                      <div className="flex items-center gap-3">
+                        <div className={`text-2xl ${user.isActive === 'true' ? 'text-[var(--success-color)]' : 'text-[var(--text-secondary)]'
                           }`}>
-                            <MdToggleOn />
-                          </div>
-                          <div>
-                            <div className={`font-medium ${
-                              user.isActive === 'true' ? 'text-[var(--success-color)]' : 'text-[var(--light-text)] dark:text-[var(--dark-text)]'
+                          <MdToggleOn />
+                        </div>
+                        <div>
+                          <div className={`font-medium ${user.isActive === 'true' ? 'text-[var(--success-color)]' : 'text-[var(--light-text)] dark:text-[var(--dark-text)]'
                             }`}>Active</div>
-                            <div className="text-sm text-[var(--text-secondary)]">User can login and access system</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`p-4 rounded-md border cursor-pointer transition-all ${
-                          user.isActive === 'false' 
-                            ? 'border-[var(--danger-color)] bg-[var(--danger-light)]' 
-                            : 'border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--danger-color)]'
-                        }`}
-                        onClick={() => {
-                          setUser(prev => ({ ...prev, isActive: 'false' }));
-                          setFormChanged(true);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`text-2xl ${
-                            user.isActive === 'false' ? 'text-[var(--danger-color)]' : 'text-[var(--text-secondary)]'
-                          }`}>
-                            <MdToggleOff />
-                          </div>
-                          <div>
-                            <div className={`font-medium ${
-                              user.isActive === 'false' ? 'text-[var(--danger-color)]' : 'text-[var(--light-text)] dark:text-[var(--dark-text)]'
-                            }`}>Inactive</div>
-                            <div className="text-sm text-[var(--text-secondary)]">User login is disabled</div>
-                          </div>
+                          <div className="text-sm text-[var(--text-secondary)]">User can login and access system</div>
                         </div>
                       </div>
                     </div>
-                    {errors.isActive && (
-                      <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
-                        <MdError /> {errors.isActive}
+
+                    <div
+                      className={`p-4 rounded-md border cursor-pointer transition-all ${user.isActive === 'false'
+                        ? 'border-[var(--danger-color)] bg-[var(--danger-light)]'
+                        : 'border-[var(--light-border)] dark:border-[var(--dark-border)] hover:border-[var(--danger-color)]'
+                        }`}
+                      onClick={() => {
+                        setUser(prev => ({ ...prev, isActive: 'false' }));
+                        setFormChanged(true);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`text-2xl ${user.isActive === 'false' ? 'text-[var(--danger-color)]' : 'text-[var(--text-secondary)]'
+                          }`}>
+                          <MdToggleOff />
+                        </div>
+                        <div>
+                          <div className={`font-medium ${user.isActive === 'false' ? 'text-[var(--danger-color)]' : 'text-[var(--light-text)] dark:text-[var(--dark-text)]'
+                            }`}>Inactive</div>
+                          <div className="text-sm text-[var(--text-secondary)]">User login is disabled</div>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
+                  {errors.isActive && (
+                    <div className="text-sm text-[var(--danger-color)] mt-1 flex items-center gap-1">
+                      <MdError /> {errors.isActive}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* COMPANY INFO - For Admin creating CompanyAdmin */ }
+          {/* COMPANY INFO - For Admin creating CompanyAdmin */}
           {currentUserRole === "admin" && user.role === "companyAdmin" && (
             <div>
               <div className="flex items-center gap-3 mb-4">

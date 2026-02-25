@@ -256,7 +256,7 @@ const AccessManagement = () => {
               <MdGroup />
               Manage Roles
             </Link>
-            <Link to="/app/users/form" className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
+            <Link to="/app/users/create" className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
               <MdPersonAdd />
               <span className="hidden sm:inline">Add User</span>
               <span className="sm:hidden">Add</span>
@@ -389,11 +389,10 @@ const AccessManagement = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.status === 'Active' 
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'Active'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                             : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                        }`}>
+                          }`}>
                           {user.status}
                         </span>
                       </td>
@@ -442,11 +441,10 @@ const AccessManagement = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-[var(--text-secondary)]">Status:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.status === 'Active' 
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'Active'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                           : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                      }`}>
+                        }`}>
                         {user.status}
                       </span>
                     </div>
@@ -500,7 +498,7 @@ const AccessManagement = () => {
           <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
             <h3 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <Link to="/app/users/form" className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
+              <Link to="/app/users/create" className="w-full px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
                 <MdPersonAdd />
                 Add New User
               </Link>

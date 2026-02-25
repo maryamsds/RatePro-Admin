@@ -1575,8 +1575,8 @@ const SurveyBuilder = () => {
       text: `Your survey "${survey.title}" will be published and made available to selected audiences.`,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: 'var(--bs-success)',
-      cancelButtonColor: 'var(--bs-secondary)',
+      confirmButtonColor: 'var(--primary-color)',
+      cancelButtonColor: 'var(--danger-color)',
       confirmButtonText: 'Yes, Publish Now!'
     });
 
@@ -2008,7 +2008,7 @@ const SurveyBuilder = () => {
                   <div
                     key={category._id}
                     className={`h-full cursor-pointer rounded-xl border-2 transition-colors ${targetAudience.includes(`category_${category._id}`)
-                      ? 'border-green-500 bg-green-50'
+                      ? 'border-[var(--primary-color)] bg-[var(--light-card)] dark:bg-[var(--dark-card)]'
                       : 'border-gray-200'
                       }`}
                     onClick={() => toggleAudience(`category_${category._id}`)}
@@ -2117,7 +2117,7 @@ const SurveyBuilder = () => {
               SELECTED AUDIENCES SUMMARY
           ═══════════════════════════════════════════════════════════════ */}
           {targetAudience.length > 0 && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] mt-4 p-3 border border-green-200 rounded-lg">
               <strong>Selected Audiences ({targetAudience.length}):</strong>
               <div className="mt-2 flex flex-wrap gap-2">
                 {targetAudience.map(audienceId => {
@@ -3046,7 +3046,7 @@ const SurveyBuilder = () => {
 
               {/* Debug Info */}
               {import.meta.env.DEV && (
-                <div className="p-3 mb-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] p-3 mb-3 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg text-sm">
                   <strong>Debug Info:</strong><br />
                   Industry: {companyProfile.industry || 'Not selected'}<br />
                   Products: {companyProfile.products || 'Not specified'}<br />

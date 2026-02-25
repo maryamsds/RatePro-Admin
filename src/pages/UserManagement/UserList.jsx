@@ -449,7 +449,7 @@ const UserList = ({ darkMode }) => {
             )}
 
             {(currentUser?.role === "companyAdmin" || memberCanCreate) && (
-              <Link to="/app/users/form" className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
+              <Link to="/app/users/create" className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)] flex items-center gap-2">
                 <MdAdd /> Create User
               </Link>
             )}
@@ -528,9 +528,9 @@ const UserList = ({ darkMode }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Role</label>
-            <select 
-              name="role" 
-              value={filters.role} 
+            <select
+              name="role"
+              value={filters.role}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
             >
@@ -542,9 +542,9 @@ const UserList = ({ darkMode }) => {
 
           <div>
             <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-2">Status</label>
-            <select 
-              name="status" 
-              value={filters.status} 
+            <select
+              name="status"
+              value={filters.status}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
             >
@@ -861,9 +861,9 @@ const UserList = ({ darkMode }) => {
           <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-lg shadow-xl border border-[var(--light-border)] dark:border-[var(--dark-border)] w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
               <h5 className="text-lg font-semibold text-[var(--light-text)] dark:text-[var(--dark-text)]">Import Contacts</h5>
-              <button 
-                type="button" 
-                className="p-2 rounded-md hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors text-[var(--light-text)] dark:text-[var(--dark-text)]" 
+              <button
+                type="button"
+                className="p-2 rounded-md hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors text-[var(--light-text)] dark:text-[var(--dark-text)]"
                 onClick={handleClose}
               >
                 <MdClose />
@@ -894,17 +894,17 @@ const UserList = ({ darkMode }) => {
               )}
             </div>
             <div className="flex items-center justify-end gap-3 p-6 border-t border-[var(--light-border)] dark:border-[var(--dark-border)]">
-              <button 
-                type="button" 
-                className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]" 
+              <button
+                type="button"
+                className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
                 onClick={handleClose}
               >
                 Cancel
               </button>
-              <button 
-                type="button" 
-                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" 
-                onClick={() => handleFileUpload(file)} 
+              <button
+                type="button"
+                className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--success-color)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => handleFileUpload(file)}
                 disabled={!file}
               >
                 Import Contacts
