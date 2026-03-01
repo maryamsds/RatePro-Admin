@@ -92,7 +92,7 @@ const AccessManagement = () => {
 
         // Fetch task assignments
         try {
-          const { data } = await axiosInstance.get("/task-assignments", { withCredentials: true })
+          const { data } = await axiosInstance.get("/permission-assignments/task-assignments", { withCredentials: true })
           const assignments = Array.isArray(data?.assignments) ? data.assignments : []
           setTaskAssignments(assignments.map(a => ({
             _id: a._id,
@@ -133,7 +133,7 @@ const AccessManagement = () => {
       console.log('Sending request to assign task:', { userId, permissionId });
 
       const { data } = await axiosInstance.post(
-        '/task-assignments',
+        '/permission-assignments/task-assignments',
         { permissionId, userId },
         { withCredentials: true }
       );
@@ -172,7 +172,7 @@ const AccessManagement = () => {
         return;
       }
 
-      await axiosInstance.delete(`/task-assignments/${assignmentId}`, { withCredentials: true });
+      await axiosInstance.delete(`/permission-assignments/task-assignments/${assignmentId}`, { withCredentials: true });
       setTaskAssignments((prev) => prev.filter((a) => a._id !== assignmentId));
       Swal.fire('Success', 'Task removed successfully', 'success');
     } catch (err) {
@@ -390,8 +390,8 @@ const AccessManagement = () => {
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'Active'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                           }`}>
                           {user.status}
                         </span>
@@ -442,8 +442,8 @@ const AccessManagement = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-[var(--text-secondary)]">Status:</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.status === 'Active'
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                         }`}>
                         {user.status}
                       </span>
@@ -506,10 +506,6 @@ const AccessManagement = () => {
                 <MdGroup />
                 Manage Roles
               </Link>
-              <button className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] flex items-center gap-2">
-                <MdSettings />
-                Settings
-              </button>
             </div>
           </div>
         </div>

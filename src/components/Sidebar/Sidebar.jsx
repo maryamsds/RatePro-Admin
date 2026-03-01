@@ -538,13 +538,6 @@ const Sidebar = ({
           roles: ["admin", "companyAdmin"],
           permissions: ["survey:templates"]
         },
-        {
-          path: "/app/surveys/settings",
-          name: "Survey Settings",
-          icon: <MdSettings />,
-          roles: ["companyAdmin"],
-          permissions: ["survey:settings:update"],
-        },
       ],
     },
     {

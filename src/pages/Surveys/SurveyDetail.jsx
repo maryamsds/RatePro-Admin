@@ -26,7 +26,6 @@ const SurveyDetail = () => {
     settings: {},
     thankYouPage: {},
   });
-  console.log("Survey State", survey);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
@@ -35,35 +34,29 @@ const SurveyDetail = () => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-  // Survey Stats
-  const [stats, setStats] = useState({
-    totalResponses: 0,
-    avgRating: 0,
-    completionRate: 0,
-    npsScore: 0,
-    responseRate: 0
-  });
 
   // Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastVariant, setToastVariant] = useState('success');
 
-  // Fetch Survey Data
+  // Derived data from survey model (single source of truth)
+  const totalResponses = survey?.totalResponses || 0;
+  const npsScore = survey?.analytics?.npsScore;
+  const avgCompletionTime = survey?.analytics?.avgCompletionTime;
+  const lastResponseAt = survey?.analytics?.lastResponseAt || survey?.lastResponseAt;
+  const hasResponses = totalResponses > 0;
+
+  // Fetch Survey Data (survey model contains all needed stats)
   useEffect(() => {
     fetchSurveyDetail();
-    fetchSurveyStats();
   }, [id]);
 
   const fetchSurveyDetail = async () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/surveys/${id}`);
-      // API returns { survey: {...} } - extract the survey object
       const surveyData = response.data.survey || response.data;
-      console.log('Fetched survey:', surveyData);
       setSurvey(surveyData);
       setError('');
     } catch (err) {
@@ -71,19 +64,6 @@ const SurveyDetail = () => {
       setError(err.response?.data?.message || 'Failed to load survey details');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchSurveyStats = async () => {
-    try {
-      const response = await axiosInstance.get(`/analytics/survey/${id}`);
-      // Handle different response shapes: { stats: {...} } or direct stats object
-      const statsData = response.data?.stats || response.data || {};
-      console.log('Stats Response:', statsData);
-      setStats(prev => ({ ...prev, ...statsData }));
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-      // Keep default stats on error
     }
   };
 
@@ -167,15 +147,17 @@ const SurveyDetail = () => {
     setShowToast(true);
   };
 
-  // Get Status Badge
+  // Get Status Badge — all 6 valid statuses
   const getStatusBadge = (status) => {
     const colorMap = {
-      active: 'bg-[var(--success-color)]',
-      completed: 'bg-[var(--primary-color)]',
-      draft: 'bg-[var(--text-secondary)]',
-      paused: 'bg-[var(--warning-color)]'
+      draft: 'bg-gray-500',
+      scheduled: 'bg-blue-500',
+      active: 'bg-green-500',
+      inactive: 'bg-yellow-500',
+      closed: 'bg-red-500',
+      archived: 'bg-purple-500',
     };
-    return <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white ${colorMap[status] || 'bg-[var(--text-secondary)]'}`}>{status?.toUpperCase()}</span>;
+    return <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium text-white ${colorMap[status] || 'bg-gray-500'}`}>{status?.toUpperCase()}</span>;
   };
 
   // Get Question Type Icon
@@ -271,7 +253,7 @@ const SurveyDetail = () => {
                 </span>
                 <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                   <FaUsers className="mr-1" />
-                  {stats?.totalResponses} Responses
+                  {totalResponses} Responses
                 </span>
               </div>
             </div>
@@ -303,8 +285,9 @@ const SurveyDetail = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards — only data from survey model */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {/* Total Responses */}
         <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <div className="flex items-center">
             <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mr-3">
@@ -312,49 +295,14 @@ const SurveyDetail = () => {
             </div>
             <div>
               <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                {survey?.totalResponses ?? stats?.totalResponses ?? '—'}
+                {totalResponses}
               </div>
               <div className="text-sm text-[var(--text-secondary)]">Total Responses</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
-          <div className="flex items-center">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mr-3">
-              <FaStar size={24} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                {survey?.averageRating != null && survey?.averageRating > 0
-                  ? survey.averageRating.toFixed(1)
-                  : (stats?.avgRating != null && stats?.avgRating > 0
-                    ? stats.avgRating.toFixed(1)
-                    : '—')}
-              </div>
-              <div className="text-sm text-[var(--text-secondary)]">Average Rating</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
-          <div className="flex items-center">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 mr-3">
-              <MdTrendingUp size={24} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                {survey?.averageScore != null && survey?.averageScore > 0
-                  ? survey.averageScore.toFixed(1)
-                  : (stats?.completionRate != null && stats?.completionRate > 0
-                    ? `${stats.completionRate}%`
-                    : '—')}
-              </div>
-              <div className="text-sm text-[var(--text-secondary)]">Average Score</div>
-            </div>
-          </div>
-        </div>
-
+        {/* NPS Score */}
         <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <div className="flex items-center">
             <div className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 mr-3">
@@ -362,11 +310,39 @@ const SurveyDetail = () => {
             </div>
             <div>
               <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                {stats?.npsScore != null && stats?.npsScore !== 0
-                  ? stats.npsScore
-                  : '—'}
+                {npsScore != null ? npsScore : '—'}
               </div>
               <div className="text-sm text-[var(--text-secondary)]">NPS Score</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Completion Time */}
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 mr-3">
+              <MdSchedule size={24} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {avgCompletionTime != null ? `${Math.round(avgCompletionTime / 1000)}s` : '—'}
+              </div>
+              <div className="text-sm text-[var(--text-secondary)]">Avg Completion</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Last Response */}
+        <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+          <div className="flex items-center">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mr-3">
+              <MdTrendingUp size={24} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
+                {lastResponseAt ? new Date(lastResponseAt).toLocaleDateString() : '—'}
+              </div>
+              <div className="text-sm text-[var(--text-secondary)]">Last Response</div>
             </div>
           </div>
         </div>
@@ -384,11 +360,10 @@ const SurveyDetail = () => {
             ].map(tab => (
               <button
                 key={tab.key}
-                className={`flex items-center px-4 py-3 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === tab.key
+                className={`flex items-center px-4 py-3 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.key
                     ? 'border-b-2 border-[var(--primary-color)] text-[var(--primary-color)]'
                     : 'border-b-2 border-transparent text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)]'
-                }`}
+                  }`}
                 onClick={() => setActiveTab(tab.key)}
               >
                 {tab.icon}{tab.label}
@@ -444,7 +419,7 @@ const SurveyDetail = () => {
                           </div>
                         ) : (
                           <div className="text-center py-4">
-                            <i className="fas fa-question-circle text-[var(--text-secondary)] mb-3" style={{fontSize: '3rem'}}></i>
+                            <i className="fas fa-question-circle text-[var(--text-secondary)] mb-3" style={{ fontSize: '3rem' }}></i>
                             <p className="text-[var(--text-secondary)]">No questions added yet</p>
                           </div>
                         )}
@@ -513,8 +488,10 @@ const SurveyDetail = () => {
                             View Responses
                           </button>
                           <button
-                            className="w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white"
-                            onClick={() => navigate(`/app/surveys/${id}/analytics`)}
+                            className={`w-full px-4 py-2 rounded-md font-medium transition-colors border border-[var(--success-color)] text-[var(--success-color)] hover:bg-[var(--success-color)] hover:text-white ${!hasResponses ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={() => hasResponses && navigate(`/app/surveys/${id}/analytics`)}
+                            disabled={!hasResponses}
+                            title={!hasResponses ? 'No responses available for analytics' : 'View Analytics'}
                           >
                             <MdTrendingUp className="mr-2 inline" />
                             View Analytics
@@ -681,60 +658,65 @@ const SurveyDetail = () => {
             {/* Analytics Tab */}
             {activeTab === 'analytics' && (
               <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
-                    <div className="p-4 text-center">
-                      <h5 className="text-xl font-bold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Response Rate</h5>
-                      <div className="relative">
-                        <div className="w-full h-5 bg-gray-200 dark:bg-gray-700 rounded-full mb-2">
-                          <div className="h-full bg-[var(--success-color)] rounded-full" style={{ width: `${stats?.responseRate || 0}%` }}></div>
-                        </div>
-                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                          {stats?.responseRate}%
-                        </span>
+                {hasResponses ? (
+                  <div>
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] p-4 text-center">
+                        <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">{totalResponses}</div>
+                        <div className="text-sm text-[var(--text-secondary)]">Total Responses</div>
                       </div>
-                      <small className="text-[var(--text-secondary)]">
-                        {stats?.totalResponses} responses collected
-                      </small>
+                      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] p-4 text-center">
+                        <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">{npsScore != null ? npsScore : '—'}</div>
+                        <div className="text-sm text-[var(--text-secondary)]">NPS Score</div>
+                      </div>
+                      <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)] p-4 text-center">
+                        <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
+                          {lastResponseAt ? new Date(lastResponseAt).toLocaleDateString() : '—'}
+                        </div>
+                        <div className="text-sm text-[var(--text-secondary)]">Last Response</div>
+                      </div>
+                    </div>
+
+                    {/* Full Analytics Link */}
+                    <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
+                      <div className="p-4 text-center py-8">
+                        <MdAnalytics size={48} className="text-[var(--primary-color)] mb-3 mx-auto" />
+                        <h5 className="text-xl font-bold mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">Detailed Analytics</h5>
+                        <p className="text-[var(--text-secondary)] mb-3">
+                          View NPS breakdown, sentiment analysis, response trends, and demographic insights
+                        </p>
+                        <button
+                          className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
+                          onClick={() => navigate(`/app/surveys/${id}/analytics`)}
+                        >
+                          <MdTrendingUp className="mr-2 inline" />
+                          View Full Analytics
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
-                    <div className="p-4 text-center">
-                      <h5 className="text-xl font-bold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Completion Rate</h5>
-                      <div className="relative">
-                        <div className="w-full h-5 bg-gray-200 dark:bg-gray-700 rounded-full mb-2">
-                          <div className="h-full bg-[var(--info-color)] rounded-full" style={{ width: `${stats?.completionRate || 0}%` }}></div>
-                        </div>
-                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                          {stats?.completionRate}%
-                        </span>
-                      </div>
-                      <small className="text-[var(--text-secondary)]">
-                        Average completion rate
-                      </small>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
+                ) : (
+                  /* No responses state */
                   <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md border border-[var(--light-border)] dark:border-[var(--dark-border)]">
                     <div className="p-4 text-center py-12">
-                      <MdAnalytics size={64} className="text-[var(--text-secondary)] mb-3 mx-auto" />
-                      <h5 className="text-xl font-bold mb-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">Detailed Analytics</h5>
+                      <MdAnalytics size={64} className="text-[var(--text-secondary)] mb-3 mx-auto opacity-40" />
+                      <h5 className="text-xl font-bold mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">No Responses Yet</h5>
                       <p className="text-[var(--text-secondary)] mb-3">
-                        View comprehensive analytics including charts, trends, and insights
+                        Analytics will be available once this survey receives responses.
                       </p>
-                      <button
-                        className="px-4 py-2 rounded-md font-medium transition-colors bg-[var(--primary-color)] text-white hover:bg-[var(--primary-hover)]"
-                        onClick={() => navigate(`/app/surveys/${id}/analytics`)}
-                      >
-                        <MdTrendingUp className="mr-2 inline" />
-                        View Full Analytics
-                      </button>
+                      {survey?.status === 'active' && (
+                        <button
+                          className="px-4 py-2 rounded-md font-medium transition-colors border border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white"
+                          onClick={() => navigate(`/app/surveys/${id}/distribution`)}
+                        >
+                          <MdShare className="mr-2 inline" />
+                          Distribute Survey
+                        </button>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -880,13 +862,12 @@ const SurveyDetail = () => {
       {/* Toast Notifications */}
       {showToast && (
         <div className="fixed top-4 right-4 z-50 p-3">
-          <div className={`px-4 py-3 rounded-md shadow-lg text-white ${
-            toastVariant === 'success' 
-              ? 'bg-[var(--success-color)]' 
-              : toastVariant === 'danger' 
-                ? 'bg-[var(--danger-color)]' 
+          <div className={`px-4 py-3 rounded-md shadow-lg text-white ${toastVariant === 'success'
+              ? 'bg-[var(--success-color)]'
+              : toastVariant === 'danger'
+                ? 'bg-[var(--danger-color)]'
                 : 'bg-[var(--primary-color)]'
-          }`}>
+            }`}>
             <div className="flex items-center justify-between">
               <span>{toastMessage}</span>
               <button className="ml-3 text-white/80 hover:text-white" onClick={() => setShowToast(false)}>&times;</button>

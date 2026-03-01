@@ -47,7 +47,7 @@ export const getSurveyAnalytics = async (surveyId, params = {}) => {
   );
 
   const response = await axiosInstance.get(
-    `/surveys/${surveyId}/analytics?${queryParams.toString()}`
+    `/analytics/${surveyId}?${queryParams.toString()}`
   );
 
   return transformSurveyAnalytics(response.data);
@@ -347,69 +347,68 @@ export const downloadFile = (blob, filename) => {
 // ============================================================================
 
 /**
- * Transform survey analytics response to frontend format
+ * Transform survey analytics response to frontend format.
+ * 
+ * Backend returns ONLY: { nps, sentimentHeatmap, trendline, totalResponses }
+ * We map exactly those fields — no phantom defaults.
  */
-const transformSurveyAnalytics = (data) => ({
-  // Overview metrics
-  overview: {
-    totalResponses: data.totalResponses || 0,
-    averageRating: data.averageRating || 0,
-    completionRate: data.completionRate || 0,
-    npsScore: data.nps?.score || data.npsScore || 0,
-    responseRate: data.responseRate || 0,
-    satisfactionScore: data.satisfactionScore || 0,
-    benchmarkComparison: data.benchmarkComparison || 0,
-  },
+const transformSurveyAnalytics = (data) => {
+  // Aggregate sentiment from heatmap array (visualization aggregation, not business logic)
+  const heatmapArr = Array.isArray(data.sentimentHeatmap) ? data.sentimentHeatmap : [];
+  let positive = 0, negative = 0, neutral = 0;
+  heatmapArr.forEach(entry => {
+    const s = (entry.sentiment || 'neutral').toLowerCase();
+    if (s === 'positive') positive++;
+    else if (s === 'negative') negative++;
+    else neutral++;
+  });
+  const sentimentTotal = positive + negative + neutral;
 
-  // NPS breakdown
-  nps: {
-    score: data.nps?.score || 0,
-    promoters: data.nps?.promoters || 0,
-    passives: data.nps?.passives || 0,
-    detractors: data.nps?.detractors || 0,
-    trend: data.nps?.trend || 0,
-  },
+  return {
+    // Overview — only fields backend provides
+    overview: {
+      totalResponses: data.totalResponses || 0,
+      npsScore: data.nps?.score ?? null,
+    },
 
-  // Trends data
-  trends: {
-    responsesByDate: transformTrendline(data.trendline || []),
-    ratingTrends: data.ratingTrends || [],
-    completionTrends: data.completionTrends || [],
-    npsHistory: data.npsHistory || [],
-  },
+    // NPS breakdown — backend provides full object
+    nps: {
+      score: data.nps?.score ?? null,
+      promoters: data.nps?.promoters || 0,
+      passives: data.nps?.passives || 0,
+      detractors: data.nps?.detractors || 0,
+      total: data.nps?.total || 0,
+    },
 
-  // Demographics
-  demographics: {
-    byDevice: data.demographics?.byDevice || [],
-    byLocation: data.demographics?.byLocation || [],
-    byTimeOfDay: data.demographics?.byTimeOfDay || [],
-    byDayOfWeek: data.demographics?.byDayOfWeek || [],
-  },
+    // Trendline — backend: [{ date, count }]
+    trends: {
+      responsesByDate: transformTrendline(data.trendline || []),
+    },
 
-  // Sentiment analysis
-  sentiment: {
-    breakdown: transformSentimentBreakdown(data.sentimentHeatmap || data.sentiment || {}),
-    topKeywords: data.topKeywords || [],
-    emotionalTrends: data.emotionalTrends || [],
-    satisfactionDrivers: data.satisfactionDrivers || [],
-  },
+    // Sentiment — aggregated from heatmap for charts
+    sentiment: {
+      breakdown: {
+        positive,
+        negative,
+        neutral,
+      },
+      percentages: {
+        positive: sentimentTotal > 0 ? Math.round((positive / sentimentTotal) * 100) : 0,
+        negative: sentimentTotal > 0 ? Math.round((negative / sentimentTotal) * 100) : 0,
+        neutral: sentimentTotal > 0 ? Math.round((neutral / sentimentTotal) * 100) : 0,
+      },
+      total: sentimentTotal,
+    },
 
-  // Question performance
-  questions: {
-    performance: data.questionPerformance || [],
-    dropoffPoints: data.dropoffPoints || [],
-    timeSpent: data.timeSpent || [],
-    skipRates: data.skipRates || [],
-  },
-
-  // Feedback insights
-  feedback: {
-    topComplaints: data.topComplaints || [],
-    topPraises: data.topPraises || [],
-    urgentIssues: data.urgentIssues || [],
-    actionableInsights: data.actionableInsights || [],
-  },
-});
+    // Demographics placeholder — filled separately by lazy-loaded endpoint
+    demographics: {
+      byDevice: [],
+      byLocation: [],
+      byTimeOfDay: [],
+      byDayOfWeek: [],
+    },
+  };
+};
 
 /**
  * Transform trendline data for charts

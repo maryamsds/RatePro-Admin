@@ -72,6 +72,9 @@ import PlanBuilder from "./pages/Subscription/PlanBuilder";
 import FeatureManagement from "./pages/Subscription/FeatureManagement";
 import TenantSubscriptions from "./pages/Subscription/TenantSubscriptions";
 import UsageDashboard from "./pages/Subscription/UsageDashboard";
+import CheckoutSuccess from "./pages/Subscription/CheckoutSuccess";
+import CheckoutCancel from "./pages/Subscription/CheckoutCancel";
+import Onboarding from "./pages/Onboarding/Onboarding";
 import ContactManagement from "./pages/Audiences/ContactManagement"
 import Support from "./pages/Support/CreateTicket"
 import VerifyEmail from "./pages/Auth/VerifyEmail"
@@ -142,6 +145,10 @@ function App() {
             {/* Authorization Error Page - Outside protected routes */}
             <Route path="/unauthorized" element={<Unauthorized />} />
 
+            {/* Checkout Pages (public — before payment confirmation, user may not be fully set up) */}
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+
             {/* Protected Layout */}
             <Route
               path="/app"
@@ -156,6 +163,9 @@ function App() {
                   ? <Navigate to="/app/platform" replace />
                   : <Navigate to="/app/dashboard" replace />
               } />
+
+              {/* Onboarding (protected but outside Layout guards) */}
+              <Route path="onboarding" element={<Onboarding />} />
 
               {/* ============================================================================ */}
               {/* � PLATFORM LAYER - Admin Only (System/Platform Level)                      */}
@@ -230,8 +240,8 @@ function App() {
               <Route path="surveys/:surveyId/schedule" element={<TenantGuard><SurveySchedule /></TenantGuard>} />
               <Route path="surveys/templates" element={<TenantGuard><SurveyTemplates /></TenantGuard>} />
               <Route path="surveys/templates/create" element={<TenantGuard><SurveyBuilder /></TenantGuard>} />
-              <Route path="surveys/takesurvey/:id" element={<TenantGuard><TakeSurvey /></TenantGuard>} />
-              <Route path="surveys/settings" element={<TenantGuard><SurveySettings /></TenantGuard>} />
+              {/* <Route path="surveys/takesurvey/:id" element={<TenantGuard><TakeSurvey /></TenantGuard>} /> */}
+              {/* <Route path="surveys/settings" element={<TenantGuard><SurveySettings /></TenantGuard>} /> */}
 
               {/* Analytics - CompanyAdmin Only */}
               <Route path="analytics" element={<TenantGuard><Analytics /></TenantGuard>} />

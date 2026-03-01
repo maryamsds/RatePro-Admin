@@ -42,6 +42,19 @@ const ProtectedRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // 2.5. Onboarding Enforcement Guard
+  // If user paid but never completed onboarding (e.g., closed browser after payment)
+  // Force them through the onboarding wizard before accessing any other route
+  const isOnboardingRoute = location.pathname === '/app/onboarding';
+  if (
+    !isOnboardingRoute &&
+    user.role === 'companyAdmin' &&
+    user.tenant &&
+    user.companyProfileUpdated === false
+  ) {
+    return <Navigate to="/app/onboarding" replace />;
+  }
+
   // 3. Tenant Association Check (for tenant-scoped routes)
   if (requiresTenant && !user.tenant) {
     console.warn(`[ProtectedRoute] User ${user.email} has no tenant for tenant-scoped route`);
