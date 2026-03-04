@@ -62,9 +62,11 @@ axiosInstance.interceptors.response.use(
     console.log("Status:", status);
     console.log("Message:", message);
     console.groupEnd();
-    // Don't refresh token on login or register calls
+    // Don't refresh token on login, register, /auth/me, or /auth/refresh calls
     const skipRefresh = originalRequest.url.includes("/auth/login") ||
-      originalRequest.url.includes("/auth/register");
+      originalRequest.url.includes("/auth/register") ||
+      originalRequest.url.includes("/auth/me") ||
+      originalRequest.url.includes("/auth/refresh");
 
     // ✅ Handle Access Token Expiry (401)
     if (status === 401 && !originalRequest._retry && !skipRefresh) {
@@ -109,15 +111,9 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         console.error("❌ Refresh Token Failed:", refreshError);
 
-        const isInvalidToken =
-          refreshError.response?.status === 401 &&
-          (refreshError.response?.data?.message?.includes("Invalid refresh token") ||
-            refreshError.response?.data?.message?.includes("No refresh token"));
-
-        if (isInvalidToken) {
-          localStorage.removeItem("authUser");
-          window.location.href = "/login";
-        }
+        // 🧹 Clean up auth state — let React handle navigation, NOT window.location
+        localStorage.removeItem("authUser");
+        delete axiosInstance.defaults.headers.common["Authorization"];
 
         processQueue(refreshError, null);
         return Promise.reject(refreshError);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaBuilding, FaUsers, FaRocket, FaCheck, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+import { FaBuilding, FaRocket, FaCheck, FaArrowRight } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axiosInstance';
 
@@ -10,22 +10,17 @@ const Onboarding = () => {
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const totalSteps = 3;
+    const totalSteps = 2;
 
     // Step 1: Company Details
     const [companyName, setCompanyName] = useState('');
     const [contactEmail, setContactEmail] = useState('');
-    const [phone, setPhone] = useState('');
+    const [contactPhone, setContactPhone] = useState('');
     const [industry, setIndustry] = useState('');
-
-    // Step 2: Team Setup
-    const [inviteEmail, setInviteEmail] = useState('');
-    const [inviteRole, setInviteRole] = useState('member');
 
     const steps = [
         { id: 1, title: 'Company Details', icon: FaBuilding, description: 'Tell us about your organization' },
-        { id: 2, title: 'Team Setup', icon: FaUsers, description: 'Invite your first team member' },
-        { id: 3, title: 'Get Started', icon: FaRocket, description: "You're ready to go!" },
+        { id: 2, title: 'Get Started', icon: FaRocket, description: "You're ready to go!" },
     ];
 
     const handleCompanySubmit = async () => {
@@ -42,11 +37,11 @@ const Onboarding = () => {
         setError('');
 
         try {
-            console.log('[Onboarding] Updating tenant:', tenantId, { name: companyName, contactEmail, phone, industry });
+            console.log('[Onboarding] Updating tenant:', tenantId, { name: companyName, contactEmail, contactPhone, industry });
             await api.put(`/tenants/${tenantId}`, {
                 name: companyName,
                 contactEmail: contactEmail || undefined,
-                phone: phone || undefined,
+                contactPhone: contactPhone || undefined,
                 industry: industry || undefined
             });
             console.log('[Onboarding] Company details saved successfully');
@@ -59,14 +54,6 @@ const Onboarding = () => {
         }
     };
 
-    const handleInvite = async () => {
-        // Team invite is optional — just proceed to next step
-        // TODO: Implement invite API when backend route is available
-        if (inviteEmail.trim()) {
-            console.log('[Onboarding] Team invite skipped (no backend route yet):', inviteEmail);
-        }
-        setCurrentStep(3);
-    };
 
     const handleComplete = () => {
         // Update user state so ProtectedRoute stops redirecting to onboarding
@@ -213,8 +200,8 @@ const Onboarding = () => {
                                         <input
                                             type="tel"
                                             placeholder="+1 (555) 000-0000"
-                                            value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
+                                            value={contactPhone}
+                                            onChange={(e) => setContactPhone(e.target.value)}
                                             className="w-full px-4 py-2.5 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]
                                                        bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]
                                                        text-[var(--light-text)] dark:text-[var(--dark-text)]
@@ -269,82 +256,8 @@ const Onboarding = () => {
                             </div>
                         )}
 
-                        {/* Step 2: Team Setup */}
+                        {/* Step 2: Get Started */}
                         {currentStep === 2 && (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1.5">
-                                        Team Member Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        placeholder="colleague@example.com"
-                                        value={inviteEmail}
-                                        onChange={(e) => setInviteEmail(e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]
-                                                   bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]
-                                                   text-[var(--light-text)] dark:text-[var(--dark-text)]
-                                                   placeholder:text-[var(--text-secondary)]
-                                                   focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
-                                                   transition-all duration-200"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1.5">
-                                        Role
-                                    </label>
-                                    <select
-                                        value={inviteRole}
-                                        onChange={(e) => setInviteRole(e.target.value)}
-                                        className="w-full px-4 py-2.5 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)]
-                                                   bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]
-                                                   text-[var(--light-text)] dark:text-[var(--dark-text)]
-                                                   focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
-                                                   transition-all duration-200"
-                                    >
-                                        <option value="member">Team Member</option>
-                                        <option value="companyAdmin">Admin</option>
-                                    </select>
-                                </div>
-
-                                <div className="flex gap-3 mt-2">
-                                    <button
-                                        onClick={() => setCurrentStep(1)}
-                                        disabled={loading}
-                                        className="px-5 py-3 rounded-md font-medium
-                                                   border border-[var(--light-border)] dark:border-[var(--dark-border)]
-                                                   text-[var(--light-text)] dark:text-[var(--dark-text)]
-                                                   hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
-                                                   disabled:opacity-50 disabled:cursor-not-allowed
-                                                   transition-colors duration-200 flex items-center gap-2"
-                                    >
-                                        <FaArrowLeft size={14} /> Back
-                                    </button>
-                                    <button
-                                        onClick={handleInvite}
-                                        disabled={loading}
-                                        className="flex-1 px-6 py-3 rounded-md font-medium text-white
-                                                   bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
-                                                   disabled:opacity-50 disabled:cursor-not-allowed
-                                                   transition-colors duration-200 flex items-center justify-center gap-2"
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                Sending...
-                                            </>
-                                        ) : inviteEmail.trim() ? (
-                                            <>Send Invite & Continue <FaArrowRight size={14} /></>
-                                        ) : (
-                                            <>Skip for Now <FaArrowRight size={14} /></>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 3: Get Started */}
-                        {currentStep === 3 && (
                             <div>
                                 <div className="text-center mb-6">
                                     <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center
