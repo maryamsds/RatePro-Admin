@@ -10,14 +10,36 @@ const CheckoutSuccess = () => {
     const [status, setStatus] = useState('polling'); // polling | active | timeout | error
     const [pollCount, setPollCount] = useState(0);
 
+    // Force-refresh user data from backend (gets updated role + tenant after webhook)
+    const refreshUserAuth = async () => {
+        try {
+            const res = await api.get('/auth/me', { withCredentials: true });
+            if (res.data?.user) {
+                const oldUser = JSON.parse(localStorage.getItem('authUser') || '{}');
+                const updatedUser = { ...res.data.user, accessToken: oldUser.accessToken || res.data.accessToken };
+                localStorage.setItem('authUser', JSON.stringify(updatedUser));
+                console.log('[CheckoutSuccess] User data refreshed:', updatedUser.role, updatedUser.tenant);
+            }
+        } catch (err) {
+            console.warn('[CheckoutSuccess] Failed to refresh user data:', err.message);
+        }
+    };
+
     const checkSubscription = useCallback(async () => {
         try {
             const res = await api.get('/subscriptions/current');
             const sub = res.data?.data;
 
+            // data is null = webhook hasn't fired yet, keep polling
+            if (!sub) {
+                console.log('[CheckoutSuccess] No tenant provisioned yet, waiting for webhook...');
+                return false;
+            }
+
             if (sub && sub.billing?.status === 'active') {
                 setStatus('active');
-                // Short delay for UX, then redirect to onboarding
+                // Refresh user data to get updated role/tenant before redirect
+                await refreshUserAuth();
                 setTimeout(() => {
                     navigate('/app/onboarding', { replace: true });
                 }, 2000);

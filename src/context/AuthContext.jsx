@@ -123,40 +123,39 @@ export const AuthProvider = ({ children }) => {
     if (savedAccessToken) {
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${savedAccessToken}`;
     }
-    
+
     const checkAuth = async () => {
       const hasAuthUser = localStorage.getItem("authUser");
 
-      if (!hasAuthUser) {
-        setUser(null);
-        setAuthLoading(false);
-        return;
-      }
-
+      // Try /auth/me with cookies first — enables cross-app session sharing
+      // (user may have logged in on Public site, cookies carry over)
       try {
         const res = await axiosInstance.get("/auth/me", { withCredentials: true });
-        const userWithToken = { ...res.data.user, accessToken: savedAccessToken };
+        const token = savedAccessToken || res.data?.accessToken;
+        const userWithToken = { ...res.data.user, accessToken: token };
         setUser(userWithToken);
         localStorage.setItem("authUser", JSON.stringify(userWithToken));
       } catch (err) {
-        console.error("❌ Startup auth failed:", err);
-        setUser(null);
-        localStorage.removeItem("authUser");
-        // Try refresh token
-        try {
-          const refreshRes = await axiosInstance.post("/auth/refresh", {}, { withCredentials: true });
-          const newAccessToken = refreshRes.data.accessToken;
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+        // Cookie auth failed — try refresh token
+        if (hasAuthUser) {
+          console.warn("❌ Cookie auth failed, trying refresh token...");
+          try {
+            const refreshRes = await axiosInstance.post("/auth/refresh", {}, { withCredentials: true });
+            const newAccessToken = refreshRes.data.accessToken;
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
 
-          const res = await axiosInstance.get("/auth/me", { withCredentials: true });
-          const refreshedUser = { ...res.data.user, accessToken: newAccessToken };
-          setUser(refreshedUser);
-          localStorage.setItem("authUser", JSON.stringify(refreshedUser));
-        } catch (refreshErr) {
-          console.error("Refresh token failed:", refreshErr);
-          // Logout if refresh also fails
+            const res = await axiosInstance.get("/auth/me", { withCredentials: true });
+            const refreshedUser = { ...res.data.user, accessToken: newAccessToken };
+            setUser(refreshedUser);
+            localStorage.setItem("authUser", JSON.stringify(refreshedUser));
+          } catch (refreshErr) {
+            console.error("Refresh token failed:", refreshErr);
+            setUser(null);
+            localStorage.removeItem("authUser");
+          }
+        } else {
+          // No localStorage, no cookies — user is not authenticated
           setUser(null);
-          localStorage.removeItem("authUser");
         }
       } finally {
         setAuthLoading(false);

@@ -1,54 +1,34 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function TokenRedirector() {
     const navigate = useNavigate();
 
-    // useEffect(() => {
-    //     const params = new URLSearchParams(window.location.search);
-    //     const token = params.get("token");
-    //     const user = params.get("user");
-
-    //     if (token && user) {
-    //         localStorage.setItem("token", token);
-    //         localStorage.setItem("authUser", user);
-    //         navigate("/app"); // 👈 navigate inside router context
-    //     } else {
-    //         navigate("/login");
-    //     }
-    // }, [navigate]);
-    // useEffect(() => {
-    //     const params = new URLSearchParams(window.location.search);
-    //     const token = params.get("token");
-    //     const user = JSON.parse(decodeURIComponent(params.get("user")));
-
-    //     if (token && user) {
-    //         localStorage.setItem("authUser", JSON.stringify(user));
-    //         localStorage.setItem("token", token);
-    //         navigate("/app");
-    //     }
-    // }, []);
-
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const token = params.get("accessToken");
         const user = params.get("user");
+        const redirectTo = params.get("redirect") || "/app";
+
+        console.log("[TokenRedirector] Received params — token:", token ? "present" : "missing", "user:", user ? "present" : "missing", "redirect:", redirectTo);
 
         if (token && user) {
             try {
                 const parsedUser = JSON.parse(decodeURIComponent(user));
 
-                // ✅ Save to localStorage
-                localStorage.setItem("authUser", JSON.stringify(parsedUser));
-                // localStorage.setItem("token", token);
+                // Save user WITH accessToken embedded (AuthContext reads accessToken from authUser)
+                const userWithToken = { ...parsedUser, accessToken: token };
+                localStorage.setItem("authUser", JSON.stringify(userWithToken));
 
-                // ✅ Redirect to dashboard
-                navigate("/app");
+                console.log("[TokenRedirector] Auth state saved, redirecting to:", redirectTo);
+                navigate(redirectTo, { replace: true });
             } catch (err) {
-                console.error("Error parsing user:", err);
-                navigate("/login");
+                console.error("[TokenRedirector] Error parsing user:", err);
+                navigate("/login", { replace: true });
             }
         } else {
-            navigate("/login"); // fallback
+            console.warn("[TokenRedirector] Missing token or user, redirecting to login");
+            navigate("/login", { replace: true });
         }
     }, [navigate]);
 
