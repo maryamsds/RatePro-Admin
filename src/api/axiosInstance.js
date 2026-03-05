@@ -62,10 +62,9 @@ axiosInstance.interceptors.response.use(
     console.log("Status:", status);
     console.log("Message:", message);
     console.groupEnd();
-    // Don't refresh token on login, register, /auth/me, or /auth/refresh calls
+    // Don't refresh token on login, register, or /auth/refresh calls
     const skipRefresh = originalRequest.url.includes("/auth/login") ||
       originalRequest.url.includes("/auth/register") ||
-      originalRequest.url.includes("/auth/me") ||
       originalRequest.url.includes("/auth/refresh");
 
     // ✅ Handle Access Token Expiry (401)

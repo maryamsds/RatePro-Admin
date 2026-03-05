@@ -153,6 +153,8 @@ const Header = ({
   }, []);
 
   useEffect(() => {
+    if (!user) return; // Don't poll if not authenticated
+
     fetchNotifications();
     fetchUnreadCount();
     const notifInterval = setInterval(fetchNotifications, 30000);
@@ -161,7 +163,7 @@ const Header = ({
       clearInterval(notifInterval);
       clearInterval(countInterval);
     };
-  }, [fetchNotifications, fetchUnreadCount]);
+  }, [user, fetchNotifications, fetchUnreadCount]);
 
   // Handle fullscreen toggle
   const toggleFullscreen = useCallback(() => {

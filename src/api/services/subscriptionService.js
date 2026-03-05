@@ -215,6 +215,15 @@ export const getBillingPortalUrl = async (returnUrl) => {
     return response.data;
 };
 
+/**
+ * Verify a checkout session and trigger provisioning if webhook hasn't fired
+ * @param {string} sessionId - Stripe checkout session ID
+ */
+export const verifyCheckoutSession = async (sessionId) => {
+    const response = await axiosInstance.post('/subscriptions/verify-session', { sessionId });
+    return response.data;
+};
+
 // ============ Helper Functions ============
 
 /**
@@ -276,6 +285,7 @@ export default {
     downgradePlan,
     cancelSubscription,
     getBillingPortalUrl,
+    verifyCheckoutSession,
     // Helpers
     getUsagePercentage,
     getUsageStatus,
