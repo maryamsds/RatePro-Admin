@@ -143,6 +143,14 @@ export const getCurrentSubscription = async () => {
 };
 
 /**
+ * Get complete "My Plan" data (plan, billing, upgrades, usage in one call)
+ */
+export const getMyPlan = async () => {
+    const response = await axiosInstance.get('/subscriptions/my-plan');
+    return response.data;
+};
+
+/**
  * Get usage report
  */
 export const getUsageReport = async () => {
@@ -180,9 +188,19 @@ export const createCheckoutSession = async (planCode, billingCycle = 'monthly', 
 /**
  * Upgrade plan (instant)
  * @param {string} planCode
+ * @param {string} billingCycle
  */
-export const upgradePlan = async (planCode) => {
-    const response = await axiosInstance.post('/subscriptions/upgrade', { planCode });
+export const upgradePlan = async (planCode, billingCycle) => {
+    const response = await axiosInstance.post('/subscriptions/upgrade', { planCode, billingCycle });
+    return response.data;
+};
+
+/**
+ * Preview upgrade proration breakdown
+ * @param {string} planCode
+ */
+export const previewUpgrade = async (planCode) => {
+    const response = await axiosInstance.post('/subscriptions/upgrade-preview', { planCode });
     return response.data;
 };
 
@@ -286,6 +304,9 @@ export default {
     cancelSubscription,
     getBillingPortalUrl,
     verifyCheckoutSession,
+    // New
+    getMyPlan,
+    previewUpgrade,
     // Helpers
     getUsagePercentage,
     getUsageStatus,
