@@ -23,7 +23,7 @@ const AuthLayout = ({ title, subtitle, children, footer }) => {
                         </div>
                         {/* Footer branding */}
                         <p className="text-center text-xs text-[var(--secondary-color)] mt-6">
-                            &copy; {new Date().getFullYear()} RatePro &mdash; Soft Desk Solutions
+                            &copy; {new Date().getFullYear()} RatePro
                         </p>
                     </div>
                     {/* Card Footer */}
