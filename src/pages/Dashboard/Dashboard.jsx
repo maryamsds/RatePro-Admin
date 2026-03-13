@@ -17,7 +17,10 @@ import {
 import {
   MdPoll,
   MdPeople,
+  MdCheckCircle,
+  MdStarRate,
   MdTrendingUp,
+  MdTrendingDown,
   MdAccessTime,
   MdQuestionAnswer,
   MdBarChart,
@@ -36,7 +39,7 @@ import { useAuth } from "../../context/AuthContext.jsx"
 
 // API Services
 import { listSurveys } from "../../api/services/surveyService"
-import { getExecutiveDashboard } from "../../api/services/dashboardService"
+import { getExecutiveDashboard, getDashboardTrends, getDashboardComparison } from "../../api/services/dashboardService"
 
 
 // Register Chart.js components including Filler
@@ -51,6 +54,15 @@ ChartJS.register(
   Filler,
 )
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+const RANGE_OPTIONS = [
+  { label: "7 days", value: "7d", days: 7 },
+  { label: "30 days", value: "30d", days: 30 },
+  { label: "90 days", value: "90d", days: 90 },
+]
+
 const Dashboard = ({ darkMode }) => {
   const { user, authLoading, hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -58,8 +70,6 @@ const Dashboard = ({ darkMode }) => {
   // ============================================================================
   // 🔐 ROLE-BASED DASHBOARD ROUTING
   // ============================================================================
-  // System Admin should not see tenant dashboard - redirect to platform dashboard
-  // This is a safety net in case they bypass frontend guards
   if (!authLoading && user?.role === 'admin') {
     return <Navigate to="/app/platform" replace />;
   }
@@ -77,8 +87,11 @@ const Dashboard = ({ darkMode }) => {
   const [pagination, setPagination] = useState({ page: 1, limit: 5, total: 0 })
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [refreshSuccess, setRefreshSuccess] = useState(false)
   const [error, setError] = useState(null)
   const [trendData, setTrendData] = useState({ labels: [], data: [] })
+  const [comparison, setComparison] = useState(null)
+  const [selectedRange, setSelectedRange] = useState("30d")
 
   // ============================================================================
   // 🔐 PERMISSION-BASED WIDGET VISIBILITY
@@ -99,57 +112,52 @@ const Dashboard = ({ darkMode }) => {
     navigate("/app/surveys");
   };
 
+  // Get the days number from the selected range
+  const getSelectedDays = useCallback(() => {
+    return RANGE_OPTIONS.find(o => o.value === selectedRange)?.days || 30;
+  }, [selectedRange]);
+
   // Fetch dashboard data from API
   const fetchDashboardData = useCallback(async (showRefreshSpinner = false) => {
-    console.time("Dashboard Fetch Time");
-
     try {
       if (showRefreshSpinner) setRefreshing(true);
       else setLoading(true);
       setError(null);
 
-      console.group("📡 Dashboard API Calls");
+      const days = getSelectedDays();
+      const range = selectedRange;
 
-      const [dashboardData, surveysData] = await Promise.all([
-        getExecutiveDashboard()
-          .then(res => {
-            console.log("✅ Raw Dashboard Response:", res);
-            return res;
-          })
+      const [dashboardData, surveysData, trendsData, comparisonData] = await Promise.all([
+        getExecutiveDashboard({ range })
           .catch(err => {
-            console.warn("❌ Dashboard API error, using fallback:", err.message);
+            console.warn("❌ Dashboard API error:", err.message);
             return null;
           }),
 
-        // Sort by lastResponseAt to show surveys with recent activity first
         listSurveys({ page: 1, limit: 10, sort: "-lastResponseAt" })
-          .then(res => {
-            console.log("✅ Raw Surveys Response:", res);
-            return res;
-          })
           .catch(err => {
             console.warn("❌ Surveys API error:", err.message);
             return { surveys: [], total: 0 };
           }),
+
+        getDashboardTrends({ days })
+          .catch(err => {
+            console.warn("❌ Trends API error:", err.message);
+            return { labels: [], data: [], responseCounts: [] };
+          }),
+
+        getDashboardComparison({ days })
+          .catch(err => {
+            console.warn("❌ Comparison API error:", err.message);
+            return null;
+          }),
       ]);
 
-      console.groupEnd();
-
       // ================= DASHBOARD DATA =================
-      console.group("📊 Dashboard KPI Mapping");
-
-      // Use survey list total as fallback for totalSurveys
       const totalSurveysFromList = surveysData?.total || surveysData?.surveys?.length || 0;
-
-      // The dashboardService transform returns { kpis: {...}, trends: {...} }
-      // Use kpis from transform, with fallbacks to raw metrics if needed
       const kpis = dashboardData?.kpis || {};
       const rawMetrics = dashboardData?._raw?.metrics || {};
 
-      console.log("📊 Transformed KPIs:", kpis);
-      console.log("📊 Raw Metrics backup:", rawMetrics);
-
-      // Extract KPIs - prefer transformed kpis, fallback to raw metrics
       const mappedStats = {
         totalSurveys: kpis.totalSurveys || rawMetrics.totalSurveys || totalSurveysFromList,
         activeResponses: kpis.totalResponses || rawMetrics.totalResponses || 0,
@@ -159,51 +167,20 @@ const Dashboard = ({ darkMode }) => {
         satisfactionIndex: kpis.satisfactionIndex || rawMetrics.satisfactionIndex || 0,
       };
 
-      console.log("📈 Final Mapped Stats:", mappedStats);
-      console.log("📊 Fallback used for totalSurveys:", !kpis.totalSurveys);
-      console.groupEnd();
-
       setStats(mappedStats);
 
       // ================= TREND DATA =================
-      console.group("📈 Trend Data Mapping");
+      setTrendData(trendsData);
 
-      // Use satisfaction trend which has weekly data from backend
-      // (responses trend only has single total value)
-      if (dashboardData?.trends?.satisfaction) {
-        const trendLabels = dashboardData.trends.satisfaction.labels || [];
-        const trendDataValues = dashboardData.trends.satisfaction.data || [];
-
-        console.log("Satisfaction Trend Labels:", trendLabels);
-        console.log("Satisfaction Trend Data:", trendDataValues);
-
-        setTrendData({
-          labels: trendLabels,
-          data: trendDataValues,
-        });
-      } else {
-        console.warn("⚠️ No satisfaction trend data available");
-        // No fallback — show empty trend
-        setTrendData({
-          labels: [],
-          data: [],
-        });
-      }
-
-
-      console.groupEnd();
+      // ================= COMPARISON DATA =================
+      setComparison(comparisonData);
 
       // ================= SURVEYS DATA =================
       if (surveysData?.surveys) {
-        console.group("📝 Recent Surveys Transformation");
-        console.log("Raw surveys count:", surveysData.surveys.length);
-
         const transformedSurveys = surveysData.surveys.map((survey) => ({
           id: survey.id || survey._id,
           name: survey.title,
-          // surveyService.transformSurvey already maps totalResponses → responseCount
           responses: survey.responseCount || 0,
-          // Backend returns completion rate in stats.completionRate
           completion: survey.stats?.completionRate || 0,
           status:
             survey.status === "active" ? "Active" :
@@ -213,9 +190,6 @@ const Dashboard = ({ darkMode }) => {
                     survey.status === "published" ? "Active" :
                       survey.status,
         }));
-
-        console.log("Transformed surveys:", transformedSurveys);
-        console.groupEnd();
 
         setRecentSurveys(transformedSurveys);
         setPagination(prev => ({
@@ -230,14 +204,20 @@ const Dashboard = ({ darkMode }) => {
     } finally {
       setLoading(false);
       setRefreshing(false);
-      console.timeEnd("Dashboard Fetch Time");
     }
-  }, []);
+  }, [selectedRange, getSelectedDays]);
 
 
   // Handle refresh button
-  const handleRefresh = () => {
-    fetchDashboardData(true);
+  const handleRefresh = async () => {
+    await fetchDashboardData(true);
+    setRefreshSuccess(true);
+    setTimeout(() => setRefreshSuccess(false), 2000);
+  };
+
+  // Handle range change
+  const handleRangeChange = (rangeValue) => {
+    setSelectedRange(rangeValue);
   };
 
   useEffect(() => {
@@ -262,20 +242,20 @@ const Dashboard = ({ darkMode }) => {
     }
   }, [user, navigate])
 
-  // Fetch data on mount
+  // Fetch data on mount and when range changes
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Chart data - use real data when available, fallback to placeholder
+  // Chart data
   const responseData = {
-    labels: trendData.labels.length > 0 ? trendData.labels : ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: trendData.labels.length > 0 ? trendData.labels : [],
     datasets: [
       {
-        label: "Responses",
-        data: trendData.data.length > 0 ? trendData.data : [0, 0, 0, 0, 0, 0],
+        label: "Avg Satisfaction Rating",
+        data: trendData.data.length > 0 ? trendData.data : [],
         borderColor: "#054a4eff",
-        backgroundColor: darkMode ? "#054a4eff" : "#054a4eff",
+        backgroundColor: darkMode ? "rgba(5, 74, 78, 0.15)" : "rgba(5, 74, 78, 0.1)",
         fill: true,
         tension: 0.4,
         borderWidth: 3,
@@ -287,11 +267,6 @@ const Dashboard = ({ darkMode }) => {
       },
     ],
   }
-
-  // Mock data charts removed - no backend support for these visualizations
-  // TODO: Implement backend APIs if these charts are needed:
-  // - GET /api/analytics/survey-types (for Survey Type Distribution)
-  // - GET /api/analytics/weekly-completion (for Weekly Completion chart)
 
   const chartOptions = {
     responsive: true,
@@ -317,6 +292,15 @@ const Dashboard = ({ darkMode }) => {
         padding: 12,
         displayColors: true,
         callbacks: {
+          label: function (context) {
+            const idx = context.dataIndex;
+            const rating = context.parsed.y;
+            const responses = trendData.responseCounts?.[idx] || 0;
+            return [
+              `Rating: ${rating.toFixed(2)} / 5.0`,
+              `Responses: ${responses}`,
+            ];
+          },
           labelTextColor: function () {
             return darkMode ? "#e9ecef" : "#495057";
           }
@@ -335,8 +319,10 @@ const Dashboard = ({ darkMode }) => {
       },
       y: {
         beginAtZero: true,
+        max: 5,
         ticks: {
           color: darkMode ? "#cbd5e0" : "#495057",
+          stepSize: 1,
         },
         grid: {
           color: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
@@ -346,12 +332,39 @@ const Dashboard = ({ darkMode }) => {
     },
   }
 
-  // doughnutOptions removed - no longer needed without mock charts
-
   const currentSurveys = recentSurveys.slice(
     (pagination.page - 1) * pagination.limit,
     pagination.page * pagination.limit,
   )
+
+  // ============================================================================
+  // HELPER: Render trend badge
+  // ============================================================================
+  const TrendBadge = ({ value, suffix = "vs last period" }) => {
+    if (value === undefined || value === null || value === 0) return null;
+    const isPositive = value > 0;
+    return (
+      <span className={`inline-flex items-center gap-1 text-xs font-medium mt-1
+        ${isPositive ? 'text-[var(--success-color)]' : 'text-[var(--danger-color)]'}`}>
+        {isPositive ? <MdTrendingUp size={14} /> : <MdTrendingDown size={14} />}
+        {isPositive ? "+" : ""}{Math.abs(value).toFixed(1)}% {suffix}
+      </span>
+    );
+  };
+
+  // ============================================================================
+  // HELPER: Metric tooltip
+  // ============================================================================
+  const MetricTooltip = ({ text }) => (
+    <div className="group/tip relative inline-flex ml-1">
+      <MdInfo size={14} className="text-[var(--text-secondary)] opacity-50 cursor-help" />
+      <div className="invisible group-hover/tip:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2
+                      bg-[var(--dark-card)] text-[var(--dark-text)] text-xs rounded shadow-lg
+                      whitespace-nowrap z-10 max-w-xs">
+        {text}
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full">
@@ -366,7 +379,24 @@ const Dashboard = ({ darkMode }) => {
               Welcome back! Here's what's happening with your surveys today.
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {/* Date Range Filter */}
+            <div className="inline-flex rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] overflow-hidden">
+              {RANGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleRangeChange(opt.value)}
+                  className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer border-0
+                    ${selectedRange === opt.value
+                      ? 'bg-[var(--primary-color)] text-white'
+                      : 'bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={handleRefresh}
               disabled={refreshing}
@@ -376,7 +406,7 @@ const Dashboard = ({ darkMode }) => {
                          bg-[var(--light-card)] dark:bg-[var(--dark-card)]
                          hover:bg-[var(--light-hover)]/10 dark:hover:bg-[var(--dark-hover)]/10
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors duration-300"
+                         transition-colors duration-300 cursor-pointer"
             >
               {refreshing ? (
                 <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -385,12 +415,21 @@ const Dashboard = ({ darkMode }) => {
               )}
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
+
+            {/* Refresh success indicator */}
+            {refreshSuccess && (
+              <span className="inline-flex items-center gap-1 text-sm text-[var(--success-color)] transition-opacity duration-300">
+                <MdCheckCircle size={16} />
+                Updated
+              </span>
+            )}
+
             {canCreateSurvey && (
               <button
                 onClick={createNewSurvey}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
                            bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
-                           text-white transition-colors duration-300"
+                           text-white transition-colors duration-300 cursor-pointer border-0"
               >
                 <MdAdd size={16} />
                 New Survey
@@ -443,7 +482,10 @@ const Dashboard = ({ darkMode }) => {
               <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
                 {stats.totalSurveys}
               </h3>
-              <p className="text-[var(--text-secondary)] text-sm">Total Surveys</p>
+              <div className="flex items-center">
+                <p className="text-[var(--text-secondary)] text-sm">Total Surveys</p>
+                <MetricTooltip text="Total number of surveys created in your organization" />
+              </div>
             </div>
 
             {/* Active Responses Card */}
@@ -460,7 +502,11 @@ const Dashboard = ({ darkMode }) => {
               <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
                 {stats.activeResponses.toLocaleString()}
               </h3>
-              <p className="text-[var(--text-secondary)] text-sm">Active Responses</p>
+              <div className="flex items-center">
+                <p className="text-[var(--text-secondary)] text-sm">Active Responses</p>
+                <MetricTooltip text="Total completed survey responses in the selected period" />
+              </div>
+              <TrendBadge value={comparison?.changes?.responseCount} />
             </div>
 
             {/* Completion Rate Card */}
@@ -471,13 +517,16 @@ const Dashboard = ({ darkMode }) => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center justify-center w-12 h-12 rounded-md
                                 bg-[var(--info-light)]">
-                  <MdTrendingUp className="text-[var(--info-color)]" size={24} />
+                  <MdCheckCircle className="text-[var(--info-color)]" size={24} />
                 </div>
               </div>
               <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
                 {stats.completionRate}%
               </h3>
-              <p className="text-[var(--text-secondary)] text-sm">Completion Rate</p>
+              <div className="flex items-center">
+                <p className="text-[var(--text-secondary)] text-sm">Completion Rate</p>
+                <MetricTooltip text="Percentage of started surveys that were fully completed" />
+              </div>
             </div>
 
             {/* Avg Satisfaction Card */}
@@ -488,13 +537,17 @@ const Dashboard = ({ darkMode }) => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center justify-center w-12 h-12 rounded-md
                                 bg-[var(--warning-light)]">
-                  <MdTrendingUp className="text-[var(--warning-color)]" size={24} />
+                  <MdStarRate className="text-[var(--warning-color)]" size={24} />
                 </div>
               </div>
               <h3 className="text-3xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
-                {typeof stats.avgSatisfaction === 'number' ? stats.avgSatisfaction.toFixed(2) : stats.avgSatisfaction}
+                {stats.activeResponses === 0 ? "—" : (typeof stats.avgSatisfaction === 'number' ? stats.avgSatisfaction.toFixed(2) : stats.avgSatisfaction)}
               </h3>
-              <p className="text-[var(--text-secondary)] text-sm">Avg Satisfaction</p>
+              <div className="flex items-center">
+                <p className="text-[var(--text-secondary)] text-sm">Avg Satisfaction</p>
+                <MetricTooltip text="Average rating across all survey responses (1-5 scale). Shows — when no responses exist." />
+              </div>
+              <TrendBadge value={comparison?.changes?.avgRating} />
             </div>
           </div>
 
@@ -518,9 +571,19 @@ const Dashboard = ({ darkMode }) => {
                     View Details →
                   </button>
                 </div>
-                <div className="w-full h-80">
-                  <Line data={responseData} options={chartOptions} />
-                </div>
+
+                {/* Chart or Empty State */}
+                {trendData.data.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-80 text-[var(--text-secondary)]">
+                    <MdShowChart size={48} className="mb-3 opacity-50" />
+                    <p className="text-lg font-medium mb-1">No trend data available yet</p>
+                    <p className="text-sm">Collect more survey responses to see satisfaction trends</p>
+                  </div>
+                ) : (
+                  <div className="w-full h-80">
+                    <Line data={responseData} options={chartOptions} />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -561,7 +624,7 @@ const Dashboard = ({ darkMode }) => {
                         onClick={createNewSurvey}
                         className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md
                                    bg-[var(--primary-color)] hover:bg-[var(--primary-hover)]
-                                   text-white transition-colors duration-300"
+                                   text-white transition-colors duration-300 cursor-pointer border-0"
                       >
                         <MdAdd size={16} />
                         Create Survey
@@ -638,32 +701,50 @@ const Dashboard = ({ darkMode }) => {
                               </td>
                               <td className="p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
                                 <div className="flex gap-2 justify-center">
+                                  {/* View Responses */}
                                   <Link 
                                     to={`/app/surveys/responses/${survey.id}`}
                                     className="inline-flex items-center justify-center w-8 h-8 rounded
                                                text-[var(--primary-color)] hover:bg-[var(--primary-light)]
-                                               transition-colors duration-200"
-                                    title="View Responses"
+                                               transition-colors duration-200 relative group"
+                                    aria-label={`View responses for ${survey.name}`}
                                   >
                                     <MdQuestionAnswer size={18} />
+                                    <span className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                                                     px-2 py-1 bg-[var(--dark-card)] text-[var(--dark-text)] text-xs rounded
+                                                     whitespace-nowrap z-10 shadow-lg pointer-events-none">
+                                      View Responses
+                                    </span>
                                   </Link>
+                                  {/* View Analytics */}
                                   <Link 
                                     to={`/app/surveys/${survey.id}/analytics`}
                                     className="inline-flex items-center justify-center w-8 h-8 rounded
                                                text-[var(--info-color)] hover:bg-[var(--info-light)]
-                                               transition-colors duration-200"
-                                    title="View Analytics"
+                                               transition-colors duration-200 relative group"
+                                    aria-label={`Analyze results for ${survey.name}`}
                                   >
                                     <MdBarChart size={18} />
+                                    <span className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                                                     px-2 py-1 bg-[var(--dark-card)] text-[var(--dark-text)] text-xs rounded
+                                                     whitespace-nowrap z-10 shadow-lg pointer-events-none">
+                                      Analyze Results
+                                    </span>
                                   </Link>
+                                  {/* Survey Details */}
                                   <Link 
                                     to={`/app/surveys/detail/${survey.id}`}
                                     className="inline-flex items-center justify-center w-8 h-8 rounded
                                                text-[var(--secondary-color)] hover:bg-gray-100 dark:hover:bg-gray-800
-                                               transition-colors duration-200"
-                                    title="Survey Details"
+                                               transition-colors duration-200 relative group"
+                                    aria-label={`View details for ${survey.name}`}
                                   >
                                     <MdInfo size={18} />
+                                    <span className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                                                     px-2 py-1 bg-[var(--dark-card)] text-[var(--dark-text)] text-xs rounded
+                                                     whitespace-nowrap z-10 shadow-lg pointer-events-none">
+                                      Survey Details
+                                    </span>
                                   </Link>
                                 </div>
                               </td>
@@ -687,7 +768,7 @@ const Dashboard = ({ darkMode }) => {
                                      bg-[var(--light-card)] dark:bg-[var(--dark-card)]
                                      hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
                                      disabled:opacity-50 disabled:cursor-not-allowed
-                                     transition-colors duration-300"
+                                     transition-colors duration-300 cursor-pointer"
                           disabled={pagination.page === 1}
                           onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
                         >
@@ -701,7 +782,7 @@ const Dashboard = ({ darkMode }) => {
                                      bg-[var(--light-card)] dark:bg-[var(--dark-card)]
                                      hover:bg-[var(--light-bg)] dark:hover:bg-[var(--dark-bg)]
                                      disabled:opacity-50 disabled:cursor-not-allowed
-                                     transition-colors duration-300"
+                                     transition-colors duration-300 cursor-pointer"
                           disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
                           onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
                         >

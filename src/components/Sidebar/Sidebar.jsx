@@ -1012,6 +1012,7 @@ const Sidebar = ({
                 ) : (
                   <NavLink
                     to={item.path}
+                    aria-label={effectiveCollapsed ? item.name : undefined}
                     className={`flex items-center w-full min-h-[44px] p-3 rounded-lg no-underline cursor-pointer transition-all duration-200 font-medium relative group ${effectiveCollapsed ? 'justify-center' : ''} ${isActiveRoute(item.path) ? 'bg-[var(--primary-color)] text-white shadow-[var(--shadow-sm)] hover:bg-[var(--primary-hover)]' : 'bg-transparent text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--primary-light)] hover:text-[var(--primary-color)] hover:translate-x-0.5'}`}
                     onClick={() => handleItemClick(item.path)}
                     onMouseEnter={() => setHoveredItem(item.name)}

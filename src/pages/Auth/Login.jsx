@@ -11,13 +11,44 @@ const Login = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  // Validation state
+  const [emailError, setEmailError] = useState("")
+  const [emailTouched, setEmailTouched] = useState(false)
+
   const navigate = useNavigate()
   const { setUser } = useAuth()
 
+  // --- Email validation ---
+  const validateEmail = (value) => {
+    if (!value) return "Email is required"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Please enter a valid email address"
+    return ""
+  }
+
+  const handleEmailChange = (e) => {
+    const val = e.target.value
+    setEmail(val)
+    if (emailTouched) setEmailError(validateEmail(val))
+  }
+
+  const handleEmailBlur = () => {
+    setEmailTouched(true)
+    setEmailError(validateEmail(email))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Run validation before submit
+    const emailErr = validateEmail(email)
+    setEmailTouched(true)
+    setEmailError(emailErr)
+    if (emailErr) return
+
     setLoading(true);
     setError("");
 
@@ -26,6 +57,7 @@ const Login = () => {
         email,
         password,
         source: "admin",
+        rememberMe,
       });
 
       const user = data?.user;
@@ -101,6 +133,16 @@ const Login = () => {
         return;
       }
 
+      if (status === 423) {
+        Swal.fire({
+          icon: "warning",
+          title: "Account Locked",
+          text: rawMsg || "Too many failed attempts. Your account is temporarily locked. Please try again later.",
+          confirmButtonColor: "#f0ad4e",
+        });
+        return;
+      }
+
       if (status === 429) {
         Swal.fire({
           icon: "warning",
@@ -132,11 +174,12 @@ const Login = () => {
     }
   };
 
+  const hasEmailError = emailTouched && emailError
+
   return (
     <AuthLayout
       title="Welcome Back"
       subtitle="Sign in to your RatePro account"
-      icon={<FaSignInAlt className="text-white" size={28} />}
     >
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
@@ -144,62 +187,98 @@ const Login = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
+        {/* Email Field */}
         <div className="mb-4">
-          <label className="block text-sm sm:text-base font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+          <label
+            htmlFor="login-email"
+            className="block text-sm sm:text-base font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"
+          >
             Email Address
           </label>
           <input
+            id="login-email"
             type="email"
-            placeholder="Enter your email"
+            placeholder="name@company.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
+            onBlur={handleEmailBlur}
             required
-            className="w-full px-3 py-2.5 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
+            aria-invalid={hasEmailError ? "true" : undefined}
+            aria-describedby={hasEmailError ? "email-error" : undefined}
+            className={`w-full px-3 py-2.5 rounded-lg border
+                       ${hasEmailError
+                         ? "border-red-400 dark:border-red-500 focus:ring-red-400"
+                         : "border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-[var(--primary-color)]"
+                       }
                        bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]
-                       focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
-                       transition-all duration-200 text-base"
+                       focus:outline-none focus:ring-2 focus:border-transparent
+                       transition-all duration-200 text-base`}
             style={{ minHeight: "44px" }}
           />
+          {hasEmailError && (
+            <p id="email-error" role="alert" className="mt-1 text-sm text-red-500 dark:text-red-400">
+              {emailError}
+            </p>
+          )}
         </div>
 
+        {/* Password Field */}
         <div className="mb-4">
-          <label className="block text-sm sm:text-base font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]">
+          <label
+            htmlFor="login-password"
+            className="block text-sm sm:text-base font-medium mb-2 text-[var(--light-text)] dark:text-[var(--dark-text)]"
+          >
             Password
           </label>
           <div className="relative">
             <input
+              id="login-password"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              aria-describedby="password-hint"
               className="w-full px-3 py-2.5 pr-12 rounded-lg border border-[var(--light-border)] dark:border-[var(--dark-border)]
                          bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)]
                          focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent
                          transition-all duration-200 text-base"
               style={{ minHeight: "44px" }}
             />
-            <span
+            <button
+              type="button"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
               className="absolute top-1/2 right-3 -translate-y-1/2 flex items-center justify-center
-                         cursor-pointer text-[var(--secondary-color)] text-lg w-11 h-11"
+                         cursor-pointer text-[var(--secondary-color)] text-lg w-11 h-11
+                         bg-transparent border-none hover:text-[var(--primary-color)] transition-colors"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </span>
+            </button>
           </div>
+          <p id="password-hint" className="mt-1.5 text-xs text-[var(--secondary-color)]">
+            Min. 8 characters with uppercase, lowercase, number & special character
+          </p>
         </div>
 
-        <div className="mb-4 flex items-center">
-          <input
-            type="checkbox"
-            id="remember-me"
-            className="w-4 h-4 rounded border-[var(--light-border)] text-[var(--primary-color)]
-                       focus:ring-[var(--primary-color)] cursor-pointer"
-          />
-          <label htmlFor="remember-me" className="ml-2 text-sm sm:text-base text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer">
-            Remember me
-          </label>
+        {/* Remember Me */}
+        <div className="mb-4 flex flex-col gap-1">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="remember-me"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-[var(--light-border)] text-[var(--primary-color)]
+                         focus:ring-[var(--primary-color)] cursor-pointer"
+            />
+            <label htmlFor="remember-me" className="ml-2 text-sm sm:text-base text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer">
+              Remember me
+            </label>
+          </div>
+          <p className="ml-6 text-xs text-[var(--secondary-color)]">
+            Keep me logged in for 7 days on this device.
+          </p>
         </div>
 
         <button

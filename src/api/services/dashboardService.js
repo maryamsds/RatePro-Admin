@@ -17,6 +17,62 @@ export const getExecutiveDashboard = async (params = {}) => {
 };
 
 /**
+ * Get satisfaction trend data for dashboard chart
+ * Uses the existing /analytics/trends/satisfaction endpoint with weekly interval
+ * @param {Object} params - { days }
+ * @returns {Promise<Object>} - { labels: string[], data: number[] }
+ */
+export const getDashboardTrends = async (params = {}) => {
+  const { days = 30 } = params;
+  // Use weekly interval for dashboard chart to avoid too many data points
+  const interval = days <= 7 ? "day" : "week";
+  try {
+    const response = await axiosInstance.get(
+      `/analytics/trends/satisfaction?days=${days}&interval=${interval}`
+    );
+    const rawData = response.data?.data || response.data;
+    const trend = rawData?.trend || [];
+
+    return {
+      labels: trend.map(t => {
+        // Format date labels nicely
+        const d = new Date(t.date);
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      }),
+      data: trend.map(t => Number((t.avgRating || t.avgScore || 0).toFixed(2))),
+      responseCounts: trend.map(t => t.responseCount || 0),
+    };
+  } catch (err) {
+    console.warn("Dashboard trends fetch failed:", err.message);
+    return { labels: [], data: [], responseCounts: [] };
+  }
+};
+
+/**
+ * Get period comparison for metric card trend indicators
+ * Uses the existing /analytics/trends/compare endpoint
+ * @param {Object} params - { days }
+ * @returns {Promise<Object>} - { responseCount, avgRating, avgScore } change percentages
+ */
+export const getDashboardComparison = async (params = {}) => {
+  const { days = 30 } = params;
+  try {
+    const response = await axiosInstance.get(
+      `/analytics/trends/compare?currentDays=${days}&previousDays=${days}`
+    );
+    const rawData = response.data?.data || response.data;
+    return {
+      changes: rawData?.changes || { responseCount: 0, avgRating: 0, avgScore: 0 },
+      current: rawData?.current || {},
+      previous: rawData?.previous || {},
+    };
+  } catch (err) {
+    console.warn("Dashboard comparison fetch failed:", err.message);
+    return { changes: { responseCount: 0, avgRating: 0, avgScore: 0 }, current: {}, previous: {} };
+  }
+};
+
+/**
  * Get operational dashboard data
  * @param {Object} params - { range }
  * @returns {Promise<Object>}
