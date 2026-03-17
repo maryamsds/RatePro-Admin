@@ -238,6 +238,41 @@ body {
   background-size: 200% 100%;
 }
 
+/* Tooltip arrows — Tailwind cannot handle pseudo-element triangles */
+.tooltip-arrow {
+  pointer-events: none;
+}
+.tooltip-arrow::after {
+  content: '';
+  position: absolute;
+  border: 5px solid transparent;
+  pointer-events: none;
+}
+.tooltip-arrow.tooltip-top::after {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: var(--dark-card);
+}
+.tooltip-arrow.tooltip-bottom::after {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: var(--dark-card);
+}
+.tooltip-arrow.tooltip-left::after {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: var(--dark-card);
+}
+.tooltip-arrow.tooltip-right::after {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: var(--dark-card);
+}
+
 /* ============================================================
    CUSTOM SCROLLBAR — Tailwind cannot fully handle
    ============================================================ */

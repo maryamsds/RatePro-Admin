@@ -63,8 +63,8 @@ const useQuestions = (questionTypes = [], initialQuestions = []) => {
             text: 'This action cannot be undone.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: 'var(--bs-danger)',
-            cancelButtonColor: 'var(--bs-secondary)',
+            confirmButtonColor: 'var(--danger-color)',
+            cancelButtonColor: 'var(--secondary-color)',
             confirmButtonText: 'Yes, Delete'
         }).then((result) => {
             if (result.isConfirmed) {

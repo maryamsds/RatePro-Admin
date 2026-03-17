@@ -23,6 +23,7 @@ import {
   MdArchive
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
+import Tooltip from "../../components/Tooltip/Tooltip.jsx"
 import axiosInstance from "../../api/axiosInstance.js"
 import Swal from "sweetalert2"
 import { useAuth } from "../../context/AuthContext"
@@ -43,6 +44,7 @@ const SurveyList = ({ darkMode }) => {
   const [selectedSurvey, setSelectedSurvey] = useState(null)
   const [sortField, setSortField] = useState("-createdAt")
   const [surveys, setSurveys] = useState([])
+  const [expandedDescriptions, setExpandedDescriptions] = useState({})
 
   const handleEdit = (surveyId) => {
     navigate(`/app/surveys/builder/edit/${surveyId}`);
@@ -356,26 +358,32 @@ const SurveyList = ({ darkMode }) => {
               <input
                 type="text"
                 className="flex-1 px-3 py-2 rounded-r-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
-                placeholder="Search surveys by title, description..."
+                placeholder="Search surveys..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
           <div className="lg:col-span-3">
-            <select
-              className="w-full px-3 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active Surveys</option>
-              <option value="draft">Draft Surveys</option>
-              <option value="inactive">Inactive Surveys</option>
-              <option value="scheduled">Scheduled Surveys</option>
-              <option value="closed">Closed Surveys</option>
-              <option value="archived">Archived Surveys</option>
-            </select>
+            <div className="relative">
+              <select
+                className="w-full pl-3 pr-8 py-2 rounded-md border border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] appearance-none cursor-pointer"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active Surveys</option>
+                <option value="draft">Draft Surveys</option>
+                <option value="inactive">Inactive Surveys</option>
+                <option value="scheduled">Scheduled Surveys</option>
+                <option value="closed">Closed Surveys</option>
+                <option value="archived">Archived Surveys</option>
+              </select>
+              <MdArrowDropDown
+                className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]"
+                size={20}
+              />
+            </div>
           </div>
           <div className="lg:col-span-4">
             <div className="flex gap-2">
@@ -446,13 +454,13 @@ const SurveyList = ({ darkMode }) => {
                       onClick={() =>
                         setSortField(sortField === "title" ? "-title" : "title")
                       }
-                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors"
+                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer select-none hover:bg-[var(--primary-light)] dark:hover:bg-[var(--primary-light)] transition-colors group"
                     >
                       <span className="flex items-center">
                         Title
                         {(() => {
                           const Icon = getSortIcon("title");
-                          return <Icon className="ml-2" />;
+                          return <Icon className="ml-2 group-hover:text-[var(--primary-color)] transition-colors" />;
                         })()}
                       </span>
                     </th>
@@ -461,13 +469,13 @@ const SurveyList = ({ darkMode }) => {
                       onClick={() =>
                         setSortField(sortField === "status" ? "-status" : "status")
                       }
-                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors"
+                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer select-none hover:bg-[var(--primary-light)] dark:hover:bg-[var(--primary-light)] transition-colors group"
                     >
                       <span className="flex items-center">
                         Status
                         {(() => {
                           const Icon = getSortIcon("status");
-                          return <Icon className="ml-2" />;
+                          return <Icon className="ml-2 group-hover:text-[var(--primary-color)] transition-colors" />;
                         })()}
                       </span>
                     </th>
@@ -478,13 +486,13 @@ const SurveyList = ({ darkMode }) => {
                           sortField === "createdAt" ? "-createdAt" : "createdAt"
                         )
                       }
-                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors"
+                      className="px-4 py-3 text-left font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] cursor-pointer select-none hover:bg-[var(--primary-light)] dark:hover:bg-[var(--primary-light)] transition-colors group"
                     >
                       <span className="flex items-center">
                         Created At
                         {(() => {
                           const Icon = getSortIcon("createdAt");
-                          return <Icon className="ml-2" />;
+                          return <Icon className="ml-2 group-hover:text-[var(--primary-color)] transition-colors" />;
                         })()}
                       </span>
                     </th>
@@ -496,11 +504,41 @@ const SurveyList = ({ darkMode }) => {
                     surveys.map((survey) => {
                       const actions = survey.allowedActions || {};
                       return (
-                        <tr key={survey._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)] transition-colors">
-                          <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">{survey.title}</td>
-                          <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                            <span className="line-clamp-1">{survey.description}</span>
+                        <tr key={survey._id} className="border-b border-[var(--light-border)] dark:border-[var(--dark-border)] hover:bg-[var(--row-hover-bg)] transition-colors">
+                          {/* Title — constrained width, 2-line clamp */}
+                          <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)] min-w-[180px] max-w-[250px]">
+                            <span className="line-clamp-2 block leading-snug font-medium">
+                              {survey.title}
+                            </span>
                           </td>
+
+                          {/* Description — RTL-safe, expandable, tooltip for medium text */}
+                          <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)] max-w-[300px]">
+                            {survey.description ? (
+                              <>
+                                <Tooltip text={survey.description} position="bottom" threshold={120}>
+                                  <p
+                                    className={`m-0 text-sm leading-snug ${expandedDescriptions[survey._id] ? '' : 'line-clamp-2'}`}
+                                    dir="auto"
+                                  >
+                                    {survey.description}
+                                  </p>
+                                </Tooltip>
+                                {survey.description.length > 100 && (
+                                  <button
+                                    type="button"
+                                    className="text-xs text-[var(--primary-color)] hover:underline bg-transparent border-0 cursor-pointer p-0 mt-1"
+                                    onClick={() => setExpandedDescriptions(prev => ({ ...prev, [survey._id]: !prev[survey._id] }))}
+                                  >
+                                    {expandedDescriptions[survey._id] ? 'Show less' : 'View more'}
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <span className="italic text-sm text-[var(--text-secondary)]">No description</span>
+                            )}
+                          </td>
+
                           <td className="px-4 py-3">
                             <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getStatusBadge(survey.status)}`}>
                               {survey.status}
@@ -511,127 +549,149 @@ const SurveyList = ({ darkMode }) => {
                               {survey.totalResponses || 0}
                             </span>
                           </td>
+
+                          {/* Date — locale-aware, timezone-safe */}
                           <td className="px-4 py-3 text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                            {new Date(survey.createdAt).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            <time dateTime={survey.createdAt}>
+                              {new Intl.DateTimeFormat(undefined, {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }).format(new Date(survey.createdAt))}
+                            </time>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end items-center gap-1">
 
                               {/* Activate / Deactivate Toggle */}
                               {(actions.activate || actions.deactivate) && user?.role !== "admin" && (
-                                <button
-                                  type="button"
-                                  className={`p-2 rounded-md transition-colors ${actions.deactivate
-                                      ? "text-[var(--success-color)] hover:bg-[var(--success-light)]"
-                                      : "text-[var(--text-secondary)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
-                                    }`}
-                                  onClick={() => toggleStatus(survey._id, survey.status)}
-                                  title={actions.deactivate ? "Deactivate Survey" : "Activate Survey"}
-                                >
-                                  {actions.deactivate ? (
-                                    <MdToggleOn size={20} />
-                                  ) : (
-                                    <MdToggleOff size={20} />
-                                  )}
-                                </button>
+                                <Tooltip text={actions.deactivate ? "Deactivate Survey" : "Activate Survey"} position="top">
+                                  <button
+                                    type="button"
+                                    aria-label={actions.deactivate ? "Deactivate Survey" : "Activate Survey"}
+                                    className={`p-2 rounded-md transition-colors ${actions.deactivate
+                                        ? "text-[var(--success-color)] hover:bg-[var(--success-light)]"
+                                        : "text-[var(--text-secondary)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
+                                      }`}
+                                    onClick={() => toggleStatus(survey._id, survey.status)}
+                                  >
+                                    {actions.deactivate ? (
+                                      <MdToggleOn size={20} />
+                                    ) : (
+                                      <MdToggleOff size={20} />
+                                    )}
+                                  </button>
+                                </Tooltip>
                               )}
 
                               {/* Edit — only for draft/scheduled */}
                               {actions.edit && user?.role !== "admin" && (
-                                <button
-                                  type="button"
-                                  className="p-2 rounded-md transition-colors text-[var(--primary-color)] hover:bg-[var(--primary-light)]"
-                                  onClick={() => handleEdit(survey._id)}
-                                  title="Edit Survey"
-                                >
-                                  <MdEdit size={20} />
-                                </button>
+                                <Tooltip text="Edit Survey" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="Edit Survey"
+                                    className="p-2 rounded-md transition-colors text-[var(--primary-color)] hover:bg-[var(--primary-light)]"
+                                    onClick={() => handleEdit(survey._id)}
+                                  >
+                                    <MdEdit size={20} />
+                                  </button>
+                                </Tooltip>
                               )}
 
                               {/* Analytics — only if responses > 0 */}
                               {actions.analytics && (
-                                <button
-                                  type="button"
-                                  className="p-2 rounded-md transition-colors text-[var(--info-color)] hover:bg-[var(--info-light)]"
-                                  onClick={() => handleAnalytics(survey._id)}
-                                  title="View Analytics"
-                                >
-                                  <MdBarChart size={20} />
-                                </button>
+                                <Tooltip text="View Analytics" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="View Analytics"
+                                    className="p-2 rounded-md transition-colors text-[var(--info-color)] hover:bg-[var(--info-light)]"
+                                    onClick={() => handleAnalytics(survey._id)}
+                                  >
+                                    <MdBarChart size={20} />
+                                  </button>
+                                </Tooltip>
                               )}
 
                               {/* Distribution — only for active */}
                               {actions.distribution && (
-                                <button
-                                  type="button"
-                                  className="p-2 rounded-md transition-colors text-[var(--primary-color)] hover:bg-[var(--primary-light)]"
-                                  onClick={() => handleDistribution(survey._id)}
-                                  title="Distribution & QR Codes"
-                                >
-                                  <MdShare size={20} />
-                                </button>
+                                <Tooltip text="Share & Distribute" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="Share & Distribute"
+                                    className="p-2 rounded-md transition-colors text-[var(--primary-color)] hover:bg-[var(--primary-light)]"
+                                    onClick={() => handleDistribution(survey._id)}
+                                  >
+                                    <MdShare size={20} />
+                                  </button>
+                                </Tooltip>
                               )}
 
                               {/* Close — only for active surveys */}
                               {actions.close && user?.role !== "admin" && (
-                                <button
-                                  type="button"
-                                  className="p-2 rounded-md transition-colors text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                  onClick={() => closeSurvey(survey._id)}
-                                  title="Close Survey (permanently stop collection)"
-                                >
-                                  <MdLock size={20} />
-                                </button>
+                                <Tooltip text="Close Survey" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="Close Survey"
+                                    className="p-2 rounded-md transition-colors text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                    onClick={() => closeSurvey(survey._id)}
+                                  >
+                                    <MdLock size={20} />
+                                  </button>
+                                </Tooltip>
                               )}
 
                               {/* Archive — only for closed surveys */}
                               {actions.archive && user?.role !== "admin" && (
-                                <button
-                                  type="button"
-                                  className="p-2 rounded-md transition-colors text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                                  onClick={() => archiveSurvey(survey._id)}
-                                  title="Archive Survey"
-                                >
-                                  <MdArchive size={20} />
-                                </button>
+                                <Tooltip text="Archive Survey" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="Archive Survey"
+                                    className="p-2 rounded-md transition-colors text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                                    onClick={() => archiveSurvey(survey._id)}
+                                  >
+                                    <MdArchive size={20} />
+                                  </button>
+                                </Tooltip>
                               )}
 
                               {/* Delete — only for draft/inactive/scheduled with 0 responses */}
                               {actions.delete && user?.role !== "admin" && (
-                                <button
-                                  type="button"
-                                  className="p-2 rounded-md transition-colors text-[var(--danger-color)] hover:bg-[var(--danger-light)]"
-                                  onClick={() => handleDelete(survey)}
-                                  title="Delete Survey"
-                                >
-                                  <MdDelete size={20} />
-                                </button>
+                                <Tooltip text="Delete Survey" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="Delete Survey"
+                                    className="p-2 rounded-md transition-colors text-[var(--danger-color)] hover:bg-[var(--danger-light)]"
+                                    onClick={() => handleDelete(survey)}
+                                  >
+                                    <MdDelete size={20} />
+                                  </button>
+                                </Tooltip>
                               )}
 
                               {/* View Survey — always visible */}
-                              <button
-                                type="button"
-                                className="p-2 rounded-md transition-colors text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
-                                onClick={() => handleViewSurvey(survey._id)}
-                                title="View Survey Details"
-                              >
-                                <MdVisibility size={20} />
-                              </button>
+                              <Tooltip text="View Details" position="top">
+                                <button
+                                  type="button"
+                                  aria-label="View Survey Details"
+                                  className="p-2 rounded-md transition-colors text-[var(--light-text)] dark:text-[var(--dark-text)] hover:bg-[var(--light-hover)] dark:hover:bg-[var(--dark-hover)]"
+                                  onClick={() => handleViewSurvey(survey._id)}
+                                >
+                                  <MdVisibility size={20} />
+                                </button>
+                              </Tooltip>
 
                               {/* Feedback — only if responses > 0 */}
                               {actions.feedback && (
-                                <button
-                                  type="button"
-                                  className="p-2 rounded-md transition-colors text-[var(--warning-color)] hover:bg-[var(--warning-light)]"
-                                  onClick={() => handleFeedback(survey._id)}
-                                  title="View Survey Feedback"
-                                >
-                                  <MdFeedback size={20} />
-                                </button>
+                                <Tooltip text="View Responses" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="View Survey Responses"
+                                    className="p-2 rounded-md transition-colors text-[var(--warning-color)] hover:bg-[var(--warning-light)]"
+                                    onClick={() => handleFeedback(survey._id)}
+                                  >
+                                    <MdFeedback size={20} />
+                                  </button>
+                                </Tooltip>
                               )}
                             </div>
                           </td>

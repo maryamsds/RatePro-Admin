@@ -22,9 +22,11 @@ const QuestionList = ({
     onEdit,
     onDuplicate,
     onDelete,
+    onAddQuestion,
     onOpenAIModal,
     onSuggestQuestion,
     onOptimize,
+    onGenerateAI,
     isGeneratingAI
 }) => {
     return (
@@ -64,21 +66,42 @@ const QuestionList = ({
                 </div>
             </div>
             <div className="p-0">
-                {questions.length === 0 ? (
+                {/* Loading skeleton while AI generates */}
+                {isGeneratingAI && questions.length === 0 && (
+                    <div className="space-y-3 p-4 animate-pulse">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                        ))}
+                        <p className="text-center text-sm text-[var(--text-secondary)]">Generating questions with AI...</p>
+                    </div>
+                )}
+
+                {!isGeneratingAI && questions.length === 0 ? (
                     <div className="text-center py-10">
                         <MdAdd size={48} className="text-muted mb-3 mx-auto" />
                         <h5 className="font-semibold">No Questions Yet</h5>
                         <p className="text-muted mb-4">
-                            Add questions from the sidebar or use AI to generate a complete survey
+                            Start by adding a question manually or generate with AI
                         </p>
-                        <button
-                            type="button"
-                            onClick={onOpenAIModal}
-                            className="inline-flex items-center px-4 py-2 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors mx-auto"
-                        >
-                            <MdAutoAwesome className="mr-2" />
-                            Generate with AI
-                        </button>
+                        <div className="flex items-center justify-center gap-3">
+                            {onAddQuestion && (
+                                <button
+                                    type="button"
+                                    onClick={() => onAddQuestion('text_short')}
+                                    className="inline-flex items-center px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:opacity-90 transition-opacity"
+                                >
+                                    <MdAdd className="mr-2" /> Add a Question
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={onOpenAIModal || onGenerateAI}
+                                className="inline-flex items-center px-4 py-2 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors"
+                            >
+                                <MdAutoAwesome className="mr-2" />
+                                Generate with AI
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <DragDropContext onDragEnd={onDragEnd}>

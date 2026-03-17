@@ -10,10 +10,12 @@ import {
   MdTune, MdCode, MdBusiness, MdBuild,
   MdOutlineAccessTime, MdEvent, MdBarChart, MdAlternateEmail, MdImage,
   Md123, MdQuestionAnswer, MdPeople, MdGroup, MdHandshake,
-  MdSchedule, MdArrowForward, MdArrowBack,
+  MdSchedule, MdArrowForward, MdArrowBack, MdLock,
 } from 'react-icons/md';
 import { MdFilterList, MdCategory, MdInfo } from "react-icons/md";
 import { FaUsers, FaLightbulb, FaPalette } from 'react-icons/fa';
+import Tooltip from '../../components/Tooltip/Tooltip.jsx';
+import { buttonVariants } from '../../constants/ButtonVariants';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
@@ -96,6 +98,8 @@ const SurveyBuilder = () => {
 
   // ── Validation state ─────────────────────────────────────
   const [validationErrors, setValidationErrors] = useState([]);
+  const [fieldErrors, setFieldErrors] = useState({ title: '', description: '' });
+  const fieldDebounceRef = useRef(null);
 
   // Multi-step Wizard States
   const [currentStep, setCurrentStep] = useState(1);
@@ -173,6 +177,7 @@ const SurveyBuilder = () => {
   }, [isDirty, navigate]);
 
   const [companyProfile, setCompanyProfile] = useState({
+    companyName: '',
     industry: "",
     products: "",
     targetAudience: "",
@@ -183,6 +188,25 @@ const SurveyBuilder = () => {
     tone: 'friendly-professional',
     additionalInstructions: ''
   });
+
+  // Auto-populate company name for AI modal
+  useEffect(() => {
+    const fetchCompanyProfile = async () => {
+      try {
+        const { data } = await axiosInstance.get('/tenants/profile');
+        if (data?.tenant?.companyName) {
+          setCompanyProfile(prev => ({
+            ...prev,
+            companyName: data.tenant.companyName,
+            industry: data.tenant.industry || prev.industry
+          }));
+        }
+      } catch (e) {
+        console.warn('Could not auto-populate company profile:', e.message);
+      }
+    };
+    fetchCompanyProfile();
+  }, []);
 
   const [logicRules, setLogicRules] = useState([]);
   const [showLogicBuilder, setShowLogicBuilder] = useState(false);
@@ -745,7 +769,7 @@ const SurveyBuilder = () => {
     }
   }, [survey.language]);
 
-  // AI Survey Generation
+  // AI Survey Generation — with AbortController timeout + retry
   const generateAISurvey = async () => {
     if (!aiPrompt.trim() && !companyProfile.industry) {
       Swal.fire({
@@ -756,10 +780,17 @@ const SurveyBuilder = () => {
       return;
     }
 
+    // Prevent double-request
+    if (aiLoadingStates.generating) return;
+
     setAILoadingStates(prev => ({ ...prev, generating: true }));
     setGlobalLoading(true);
+
+    // AbortController with 30-second timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
     try {
-      // ✅ FIX: Use companyProfile.language (canonical 'en'/'ar') instead of languages array
       const selectedLanguage = companyProfile.language || survey.language || 'en';
 
       const requestPayload = {
@@ -771,14 +802,16 @@ const SurveyBuilder = () => {
         goal: companyProfile.surveyGoal || aiPrompt || 'customer feedback',
         questionCount: companyProfile.questionCount || 8,
         includeNPS: companyProfile.includeNPS || true,
-        language: selectedLanguage, // ✅ Send canonical value 'en' or 'ar'
+        language: selectedLanguage,
         tone: companyProfile.tone || 'friendly-professional',
         additionalInstructions: companyProfile.additionalInstructions || aiPrompt.trim() || ''
       };
 
       console.log('🤖 AI Survey Generation Request:', requestPayload);
 
-      const response = await axiosInstance.post('/ai/generate-from-profile', requestPayload);
+      const response = await axiosInstance.post('/ai/generate-from-profile', requestPayload, {
+        signal: controller.signal
+      });
 
       if (response.data && (response.data.success || response.data.data || response.status < 400)) {
         const aiData = response.data.data || response.data;
@@ -831,16 +864,23 @@ const SurveyBuilder = () => {
 
     } catch (error) {
       console.error('❌ Error generating AI survey:', error);
+      const isTimeout = error.code === 'ERR_CANCELED' || error.name === 'AbortError';
+
       Swal.fire({
         icon: 'error',
-        title: 'Generation Failed',
-        html: `
-          <p>Failed to generate AI survey.</p>
-          <small>Error: ${error.response?.data?.message || error.message}</small>
-          <br><small>Please try again or check your internet connection.</small>
-        `
+        title: isTimeout ? 'Request Timed Out' : 'Generation Failed',
+        html: isTimeout
+          ? '<p>AI is taking too long to respond. Please try again.</p>'
+          : `<p>Failed to generate AI survey.</p><small>${error.response?.data?.message || error.message}</small>`,
+        showCancelButton: true,
+        confirmButtonText: '🔄 Retry',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: 'var(--primary-color)',
+      }).then((result) => {
+        if (result.isConfirmed) generateAISurvey();
       });
     } finally {
+      clearTimeout(timeout);
       setAILoadingStates(prev => ({ ...prev, generating: false }));
       setGlobalLoading(false);
     }
@@ -1153,18 +1193,46 @@ const SurveyBuilder = () => {
     }
   };
 
+  // ── Field validation with debounce ────────────────────────
+  const validateField = useCallback((field, value) => {
+    if (field === 'title') {
+      if (!value.trim()) return 'Survey title is required';
+      if (value.trim().length < 5) return 'Title must be at least 5 characters';
+      if (value.trim().length > 150) return 'Title must be under 150 characters';
+    }
+    if (field === 'description') {
+      if (value.trim().length > 0 && value.trim().length < 10) return 'Description must be at least 10 characters';
+      if (value.trim().length > 500) return 'Description must be under 500 characters';
+    }
+    return '';
+  }, []);
+
+  // Debounced title validation
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    if (fieldDebounceRef.current) clearTimeout(fieldDebounceRef.current);
+    fieldDebounceRef.current = setTimeout(() => {
+      setFieldErrors(prev => ({
+        ...prev,
+        title: validateField('title', survey.title),
+        description: validateField('description', survey.description)
+      }));
+    }, 300);
+    return () => clearTimeout(fieldDebounceRef.current);
+  }, [survey.title, survey.description, validateField]);
+
   const renderActionButtons = () => {
     const isSurveyFlow = !isTemplateMode;
 
     return (
       <div className="flex gap-2 flex-wrap">
 
-        {/* AI Assistant */}
+        {/* AI Assistant — secondary "ai" variant */}
         <button
           type="button"
           onClick={() => setShowAIModal(true)}
           disabled={aiLoadingStates.generating}
-          className="inline-flex items-center px-3 py-1.5 text-sm border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors disabled:opacity-50"
+          className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg disabled:opacity-50 ${buttonVariants.ai}`}
         >
           {aiLoadingStates.generating ? (
             <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></span>
@@ -1174,11 +1242,11 @@ const SurveyBuilder = () => {
           <span className="hidden sm:inline">AI Assistant</span>
         </button>
 
-        {/* Preview */}
+        {/* Preview — neutral variant */}
         <button
           type="button"
           onClick={() => setShowPreviewModal(true)}
-          className="inline-flex items-center px-3 py-1.5 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] text-[var(--text-secondary)] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg ${buttonVariants.neutral}`}
         >
           <MdPreview className="mr-2" />
           <span className="hidden sm:inline">Preview</span>
@@ -1191,11 +1259,12 @@ const SurveyBuilder = () => {
               type="button"
               onClick={() => saveAsDraft()}
               disabled={saving || !survey.title.trim()}
-              className="inline-flex items-center px-3 py-1.5 text-sm border border-yellow-500 text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors disabled:opacity-50"
+              className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg disabled:opacity-50 ${buttonVariants.warning}`}
             >
               <MdSave className="mr-2" /> Save Draft
             </button>
 
+            {/* Primary action — Next Step / Publish */}
             <button
               type="button"
               onClick={() => {
@@ -1206,7 +1275,7 @@ const SurveyBuilder = () => {
                 }
               }}
               disabled={saving || !canProceedToNextStep()}
-              className="inline-flex items-center px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg disabled:opacity-50 ${buttonVariants.primary}`}
             >
               <MdPublish className="mr-2" />
               {currentStep < 3 ? 'Next Step' : (isEditMode ? 'Update Survey' : 'Publish Survey')}
@@ -1221,15 +1290,15 @@ const SurveyBuilder = () => {
               type="button"
               onClick={() => saveSurvey(false)}
               disabled={saving || !survey.title.trim()}
-              className="inline-flex items-center px-3 py-1.5 text-sm border border-yellow-500 text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors disabled:opacity-50"
+              className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg disabled:opacity-50 ${buttonVariants.warning}`}
             >
-              <MdSave className="mr-2" /> {isTemplateEditMode ? 'Save Template Draft' : 'Save Template Draft'}
+              <MdSave className="mr-2" /> Save Template Draft
             </button>
             <button
               type="button"
               onClick={() => saveSurvey(true)}
               disabled={saving || !survey.title.trim()}
-              className="inline-flex items-center px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg disabled:opacity-50 ${buttonVariants.primary}`}
             >
               <MdPublish className="mr-2" /> {isTemplateEditMode ? 'Update Template' : 'Publish Template'}
             </button>
@@ -1284,46 +1353,19 @@ const SurveyBuilder = () => {
     );
   };
 
-  // Get completion percentage
-  // This function calculates the overall progress across all 3 steps of survey creation
-  const getCompletionPercentage = () => {
-    let stepCompletions = {
-      step1: 0, // Survey Form (title, description, questions)
-      step2: 0, // Target Audience selection
-      step3: 0  // Schedule/Publish settings
-    };
+  // ── 5-factor completion scoring (20% each) ──────────────
+  const calculateCompletion = () => {
+    let score = 0;
+    if (survey.title.trim()) score += 20;
+    if (survey.description.trim()) score += 20;
+    if (questions.length > 0) score += 20;
+    if (targetAudience.length > 0) score += 20;
+    if (publishSettings.publishNow || publishSettings.scheduleDate) score += 20;
+    return score;
+  };
 
-    // STEP 1: Survey Form Completion (33.33% total)
-    // Check if basic survey information is complete
-    let step1Progress = 0;
-    let step1Total = 3;
-
-    if (survey.title.trim()) step1Progress++; // Title is required
-    if (survey.description.trim()) step1Progress++; // Description is required
-    if (questions.length > 0) step1Progress++; // At least one question required
-
-    stepCompletions.step1 = (step1Progress / step1Total) * 33.33;
-
-    // STEP 2: Target Audience Completion (33.33% total)
-    // Check if at least one target audience is selected
-    if (targetAudience.length > 0) {
-      stepCompletions.step2 = 33.33;
-    }
-
-    // STEP 3: Schedule/Publish Settings Completion (33.33% total)
-    // Check if publish settings are configured
-    // If publishNow is true, step is complete
-    // If scheduled, check if date and time are set
-    if (publishSettings.publishNow) {
-      stepCompletions.step3 = 33.33;
-    } else if (publishSettings.scheduleDate && publishSettings.scheduleTime) {
-      stepCompletions.step3 = 33.33;
-    }
-
-    // Calculate total completion percentage
-    const totalCompletion = stepCompletions.step1 + stepCompletions.step2 + stepCompletions.step3;
-
-    return Math.round(totalCompletion);
+  const getCompletionBreakdown = () => {
+    return `Title: ${survey.title.trim() ? '✓' : '✗'} | Description: ${survey.description.trim() ? '✓' : '✗'} | Questions: ${questions.length > 0 ? '✓' : '✗'} | Audience: ${targetAudience.length > 0 ? '✓' : '✗'} | Schedule: ${publishSettings.publishNow || publishSettings.scheduleDate ? '✓' : '✗'}`;
   };
 
   // Other AI functions
@@ -1764,20 +1806,34 @@ const SurveyBuilder = () => {
                       type="text"
                       value={survey.title}
                       onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
-                      placeholder="Enter survey title..."
-                      className="w-full px-4 py-2.5 text-base border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                      onBlur={(e) => setFieldErrors(prev => ({ ...prev, title: validateField('title', e.target.value) }))}
+                      placeholder="Enter survey title"
+                      className={`w-full px-4 py-2.5 text-base border rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:border-transparent ${fieldErrors.title ? 'border-red-500 focus:ring-red-500' : 'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-[var(--primary-color)]'}`}
                     />
+                    <div className="flex justify-between mt-1">
+                      {fieldErrors.title ? (
+                        <p className="text-red-500 text-xs">{fieldErrors.title}</p>
+                      ) : <span />}
+                      <small className="text-[var(--text-secondary)]">{survey.title.length}/150</small>
+                    </div>
                   </div>
 
                   <div className="mb-3">
                     <label className="block font-semibold mb-1.5">Description</label>
                     <textarea
-                      rows={3}
+                      rows={4}
                       value={survey.description}
                       onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
-                      placeholder="Describe the purpose of this survey..."
-                      className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
+                      onBlur={(e) => setFieldErrors(prev => ({ ...prev, description: validateField('description', e.target.value) }))}
+                      placeholder="Describe the purpose of this survey"
+                      className={`w-full px-3 py-2 border rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:border-transparent ${fieldErrors.description ? 'border-red-500 focus:ring-red-500' : 'border-[var(--light-border)] dark:border-[var(--dark-border)] focus:ring-[var(--primary-color)]'}`}
                     />
+                    <div className="flex justify-between mt-1">
+                      {fieldErrors.description ? (
+                        <p className="text-red-500 text-xs">{fieldErrors.description}</p>
+                      ) : <span />}
+                      <small className="text-[var(--text-secondary)]">{survey.description.length}/500</small>
+                    </div>
                   </div>
                 </div>
                 <div className="md:col-span-4">
@@ -1847,65 +1903,56 @@ const SurveyBuilder = () => {
             }}
             onDuplicate={duplicateQuestion}
             onDelete={deleteQuestion}
-            onSuggest={suggestNextQuestion}
+            onAddQuestion={addQuestion}
+            onSuggestQuestion={suggestNextQuestion}
             onOptimize={optimizeSurvey}
-            onGenerateAI={() => setShowAIModal(true)}
+            onOpenAIModal={() => setShowAIModal(true)}
             isGeneratingAI={isGeneratingAI}
           />
         </div>
 
-        {/* LOGIC RULES PANEL - Right Sidebar */}
-        {/* {currentStep === 1 && (
-          <div className="lg:col-span-3">
-            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm sticky top-4">
-              <div className="flex justify-between items-center p-3 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--primary-color)] text-white rounded-t-xl">
-                <div>
-                  <MdCode size={20} />
-                  <strong className="ml-2">Logic Rules ({logicRules.length})</strong>
-                </div>
-                <button type="button" onClick={() => setShowLogicBuilder(true)} className="px-2.5 py-1 text-sm bg-white text-[var(--primary-color)] rounded hover:bg-gray-100 transition-colors">
-                  <MdAdd /> Add Rule
-                </button>
+
+        {/* Logic Rules — modal trigger */}
+        {questions.length > 0 && (
+          <div className="lg:col-span-3 mt-4 bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm">
+            <div className="flex justify-between items-center p-3">
+              <div className="flex items-center">
+                <MdCode className="mr-2 text-[var(--primary-color)]" size={20} />
+                <strong>Logic Rules ({logicRules.length})</strong>
               </div>
-              <div className="p-2">
-                {logicRules.length === 0 ? (
-                  <div className="text-center py-10 text-[var(--text-secondary)]">
-                    <MdCode size={48} className="mb-3 opacity-50 mx-auto" />
-                    <p className="text-sm font-bold">No Logic Rules Yet</p>
-                    <p className="text-sm">Create conditional branching like Typeform</p>
-                    <button type="button" onClick={() => setShowLogicBuilder(true)} className="px-3 py-1.5 text-sm border border-[var(--primary-color)] text-[var(--primary-color)] rounded-lg hover:bg-[var(--primary-color)] hover:text-white transition-colors">
-                      <MdAdd /> Create First Rule
+              <button
+                type="button"
+                onClick={() => setShowLogicBuilder(true)}
+                className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg ${buttonVariants.secondary}`}
+              >
+                <MdCode className="mr-1" /> Edit Logic
+              </button>
+            </div>
+            {logicRules.length > 0 && (
+              <div className="px-3 pb-3">
+                {logicRules.map((rule, idx) => (
+                  <div key={idx} className="mb-2 p-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
+                    <div>
+                      <strong>{rule.name || `Rule ${idx + 1}`}</strong>
+                      <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800 ml-2">Priority {rule.priority}</span>
+                      <br />
+                      <small className="text-[var(--text-secondary)]">
+                        IF {rule.conditions.items.length} condition(s) ({rule.conditions.logic}) → {rule.actions.length} action(s)
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLogicRules(logicRules.filter((_, i) => i !== idx))}
+                      className="p-1 border border-red-300 text-red-500 rounded hover:bg-red-50 transition-colors"
+                    >
+                      <MdDelete size={14} />
                     </button>
                   </div>
-                ) : (
-                  <div>
-                    {logicRules.map((rule, idx) => (
-                      <div key={idx} className="mb-2 p-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                        <div className="flex justify-between">
-                          <div>
-                            <strong>{rule.name || `Rule ${idx + 1}`}</strong>
-                            <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800 ml-2">Priority {rule.priority}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setLogicRules(logicRules.filter((_, i) => i !== idx))}
-                            className="p-1 border border-red-300 text-red-500 rounded hover:bg-red-50 transition-colors"
-                          >
-                            <MdDelete size={14} />
-                          </button>
-                        </div>
-                        <small className="text-[var(--text-secondary)]">
-                          IF {rule.conditions.items.length} condition(s) ({rule.conditions.logic})
-                          → {rule.actions.length} action(s)
-                        </small>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                ))}
               </div>
-            </div>
+            )}
           </div>
-        )} */}
+        )}
       </div>
     </div>
   );
@@ -2451,16 +2498,18 @@ const SurveyBuilder = () => {
         <div className="flex justify-between items-center flex-wrap py-3">
           {/* Progress Indicator */}
           {!isTemplateMode && (
-            <div className="flex items-center gap-3 flex-wrap w-1/2">
-              <small className="text-[var(--text-secondary)]">Completion:</small>
-              <div className="flex-grow max-w-[200px] h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${getCompletionPercentage() > 80 ? 'bg-green-500' : 'bg-[var(--primary-color)]'}`}
-                  style={{ width: `${getCompletionPercentage()}%` }}
-                ></div>
+            <Tooltip text={getCompletionBreakdown()} position="bottom">
+              <div className="flex items-center gap-3 flex-wrap w-1/2">
+                <small className="text-[var(--text-secondary)]">Completion:</small>
+                <div className="flex-grow max-w-[200px] h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${calculateCompletion() > 80 ? 'bg-green-500' : 'bg-[var(--primary-color)]'}`}
+                    style={{ width: `${calculateCompletion()}%` }}
+                  ></div>
+                </div>
+                <small className="font-semibold">{calculateCompletion()}%</small>
               </div>
-              <small className="font-semibold">{getCompletionPercentage()}%</small>
-            </div>
+            </Tooltip>
           )}
 
           {/* Action Buttons */}
@@ -2477,26 +2526,39 @@ const SurveyBuilder = () => {
           <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm mb-4">
             <div className="py-3 px-4">
               <div className="flex items-center justify-between">
-                {steps.map((step, index) => (
-                  <div key={step.id} className="flex items-center flex-grow">
-                    <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${currentStep >= step.id ? 'bg-[var(--primary-color)] text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {step.id}
+                {steps.map((step, index) => {
+                  const isStepLocked = step.id > currentStep;
+                  const prerequisiteText = step.id === 2
+                    ? 'Complete survey title and add questions to unlock'
+                    : step.id === 3
+                      ? 'Select target audience to unlock'
+                      : '';
+
+                  return (
+                    <div key={step.id} className="flex items-center flex-grow">
+                      <div className={isStepLocked ? 'pointer-events-none opacity-60' : ''}>
+                        <Tooltip text={isStepLocked ? prerequisiteText : ''} position="bottom">
+                          <div className="flex items-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${currentStep >= step.id ? 'bg-[var(--primary-color)] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                              {isStepLocked ? <MdLock size={18} /> : step.id}
+                            </div>
+                            <div className="ml-3">
+                              <h6 className={`mb-0 font-medium ${currentStep >= step.id ? 'text-[var(--primary-color)]' : 'text-[var(--text-secondary)]'}`}>
+                                {step.title}
+                              </h6>
+                              <small className="text-[var(--text-secondary)]">{step.description}</small>
+                            </div>
+                          </div>
+                        </Tooltip>
                       </div>
-                      <div className="ml-3">
-                        <h6 className={`mb-0 font-medium ${currentStep >= step.id ? 'text-[var(--primary-color)]' : 'text-[var(--text-secondary)]'}`}>
-                          {step.title}
-                        </h6>
-                        <small className="text-[var(--text-secondary)]">{step.description}</small>
-                      </div>
+                      {index < steps.length - 1 && (
+                        <div className="flex-grow mx-4">
+                          <div className={`h-0.5 ${currentStep > step.id ? 'bg-[var(--primary-color)]' : 'bg-gray-300'}`}></div>
+                        </div>
+                      )}
                     </div>
-                    {index < steps.length - 1 && (
-                      <div className="flex-grow mx-4">
-                        <div className={`h-0.5 ${currentStep > step.id ? 'bg-[var(--primary-color)]' : 'bg-gray-300'}`}></div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -2515,7 +2577,7 @@ const SurveyBuilder = () => {
                     <button
                       type="button"
                       onClick={previousStep}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                      className={`inline-flex items-center px-4 py-2 rounded-lg ${buttonVariants.neutral}`}
                     >
                       <MdArrowBack className="mr-2" />
                       Back
@@ -2535,7 +2597,7 @@ const SurveyBuilder = () => {
                       type="button"
                       onClick={nextStep}
                       disabled={!canProceedToNextStep()}
-                      className="inline-flex items-center px-4 py-2 bg-[var(--primary-color)] text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`inline-flex items-center px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${buttonVariants.primary}`}
                     >
                       Next
                       <MdArrowForward className="ml-2" />
@@ -2545,7 +2607,7 @@ const SurveyBuilder = () => {
                       type="button"
                       onClick={handleStepWizardComplete}
                       disabled={saving || !canProceedToNextStep()}
-                      className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`inline-flex items-center px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${buttonVariants.primary}`}
                     >
                       {saving ? (
                         <>
@@ -2617,7 +2679,7 @@ const SurveyBuilder = () => {
                               type="text"
                               value={survey.title}
                               onChange={(e) => setSurvey({ ...survey, title: e.target.value })}
-                              placeholder="Enter survey title..."
+                              placeholder="Enter survey title"
                               className="w-full px-3 py-2.5 text-lg border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
                             />
                           </div>
@@ -2625,10 +2687,10 @@ const SurveyBuilder = () => {
                           <div className="mb-3">
                             <label className="block font-semibold mb-1.5">Description</label>
                             <textarea
-                              rows={3}
+                              rows={4}
                               value={survey.description}
                               onChange={(e) => setSurvey({ ...survey, description: e.target.value })}
-                              placeholder="Describe the purpose of this survey..."
+                              placeholder="Describe the purpose of this survey"
                               className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] focus:border-transparent"
                             />
                           </div>
@@ -2701,9 +2763,10 @@ const SurveyBuilder = () => {
                     }}
                     onDuplicate={duplicateQuestion}
                     onDelete={deleteQuestion}
-                    onSuggest={suggestNextQuestion}
+                    onAddQuestion={addQuestion}
+                    onSuggestQuestion={suggestNextQuestion}
                     onOptimize={optimizeSurvey}
-                    onGenerateAI={() => setShowAIModal(true)}
+                    onOpenAIModal={() => setShowAIModal(true)}
                     isGeneratingAI={isGeneratingAI}
                   />
                 </div>
@@ -2869,6 +2932,17 @@ const SurveyBuilder = () => {
             <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <div className="mb-3">
+                    <label className="block mb-1.5 font-semibold">Company Name</label>
+                    <input
+                      type="text"
+                      value={companyProfile.companyName || ''}
+                      readOnly
+                      className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                    />
+                    <small className="text-[var(--text-secondary)]">Auto-populated from your company profile</small>
+                  </div>
+
                   <div className="mb-3">
                     <label className="block mb-1.5 font-semibold">Industry/Category *</label>
                     <select
@@ -3175,7 +3249,7 @@ const SurveyBuilder = () => {
                     />
                   </div>
 
-                  {(selectedQuestion.type === 'single_choice' || selectedQuestion.type === 'multiple_choice') && (
+                  {(['single_choice', 'multiple_choice', 'select', 'ranking'].includes(selectedQuestion.type)) && (
                     <div className="mb-3">
                       <label className="block mb-1.5">Answer Options</label>
                       {selectedQuestion.options.map((option, index) => (
@@ -3743,6 +3817,180 @@ const SurveyBuilder = () => {
               >
                 <MdSave className="mr-1" />
                 Save Selection ({selectedContacts.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logic Builder Modal */}
+      {showLogicBuilder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowLogicBuilder(false)}>
+          <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)] bg-[var(--primary-color)] text-white rounded-t-xl">
+              <h5 className="flex items-center m-0 text-lg font-semibold">
+                <MdCode className="mr-2" /> Logic Builder
+              </h5>
+              <button type="button" onClick={() => setShowLogicBuilder(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+                <MdClose size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 130px)' }}>
+              {/* Rule Name */}
+              <div className="mb-4">
+                <label className="block mb-1.5 font-semibold">Rule Name</label>
+                <input
+                  type="text"
+                  value={currentLogicRule.name}
+                  onChange={(e) => setCurrentLogicRule({ ...currentLogicRule, name: e.target.value })}
+                  placeholder="e.g., Skip to end if satisfied"
+                  className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-[var(--light-bg)] dark:bg-[var(--dark-bg)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
+                />
+              </div>
+
+              {/* Conditions */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="font-semibold">IF Conditions</label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={currentLogicRule.conditions.logic}
+                      onChange={(e) => setCurrentLogicRule({
+                        ...currentLogicRule,
+                        conditions: { ...currentLogicRule.conditions, logic: e.target.value }
+                      })}
+                      className="px-2 py-1 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]"
+                    >
+                      <option value="AND">ALL (AND)</option>
+                      <option value="OR">ANY (OR)</option>
+                    </select>
+                    <button type="button" onClick={addCondition} className={`inline-flex items-center px-2 py-1 text-sm rounded ${buttonVariants.secondary}`}>
+                      <MdAdd size={16} className="mr-1" /> Add
+                    </button>
+                  </div>
+                </div>
+                {currentLogicRule.conditions.items.length === 0 ? (
+                  <p className="text-sm text-[var(--text-secondary)] italic">No conditions added yet. Click "Add" to start.</p>
+                ) : (
+                  currentLogicRule.conditions.items.map((cond, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-2">
+                      <select
+                        value={cond.questionId}
+                        onChange={(e) => updateCondition(idx, 'questionId', e.target.value)}
+                        className="flex-1 px-2 py-1.5 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]"
+                      >
+                        <option value="">Select question</option>
+                        {questions.map(q => (
+                          <option key={q.id} value={q.id}>{q.title || `Q${questions.indexOf(q) + 1}`}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={cond.operator}
+                        onChange={(e) => updateCondition(idx, 'operator', e.target.value)}
+                        className="px-2 py-1.5 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]"
+                      >
+                        <option value="==">equals</option>
+                        <option value="!=">not equals</option>
+                        <option value=">">greater than</option>
+                        <option value="<">less than</option>
+                        <option value="contains">contains</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={cond.value}
+                        onChange={(e) => updateCondition(idx, 'value', e.target.value)}
+                        placeholder="Value"
+                        className="flex-1 px-2 py-1.5 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]"
+                      />
+                      <button type="button" onClick={() => removeCondition(idx)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                        <MdDelete size={16} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="font-semibold">THEN Actions</label>
+                  <button type="button" onClick={addAction} className={`inline-flex items-center px-2 py-1 text-sm rounded ${buttonVariants.secondary}`}>
+                    <MdAdd size={16} className="mr-1" /> Add
+                  </button>
+                </div>
+                {currentLogicRule.actions.length === 0 ? (
+                  <p className="text-sm text-[var(--text-secondary)] italic">No actions added yet. Click "Add" to start.</p>
+                ) : (
+                  currentLogicRule.actions.map((action, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-2">
+                      <select
+                        value={action.type}
+                        onChange={(e) => updateAction(idx, 'type', e.target.value)}
+                        className="px-2 py-1.5 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]"
+                      >
+                        <option value="SHOW">Show</option>
+                        <option value="HIDE">Hide</option>
+                        <option value="SKIP_TO">Skip To</option>
+                        <option value="END_SURVEY">End Survey</option>
+                      </select>
+                      {action.type !== 'END_SURVEY' && (
+                        <select
+                          value={action.targetId}
+                          onChange={(e) => updateAction(idx, 'targetId', e.target.value)}
+                          className="flex-1 px-2 py-1.5 text-sm border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded bg-[var(--light-bg)] dark:bg-[var(--dark-bg)]"
+                        >
+                          <option value="">Select target question</option>
+                          {questions.map(q => (
+                            <option key={q.id} value={q.id}>{q.title || `Q${questions.indexOf(q) + 1}`}</option>
+                          ))}
+                        </select>
+                      )}
+                      <button type="button" onClick={() => removeAction(idx)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                        <MdDelete size={16} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Priority */}
+              <div className="mb-4">
+                <label className="block mb-1.5 font-semibold">Priority</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={100}
+                  value={currentLogicRule.priority}
+                  onChange={(e) => setCurrentLogicRule({ ...currentLogicRule, priority: parseInt(e.target.value) })}
+                  className="w-full accent-[var(--primary-color)]"
+                />
+                <div className="flex justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Low</span>
+                  <span>{currentLogicRule.priority}</span>
+                  <span>High</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-[var(--light-border)] dark:border-[var(--dark-border)] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLogicBuilder(false)}
+                className={`inline-flex items-center px-4 py-2 text-sm rounded-lg ${buttonVariants.neutral}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveLogicRule}
+                disabled={currentLogicRule.conditions.items.length === 0 || currentLogicRule.actions.length === 0}
+                className={`inline-flex items-center px-4 py-2 text-sm rounded-lg disabled:opacity-50 ${buttonVariants.primary}`}
+              >
+                <MdSave className="mr-1" /> Save Rule
               </button>
             </div>
           </div>

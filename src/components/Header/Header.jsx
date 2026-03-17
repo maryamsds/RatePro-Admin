@@ -257,7 +257,7 @@ const Header = ({
               </span>
               <input
                 type="text"
-                placeholder={isMobile ? "Search" : "Search surveys, responses..."}
+                placeholder={isMobile ? "Search" : "Search across all data..."}
                 className={`flex-1 outline-none border-0 bg-[var(--light-card)] dark:bg-[var(--dark-card)] text-[var(--light-text)] dark:text-[var(--dark-text)] p-2 ${isMobile ? 'text-base min-h-[44px]' : 'text-sm min-h-[38px]'}`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
