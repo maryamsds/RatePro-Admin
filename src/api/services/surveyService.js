@@ -263,15 +263,16 @@ const transformSurveyDetail = (survey) => ({
  * Transform response item
  */
 const transformResponse = (response) => ({
+  ...response,
   id: response._id,
   _id: response._id,
-  respondent: response.contact?.email || response.respondentEmail || "Anonymous",
-  submittedAt: response.createdAt,
+  submittedAt: response.submittedAt || response.createdAt,
   completionTime: response.completionTime,
   device: response.metadata?.device || "Unknown",
   location: response.metadata?.location || "Unknown",
   sentiment: response.analysis?.sentiment || "neutral",
-  rating: response.overallRating || response.score,
+  rating: response.rating ?? null,
+  score: response.score ?? null,
   answers: response.answers || [],
   // AI Analysis
   analysis: response.analysis || null,

@@ -20,10 +20,12 @@ import {
   MdVisibility,
   MdFeedback,
   MdLock,
-  MdArchive
+  MdArchive,
+  MdUploadFile
 } from "react-icons/md"
 import Pagination from "../../components/Pagination/Pagination.jsx"
 import Tooltip from "../../components/Tooltip/Tooltip.jsx"
+import BulkUploadModal from "./components/BulkUploadModal.jsx"
 import axiosInstance from "../../api/axiosInstance.js"
 import Swal from "sweetalert2"
 import { useAuth } from "../../context/AuthContext"
@@ -45,6 +47,7 @@ const SurveyList = ({ darkMode }) => {
   const [sortField, setSortField] = useState("-createdAt")
   const [surveys, setSurveys] = useState([])
   const [expandedDescriptions, setExpandedDescriptions] = useState({})
+  const [bulkUploadSurvey, setBulkUploadSurvey] = useState(null)
 
   const handleEdit = (surveyId) => {
     navigate(`/app/surveys/builder/edit/${surveyId}`);
@@ -626,6 +629,20 @@ const SurveyList = ({ darkMode }) => {
                                 </Tooltip>
                               )}
 
+                              {/* Bulk Upload — only for active surveys */}
+                              {actions.bulkUpload && user?.role !== "admin" && (
+                                <Tooltip text="Bulk Upload Responses" position="top">
+                                  <button
+                                    type="button"
+                                    aria-label="Bulk Upload Responses"
+                                    className="p-2 rounded-md transition-colors text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                    onClick={() => setBulkUploadSurvey(survey)}
+                                  >
+                                    <MdUploadFile size={20} />
+                                  </button>
+                                </Tooltip>
+                              )}
+
                               {/* Close — only for active surveys */}
                               {actions.close && user?.role !== "admin" && (
                                 <Tooltip text="Close Survey" position="top">
@@ -815,6 +832,17 @@ const SurveyList = ({ darkMode }) => {
           </div>
         </>
       )}
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={!!bulkUploadSurvey}
+        onClose={() => {
+          setBulkUploadSurvey(null);
+          fetchSurveys(); // Refresh to update response counts
+        }}
+        surveyId={bulkUploadSurvey?._id}
+        surveyTitle={bulkUploadSurvey?.title}
+      />
     </div>
   )
 }

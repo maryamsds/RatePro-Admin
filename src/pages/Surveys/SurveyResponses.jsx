@@ -235,12 +235,18 @@ const SurveyResponses = () => {
     primary: 'bg-[var(--primary-color)]/10 text-[var(--primary-color)]'
   };
 
-  const getScoreBadge = (score) => {
-    if (!score && score !== 0) return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.secondary}`}>N/A</span>;
-    let variant = 'success';
-    if (score < 40) variant = 'danger';
-    else if (score < 70) variant = 'warning';
-    return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors[variant]}`}>{score}/100</span>;
+  const getNpsScoreBadge = (score) => {
+    if (score == null) return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors.secondary}`}>N/A</span>;
+    let variant = 'success'; // Promoter (9-10)
+    let label = 'Promoter';
+    if (score <= 6) { variant = 'danger'; label = 'Detractor'; }
+    else if (score <= 8) { variant = 'warning'; label = 'Passive'; }
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badgeColors[variant]}`}>
+        {score}/10
+        <span className="opacity-70">({label})</span>
+      </span>
+    );
   };
 
   const getPriorityBadge = (priority) => {
@@ -467,7 +473,7 @@ const SurveyResponses = () => {
                         <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Submitted</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Respondent</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Rating</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Score</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">NPS Score</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Status</th>
                         <th className="px-4 py-3 text-left text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)] border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">Actions</th>
                       </tr>
@@ -500,14 +506,14 @@ const SurveyResponses = () => {
                               {response.rating && <span className="ml-2 text-sm text-[var(--text-secondary)]">({response.rating})</span>}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm">{getScoreBadge(response.score)}</td>
+                          <td className="px-4 py-3 text-sm">{getNpsScoreBadge(response.score)}</td>
                           <td className="px-4 py-3 text-sm">{getStatusBadge(response.status || 'submitted')}</td>
                           <td className="px-4 py-3 text-sm">
                             <div className="flex gap-1">
                               <button title="View Details" className="p-1.5 border border-[var(--primary-color)] text-[var(--primary-color)] rounded-md hover:bg-[var(--primary-color)] hover:text-white transition-colors" onClick={() => { setSelectedResponse(response); setShowResponseModal(true); }}>
                                 <MdVisibility />
                               </button>
-                              {response.score && response.score < 50 && (
+                              {response.score != null && response.score <= 6 && (
                                 <button title="Low score - needs attention" className="p-1.5 border border-yellow-500 text-yellow-600 rounded-md hover:bg-yellow-500 hover:text-white transition-colors">
                                   <MdFlag />
                                 </button>
@@ -594,8 +600,8 @@ const SurveyResponses = () => {
                 <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 mb-2 mx-auto">
                   <MdTrendingUp size={24} />
                 </div>
-                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.averageScore?.toFixed(0) || 'N/A'}</h3>
-                <p className="text-sm text-[var(--text-secondary)] mb-0">Average Score</p>
+                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.averageScore != null ? analytics.averageScore.toFixed(1) : 'N/A'}</h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-0">Avg NPS Score</p>
               </div>
               <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-center">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 mb-2 mx-auto">
@@ -698,8 +704,8 @@ const SurveyResponses = () => {
                         <div>{getRatingStars(selectedResponse.rating)} {selectedResponse.rating && `(${selectedResponse.rating}/5)`}</div>
                       </div>
                       <div>
-                        <strong className="text-[var(--text-secondary)] block text-sm mb-1">Score</strong>
-                        {getScoreBadge(selectedResponse.score)}
+                        <strong className="text-[var(--text-secondary)] block text-sm mb-1">NPS Score</strong>
+                        {getNpsScoreBadge(selectedResponse.score)}
                       </div>
                     </div>
 

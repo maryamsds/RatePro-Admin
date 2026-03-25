@@ -193,11 +193,11 @@ const SurveyBuilder = () => {
   useEffect(() => {
     const fetchCompanyProfile = async () => {
       try {
-        const { data } = await axiosInstance.get('/tenants/profile');
-        if (data?.tenant?.companyName) {
+        const { data } = await axiosInstance.get('/tenants/me');
+        if (data?.tenant?.name) {
           setCompanyProfile(prev => ({
             ...prev,
-            companyName: data.tenant.companyName,
+            companyName: data.tenant.name,
             industry: data.tenant.industry || prev.industry
           }));
         }
@@ -420,6 +420,8 @@ const SurveyBuilder = () => {
     name: opt.label,
     icon: MdBusiness // Default icon for all industries
   }));
+
+  console.log(industries)
 
   const steps = [
     { id: 1, title: 'Survey Details', description: 'Basic information and questions' },
@@ -2495,7 +2497,7 @@ const SurveyBuilder = () => {
           </div>
         )}
 
-        <div className="flex justify-between items-center flex-wrap py-3">
+        <div className="flex justify-between items-center flex-wrap py-3 gap-5 sm:gap-0">
           {/* Progress Indicator */}
           {!isTemplateMode && (
             <Tooltip text={getCompletionBreakdown()} position="bottom">
@@ -2525,7 +2527,7 @@ const SurveyBuilder = () => {
           {/* Step Progress Indicator */}
           <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-xl shadow-sm mb-4">
             <div className="py-3 px-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-center justify-between">
                 {steps.map((step, index) => {
                   const isStepLocked = step.id > currentStep;
                   const prerequisiteText = step.id === 2
@@ -2535,7 +2537,7 @@ const SurveyBuilder = () => {
                       : '';
 
                   return (
-                    <div key={step.id} className="flex items-center flex-grow">
+                    <div key={step.id} className="flex items-center flex-grow w-full">
                       <div className={isStepLocked ? 'pointer-events-none opacity-60' : ''}>
                         <Tooltip text={isStepLocked ? prerequisiteText : ''} position="bottom">
                           <div className="flex items-center">
