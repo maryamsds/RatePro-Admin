@@ -59,6 +59,7 @@ import AccessManagement from "./pages/AccessManagement/AccessManagement"
 import RoleManagement from "./pages/AccessManagement/RoleManagement"
 import EmailTemplates from "./pages/Settings/EmailTemplates"
 import DropdownSettings from "./pages/Settings/DropdownSettings"
+import AIPromptSettings from "./pages/Settings/AIPromptSettings"
 import SupportTickets from "./pages/Support/SupportTickets"
 import TicketDetail from "./pages/Support/TicketDetail"
 import CreateTicket from "./pages/Support/CreateTicket"
@@ -185,6 +186,7 @@ function App() {
               <Route path="settings/theme" element={<PlatformGuard><ThemeSettings /></PlatformGuard>} />
               <Route path="settings/email-templates" element={<PlatformGuard><EmailTemplates /></PlatformGuard>} />
               <Route path="settings/dropdowns" element={<PlatformGuard><DropdownSettings /></PlatformGuard>} />
+              <Route path="settings/ai-prompts" element={<PlatformGuard><AIPromptSettings /></PlatformGuard>} />
 
               {/* Communication Settings - Admin Only */}
               <Route path="communication/whatsapp" element={<PlatformGuard><WhatsAppSettings /></PlatformGuard>} />
@@ -223,12 +225,12 @@ function App() {
               {/* Dashboard */}
               <Route path="dashboard" element={<TenantGuard><Dashboard /></TenantGuard>} />
 
-              {/* Surveys - CompanyAdmin Only */}
+              {/* Surveys - CompanyAdmin Only (except builder edit routes shared with Admin for templates) */}
               <Route path="surveys" element={<TenantGuard><SurveyList /></TenantGuard>} />
-              <Route path="surveys/create" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
-              <Route path="surveys/builder/edit/:id" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
-              <Route path="surveys/builder/:id" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
-              <Route path="templates/create" element={<TenantGuard><SurveyBuilder darkMode={darkMode} /></TenantGuard>} />
+              <Route path="surveys/create" element={<SharedGuard><SurveyBuilder darkMode={darkMode} /></SharedGuard>} />
+              <Route path="surveys/builder/edit/:id" element={<SharedGuard><SurveyBuilder darkMode={darkMode} /></SharedGuard>} />
+              <Route path="surveys/builder/:id" element={<SharedGuard><SurveyBuilder darkMode={darkMode} /></SharedGuard>} />
+              <Route path="templates/create" element={<SharedGuard><SurveyBuilder darkMode={darkMode} /></SharedGuard>} />
               <Route path="surveys/detail/:id" element={<TenantGuard><SurveyDetail /></TenantGuard>} />
               <Route path="surveys/responses/:id" element={<TenantGuard><SurveyResponses /></TenantGuard>} />
               <Route path="surveys/:id/analytics" element={<TenantGuard><SurveyAnalytics /></TenantGuard>} />
@@ -238,8 +240,8 @@ function App() {
               <Route path="surveys/scheduling" element={<TenantGuard><SurveyScheduling /></TenantGuard>} />
               <Route path="surveys/:surveyId/target-audience" element={<TenantGuard><TargetAudienceSelection /></TenantGuard>} />
               <Route path="surveys/:surveyId/schedule" element={<TenantGuard><SurveySchedule /></TenantGuard>} />
-              <Route path="surveys/templates" element={<TenantGuard><SurveyTemplates /></TenantGuard>} />
-              <Route path="surveys/templates/create" element={<TenantGuard><SurveyBuilder /></TenantGuard>} />
+              <Route path="surveys/templates" element={<SharedGuard><SurveyTemplates /></SharedGuard>} />
+              <Route path="surveys/templates/create" element={<SharedGuard><SurveyBuilder /></SharedGuard>} />
               {/* <Route path="surveys/takesurvey/:id" element={<TenantGuard><TakeSurvey /></TenantGuard>} /> */}
               {/* <Route path="surveys/settings" element={<TenantGuard><SurveySettings /></TenantGuard>} /> */}
 

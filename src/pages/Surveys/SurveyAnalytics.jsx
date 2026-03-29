@@ -40,8 +40,7 @@ import {
   getSurveyAnalytics,
   getSurveyDemographics,
   exportResponsesCSV,
-  exportAnalyticsPDF,
-  downloadFile
+  exportAnalyticsPDF
 } from '../../api/services/analyticsService';
 
 
@@ -141,7 +140,7 @@ const SurveyAnalytics = () => {
           return null;
         }),
         getSurveyAnalytics(id, analyticsParams).catch(err => {
-          console.warn('[SurveyAnalytics] Analytics fetch failed:', err.message);
+          console.error('[SurveyAnalytics] Analytics fetch failed:', err.message);
           return null;
         }),
       ]);
@@ -163,6 +162,7 @@ const SurveyAnalytics = () => {
     }
   }, [id, dateRange, startDate, endDate]);
 
+
   // Lazy-load demographics only when tab is opened
   const fetchDemographics = useCallback(async () => {
     if (demographicsLoaded || demographicsLoading) return;
@@ -170,13 +170,24 @@ const SurveyAnalytics = () => {
       setDemographicsLoading(true);
       const data = await getSurveyDemographics(id, { days: 30 });
       if (data) {
+        // Compute percentages for byHour and byDayOfWeek (backend doesn't include them)
+        const totalResponses = data.totalResponses || 0;
+        const byHourWithPct = (data.byHour || []).map(h => ({
+          ...h,
+          percentage: totalResponses > 0 ? Math.round((h.count / totalResponses) * 100) : 0,
+        }));
+        const byDayWithPct = (data.byDayOfWeek || []).map(d => ({
+          ...d,
+          percentage: totalResponses > 0 ? Math.round((d.count / totalResponses) * 100) : 0,
+        }));
+
         setAnalyticsData(prev => ({
           ...prev,
           demographics: {
             byDevice: data.byDevice || [],
-            byLocation: data.byCountry || data.byLocation || [],
-            byTimeOfDay: data.byHour || [],
-            byDayOfWeek: data.byDayOfWeek || [],
+            byLocation: data.byLocation || [],
+            byTimeOfDay: byHourWithPct,
+            byDayOfWeek: byDayWithPct,
           }
         }));
       }
@@ -222,11 +233,9 @@ const SurveyAnalytics = () => {
         custom: 'custom'
       };
 
-      const blob = await exportAnalyticsPDF(id, {
+      await exportAnalyticsPDF(id, {
         range: rangeMap[dateRange] || '30d'
       });
-
-      downloadFile(blob, `${survey?.title || 'survey'}_analytics.pdf`);
 
       showSuccessToast('Analytics report downloaded successfully!');
       setShowExportModal(false);
@@ -238,12 +247,10 @@ const SurveyAnalytics = () => {
 
   const handleExportExcel = async () => {
     try {
-      const blob = await exportResponsesCSV(id, {
+      await exportResponsesCSV(id, {
         startDate: dateRange === 'custom' ? startDate?.toISOString() : undefined,
         endDate: dateRange === 'custom' ? endDate?.toISOString() : undefined,
       });
-
-      downloadFile(blob, `${survey?.title || 'survey'}_responses.csv`);
 
       showSuccessToast('Responses exported successfully!');
       setShowExportModal(false);
@@ -321,7 +328,7 @@ const SurveyAnalytics = () => {
 
   // Device breakdown bar chart
   const deviceData = {
-    labels: analyticsData.demographics.byDevice?.map(item => item.device || item._id) || [],
+    labels: analyticsData.demographics.byDevice?.map(item => item.name || item.device || item._id) || [],
     datasets: [
       {
         label: 'Responses by Device',
@@ -683,7 +690,7 @@ const SurveyAnalytics = () => {
                               <div key={index} className="flex justify-between items-center mb-3">
                                 <div className="flex items-center">
                                   <FaMapMarkerAlt className="text-[var(--primary-color)] mr-2" />
-                                  <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">{location.country || location.city || location._id || 'Unknown'}</span>
+                                  <span className="text-[var(--light-text)] dark:text-[var(--dark-text)]">{location.name || location.country || location.city || location._id || 'Unknown'}</span>
                                 </div>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">{location.count}</span>
                               </div>
@@ -727,7 +734,7 @@ const SurveyAnalytics = () => {
                               <h6 className="mb-3 text-sm font-medium text-[var(--light-text)] dark:text-[var(--dark-text)]">Peak Days</h6>
                               {analyticsData.demographics.byDayOfWeek.map((day, index) => (
                                 <div key={index} className="flex justify-between items-center mb-2">
-                                  <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{day.dayName || day._id}</span>
+                                  <span className="text-sm text-[var(--light-text)] dark:text-[var(--dark-text)]">{day.name || day.dayName || day._id}</span>
                                   <div className="flex items-center">
                                     <div className="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full mr-2">
                                       <div className="h-full bg-green-500 rounded-full" style={{ width: `${day.percentage || 0}%` }}></div>

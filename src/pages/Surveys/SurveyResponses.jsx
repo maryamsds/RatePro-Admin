@@ -73,7 +73,6 @@ const SurveyResponses = () => {
   const [analytics, setAnalytics] = useState({
     totalResponses: 0,
     averageRating: 0,
-    averageScore: 0,
     completionRate: 0,
     npsScore: 0,
     sentimentBreakdown: { positive: 0, negative: 0, neutral: 0 },
@@ -148,8 +147,7 @@ const SurveyResponses = () => {
         const analyticsData = await getSurveyAnalytics(id);
         setAnalytics({
           totalResponses: analyticsData.overview?.totalResponses || responsesData.total || 0,
-          averageRating: analyticsData.overview?.avgRating || 0,
-          averageScore: analyticsData.overview?.avgScore || 0,
+          averageRating: analyticsData.overview?.averageRating || 0,
           completionRate: analyticsData.overview?.completionRate || 0,
           npsScore: analyticsData.nps?.score || 0,
           sentimentBreakdown: analyticsData.sentiment?.breakdown || { positive: 0, negative: 0, neutral: 0 },
@@ -365,7 +363,7 @@ const SurveyResponses = () => {
         <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <div className="flex justify-between items-start flex-wrap gap-3">
             <div>
-              <button className="flex items-center text-[var(--primary-color)] hover:underline mb-2 p-0 bg-transparent border-0" onClick={() => navigate(`/app/surveys/${id}`)}>
+              <button className="flex items-center text-[var(--primary-color)] hover:underline mb-2 p-0 bg-transparent border-0" onClick={() => navigate(`/app/surveys/detail/${id}`)}>
                 <MdArrowBack className="mr-1" />
                 Back to Survey Details
               </button>
@@ -593,15 +591,19 @@ const SurveyResponses = () => {
                 <div className="w-12 h-12 rounded-full flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 mb-2 mx-auto">
                   <FaStar size={24} />
                 </div>
-                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.averageRating?.toFixed(1) || 'N/A'}</h3>
+                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.averageRating > 0 ? analytics.averageRating.toFixed(1) : 'N/A'}</h3>
                 <p className="text-sm text-[var(--text-secondary)] mb-0">Average Rating</p>
               </div>
               <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-center">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 mb-2 mx-auto">
-                  <MdTrendingUp size={24} />
+                  <MdSentimentSatisfied size={24} />
                 </div>
-                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">{analytics.averageScore != null ? analytics.averageScore.toFixed(1) : 'N/A'}</h3>
-                <p className="text-sm text-[var(--text-secondary)] mb-0">Avg NPS Score</p>
+                <h3 className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)] mb-1">
+                  {analytics.sentimentBreakdown.positive > 0
+                    ? `${Math.round((analytics.sentimentBreakdown.positive / (analytics.sentimentBreakdown.positive + analytics.sentimentBreakdown.negative + analytics.sentimentBreakdown.neutral)) * 100)}%`
+                    : 'N/A'}
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)] mb-0">Positive Sentiment</p>
               </div>
               <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)] text-center">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 mb-2 mx-auto">
@@ -766,7 +768,7 @@ const SurveyResponses = () => {
       {showFilterModal && (
         <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowFilterModal(false)}>
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-3xl w-full max-h-[90vh] overflow-auto" style={{maxWidth: '28rem'}} onClick={e => e.stopPropagation()}>
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-3xl w-full max-h-[90vh] overflow-auto" style={{ maxWidth: '28rem' }} onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
                 <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">Advanced Filters</h5>
                 <button className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] text-xl" onClick={() => setShowFilterModal(false)}>&times;</button>
@@ -815,7 +817,7 @@ const SurveyResponses = () => {
       {showExportModal && (
         <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowExportModal(false)}>
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-3xl w-full max-h-[90vh] overflow-auto" style={{maxWidth: '28rem'}} onClick={e => e.stopPropagation()}>
+            <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-lg max-w-3xl w-full max-h-[90vh] overflow-auto" style={{ maxWidth: '28rem' }} onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between p-4 border-b border-[var(--light-border)] dark:border-[var(--dark-border)]">
                 <h5 className="mb-0 text-[var(--light-text)] dark:text-[var(--dark-text)] font-medium">Export Responses</h5>
                 <button className="text-[var(--text-secondary)] hover:text-[var(--light-text)] dark:hover:text-[var(--dark-text)] text-xl" onClick={() => setShowExportModal(false)}>&times;</button>

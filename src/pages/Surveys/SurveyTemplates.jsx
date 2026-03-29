@@ -126,8 +126,8 @@ const SurveyTemplates = ({ darkMode }) => {
         text: confirmMessage,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: 'var(--bs-primary)',
-        cancelButtonColor: 'var(--bs-secondary)',
+        confirmButtonColor: 'var(--primary-color)',
+        cancelButtonColor: 'var(--danger-color)',
         confirmButtonText: 'Yes, Change Status',
         cancelButtonText: 'Cancel'
       });
@@ -370,7 +370,7 @@ const SurveyTemplates = ({ darkMode }) => {
 
       if (!result.isConfirmed) return;
 
-      const response = await axiosInstance.delete(`/survey-templates/delete/${id}`);
+      const response = await axiosInstance.delete(`/survey-templates/${id}`);
 
       await MySwal.fire({
         title: "Deleted!",

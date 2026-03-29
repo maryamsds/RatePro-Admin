@@ -87,6 +87,15 @@ export const ROUTE_CONFIG = {
                     admin: 'Manage platform email templates'
                 }
             },
+            {
+                path: 'settings/ai-prompts',
+                name: 'AI Prompt Settings',
+                allowedRoles: ['admin'],
+                scope: 'platform',
+                intent: {
+                    admin: 'Manage AI prompt templates, versions, and configurations'
+                }
+            },
 
             // Communication Settings (Platform Level)
             {

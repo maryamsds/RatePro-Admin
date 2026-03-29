@@ -364,11 +364,15 @@ const transformSurveyAnalytics = (data) => {
   });
   const sentimentTotal = positive + negative + neutral;
 
+  // NPS: backend returns `totalResponses` (not `total`), handle both for safety
+  const npsTotal = data.nps?.total || data.nps?.totalResponses || 0;
+
   return {
     // Overview — only fields backend provides
     overview: {
       totalResponses: data.totalResponses || 0,
       npsScore: data.nps?.score ?? null,
+      averageRating: data.averageRating || 0,
     },
 
     // NPS breakdown — backend provides full object
@@ -377,7 +381,7 @@ const transformSurveyAnalytics = (data) => {
       promoters: data.nps?.promoters || 0,
       passives: data.nps?.passives || 0,
       detractors: data.nps?.detractors || 0,
-      total: data.nps?.total || 0,
+      total: npsTotal,
     },
 
     // Trendline — backend: [{ date, count }]
@@ -400,6 +404,9 @@ const transformSurveyAnalytics = (data) => {
       total: sentimentTotal,
     },
 
+    // Rating distribution — backend: [{ rating: 1, count: N }, ...]
+    ratingDistribution: Array.isArray(data.ratingDistribution) ? data.ratingDistribution : [],
+
     // Demographics placeholder — filled separately by lazy-loaded endpoint
     demographics: {
       byDevice: [],
@@ -409,6 +416,7 @@ const transformSurveyAnalytics = (data) => {
     },
   };
 };
+
 
 /**
  * Transform trendline data for charts

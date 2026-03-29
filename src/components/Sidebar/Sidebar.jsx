@@ -816,6 +816,12 @@ const Sidebar = ({
           icon: <MdList />,
           roles: ["admin"], // System Admin only
         },
+        {
+          path: "/app/settings/ai-prompts",
+          name: "AI Prompt Settings",
+          icon: <MdPsychology />,
+          roles: ["admin"], // System Admin only
+        },
       ],
     },
     {

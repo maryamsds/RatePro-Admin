@@ -37,6 +37,7 @@ body {
 :root {
   /* Primary Theme Colors */
   --primary-color: #1fdae4;
+  --accent-color: #1fdae4;
   --text-primary: #1fdae4;
   --text-secondary: #6c757d;
   --primary-hover: #17c1ca;

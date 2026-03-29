@@ -673,7 +673,7 @@ const BulkUploadModal = ({ isOpen, onClose, surveyId, surveyTitle }) => {
                 <button
                   onClick={handleConfirmInsert}
                   disabled={confirming}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-md text-sm font-medium transition-colors bg-[var(--success-color, #28a745)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-md text-sm font-medium transition-colors bg-[var(--primary-color)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {confirming ? (
                     <>

@@ -125,7 +125,7 @@ const SurveySchedule = ({ onSchedule }) => {
         title: 'Missing Information',
         text: 'Please provide start date and time.',
         icon: 'warning',
-        confirmButtonColor: 'var(--bs-warning)'
+        confirmButtonColor: 'var(--danger-color)'
       });
       return;
     }
@@ -144,8 +144,8 @@ const SurveySchedule = ({ onSchedule }) => {
         text: 'The start time is in the past. The survey will be published immediately. Continue?',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: 'var(--bs-primary)',
-        cancelButtonColor: 'var(--bs-secondary)',
+        confirmButtonColor: 'var(--primary-color)',
+        cancelButtonColor: 'var(--danger-color)',
         confirmButtonText: 'Publish Now',
         cancelButtonText: 'Change Time'
       });
@@ -161,7 +161,7 @@ const SurveySchedule = ({ onSchedule }) => {
         title: 'Invalid End Time',
         text: 'End time must be after start time.',
         icon: 'error',
-        confirmButtonColor: 'var(--bs-danger)'
+        confirmButtonColor: 'var(--danger-color)'
       });
       return;
     }
@@ -202,7 +202,7 @@ const SurveySchedule = ({ onSchedule }) => {
         title: 'Survey Scheduled!',
         text: `Your survey will be ${schedule.autoPublish ? 'published' : 'available'} ${publishTime}.`,
         icon: 'success',
-        confirmButtonColor: 'var(--bs-success)',
+        confirmButtonColor: 'var(--primary-color)',
         timer: 3000,
         showConfirmButton: false
       });
@@ -223,7 +223,7 @@ const SurveySchedule = ({ onSchedule }) => {
         title: 'Scheduling Failed',
         text: err.response?.data?.message || 'Failed to schedule survey. Please try again.',
         icon: 'error',
-        confirmButtonColor: 'var(--bs-danger)'
+        confirmButtonColor: 'var(--danger-color)'
       });
     } finally {
       setSaving(false);

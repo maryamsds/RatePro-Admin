@@ -10,6 +10,7 @@ import {
 } from 'react-icons/md';
 import { FaStar, FaRegStar, FaEye, FaUsers, FaChartLine } from 'react-icons/fa';
 import axiosInstance from '../../api/axiosInstance';
+import { getSurveyAnalytics } from '../../api/services/analyticsService';
 import { QRCodeSVG } from 'qrcode.react';
 import Swal from 'sweetalert2';
 
@@ -40,11 +41,14 @@ const SurveyDetail = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastVariant, setToastVariant] = useState('success');
 
-  // Derived data from survey model (single source of truth)
+  // Analytics data from API
+  const [analyticsData, setAnalyticsData] = useState(null);
+
+  // Derived data
   const totalResponses = survey?.totalResponses || 0;
-  const npsScore = survey?.analytics?.npsScore;
-  const avgCompletionTime = survey?.analytics?.avgCompletionTime;
-  const lastResponseAt = survey?.analytics?.lastResponseAt || survey?.lastResponseAt;
+  const npsScore = analyticsData?.nps?.score ?? null;
+  const averageRating = analyticsData?.overview?.averageRating ?? null;
+  const lastResponseAt = survey?.lastResponseAt;
   const hasResponses = totalResponses > 0;
 
   // Fetch Survey Data (survey model contains all needed stats)
@@ -59,6 +63,16 @@ const SurveyDetail = () => {
       const surveyData = response.data.survey || response.data;
       setSurvey(surveyData);
       setError('');
+
+      // Fetch analytics if survey has responses
+      if (surveyData.totalResponses > 0) {
+        try {
+          const analytics = await getSurveyAnalytics(id);
+          setAnalyticsData(analytics);
+        } catch (analyticsErr) {
+          console.warn('[SurveyDetail] Analytics fetch failed:', analyticsErr.message);
+        }
+      }
     } catch (err) {
       console.error('Error fetching survey:', err);
       setError(err.response?.data?.message || 'Failed to load survey details');
@@ -317,17 +331,17 @@ const SurveyDetail = () => {
           </div>
         </div>
 
-        {/* Avg Completion Time */}
+        {/* Average Rating */}
         <div className="bg-[var(--light-card)] dark:bg-[var(--dark-card)] rounded-md shadow-md p-6 border border-[var(--light-border)] dark:border-[var(--dark-border)]">
           <div className="flex items-center">
             <div className="w-12 h-12 rounded-full flex items-center justify-center bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 mr-3">
-              <MdSchedule size={24} />
+              <FaStar size={24} />
             </div>
             <div>
               <div className="text-2xl font-bold text-[var(--light-text)] dark:text-[var(--dark-text)]">
-                {avgCompletionTime != null ? `${Math.round(avgCompletionTime / 1000)}s` : '—'}
+                {averageRating != null && averageRating > 0 ? `${averageRating.toFixed(1)}/5` : '—'}
               </div>
-              <div className="text-sm text-[var(--text-secondary)]">Avg Completion</div>
+              <div className="text-sm text-[var(--text-secondary)]">Average Rating</div>
             </div>
           </div>
         </div>

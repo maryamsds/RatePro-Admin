@@ -189,7 +189,7 @@ const TargetAudienceSelection = ({ survey, onNext }) => {
           return audience?.name || id;
         }).join(', ')}${selectedContacts.length > 0 ? ` + ${selectedContacts.length} custom contacts` : ''}`,
         icon: 'success',
-        confirmButtonColor: 'var(--bs-success)',
+        confirmButtonColor: 'var(--primary-color)',
         confirmButtonText: 'Continue to Schedule'
       });
 
@@ -210,7 +210,7 @@ const TargetAudienceSelection = ({ survey, onNext }) => {
         title: 'Error',
         text: err.message || 'Failed to save target audience. Please try again.',
         icon: 'error',
-        confirmButtonColor: 'var(--bs-danger)'
+        confirmButtonColor: 'var(--danger-color)'
       });
     } finally {
       setLoading(false);

@@ -464,7 +464,7 @@ const UserForm = () => {
                     {currentUserRole === "admin" && (
                       <>
                         <option value="companyAdmin">Company Admin</option>
-                        <option value="user">User</option>
+                        {/* <option value="user">User</option> */}
                       </>
                     )}
                     {(currentUserRole === "companyAdmin" || memberCanCreate) && (

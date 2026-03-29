@@ -164,8 +164,8 @@ const SurveyBuilder = () => {
       text: 'You have unsaved changes. Are you sure you want to leave?',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: 'var(--bs-danger)',
-      cancelButtonColor: 'var(--bs-secondary)',
+      confirmButtonColor: 'var(--primary-color)',
+      cancelButtonColor: 'var(--danger-color)',
       confirmButtonText: 'Leave',
       cancelButtonText: 'Stay'
     }).then((result) => {
@@ -189,8 +189,11 @@ const SurveyBuilder = () => {
     additionalInstructions: ''
   });
 
-  // Auto-populate company name for AI modal
+  // Auto-populate company name for AI modal (tenant users only)
   useEffect(() => {
+    // System admins create templates — they don't need tenant data
+    if (user?.role === 'admin') return;
+
     const fetchCompanyProfile = async () => {
       try {
         const { data } = await axiosInstance.get('/tenants/me');
@@ -206,7 +209,7 @@ const SurveyBuilder = () => {
       }
     };
     fetchCompanyProfile();
-  }, []);
+  }, [user?.role]);
 
   const [logicRules, setLogicRules] = useState([]);
   const [showLogicBuilder, setShowLogicBuilder] = useState(false);
@@ -421,7 +424,7 @@ const SurveyBuilder = () => {
     icon: MdBusiness // Default icon for all industries
   }));
 
-  console.log(industries)
+  // industries loaded from dropdown settings
 
   const steps = [
     { id: 1, title: 'Survey Details', description: 'Basic information and questions' },
@@ -1100,8 +1103,8 @@ const SurveyBuilder = () => {
       text: 'Your survey will be saved as draft and can be published later.',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: 'var(--bs-warning)',
-      cancelButtonColor: 'var(--bs-secondary)',
+      confirmButtonColor: 'var(--primary-color)',
+      cancelButtonColor: 'var(--danger-color)',
       confirmButtonText: 'Yes, Save as Draft'
     });
 
@@ -1302,7 +1305,7 @@ const SurveyBuilder = () => {
               disabled={saving || !survey.title.trim()}
               className={`inline-flex items-center px-3 py-1.5 text-sm rounded-lg disabled:opacity-50 ${buttonVariants.primary}`}
             >
-              <MdPublish className="mr-2" /> {isTemplateEditMode ? 'Update Template' : 'Publish Template'}
+              <MdPublish className="mr-2" /> {isTemplateEditMode ? 'Publish Template' : 'Publish Template'}
             </button>
           </>
         )}
@@ -1448,6 +1451,30 @@ const SurveyBuilder = () => {
         confirmButtonText: 'Fix'
       });
       return;
+    }
+    // Step 3 validation: expiry date must be in the future, maxResponses must be > 0
+    if (currentStep === 3) {
+      if (publishSettings.expiryDate) {
+        const expiryDate = new Date(publishSettings.expiryDate);
+        if (expiryDate <= new Date()) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Invalid Expiry Date',
+            text: 'Expiry date must be in the future.',
+            confirmButtonText: 'Fix'
+          });
+          return;
+        }
+      }
+      if (publishSettings.maxResponses && parseInt(publishSettings.maxResponses) <= 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Invalid Max Responses',
+          text: 'Maximum responses must be greater than 0.',
+          confirmButtonText: 'Fix'
+        });
+        return;
+      }
     }
     setValidationErrors([]);
     if (currentStep < 3) {
@@ -2391,6 +2418,26 @@ const SurveyBuilder = () => {
                     : `${publishSettings.scheduleDate} at ${publishSettings.scheduleTime}`}
                 </p>
               </div>
+
+              {publishSettings.expiryDate && (
+                <div className="mb-3">
+                  <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Closes on:</strong>
+                  <p className="text-orange-500 dark:text-orange-400 mb-2 flex items-center gap-1">
+                    <MdEvent className="inline" />
+                    {new Date(publishSettings.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              )}
+
+              {publishSettings.maxResponses && (
+                <div className="mb-3">
+                  <strong className="text-[var(--light-text)] dark:text-[var(--dark-text)]">Max Responses:</strong>
+                  <p className="text-blue-500 dark:text-blue-400 mb-2 flex items-center gap-1">
+                    <MdPeople className="inline" />
+                    {publishSettings.maxResponses} responses
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2934,16 +2981,19 @@ const SurveyBuilder = () => {
             <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="mb-3">
-                    <label className="block mb-1.5 font-semibold">Company Name</label>
-                    <input
-                      type="text"
-                      value={companyProfile.companyName || ''}
-                      readOnly
-                      className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 cursor-not-allowed"
-                    />
-                    <small className="text-[var(--text-secondary)]">Auto-populated from your company profile</small>
-                  </div>
+                  {/* Company Name — only shown for tenant users (auto-populated) */}
+                  {!isTemplateMode && user?.role !== 'admin' && (
+                    <div className="mb-3">
+                      <label className="block mb-1.5 font-semibold">Company Name</label>
+                      <input
+                        type="text"
+                        value={companyProfile.companyName || ''}
+                        readOnly
+                        className="w-full px-3 py-2 border border-[var(--light-border)] dark:border-[var(--dark-border)] rounded-lg bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                      />
+                      <small className="text-[var(--text-secondary)]">Auto-populated from your company profile</small>
+                    </div>
+                  )}
 
                   <div className="mb-3">
                     <label className="block mb-1.5 font-semibold">Industry/Category *</label>
